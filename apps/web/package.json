@@ -1,0 +1,6 @@
+{
+  "name": "@shahrjo/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shahrjo web app (port 3000) - implemented in its own step"
+}

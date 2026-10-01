@@ -1,0 +1,72 @@
+# ShahrJo CI - runs on every push / PR:
+#   1) checks:    structure check + prisma validate + typecheck + tests (when present)
+#   2) database:  migrations + seed against a clean PostgreSQL 17
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Structure / TypeCheck / Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Phase checks (structure + secret scan + prisma validate + typecheck)
+        run: pnpm verify:phase1
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Tests
+        run: pnpm run --if-present test
+
+  database:
+    name: Migration + Seed (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: shahrjo
+          POSTGRES_PASSWORD: ci_strong_password
+          POSTGRES_DB: shahrjo
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://shahrjo:ci_strong_password@localhost:5432/shahrjo?schema=public
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations to a clean database
+        run: pnpm db:deploy
+
+      - name: Seed reference data
+        run: pnpm db:seed

@@ -1,0 +1,34 @@
+{
+  "name": "shahrjo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shahrjo - multi-province city platform (Web/PWA + Android)",
+  "packageManager": "pnpm@9.12.0",
+  "engines": { "node": ">=20.11.0" },
+  "scripts": {
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "infra:logs": "docker compose logs -f",
+    "check:env": "node scripts/check-env.mjs",
+    "verify:step1": "node scripts/verify-step1.mjs",
+    "verify:phase1": "node scripts/verify-step1.mjs && prisma validate && tsc -p tsconfig.json --noEmit",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed/index.ts",
+    "db:studio": "prisma studio",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed/index.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "prisma": "^6.19.3",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.0"
+  }
+}

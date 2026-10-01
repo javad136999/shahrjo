@@ -1,0 +1,6 @@
+{
+  "name": "@shahrjo/admin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shahrjo admin app (port 3002) - implemented in its own step"
+}

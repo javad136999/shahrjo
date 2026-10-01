@@ -1,0 +1,6 @@
+{
+  "name": "@shahrjo/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shahrjo api app (port 4000) - implemented in its own step"
+}
