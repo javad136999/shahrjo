@@ -4,6 +4,9 @@ FROM node:22-alpine AS build
 WORKDIR /repo
 RUN corepack enable
 ENV NEXT_TELEMETRY_DISABLED=1
+# /api rewrite target — serialized into the routes manifest at build time.
+ARG INTERNAL_API_URL=http://127.0.0.1:4000
+ENV INTERNAL_API_URL=${INTERNAL_API_URL}
 
 # Dependency layer (cached unless lockfiles change)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./

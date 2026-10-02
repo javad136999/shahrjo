@@ -66,6 +66,9 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        # Rewrites are serialized at build time, so the proxy target must be a build arg.
+        INTERNAL_API_URL: http://api:4000
     container_name: shahrjo-prod-web
     restart: unless-stopped
     environment:
