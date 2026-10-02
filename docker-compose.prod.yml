@@ -94,8 +94,12 @@ services:
     volumes:
       - shahrjo_backups:/backups
       - ./docker/backup/backup.sh:/usr/local/bin/backup.sh:ro
-      - ./docker/backup/crontab:/etc/crontabs/root:ro
-    entrypoint: ["/bin/sh", "-c", "chmod +x /usr/local/bin/backup.sh && exec crond -f -l 2"]
+      - ./docker/backup/crontab:/crontab:ro
+    # crond needs a root-owned 600 crontab: copy the read-only mount into place.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - cp /crontab /etc/crontabs/root && chown root:root /etc/crontabs/root && chmod 600 /etc/crontabs/root && exec crond -f -l 2
     depends_on:
       postgres:
         condition: service_healthy
