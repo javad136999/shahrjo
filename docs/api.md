@@ -9,7 +9,9 @@
 | POST `/auth/send-otp` | `{ phone }` | Validate شماره، Rate Limit (IP+Phone)، تولید OTP امن، Hash، ذخیره در Postgres با انقضا، ارسال SMS |
 | POST `/auth/verify-otp` | `{ phone, code }` | بررسی Hash/انقضا/تلاش‌ها/یک‌بارمصرف؛ ایجاد یا Login کاربر؛ برمی‌گرداند `{ accessToken, refreshToken, user }` |
 | POST `/auth/refresh` | `{ refreshToken }` | چرخش Refresh Token (hash در `user_sessions`) |
-| POST `/auth/logout` | `{ refreshToken }` | Revoked کردن Session |
+| POST `/auth/logout` | `{ refreshToken }` | Revoked کردن یک Session |
+| GET `/auth/sessions` | — | لیست نشست‌های فعال کاربر (نیازمند Access Token) |
+| POST `/auth/logout-all` | — | Revoked کردن همه نشست‌های کاربر (همه دستگاه‌ها) |
 
 ## Users / City
 

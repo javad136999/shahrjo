@@ -169,6 +169,8 @@ model User {
   notifications Notification[]
   adminProfile  AdminUser?
   businesses    Business[]
+  media         Media[]
+  payments      Payment[]
 
   @@index([cityId])
   @@map("users")
@@ -347,6 +349,7 @@ model Ad {
   mapLocations MapLocation[]
 
   @@index([cityId, categoryId, status])
+  @@index([status, expiresAt])
   @@index([userId])
   @@index([status, createdAt])
   @@map("ads")
@@ -383,37 +386,48 @@ model BusinessCategory {
 }
 
 model Business {
-  id           Int            @id @default(autoincrement())
-  cityId       Int            @map("city_id")
-  categoryId   Int            @map("category_id")
-  ownerId      Int            @map("owner_id")
-  name         String         @db.VarChar(160)
-  slug         String         @unique @db.VarChar(180)
-  description  String?
-  logoUrl      String?        @map("logo_url")
-  coverUrl     String?        @map("cover_url")
-  phone        String?        @db.VarChar(15)
-  address      String?
-  latitude     Float?
-  longitude    Float?
-  workingHours Json?          @map("working_hours") // [{ day, open, close }]
-  socialLinks  Json?          @map("social_links") // { instagram, telegram, website, ... }
-  rating       Float          @default(0)
-  ratingCount  Int            @default(0) @map("rating_count")
-  viewCount    Int            @default(0) @map("view_count")
-  status       BusinessStatus @default(PENDING)
-  createdAt    DateTime       @default(now()) @map("created_at")
-  updatedAt    DateTime       @updatedAt @map("updated_at")
+  id                    Int                        @id @default(autoincrement())
+  cityId                Int                        @map("city_id")
+  categoryId            Int                        @map("category_id")
+  ownerId               Int                        @map("owner_id")
+  name                  String                     @db.VarChar(160)
+  slug                  String                     @unique @db.VarChar(180)
+  description           String?
+  logoUrl               String?                    @map("logo_url")
+  coverUrl              String?                    @map("cover_url")
+  phone                 String?                    @db.VarChar(15)
+  address               String?
+  latitude              Float?
+  longitude             Float?
+  workingHours          Json?                      @map("working_hours") // [{ day, open, close }]
+  socialLinks           Json?                      @map("social_links") // { instagram, telegram, website, ... }
+  rating                Float                      @default(0)
+  ratingCount           Int                        @default(0) @map("rating_count")
+  viewCount             Int                        @default(0) @map("view_count")
+  status                BusinessStatus             @default(PENDING)
+  // Subscription (Gold/Silver) — denormalized for fast filtering + showcase ordering
+  subscriptionTier      SubscriptionTier           @default(FREE) @map("subscription_tier")
+  subscriptionStatus    BusinessSubscriptionStatus @default(NONE) @map("subscription_status")
+  subscriptionExpiresAt DateTime?                  @map("subscription_expires_at")
+  showcasePriority      Int                        @default(100) @map("showcase_priority") // lower = earlier in golden showcase
+  showcaseEnabled       Boolean                    @default(true) @map("showcase_enabled")
+  createdAt             DateTime                   @default(now()) @map("created_at")
+  updatedAt             DateTime                   @updatedAt @map("updated_at")
 
-  city         City             @relation(fields: [cityId], references: [id])
-  category     BusinessCategory @relation(fields: [categoryId], references: [id])
-  owner        User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  reviews      Review[]
-  favorites    Favorite[]
-  comments     Comment[]
-  mapLocations MapLocation[]
+  city          City             @relation(fields: [cityId], references: [id])
+  category      BusinessCategory @relation(fields: [categoryId], references: [id])
+  owner         User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  reviews       Review[]
+  favorites     Favorite[]
+  comments      Comment[]
+  mapLocations  MapLocation[]
+  payments      Payment[]
+  subscriptions Subscription[]
 
   @@index([cityId, categoryId, status])
+  @@index([subscriptionTier, subscriptionStatus])
+  @@index([subscriptionExpiresAt])
+  @@index([latitude, longitude])
   @@index([ownerId])
   @@map("businesses")
 }
@@ -623,4 +637,141 @@ model Banner {
 
   @@index([cityId, isActive])
   @@map("banners")
+}
+
+// ================= Subscriptions & Payments (Gold / Silver) =================
+
+enum SubscriptionTier {
+  FREE
+  SILVER
+  GOLD
+}
+
+// Business-level subscription state (denormalized on `businesses` for fast queries).
+// PENDING_REVIEW: payment succeeded but admin approval is required —
+// a successful payment alone never publishes/promotes a business.
+enum BusinessSubscriptionStatus {
+  NONE
+  PENDING_REVIEW
+  ACTIVE
+  EXPIRED
+  REJECTED
+  SUSPENDED
+}
+
+enum SubscriptionStatus {
+  PENDING_REVIEW
+  ACTIVE
+  EXPIRED
+  REJECTED
+  CANCELED
+}
+
+enum PaymentStatus {
+  CREATED
+  STARTED
+  SUCCESS
+  FAILED
+  CANCELED
+}
+
+enum PaymentProvider {
+  ZARINPAL
+}
+
+// Admin-defined purchasable plans (prices in Rial, editable without code changes).
+model SubscriptionPlan {
+  id           Int              @id @default(autoincrement())
+  code         String           @unique // GOLD_1M, GOLD_6M, SILVER_12M, ...
+  tier         SubscriptionTier
+  label        String           @db.VarChar(50) // "۱ ماهه"
+  badge        String?          @db.VarChar(50) // "پیشنهاد ویژه"
+  durationDays Int              @map("duration_days")
+  price        BigInt // Rial
+  isActive     Boolean          @default(true) @map("is_active")
+  sortOrder    Int              @default(0) @map("sort_order")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  payments      Payment[]
+  subscriptions Subscription[]
+
+  @@index([tier, isActive])
+  @@map("subscription_plans")
+}
+
+// Subscription history per business. Created after successful ZarinPal verify,
+// then activated only by admin approval (PENDING_REVIEW -> ACTIVE).
+model Subscription {
+  id           Int                @id @default(autoincrement())
+  businessId   Int                @map("business_id")
+  planId       Int                @map("plan_id")
+  tier         SubscriptionTier
+  status       SubscriptionStatus @default(PENDING_REVIEW)
+  startsAt     DateTime?          @map("starts_at")
+  expiresAt    DateTime?          @map("expires_at")
+  reviewedById Int?               @map("reviewed_by_id")
+  reviewNote   String?            @map("review_note")
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+
+  business Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  plan     SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@index([businessId, status])
+  @@index([status, expiresAt])
+  @@map("subscriptions")
+}
+
+// ZarinPal payments. Secrets (merchant id) stay in env/VPS only — never in client code.
+model Payment {
+  id               Int             @id @default(autoincrement())
+  userId           Int             @map("user_id")
+  businessId       Int?            @map("business_id")
+  planId           Int             @map("plan_id")
+  subscriptionId   Int?            @map("subscription_id")
+  provider         PaymentProvider @default(ZARINPAL)
+  amount           BigInt // Rial
+  status           PaymentStatus   @default(CREATED)
+  authority        String?         @unique @db.VarChar(64) // ZarinPal authority
+  refId            String?         @map("ref_id") @db.VarChar(32) // bank RefID after verify
+  resultCode       Int?            @map("result_code") // ZarinPal code (100 = OK)
+  errorDescription String?         @map("error_description")
+  callbackPayload  Json?           @map("callback_payload")
+  paidAt           DateTime?       @map("paid_at")
+  verifiedAt       DateTime?       @map("verified_at")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business?        @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  plan     SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@index([businessId, createdAt])
+  @@index([status, createdAt])
+  @@map("payments")
+}
+
+// ================= Media / file storage metadata =================
+// Binary files live in StorageService (VPS local now, S3-compatible later).
+// Only metadata is stored in PostgreSQL — never the file bytes.
+model Media {
+  id          Int       @id @default(autoincrement())
+  storageKey  String    @unique @map("storage_key") // e.g. businesses/2026/10/xxx.webp
+  url         String // public path/URL (thumbnail/large variants derived from it)
+  mimeType    String    @map("mime_type") @db.VarChar(100)
+  width       Int?
+  height      Int?
+  sizeBytes   Int       @map("size_bytes")
+  ownerUserId Int?      @map("owner_user_id")
+  entityType  String    @db.VarChar(30) // BUSINESS | AD | NEWS | USER | BANNER
+  entityId    String?   @map("entity_id") @db.VarChar(50)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  deletedAt   DateTime? @map("deleted_at") // soft-delete marker for orphan cleanup job
+
+  owner User? @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([deletedAt])
+  @@map("media")
 }

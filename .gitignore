@@ -19,10 +19,15 @@ coverage/
 # Freebuff local workspace metadata
 .freebuff/
 
+# JamCity reference clone (study only - never committed)
+.jamcity-ref/
+
 # Uploads & data
 uploads/
 docker/data/
 *.sql
+# ...but Prisma migrations MUST be committed (CI applies them to a clean DB)
+!prisma/migrations/**/*.sql
 *.dump
 backups/
 

@@ -1,6 +1,7 @@
-// ShahrJo seed - Phase 1.
+// ShahrJo seed - Phase 1 + Phase 2.
 // Idempotent: safe to run multiple times (upsert by slug/code).
-// Cities are data, never hard-coded in the app; admins can add more later.
+// Cities/categories are DATA, never hard-coded in the app; admins can edit later.
+// Category set aligns with JamCity UX (docs/jamcity-reference.md) - data only, no code copied.
 
 import { PrismaClient } from '@prisma/client';
 
@@ -15,6 +16,7 @@ const cities = [
   { province: 'bushehr', name: 'جم', slug: 'jam', latitude: 27.83, longitude: 52.32, featured: true },
   { province: 'bushehr', name: 'عسلویه', slug: 'asaluyeh', latitude: 27.48, longitude: 52.6, featured: true },
   { province: 'bushehr', name: 'کنگان', slug: 'kangan', latitude: 27.89, longitude: 52.49, featured: false },
+  { province: 'bushehr', name: 'دیر', slug: 'dayer', latitude: 27.84, longitude: 51.94, featured: false },
   { province: 'bushehr', name: 'بوشهر', slug: 'bushehr-city', latitude: 28.97, longitude: 50.84, featured: true },
   { province: 'fars', name: 'شیراز', slug: 'shiraz', latitude: 29.59, longitude: 52.58, featured: true },
   { province: 'fars', name: 'جهرم', slug: 'jahrom', latitude: 28.5, longitude: 53.56, featured: false },
@@ -42,6 +44,9 @@ const permissions = [
   { code: 'businesses.view', title: 'مشاهده کسب‌وکارها' },
   { code: 'businesses.create', title: 'ایجاد کسب‌وکار' },
   { code: 'businesses.moderate', title: 'تایید/رد کسب‌وکار' },
+  { code: 'subscriptions.manage', title: 'مدیریت اشتراک‌ها و تایید پرداخت' },
+  { code: 'showcase.manage', title: 'مدیریت ویترین طلایی (ترتیب/اولویت)' },
+  { code: 'payments.view', title: 'مشاهده پرداخت‌ها' },
   { code: 'news.manage', title: 'مدیریت اخبار' },
   { code: 'chat.moderate', title: 'نظارت بر چت' },
   { code: 'reports.handle', title: 'رسیدگی به گزارش‌ها' },
@@ -51,14 +56,13 @@ const permissions = [
   { code: 'audit.view', title: 'مشاهده لاگ ممیزی' },
 ];
 
-const allPermissionCodes = permissions.map((p) => p.code);
-
 const rolePermissions: Record<string, string[]> = {
-  SUPER_ADMIN: allPermissionCodes,
+  SUPER_ADMIN: permissions.map((p) => p.code),
   PROVINCE_ADMIN: [
     'dashboard.view', 'users.view', 'users.manage',
     'ads.view', 'ads.moderate',
     'businesses.view', 'businesses.moderate',
+    'subscriptions.manage', 'payments.view', 'showcase.manage',
     'news.manage', 'chat.moderate', 'reports.handle',
     'banners.manage', 'map.manage', 'audit.view',
   ],
@@ -66,6 +70,7 @@ const rolePermissions: Record<string, string[]> = {
     'dashboard.view', 'users.view',
     'ads.view', 'ads.moderate',
     'businesses.view', 'businesses.moderate',
+    'subscriptions.manage', 'payments.view', 'showcase.manage',
     'news.manage', 'chat.moderate', 'reports.handle',
     'banners.manage', 'map.manage',
   ],
@@ -78,28 +83,68 @@ const rolePermissions: Record<string, string[]> = {
   USER: ['ads.view', 'ads.create'],
 };
 
+// 9 ad categories (JamCity-aligned)
 const adCategories = [
-  { name: 'خودرو', slug: 'khodro', icon: 'car', color: '#2563eb' },
-  { name: 'املاک', slug: 'amlak', icon: 'building', color: '#16a34a' },
-  { name: 'موبایل', slug: 'mobile', icon: 'smartphone', color: '#7c3aed' },
-  { name: 'لوازم خانه', slug: 'home-appliances', icon: 'sofa', color: '#ea580c' },
-  { name: 'استخدام', slug: 'employment', icon: 'briefcase', color: '#0891b2' },
-  { name: 'خدمات', slug: 'services', icon: 'wrench', color: '#ca8a04' },
-  { name: 'خرید و فروش', slug: 'buy-sell', icon: 'tag', color: '#db2777' },
-  { name: 'سایر', slug: 'other', icon: 'dots', color: '#6b7280' },
+  { name: 'املاک', slug: 'real-estate', icon: '🏠', color: '#16a34a' },
+  { name: 'وسایل نقلیه', slug: 'car', icon: '🚗', color: '#2563eb' },
+  { name: 'موبایل', slug: 'mobile', icon: '📱', color: '#7c3aed' },
+  { name: 'لوازم خانه', slug: 'home-appliances', icon: '🛋️', color: '#ea580c' },
+  { name: 'استخدام', slug: 'jobs', icon: '💼', color: '#0891b2' },
+  { name: 'خدمات', slug: 'services', icon: '🛠️', color: '#ca8a04' },
+  { name: 'خرید و فروش', slug: 'market', icon: '🛒', color: '#db2777' },
+  { name: 'لوازم شخصی', slug: 'personal', icon: '🎒', color: '#9333ea' },
+  { name: 'سایر', slug: 'other', icon: '✨', color: '#6b7280' },
 ];
 
-const businessCategories = [
-  { name: 'فروشگاه', slug: 'store', icon: 'shopping-cart', color: '#2563eb' },
-  { name: 'رستوران و کافه', slug: 'restaurant', icon: 'utensils', color: '#ea580c' },
-  { name: 'خدمات', slug: 'services', icon: 'wrench', color: '#ca8a04' },
-  { name: 'بهداشت و درمان', slug: 'health', icon: 'heart-pulse', color: '#dc2626' },
-  { name: 'آموزش', slug: 'education', icon: 'graduation-cap', color: '#7c3aed' },
-  { name: 'املاک', slug: 'real-estate', icon: 'building', color: '#16a34a' },
-  { name: 'خودرو', slug: 'auto', icon: 'car', color: '#0891b2' },
-  { name: 'ساختمانی', slug: 'construction', icon: 'hard-hat', color: '#a16207' },
-  { name: 'زیبایی و آرایشی', slug: 'beauty', icon: 'sparkles', color: '#db2777' },
-  { name: 'فناوری', slug: 'technology', icon: 'cpu', color: '#4f46e5' },
+// 48 business categories (JamCity-aligned: name + emoji, familiar UX)
+const businessCategories: { name: string; slug: string; icon: string }[] = [
+  { name: 'رستوران', slug: 'restaurant', icon: '🍽️' },
+  { name: 'کافه', slug: 'cafe', icon: '☕' },
+  { name: 'فست‌فود', slug: 'fastfood', icon: '🍔' },
+  { name: 'نانوایی و شیرینی', slug: 'bakery', icon: '🥖' },
+  { name: 'سوپرمارکت و مواد غذایی', slug: 'supermarket', icon: '🛒' },
+  { name: 'میوه و تره‌بار', slug: 'fruit_store', icon: '🍎' },
+  { name: 'پروتئینی و قصابی', slug: 'butcher', icon: '🥩' },
+  { name: 'پوشاک', slug: 'clothing', icon: '👕' },
+  { name: 'کفش و کیف', slug: 'shoes', icon: '👟' },
+  { name: 'لوازم آرایشی و بهداشتی', slug: 'cosmetics', icon: '💄' },
+  { name: 'طلا و جواهر', slug: 'jewelry', icon: '💎' },
+  { name: 'ساعت و عینک', slug: 'watch_glasses', icon: '⌚' },
+  { name: 'موبایل و لوازم جانبی', slug: 'mobile', icon: '📱' },
+  { name: 'کامپیوتر و تجهیزات', slug: 'computer', icon: '💻' },
+  { name: 'لوازم الکترونیکی', slug: 'electronics', icon: '🔌' },
+  { name: 'لوازم خانگی', slug: 'home_appliances', icon: '🏠' },
+  { name: 'مبلمان و دکوراسیون', slug: 'furniture', icon: '🛋️' },
+  { name: 'اتوگالری و خرید و فروش خودرو', slug: 'car_dealer', icon: '🚗' },
+  { name: 'خدمات خودرو', slug: 'car_service', icon: '🔧' },
+  { name: 'قطعات و لوازم خودرو', slug: 'car_parts', icon: '⚙️' },
+  { name: 'کارواش', slug: 'car_wash', icon: '🚿' },
+  { name: 'لاستیک و آپاراتی', slug: 'tire', icon: '🛞' },
+  { name: 'خدمات فنی', slug: 'technical', icon: '🧰' },
+  { name: 'ساختمان و مصالح', slug: 'construction', icon: '🏗️' },
+  { name: 'برق‌کاری', slug: 'electrician', icon: '💡' },
+  { name: 'لوله‌کشی و تاسیسات', slug: 'plumbing', icon: '🚰' },
+  { name: 'جوشکاری و آهنگاری', slug: 'welding', icon: '🔩' },
+  { name: 'پزشکان و درمان', slug: 'doctor', icon: '🩺' },
+  { name: 'دندانپزشکی', slug: 'dentist', icon: '🦷' },
+  { name: 'داروخانه', slug: 'pharmacy', icon: '💊' },
+  { name: 'آزمایشگاه و تشخیص پزشکی', slug: 'laboratory', icon: '🧪' },
+  { name: 'آرایشگاه و زیبایی', slug: 'beauty', icon: '💇' },
+  { name: 'ورزشی و باشگاه', slug: 'fitness', icon: '🏋️' },
+  { name: 'آموزش و کلاس', slug: 'education', icon: '📚' },
+  { name: 'مهدکودک و پیش‌دبستانی', slug: 'kindergarten', icon: '🧸' },
+  { name: 'املاک', slug: 'real_estate', icon: '🏠' },
+  { name: 'گردشگری و اقامت', slug: 'travel', icon: '🏨' },
+  { name: 'چاپ و تبلیغات', slug: 'printing', icon: '🖨️' },
+  { name: 'عکاسی و فیلم‌برداری', slug: 'photography', icon: '📷' },
+  { name: 'گل‌فروشی', slug: 'florist', icon: '🌷' },
+  { name: 'پت‌شاپ و خدمات حیوانات', slug: 'pet', icon: '🐾' },
+  { name: 'خشکشویی و شست‌وشو', slug: 'laundry', icon: '👔' },
+  { name: 'حمل و نقل', slug: 'delivery', icon: '🚚' },
+  { name: 'خدمات عمومی', slug: 'services', icon: '🛠️' },
+  { name: 'فروشگاه', slug: 'shop', icon: '🛍️' },
+  { name: 'تعمیرگاه', slug: 'repair', icon: '🔧' },
+  { name: 'سایر', slug: 'other', icon: '✨' },
 ];
 
 const newsCategories = [
@@ -109,6 +154,16 @@ const newsCategories = [
   { name: 'ورزشی', slug: 'sports' },
   { name: 'فرهنگی', slug: 'culture' },
   { name: 'حوادث', slug: 'incidents' },
+];
+
+// Purchasable plans (Rial). Prices follow the familiar JamCity tiers; admins can edit.
+const subscriptionPlans = [
+  { code: 'GOLD_1M', tier: 'GOLD' as const, label: '۱ ماهه', badge: null, durationDays: 30, price: 4_000_000, sortOrder: 1 },
+  { code: 'GOLD_6M', tier: 'GOLD' as const, label: '۶ ماهه', badge: 'پیشنهاد ویژه', durationDays: 180, price: 15_000_000, sortOrder: 2 },
+  { code: 'GOLD_12M', tier: 'GOLD' as const, label: '۱۲ ماهه', badge: 'به‌صرفه‌ترین', durationDays: 365, price: 25_000_000, sortOrder: 3 },
+  { code: 'SILVER_1M', tier: 'SILVER' as const, label: '۱ ماهه', badge: null, durationDays: 30, price: 2_000_000, sortOrder: 4 },
+  { code: 'SILVER_6M', tier: 'SILVER' as const, label: '۶ ماهه', badge: 'پیشنهاد ویژه', durationDays: 180, price: 8_000_000, sortOrder: 5 },
+  { code: 'SILVER_12M', tier: 'SILVER' as const, label: '۱۲ ماهه', badge: 'به‌صرفه‌ترین', durationDays: 365, price: 13_000_000, sortOrder: 6 },
 ];
 
 async function main(): Promise<void> {
@@ -157,18 +212,38 @@ async function main(): Promise<void> {
     }
   }
 
-  // Categories
+  // Ad categories (target list wins; remove rows left over from older seeds)
   for (const c of adCategories) {
-    await prisma.adCategory.upsert({ where: { slug: c.slug }, update: { name: c.name }, create: c });
+    const { color, ...data } = c;
+    await prisma.adCategory.upsert({ where: { slug: c.slug }, update: { name: c.name, icon: c.icon, color }, create: { ...data, color } });
   }
+  await prisma.adCategory.deleteMany({ where: { slug: { notIn: adCategories.map((c) => c.slug) } } });
+
+  // Business categories (48, JamCity-aligned)
   for (const c of businessCategories) {
-    await prisma.businessCategory.upsert({ where: { slug: c.slug }, update: { name: c.name }, create: c });
+    await prisma.businessCategory.upsert({ where: { slug: c.slug }, update: { name: c.name, icon: c.icon }, create: c });
   }
+  await prisma.businessCategory.deleteMany({ where: { slug: { notIn: businessCategories.map((c) => c.slug) } } });
+
+  // News categories
   for (const c of newsCategories) {
     await prisma.newsCategory.upsert({ where: { slug: c.slug }, update: { name: c.name }, create: c });
   }
 
-  console.log('Seed OK: provinces, cities, roles, permissions, categories');
+  // Subscription plans (Gold / Silver)
+  for (const p of subscriptionPlans) {
+    await prisma.subscriptionPlan.upsert({
+      where: { code: p.code },
+      update: { label: p.label, badge: p.badge, durationDays: p.durationDays, price: p.price, sortOrder: p.sortOrder, tier: p.tier },
+      create: p,
+    });
+  }
+
+  console.log(
+    `Seed OK: ${provinces.length} provinces, ${cities.length} cities, ${roles.length} roles, ` +
+      `${permissions.length} permissions, ${adCategories.length} ad categories, ` +
+      `${businessCategories.length} business categories, ${subscriptionPlans.length} plans`,
+  );
 }
 
 main()

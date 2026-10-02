@@ -37,12 +37,15 @@ pnpm verify:step1             # بررسی ساختار
 
 ## دستورات مفید
 ```bash
-pnpm db:studio                # مرور دیتابیس
-pnpm typecheck                # بررسی تایپ seed
+pnpm --filter @shahrjo/api start:dev   # اجرای API (نیازمند infra بالا)
+pnpm --filter @shahrjo/api test        # تست‌های unit
+pnpm smoke                             # تست زنده جریان auth (نیازمند infra + build)
+pnpm typecheck:all                     # بررسی تایپ همه پکیج‌ها
+pnpm db:studio                         # مرور دیتابیس
 ```
 
 ## فازها (هر فاز: Build + TypeCheck + Tests + Security Check)
-1. Architecture + Database ✅ · 2. Backend + Auth · 3. City Selection · 4. City Dashboard
+1. Architecture + Database ✅ · 2. Backend + Auth ✅ · 3. City Selection · 4. City Dashboard
 5. Map · 6. Chat · 7. Ads · 8. Businesses · 9. News · 10. Admin · 11. Notifications
 12. PWA · 13. Docker · 14. Production Deployment
 

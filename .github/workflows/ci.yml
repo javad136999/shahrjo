@@ -31,6 +31,12 @@ jobs:
       - name: Phase checks (structure + secret scan + prisma validate + typecheck)
         run: pnpm verify:phase1
 
+      - name: Phase 2 checks (auth structure + security invariants)
+        run: pnpm verify:phase2
+
+      - name: Typecheck all workspaces
+        run: pnpm typecheck:all
+
       - name: Generate Prisma Client
         run: pnpm db:generate
 
@@ -70,3 +76,9 @@ jobs:
 
       - name: Seed reference data
         run: pnpm db:seed
+
+      - name: Build API
+        run: pnpm --filter @shahrjo/api build
+
+      - name: "Smoke test (full auth flow: OTP -> tokens -> refresh -> logout)"
+        run: pnpm smoke
