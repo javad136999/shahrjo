@@ -96,6 +96,9 @@ try {
   await waitForServer(main, 4099);
   console.log('--- main flow (:4099) ---');
 
+  const health = await get(4099, '/health', undefined, uniqueIp());
+  check('GET /health reports db+redis ok', health.status === 200 && health.json?.data?.checks?.database === true && health.json?.data?.checks?.redis === true, JSON.stringify(health.json));
+
   const phone = uniquePhone();
   const ip = uniqueIp();
 

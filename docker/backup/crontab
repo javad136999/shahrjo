@@ -1,0 +1,2 @@
+# BusyBox crond format (minute hour day month weekday command) - 03:00 daily (TZ=Asia/Tehran)
+0 3 * * * /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1

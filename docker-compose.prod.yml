@@ -1,0 +1,104 @@
+# ShahrJo - production stack (Phase 14). Secrets come from host .env (never committed).
+# Usage: docker compose -f docker-compose.prod.yml up -d --build
+name: shahrjo-prod
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: shahrjo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # No host port: reachable only inside the compose network.
+    volumes:
+      - shahrjo_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: shahrjo-redis
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}", "--appendonly", "yes"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - shahrjo_redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: shahrjo-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+    volumes:
+      - shahrjo_uploads:/repo/apps/api/uploads
+    expose:
+      - "4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  nginx:
+    image: nginx:alpine
+    container_name: shahrjo-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      # - "443:443"  # enable after certbot (docs/deploy.md)
+    environment:
+      SERVER_NAME: ${SERVER_NAME:-_}
+    volumes:
+      - ./docker/nginx/templates:/etc/nginx/templates:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      api:
+        condition: service_healthy
+
+  backup:
+    image: postgres:17-alpine
+    container_name: shahrjo-backup
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: postgres
+      BACKUP_KEEP: ${BACKUP_KEEP:-7}
+      TZ: Asia/Tehran
+    volumes:
+      - shahrjo_backups:/backups
+      - ./docker/backup/backup.sh:/usr/local/bin/backup.sh:ro
+      - ./docker/backup/crontab:/etc/crontabs/root:ro
+    entrypoint: ["/bin/sh", "-c", "chmod +x /usr/local/bin/backup.sh && exec crond -f -l 2"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  shahrjo_pgdata:
+  shahrjo_redisdata:
+  shahrjo_uploads:
+  shahrjo_backups:

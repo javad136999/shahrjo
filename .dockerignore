@@ -1,0 +1,14 @@
+# Never bake secrets or local artifacts into images
+.env
+.env.*
+!.env.example
+node_modules
+**/node_modules
+.git
+.jamcity-ref
+.freebuff
+**/dist
+uploads
+backups
+*.log
+coverage
