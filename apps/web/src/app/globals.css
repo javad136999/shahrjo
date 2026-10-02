@@ -1,0 +1,356 @@
+/* ShahrJo global styles — Phase 3 (no external fonts/CDN). */
+
+:root {
+  --bg: #f6f8f7;
+  --surface: #ffffff;
+  --text: #14231d;
+  --muted: #5c6f67;
+  --line: #e2e8e5;
+  --brand: #0e7a5f;
+  --brand-dark: #0a5c47;
+  --brand-soft: #e6f4ef;
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgb(16 40 32 / 8%), 0 6px 20px rgb(16 40 32 / 6%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Vazirmatn, Tahoma, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  line-height: 1.7;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: var(--brand);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+.container {
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* ---------- header / footer ---------- */
+
+.site-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--text);
+}
+.brand:hover {
+  text-decoration: none;
+}
+.brand-mark {
+  font-size: 22px;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-phone {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.page {
+  flex: 1;
+  padding-top: 28px;
+  padding-bottom: 48px;
+}
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  padding: 14px 0;
+}
+
+/* ---------- hero ---------- */
+
+.hero {
+  text-align: center;
+  margin-bottom: 26px;
+}
+.hero h1 {
+  font-size: clamp(24px, 4vw, 34px);
+  margin: 0 0 8px;
+}
+.muted {
+  color: var(--muted);
+}
+.current-city {
+  margin-top: 14px;
+  background: var(--brand-soft);
+  border: 1px solid rgb(14 122 95 / 25%);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: inline-block;
+}
+.current-city__link {
+  font-weight: 700;
+}
+
+/* ---------- city selection ---------- */
+
+.search-input {
+  width: 100%;
+  max-width: 420px;
+  display: block;
+  margin: 0 auto 22px;
+  padding: 11px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font: inherit;
+  font-size: 15px;
+}
+.search-input:focus {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.province-group {
+  margin-bottom: 22px;
+  text-align: right;
+}
+.province-title {
+  font-size: 15px;
+  color: var(--muted);
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+
+.city-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.city-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+.city-card:hover:not(:disabled) {
+  border-color: var(--brand);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.city-card:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.city-card--selected {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+.city-card__name {
+  font-weight: 700;
+}
+.city-card__check {
+  font-size: 12px;
+  color: var(--brand-dark);
+}
+
+.badge {
+  font-size: 11px;
+  background: var(--brand);
+  color: #fff;
+  border-radius: 999px;
+  padding: 1px 9px;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+}
+
+.loading {
+  text-align: center;
+  padding: 30px 0;
+}
+
+/* ---------- banner ---------- */
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 18px;
+}
+.banner--error {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid rgb(180 35 24 / 30%);
+}
+
+/* ---------- auth ---------- */
+
+.auth-card {
+  max-width: 400px;
+  margin: 30px auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) + 4px);
+  box-shadow: var(--shadow);
+  padding: 28px 24px;
+}
+.auth-card h1 {
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+.auth-card label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin: 16px 0 6px;
+}
+.auth-card input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 16px;
+  background: #fbfdfc;
+}
+.auth-card input:focus {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+.auth-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 10px;
+}
+.error {
+  color: var(--danger);
+  font-size: 14px;
+  margin: 10px 0 0;
+}
+
+/* ---------- buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  margin-top: 16px;
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.btn-primary {
+  width: 100%;
+  background: var(--brand);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--brand-dark);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--brand);
+  border-color: rgb(14 122 95 / 35%);
+  margin-top: 0;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--brand-soft);
+  text-decoration: none;
+}
+
+/* ---------- city home ---------- */
+
+.city-home {
+  text-align: center;
+  padding: 24px 0;
+}
+.city-home h1 {
+  font-size: clamp(30px, 6vw, 46px);
+  margin: 6px 0 10px;
+}
+.city-home__province {
+  color: var(--muted);
+  margin: 0;
+}
+.city-home__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+@media (max-width: 480px) {
+  .city-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+}

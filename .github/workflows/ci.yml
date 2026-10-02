@@ -34,6 +34,9 @@ jobs:
       - name: Phase 2 checks (auth structure + security invariants)
         run: pnpm verify:phase2
 
+      - name: Phase 3 checks (city selection frontend + validated cityId)
+        run: pnpm verify:phase3
+
       - name: Typecheck all workspaces
         run: pnpm typecheck:all
 

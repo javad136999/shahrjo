@@ -1,4 +1,4 @@
-import { IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsInt, IsOptional, IsString, Matches, MaxLength, Min, MinLength } from 'class-validator';
 
 export class SendOtpDto {
   // Loose syntactic check here; strict Iranian-mobile validation happens in AuthService.
@@ -35,4 +35,10 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(500)
   avatarUrl?: string;
+
+  // First-run city selection: must be an existing active city (checked in service).
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  cityId?: number;
 }

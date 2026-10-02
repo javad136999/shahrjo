@@ -61,7 +61,7 @@ api ◄──► WebSocket (چت Real-Time)
 |---|---|---|
 | 1 | Architecture + Database | ✅ |
 | 2 | Backend + Authentication (OTP/JWT/Refresh) | ✅ |
-| 3 | City Selection (صفحه اول + `city_id` در profile) | ⬜ |
+| 3 | City Selection (صفحه اول + `city_id` در profile) | ✅ |
 | 4 | City Dashboard (صفحه اصلی شهر) | ⬜ |
 | 5 | Map | ⬜ |
 | 6 | Chat (WebSocket per-city) | ⬜ |

@@ -15,12 +15,13 @@
 
 ## Users / City
 
-| Module | Endpoint |
-|---|---|
-| users | GET/PATCH `/users/me`, GET `/users/me/ads`, GET `/users/me/favorites` |
-| city | GET `/me/city`, PUT `/me/city` — ذخیره/تغییر `city_id` انتخابی |
-| provinces | GET `/provinces`, GET `/provinces/:id/cities` |
-| cities | GET `/cities/:slug`, GET `/cities?search=` — جستجوی شهر برای صفحه اول |
+| Module | Endpoint | وضعیت |
+|---|---|---|
+| users | GET/PATCH `/users/me` — `cityId` در PATCH اعتبارسنجی می‌شود (فقط شهرهای فعال) و در پاسخ `hasSelectedCity` برمی‌گردد | ✅ Phase 2/3 |
+| cities | GET `/cities` — عمومی (@Public)، فقط شهرهای فعال استان‌های فعال، ویژه‌ها اول، برای صفحه انتخاب شهر | ✅ Phase 3 |
+| city | GET `/me/city`, PUT `/me/city` — ذخیره/تغییر `city_id` انتخابی | ⬜ Planned |
+| provinces | GET `/provinces`, GET `/provinces/:id/cities` | ⬜ Planned |
+| users extra | GET `/users/me/ads`, GET `/users/me/favorites` | ⬜ Planned |
 
 ## Content (همه City-scoped)
 
