@@ -37,6 +37,9 @@ jobs:
       - name: Phase 3 checks (city selection frontend + validated cityId)
         run: pnpm verify:phase3
 
+      - name: Phase 4 checks (city dashboard feeds + moderation filters)
+        run: pnpm verify:phase4
+
       - name: Typecheck all workspaces
         run: pnpm typecheck:all
 

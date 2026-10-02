@@ -1,6 +1,6 @@
 // ShahrJo API client: same-origin /api/v1, response-envelope unwrap,
 // localStorage tokens with single-flight refresh on 401.
-import type { LocalCity, Tokens } from './types';
+import type { AdItem, BusinessItem, LocalCity, NewsItem, Tokens } from './types';
 
 const API_PREFIX = '/api/v1';
 const TOKEN_KEY = 'shahrjo.tokens';
@@ -137,6 +137,22 @@ export const api = {
 };
 
 // ---------- domain helpers ----------
+
+// ---------- city feeds (Phase 4) ----------
+
+const cityQS = (slug: string, limit: number) => `city=${encodeURIComponent(slug)}&limit=${limit}`;
+
+export async function getCityNews(slug: string, limit = 6): Promise<NewsItem[]> {
+  return api.get<NewsItem[]>(`/news?${cityQS(slug, limit)}`);
+}
+
+export async function getCityAds(slug: string, limit = 8): Promise<AdItem[]> {
+  return api.get<AdItem[]>(`/ads?${cityQS(slug, limit)}`);
+}
+
+export async function getCityBusinesses(slug: string, limit = 8): Promise<BusinessItem[]> {
+  return api.get<BusinessItem[]>(`/businesses?${cityQS(slug, limit)}`);
+}
 
 export async function sendOtp(phone: string): Promise<{ sent: true; cooldownSeconds: number }> {
   return api.post('/auth/send-otp', { phone });

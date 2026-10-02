@@ -3,50 +3,98 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { api, getTokens, setLocalCity } from '@/lib/api';
-import type { City, MeResponse } from '@/lib/types';
+import { CityDashboard } from '@/components/dashboard';
+import { api, getCityAds, getCityBusinesses, getCityNews, getTokens, setLocalCity } from '@/lib/api';
+import type { AdItem, BusinessItem, City, MeResponse, NewsItem } from '@/lib/types';
+
+interface DashboardState {
+  city: City | null | undefined; // undefined = loading, null = not found
+  news: NewsItem[];
+  ads: AdItem[];
+  businesses: BusinessItem[];
+  loading: boolean;
+  feedError: string | null;
+}
+
+const INITIAL: DashboardState = {
+  city: undefined,
+  news: [],
+  ads: [],
+  businesses: [],
+  loading: true,
+  feedError: null,
+};
 
 /**
- * City home (Phase 3 placeholder): resolves the slug, remembers the selection
- * locally and syncs `cityId` into the profile when the user is logged in.
- * The real dashboard arrives in Phase 4.
+ * City dashboard (Phase 4): resolves the slug, remembers the selection,
+ * syncs `cityId` into the profile when logged in, then loads the three
+ * public feeds (news / ads / businesses) of that city.
  */
 export default function CityPage() {
   const { slug } = useParams<{ slug: string }>();
-  const [city, setCity] = useState<City | null | undefined>(undefined); // undefined = loading
+  const [state, setState] = useState<DashboardState>(INITIAL);
 
   useEffect(() => {
     let alive = true;
+    setState(INITIAL);
+
     (async () => {
+      // 1) resolve the city from the public list
+      let city: City | null;
       try {
         const list = await api.get<City[]>('/cities');
-        const found = list.find((c) => c.slug === slug) ?? null;
-        if (!alive) return;
-        setCity(found);
-        if (!found) return;
-
-        setLocalCity({ id: found.id, slug: found.slug, name: found.name });
-        if (getTokens()) {
-          // URL is the source of truth: keep the profile in sync (best-effort).
-          api
-            .get<MeResponse>('/users/me')
-            .then((me) => {
-              if (me.cityId !== found.id) {
-                void api.patch<MeResponse>('/users/me', { cityId: found.id }).catch(() => {});
-              }
-            })
-            .catch(() => {});
-        }
+        city = list.find((c) => c.slug === slug) ?? null;
       } catch {
-        if (alive) setCity(null);
+        if (alive) setState((s) => ({ ...s, city: null, loading: false, feedError: 'دریافت اطلاعات شهر ناموفق بود' }));
+        return;
+      }
+      if (!alive) return;
+
+      if (!city) {
+        setState((s) => ({ ...s, city: null, loading: false }));
+        return;
+      }
+
+      setState((s) => ({ ...s, city }));
+      setLocalCity({ id: city!.id, slug: city!.slug, name: city!.name });
+
+      // 2) keep the profile in sync when logged in (best-effort)
+      if (getTokens()) {
+        api
+          .get<MeResponse>('/users/me')
+          .then((me) => {
+            if (me.cityId !== city!.id) {
+              void api.patch<MeResponse>('/users/me', { cityId: city!.id }).catch(() => {});
+            }
+          })
+          .catch(() => {});
+      }
+
+      // 3) the three feeds — dashboard still renders the header if they fail
+      try {
+        const [news, ads, businesses] = await Promise.all([
+          getCityNews(city.slug),
+          getCityAds(city.slug),
+          getCityBusinesses(city.slug),
+        ]);
+        if (alive) setState((s) => ({ ...s, news, ads, businesses, loading: false }));
+      } catch (err) {
+        if (alive) {
+          setState((s) => ({
+            ...s,
+            loading: false,
+            feedError: err instanceof Error ? err.message : 'دریافت محتوای شهر ناموفق بود',
+          }));
+        }
       }
     })();
+
     return () => {
       alive = false;
     };
   }, [slug]);
 
-  if (city === undefined) {
+  if (state.city === undefined) {
     return (
       <p className="muted loading" aria-busy>
         در حال بارگذاری…
@@ -54,7 +102,7 @@ export default function CityPage() {
     );
   }
 
-  if (city === null) {
+  if (state.city === null) {
     return (
       <div className="banner banner--error" role="alert">
         <span>چنین شهری پیدا نشد.</span>
@@ -66,23 +114,13 @@ export default function CityPage() {
   }
 
   return (
-    <article className="city-home">
-      <p className="city-home__province">
-        استان {city.province.name} {city.isFeatured && <span className="badge">ویژه</span>}
-      </p>
-      <h1>{city.name}</h1>
-      <p className="muted">
-        فضای شهر <strong>{city.name}</strong> انتخاب شد. داشبورد شهر (اخبار، آگهی‌ها، کسب‌وکارها و نقشه)
-        در فازهای بعد ساخته می‌شود.
-      </p>
-      <div className="city-home__actions">
-        <Link href="/" className="btn btn-primary">
-          تغییر شهر
-        </Link>
-        <Link href="/login" className="btn btn-ghost">
-          ورود با موبایل
-        </Link>
-      </div>
-    </article>
+    <CityDashboard
+      city={state.city}
+      news={state.news}
+      ads={state.ads}
+      businesses={state.businesses}
+      loading={state.loading}
+      feedError={state.feedError}
+    />
   );
 }

@@ -14,6 +14,7 @@
     "verify:phase1": "node scripts/verify-step1.mjs && prisma validate && tsc -p tsconfig.json --noEmit",
     "verify:phase2": "node scripts/verify-phase2.mjs",
     "verify:phase3": "node scripts/verify-phase3.mjs",
+    "verify:phase4": "node scripts/verify-phase4.mjs",
     "smoke": "node scripts/smoke.mjs",
     "test": "pnpm -r run test",
     "typecheck:all": "pnpm -r run typecheck",
