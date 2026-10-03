@@ -47,6 +47,28 @@ describe('JwtAuthGuard', () => {
     expect(prisma.user.findUnique).not.toHaveBeenCalled();
   });
 
+  it('attaches the user opportunistically on @Public routes when a valid token is sent', async () => {
+    const { guard, reflector, jwt, prisma } = makeGuard();
+    reflector.getAllAndOverride.mockReturnValue(true);
+    const user = { id: 1, phone: '09123456789', status: 'ACTIVE' };
+    prisma.user.findUnique.mockResolvedValue(user);
+    const token = await jwt.signAsync({ sub: 1 });
+    const { ctx, req } = makeCtx(`Bearer ${token}`);
+
+    expect(await guard.canActivate(ctx)).toBe(true);
+    expect(req.user).toBe(user); // optional enrichment, not a requirement
+  });
+
+  it('stays anonymous on @Public routes when the token is unusable', async () => {
+    const { guard, reflector, prisma } = makeGuard();
+    reflector.getAllAndOverride.mockReturnValue(true);
+    const { ctx, req } = makeCtx('Bearer garbage-token');
+
+    expect(await guard.canActivate(ctx)).toBe(true);
+    expect(req.user).toBeUndefined();
+    expect(prisma.user.findUnique).not.toHaveBeenCalled();
+  });
+
   it('rejects requests without an Authorization header', async () => {
     const { guard } = makeGuard();
     const { ctx } = makeCtx();

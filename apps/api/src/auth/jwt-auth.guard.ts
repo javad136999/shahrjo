@@ -22,25 +22,50 @@ export class JwtAuthGuard implements CanActivate {
       ctx.getHandler(),
       ctx.getClass(),
     ]);
-    if (isPublic) return true;
-
     const req = ctx.switchToHttp().getRequest<AuthedRequest>();
+
+    if (isPublic) {
+      // Optional auth: public detail endpoints stay open, but a caller with a
+      // valid token gets enrichments (owner preview, favorited state, …).
+      await this.attachOptionalUser(req);
+      return true;
+    }
+
     const [type, token] = (req.headers.authorization ?? '').split(' ');
     if (type !== 'Bearer' || !token) throw this.unauthorized();
 
+    const user = await this.loadUser(token);
+    if (!user) throw this.unauthorized();
+
+    req.user = user;
+    return true;
+  }
+
+  /** Verifies a token and returns its active user, or null when unusable. */
+  private async loadUser(token: string): Promise<User | null> {
     let payload: { sub?: number };
     try {
       payload = await this.jwt.verifyAsync<{ sub: number }>(token);
     } catch {
-      throw this.unauthorized();
+      return null;
     }
-    if (!payload.sub) throw this.unauthorized();
+    if (!payload.sub) return null;
 
     const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
-    if (!user || user.status !== 'ACTIVE') throw this.unauthorized();
+    if (!user || user.status !== 'ACTIVE') return null;
+    return user;
+  }
 
-    req.user = user;
-    return true;
+  /** Best-effort identity on @Public routes: never throws, never blocks. */
+  private async attachOptionalUser(req: AuthedRequest): Promise<void> {
+    const [type, token] = (req.headers.authorization ?? '').split(' ');
+    if (type !== 'Bearer' || !token) return;
+    try {
+      const user = await this.loadUser(token);
+      if (user) req.user = user;
+    } catch {
+      // anonymous access is always allowed here
+    }
   }
 
   private unauthorized(): HttpException {

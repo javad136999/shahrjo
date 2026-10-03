@@ -33,6 +33,8 @@ describe('BottomNav', () => {
     expect(screen.getByTestId('bottom-nav-news')).toHaveTextContent('اخبار');
     expect(screen.getByTestId('bottom-nav-submit')).toHaveTextContent('ثبت آگهی');
     expect(screen.getByTestId('bottom-nav-businesses')).toHaveTextContent('کسب‌وکارها');
+    expect(screen.getByTestId('bottom-nav-profile')).toHaveTextContent('پروفایل');
+    expect(screen.getByTestId('bottom-nav-profile')).toHaveAttribute('href', '/profile');
   });
 
   it('deep-links news and businesses into the remembered city', async () => {
@@ -62,5 +64,12 @@ describe('BottomNav', () => {
     render(<BottomNav />);
     expect(screen.getByTestId('bottom-nav-home')).toHaveClass('is-active');
     expect(screen.getByTestId('bottom-nav-submit')).not.toHaveClass('is-active');
+  });
+
+  it('marks the profile item active on /profile', () => {
+    mockPathname.mockReturnValue('/profile');
+    render(<BottomNav />);
+    expect(screen.getByTestId('bottom-nav-profile')).toHaveClass('is-active');
+    expect(screen.getByTestId('bottom-nav-home')).not.toHaveClass('is-active');
   });
 });

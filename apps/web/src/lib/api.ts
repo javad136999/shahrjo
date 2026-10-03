@@ -3,11 +3,14 @@
 import type {
   AdCategoryOption,
   AdItem,
+  AdDetail,
+  BusinessDetail,
   BusinessItem,
   CreatedAd,
   LocalCity,
   MeResponse,
   MyAdItem,
+  NewsDetail,
   NewsItem,
   Tokens,
   UploadedImage,
@@ -202,6 +205,32 @@ export async function uploadImage(file: File): Promise<UploadedImage> {
 
 export async function getProfile(): Promise<MeResponse> {
   return api.get<MeResponse>('/users/me');
+}
+
+// ---------- detail pages (Phase 6) ----------
+
+export async function getAdDetail(id: number): Promise<AdDetail> {
+  return api.get<AdDetail>(`/ads/${id}`);
+}
+
+export async function getNewsDetail(slug: string): Promise<NewsDetail> {
+  return api.get<NewsDetail>(`/news/${encodeURIComponent(slug)}`);
+}
+
+export async function getBusinessDetail(id: number): Promise<BusinessDetail> {
+  return api.get<BusinessDetail>(`/businesses/${id}`);
+}
+
+export async function toggleAdFavorite(id: number): Promise<{ favorited: boolean }> {
+  return api.post<{ favorited: boolean }>(`/ads/${id}/favorite`);
+}
+
+export async function getMyFavorites(): Promise<MyAdItem[]> {
+  return api.get<MyAdItem[]>('/ads/favorites');
+}
+
+export async function updateProfile(patch: { fullName?: string; cityId?: number }): Promise<MeResponse> {
+  return api.patch<MeResponse>('/users/me', patch);
 }
 
 // ---------- city feeds (Phase 4) ----------

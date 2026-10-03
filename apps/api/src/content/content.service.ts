@@ -37,6 +37,34 @@ export interface BusinessItem {
   category: { name: string; slug: string; icon: string | null; color: string | null };
 }
 
+export interface NewsDetail extends NewsItem {
+  body: string;
+  viewCount: number;
+  city: { name: string; slug: string };
+}
+
+export interface BusinessDetail {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  logoUrl: string | null;
+  coverUrl: string | null;
+  phone: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  workingHours: unknown;
+  socialLinks: unknown;
+  rating: number;
+  ratingCount: number;
+  viewCount: number;
+  subscriptionTier: string;
+  createdAt: Date;
+  city: { name: string; slug: string };
+  category: { name: string; slug: string; icon: string | null; color: string | null };
+}
+
 /**
  * Read-only public feeds of a single city for the dashboard (Phase 4).
  * Every query is scoped by a resolved active city and by the public-facing
@@ -124,5 +152,68 @@ export class ContentService {
         category: { select: { name: true, slug: true, icon: true, color: true } },
       },
     });
+  }
+
+  /** A single published news article + view counting (Phase 6). */
+  async newsDetail(slug: string): Promise<NewsDetail> {
+    const item = await this.prisma.news.findFirst({
+      where: { slug, status: 'PUBLISHED' },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        body: true,
+        coverUrl: true,
+        viewCount: true,
+        publishedAt: true,
+        city: { select: { name: true, slug: true } },
+        category: { select: { name: true, slug: true } },
+      },
+    });
+    if (!item) throw new NotFoundException('خبر یافت نشد');
+
+    const updated = await this.prisma.news.update({
+      where: { id: item.id },
+      data: { viewCount: { increment: 1 } },
+      select: { viewCount: true },
+    });
+    return { ...item, viewCount: updated.viewCount };
+  }
+
+  /** A single approved business profile + view counting (Phase 6). */
+  async businessDetail(id: number): Promise<BusinessDetail> {
+    const business = await this.prisma.business.findFirst({
+      where: { id, status: 'APPROVED' },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        logoUrl: true,
+        coverUrl: true,
+        phone: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        workingHours: true,
+        socialLinks: true,
+        rating: true,
+        ratingCount: true,
+        viewCount: true,
+        subscriptionTier: true,
+        createdAt: true,
+        city: { select: { name: true, slug: true } },
+        category: { select: { name: true, slug: true, icon: true, color: true } },
+      },
+    });
+    if (!business) throw new NotFoundException('کسب‌وکار یافت نشد');
+
+    const updated = await this.prisma.business.update({
+      where: { id: business.id },
+      data: { viewCount: { increment: 1 } },
+      select: { viewCount: true },
+    });
+    return { ...business, viewCount: updated.viewCount };
   }
 }

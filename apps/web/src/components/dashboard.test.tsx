@@ -82,6 +82,10 @@ describe('CityDashboard', () => {
     expect(screen.getByTestId('stat-خبر')).toHaveTextContent('۱');
     expect(screen.getByTestId('stat-آگهی')).toHaveTextContent('۲');
     expect(screen.getByTestId('stat-کسب‌وکار')).toHaveTextContent('۱');
+    // every card title deep-links into its detail page (Phase 6)
+    expect(screen.getByRole('link', { name: 'خبر نمونه' })).toHaveAttribute('href', '/news/sample-news');
+    expect(screen.getByRole('link', { name: 'آگهی گران' })).toHaveAttribute('href', '/ad/20');
+    expect(screen.getByRole('link', { name: 'کسب‌وکار نمونه' })).toHaveAttribute('href', '/business/30');
   });
 
   it('formats prices as Rial or negotiated', () => {

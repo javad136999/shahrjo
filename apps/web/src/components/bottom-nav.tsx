@@ -7,7 +7,7 @@ import { getLocalCity } from '@/lib/api';
 import type { LocalCity } from '@/lib/types';
 
 interface NavItem {
-  id: 'home' | 'news' | 'submit' | 'businesses';
+  id: 'home' | 'news' | 'submit' | 'businesses' | 'profile';
   href: string;
   icon: string;
   label: string;
@@ -46,10 +46,12 @@ export function BottomNav() {
     { id: 'news', href: cityBase ? `${cityBase}#news` : '/', icon: '📰', label: 'اخبار' },
     { id: 'submit', href: '/ads/new', icon: '📝', label: 'ثبت آگهی', accent: true },
     { id: 'businesses', href: cityBase ? `${cityBase}#businesses` : '/', icon: '🏬', label: 'کسب‌وکارها' },
+    { id: 'profile', href: '/profile', icon: '👤', label: 'پروفایل' },
   ];
 
   const isActive = (item: NavItem): boolean => {
     if (item.accent) return pathname.startsWith('/ads');
+    if (item.id === 'profile') return pathname.startsWith('/profile');
     if (item.id === 'home') return (pathname === '/' || pathname.startsWith('/city/')) && !hash;
     if (item.id === 'news') return hash === '#news';
     if (item.id === 'businesses') return hash === '#businesses';

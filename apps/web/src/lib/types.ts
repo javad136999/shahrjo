@@ -112,3 +112,59 @@ export interface MyAdItem {
   createdAt: string;
   expiresAt: string | null;
 }
+
+/** Detail pages (Phase 6). */
+export interface AdDetail {
+  id: number;
+  title: string;
+  description: string;
+  price: number | null;
+  phone: string | null;
+  address: string | null;
+  status: string;
+  viewCount: number;
+  publishedAt: string | null;
+  createdAt: string;
+  expiresAt: string | null;
+  rejectedReason: string | null;
+  images: string[];
+  category: { id: number; name: string; slug: string; icon: string | null; color: string | null };
+  city: { id: number; name: string; slug: string };
+  isOwner: boolean;
+  favorited: boolean;
+}
+
+export interface NewsDetail {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  body: string;
+  coverUrl: string | null;
+  publishedAt: string | null;
+  viewCount: number;
+  city: { name: string; slug: string };
+  category: { name: string; slug: string } | null;
+}
+
+export interface BusinessDetail {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  logoUrl: string | null;
+  coverUrl: string | null;
+  phone: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  workingHours: unknown;
+  socialLinks: unknown;
+  rating: number;
+  ratingCount: number;
+  viewCount: number;
+  subscriptionTier: string;
+  createdAt: string;
+  city: { name: string; slug: string };
+  category: { name: string; slug: string; icon: string | null; color: string | null };
+}

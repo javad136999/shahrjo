@@ -46,8 +46,9 @@ pnpm db:studio                         # مرور دیتابیس
 
 ## فازها (هر فاز: Build + TypeCheck + Tests + Security Check)
 1. Architecture + Database ✅ · 2. Backend + Auth ✅ · 3. City Selection ✅ · 4. City Dashboard ✅
-5. Ad Submission (ثبت آگهی + آپلود عکس + تأیید) ✅ · 6. Map · 7. Chat · 8. Ads · 9. Businesses
-10. News · 11. Admin · 12. Notifications · 13. PWA · 14. Docker + Production Deployment
+5. Ad Submission (ثبت آگهی + آپلود عکس + تأیید) ✅ · 6. جزئیات + پروفایل + علاقه‌مندی ✅
+7. اشتراک و پرداخت زرین‌پال · 8. دیوار شهر · 9. چت · 10. کسب‌وکار + محصولات + نظرات
+11. تخفیف/رویداد/نقشه · 12. ناظر/ادمین + اعلان‌ها · 13. PWA + معرفی + بیمه/ترب · 14. Docker + Production
 
 ## قوانین
 - هیچ Secret ای در Git قرار نگیرد (فقط `.env.example`).

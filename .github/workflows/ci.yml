@@ -47,6 +47,9 @@ jobs:
       - name: Phase 5 checks (ad submission + upload security)
         run: pnpm verify:phase5
 
+      - name: Phase 6 checks (detail pages + profile + favorites)
+        run: pnpm verify:phase6
+
       - name: Typecheck all workspaces
         run: pnpm typecheck:all
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { Public } from '../common/decorators';
 import { CityContentQueryDto } from './content.dto';
 import { ContentService } from './content.service';
@@ -26,5 +26,19 @@ export class ContentController {
   @Get('businesses')
   businesses(@Query() query: CityContentQueryDto): ReturnType<ContentService['businesses']> {
     return this.content.businesses(query.city, query.limit);
+  }
+
+  /** One published news article (Phase 6) — counts a view. */
+  @Public()
+  @Get('news/:slug')
+  newsDetail(@Param('slug') slug: string): ReturnType<ContentService['newsDetail']> {
+    return this.content.newsDetail(slug);
+  }
+
+  /** One approved business profile (Phase 6) — counts a view. */
+  @Public()
+  @Get('businesses/:id')
+  businessDetail(@Param('id', ParseIntPipe) id: number): ReturnType<ContentService['businessDetail']> {
+    return this.content.businessDetail(id);
   }
 }

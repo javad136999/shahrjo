@@ -14,23 +14,13 @@ import {
   uploadImage,
 } from '@/lib/api';
 import type { CreateAdInput } from '@/lib/api';
-import { formatDate, formatPrice } from '@/lib/format';
 import type { AdCategoryOption, CreatedAd, MeResponse, MyAdItem } from '@/lib/types';
+import { MyAdsList, STATUS_LABEL, StatusChip } from './my-ads';
 
 const MAX_IMAGES = 5;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const IRANIAN_MOBILE = /^09\d{9}$/;
-
-const STATUS_LABEL: Record<string, string> = {
-  DRAFT: 'پیش‌نویس',
-  PENDING: 'در انتظار تأیید',
-  APPROVED: 'تأیید شده',
-  REJECTED: 'رد شده',
-  EXPIRED: 'منقضی',
-  SOLD: 'فروخته شده',
-  DELETED: 'حذف شده',
-};
 
 /** Persian/Arabic digits → Latin so «۱٬۲۰۰» parses as a number. */
 function toLatinDigits(raw: string): string {
@@ -227,8 +217,8 @@ export function AdForm() {
           «{submitted.title}» برای بررسی به ناظر ارسال شد؛ پس از تأیید در صفحه شهر نمایش داده می‌شود.
         </p>
         <p>
-          <span className={`status-chip status-chip--${submitted.status.toLowerCase()}`} data-testid="ad-status">
-            {STATUS_LABEL[submitted.status] ?? submitted.status}
+          <span data-testid="ad-status">
+            <StatusChip status={submitted.status} />
           </span>
         </p>
         <div className="auth-actions">
@@ -392,36 +382,9 @@ export function AdForm() {
         </button>
       </form>
 
-      <section className="form-card my-ads" aria-label="آگهی‌های من">
+      <section className="form-card my-ads" aria-label="آگهی‌های من" id="mine">
         <h2>آگهی‌های من</h2>
-        {myAds.length === 0 ? (
-          <p className="empty-state">هنوز آگهی ثبت نکرده‌اید.</p>
-        ) : (
-          <ul className="my-ads__list">
-            {myAds.map((ad) => (
-              <li key={ad.id} className="my-ads__item" data-testid={`my-ad-${ad.id}`}>
-                {ad.coverUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element -- remote media
-                  <img className="my-ads__cover" src={ad.coverUrl} alt="" loading="lazy" />
-                )}
-                <div className="my-ads__body">
-                  <h3>{ad.title}</h3>
-                  <p className="price">{formatPrice(ad.price)}</p>
-                  <p className="muted small">
-                    <span className={`status-chip status-chip--${ad.status.toLowerCase()}`}>
-                      {STATUS_LABEL[ad.status] ?? ad.status}
-                    </span>{' '}
-                    {formatDate(ad.createdAt)}
-                    {ad.imageCount > 0 && ` · ${ad.imageCount.toLocaleString('fa-IR')} تصویر`}
-                  </p>
-                  {ad.status === 'REJECTED' && ad.rejectedReason && (
-                    <p className="error small">علت رد: {ad.rejectedReason}</p>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+        <MyAdsList items={myAds} />
       </section>
     </div>
   );

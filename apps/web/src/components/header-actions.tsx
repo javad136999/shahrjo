@@ -42,9 +42,9 @@ export function HeaderActions() {
 
   return (
     <div className="header-user">
-      <span className="header-phone" dir="ltr" title="شماره شما">
+      <Link href="/profile" className="header-phone" dir="ltr" title="پروفایل من" data-testid="header-profile">
         {me.phone}
-      </span>
+      </Link>
       <button type="button" className="btn btn-ghost" onClick={logout}>
         خروج
       </button>

@@ -94,8 +94,14 @@ if (!apiClient.includes('requestForm') || !apiClient.includes('Authorization')) 
 }
 
 const form = read('apps/web/src/components/ad-form.tsx');
-for (const marker of ['ارسال برای تأیید', 'type="file"', 'MAX_IMAGES', 'uploadImage', 'createAd', 'در انتظار تأیید']) {
+for (const marker of ['ارسال برای تأیید', 'type="file"', 'MAX_IMAGES', 'uploadImage', 'createAd', 'ad-status', 'StatusChip']) {
   if (!form.includes(marker)) { console.error(`WEB: ad form missing ${marker}`); fail++; }
+}
+// the PENDING label lives in the shared status chip (form + profile + detail)
+const myAds = read('apps/web/src/components/my-ads.tsx');
+if (!myAds.includes('در انتظار تأیید')) {
+  console.error('WEB: shared status chip must label PENDING as «در انتظار تأیید»');
+  fail++;
 }
 const formPage = read('apps/web/src/app/ads/new/page.tsx');
 if (!formPage.includes('AdForm')) { console.error('WEB: /ads/new must render AdForm'); fail++; }

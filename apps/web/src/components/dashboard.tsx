@@ -153,7 +153,11 @@ export function CityDashboard({ city, news, ads, businesses, loading, feedError 
               )}
               <div className="content-card__body">
                 {item.category && <span className="chip">{item.category.name}</span>}
-                <h3>{item.title}</h3>
+                <h3>
+                  <Link href={`/news/${item.slug}`} className="card-link">
+                    {item.title}
+                  </Link>
+                </h3>
                 {item.excerpt && <p className="muted">{item.excerpt}</p>}
                 <time className="muted small">{formatDate(item.publishedAt)}</time>
               </div>
@@ -189,7 +193,11 @@ export function CityDashboard({ city, news, ads, businesses, loading, feedError 
                   {item.category.icon ? `${item.category.icon} ` : ''}
                   {item.category.name}
                 </span>
-                <h3>{item.title}</h3>
+                <h3>
+                  <Link href={`/ad/${item.id}`} className="card-link">
+                    {item.title}
+                  </Link>
+                </h3>
                 <p className="price" data-testid={`ad-${item.id}-price`}>
                   {formatPrice(item.price)}
                 </p>
@@ -230,7 +238,11 @@ export function CityDashboard({ city, news, ads, businesses, loading, feedError 
                   )}
                   {item.subscriptionTier === 'SILVER' && <span className="badge badge--silver">نقره‌ای</span>}
                 </div>
-                <h3>{item.name}</h3>
+                <h3>
+                  <Link href={`/business/${item.id}`} className="card-link">
+                    {item.name}
+                  </Link>
+                </h3>
                 <p className="muted small">{formatRating(item.rating, item.ratingCount)}</p>
                 {item.address && <p className="muted small">📍 {item.address}</p>}
                 {item.phone && (

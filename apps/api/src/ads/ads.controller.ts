@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { CurrentUser, Public } from '../common/decorators';
 import { CreateAdDto } from './ads.dto';
@@ -25,5 +25,34 @@ export class AdsController {
   @Get('ads/mine')
   mine(@CurrentUser() user: User): ReturnType<AdsService['mine']> {
     return this.ads.mine(user);
+  }
+
+  /** The caller's favorited ads (declared before ads/:id on purpose). */
+  @Get('ads/favorites')
+  favorites(@CurrentUser() user: User): ReturnType<AdsService['favorites']> {
+    return this.ads.favorites(user);
+  }
+
+  /** Toggle a favorite on an ad. */
+  @Post('ads/:id/favorite')
+  toggleFavorite(
+    @CurrentUser() user: User,
+    @Param('id', ParseIntPipe) id: number,
+  ): ReturnType<AdsService['toggleFavorite']> {
+    return this.ads.toggleFavorite(user, id);
+  }
+
+  /**
+   * Ad detail (Phase 6): public for approved ads; with a valid token the owner
+   * also gets their own pending/rejected ad plus the favorited flag — the
+   * global guard attaches the user opportunistically on @Public routes.
+   */
+  @Public()
+  @Get('ads/:id')
+  detail(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: User | undefined,
+  ): ReturnType<AdsService['detail']> {
+    return this.ads.detail(id, user ?? null);
   }
 }
