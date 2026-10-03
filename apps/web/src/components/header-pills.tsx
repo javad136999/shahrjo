@@ -19,10 +19,29 @@ export function HeaderPills() {
 
   return (
     <div className="header-pills">
-      <Link href={city ? `/city/${city.slug}` : '/'} className="pill" data-testid="header-city-pill">
-        <span aria-hidden>🏙</span>
-        <span className="pill__label">{city ? city.name : 'انتخاب شهر'}</span>
-      </Link>
+      {city ? (
+        // a city is chosen: a dedicated icon back to the city picker + a link to its dashboard
+        <>
+          <Link
+            href="/"
+            className="pill pill--icon"
+            aria-label="انتخاب شهر"
+            title="انتخاب شهر"
+            data-testid="header-city-select"
+          >
+            <span aria-hidden>📍</span>
+          </Link>
+          <Link href={`/city/${city.slug}`} className="pill" data-testid="header-city-pill">
+            <span aria-hidden>🏙</span>
+            <span className="pill__label">{city.name}</span>
+          </Link>
+        </>
+      ) : (
+        <Link href="/" className="pill" data-testid="header-city-pill">
+          <span aria-hidden>🏙</span>
+          <span className="pill__label">انتخاب شهر</span>
+        </Link>
+      )}
       <Link href="/ads/new" className="pill pill--brand" data-testid="header-submit-pill">
         <span aria-hidden>📝</span>
         <span className="pill__label">ثبت آگهی</span>

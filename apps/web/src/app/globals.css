@@ -136,6 +136,12 @@ a:hover {
   border-color: var(--gold-line);
   color: var(--gold-dark);
 }
+.pill--icon {
+  padding: 7px 11px;
+  font-size: 16px;
+  background: var(--brand-soft);
+  border-color: rgb(14 122 95 / 25%);
+}
 
 @media (max-width: 430px) {
   .header-pills .pill__label {
