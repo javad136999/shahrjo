@@ -55,7 +55,7 @@ export interface AdItem {
   coverUrl: string | null;
   viewCount: number;
   publishedAt: string | null;
-  category: { name: string; slug: string };
+  category: { name: string; slug: string; icon: string | null; color: string | null };
 }
 
 export interface BusinessItem {

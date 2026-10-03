@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { BottomNav } from '@/components/bottom-nav';
 import { HeaderActions } from '@/components/header-actions';
+import { HeaderPills } from '@/components/header-pills';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -23,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </span>
               شهرجو
             </Link>
+            <HeaderPills />
             <HeaderActions />
           </div>
         </header>
@@ -30,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer className="site-footer">
           <div className="container">شهرجو — پلتفرم شهری چندشهری 🇮🇷</div>
         </footer>
+        <BottomNav />
       </body>
     </html>
   );

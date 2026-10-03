@@ -21,7 +21,7 @@ export interface AdItem {
   coverUrl: string | null;
   viewCount: number;
   publishedAt: Date | null;
-  category: { name: string; slug: string };
+  category: { name: string; slug: string; icon: string | null; color: string | null };
 }
 
 export interface BusinessItem {
@@ -91,7 +91,7 @@ export class ContentService {
         price: true,
         viewCount: true,
         publishedAt: true,
-        category: { select: { name: true, slug: true } },
+        category: { select: { name: true, slug: true, icon: true, color: true } },
         images: { orderBy: { sortOrder: 'asc' }, take: 1, select: { url: true } },
       },
     });

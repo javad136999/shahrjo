@@ -9,6 +9,10 @@ const mustExist = [
   'apps/api/src/content/content.dto.ts',
   'apps/web/src/components/dashboard.tsx',
   'apps/web/src/components/dashboard.test.tsx',
+  'apps/web/src/components/bottom-nav.tsx',
+  'apps/web/src/components/bottom-nav.test.tsx',
+  'apps/web/src/components/header-pills.tsx',
+  'apps/web/src/components/header-pills.test.tsx',
   'apps/web/src/lib/format.ts',
   'apps/web/src/lib/format.test.ts',
 ];
@@ -55,6 +59,27 @@ if (!page.includes('Promise.all')) { console.error('WEB: feeds should load in pa
 const dashboard = read('apps/web/src/components/dashboard.tsx');
 for (const section of ['اخبار شهر', 'آگهی‌ها', 'کسب‌وکارها']) {
   if (!dashboard.includes(section)) { console.error(`WEB: missing dashboard section "${section}"`); fail++; }
+}
+
+// --- JamCity-style shell: quick pills, bottom nav, icon tiles, section anchors ---
+const layout = read('apps/web/src/app/layout.tsx');
+for (const comp of ['HeaderPills', 'BottomNav']) {
+  if (!layout.includes(comp)) { console.error(`WEB: layout must render ${comp}`); fail++; }
+}
+const bottomNav = read('apps/web/src/components/bottom-nav.tsx');
+for (const marker of ['bottom-nav', 'getLocalCity', '#news', '#businesses', '/ads/new']) {
+  if (!bottomNav.includes(marker)) { console.error(`WEB: bottom nav missing ${marker}`); fail++; }
+}
+const headerPills = read('apps/web/src/components/header-pills.tsx');
+for (const marker of ['getLocalCity', '/ads/new']) {
+  if (!headerPills.includes(marker)) { console.error(`WEB: header pills missing ${marker}`); fail++; }
+}
+for (const marker of ['icon-tile', 'stats-row', 'dash-section__head', 'id="news"', 'id="ads"', 'id="businesses"']) {
+  if (!dashboard.includes(marker)) { console.error(`WEB: dashboard missing ${marker}`); fail++; }
+}
+const css = read('apps/web/src/app/globals.css');
+for (const marker of ['.bottom-nav', '.pill', '.icon-tile', '.count-chip', '.stats-row', '.content-card--gold']) {
+  if (!css.includes(marker)) { console.error(`CSS: theme missing ${marker}`); fail++; }
 }
 
 const apiClient = read('apps/web/src/lib/api.ts');
