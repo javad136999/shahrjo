@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AdsModule } from './ads/ads.module';
 import { AuthModule } from './auth/auth.module';
 import { CitiesModule } from './cities/cities.module';
 import { ContentModule } from './content/content.module';
@@ -8,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RbacModule } from './rbac/rbac.module';
 import { RedisModule } from './redis/redis.module';
 import { SmsModule } from './sms/sms.module';
+import { UploadsModule } from './uploads/uploads.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -22,6 +24,8 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     CitiesModule,
     ContentModule,
+    AdsModule,
+    UploadsModule,
   ],
   controllers: [HealthController],
 })

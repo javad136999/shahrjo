@@ -9,7 +9,7 @@
     "allowSyntheticDefaultImports": true,
     "incremental": true,
     "baseUrl": "./",
-    "types": ["node", "jest"]
+    "types": ["node", "jest", "multer"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

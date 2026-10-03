@@ -57,6 +57,9 @@ export function CityDashboard({ city, news, ads, businesses, loading, feedError 
         </p>
         <h1>{city.name}</h1>
         <div className="dash-header__actions">
+          <Link href="/ads/new" className="btn btn-ghost">
+            ثبت آگهی
+          </Link>
           <Link href="/" className="btn btn-ghost">
             تغییر شهر
           </Link>

@@ -44,6 +44,9 @@ jobs:
       - name: Phase 4 checks (city dashboard feeds + moderation filters)
         run: pnpm verify:phase4
 
+      - name: Phase 5 checks (ad submission + upload security)
+        run: pnpm verify:phase5
+
       - name: Typecheck all workspaces
         run: pnpm typecheck:all
 

@@ -2,6 +2,9 @@ import 'reflect-metadata';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import type { ServerResponse } from 'node:http';
+import { resolve } from 'node:path';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/http-exception.filter';
 import { TransformInterceptor } from './common/transform.interceptor';
@@ -22,11 +25,23 @@ function assertRequiredEnv(config: ConfigService): void {
 }
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   assertRequiredEnv(app.get(ConfigService));
 
   app.setGlobalPrefix('api/v1');
+
+  // Uploaded images (Phase 5): served under /api/v1/files/* so the reverse
+  // proxy's existing /api rule forwards them — no new vhost configuration.
+  app.useStaticAssets(resolve(process.env.STORAGE_LOCAL_DIR ?? './uploads'), {
+    prefix: '/api/v1/files/',
+    index: false,
+    setHeaders: (res: ServerResponse) => {
+      // Content-addressed random names: safe to cache hard.
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+    },
+  });
   app.enableCors({
     origin: [
       process.env.WEB_URL ?? 'http://localhost:3000',

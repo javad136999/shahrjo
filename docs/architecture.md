@@ -63,18 +63,18 @@ api ◄──► WebSocket (چت Real-Time)
 | 2 | Backend + Authentication (OTP/JWT/Refresh) | ✅ |
 | 3 | City Selection (صفحه اول + `city_id` در profile) | ✅ |
 | 4 | City Dashboard (صفحه اصلی شهر) | ✅ |
-| 5 | Map | ⬜ |
-| 6 | Chat (WebSocket per-city) | ⬜ |
-| 7 | Ads (Marketplace) | ⬜ |
-| 8 | Businesses | ⬜ |
-| 9 | News | ⬜ |
-| 10 | Admin | ⬜ |
-| 11 | Notifications | ⬜ |
-| 12 | PWA | ⬜ |
-| 13 | Docker (compose prod + nginx + backup) | ⬜ |
-| 14 | Production Deployment | ⬜ |
+| 5 | Ad Submission (ثبت آگهی: فرم + آپلود عکس + ارسال برای تأیید) | ✅ |
+| 6 | Map | ⬜ |
+| 7 | Chat (WebSocket per-city) | ⬜ |
+| 8 | Ads — نمایش/جستجو/علاقه‌مندی (Marketplace) | ⬜ |
+| 9 | Businesses | ⬜ |
+| 10 | News | ⬜ |
+| 11 | Admin | ⬜ |
+| 12 | Notifications | ⬜ |
+| 13 | PWA | ⬜ |
+| 14 | Docker + Production Deployment (compose prod + backup + دامنه/SSL) | ⬜ |
 
-## SEO / URL (فاز ۱۲)
+## SEO / URL (فاز ۱۳)
 
 ```
 /city/jam            /city/jam/map

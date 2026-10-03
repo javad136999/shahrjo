@@ -76,7 +76,9 @@ const walk = (dir) => {
     else if (/\.(ts|tsx|mjs|js)$/.test(full)) {
       const text = readFileSync(full, 'utf8');
       for (const city of hardcoded) {
-        if (text.includes(city)) { console.error(`HARDCODED city "${city}" in ${full}`); fail++; }
+        // Whole-word match only: «جم» must not fire inside another word (e.g. «حجم»).
+        const cityRe = new RegExp(`(?<![\\u0600-\\u06FF])${city}(?![\\u0600-\\u06FF])`);
+        if (cityRe.test(text)) { console.error(`HARDCODED city "${city}" in ${full}`); fail++; }
       }
     }
   }

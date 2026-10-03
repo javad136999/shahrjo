@@ -27,6 +27,7 @@
     "@nestjs/cli": "^11.0.24",
     "@types/express": "^5",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.3.0",
     "@types/node": "^22",
     "jest": "^30",
     "ts-jest": "^29",

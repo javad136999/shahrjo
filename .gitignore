@@ -23,8 +23,9 @@ coverage/
 # JamCity reference clone (study only - never committed)
 .jamcity-ref/
 
-# Uploads & data
-uploads/
+# Uploads & data (upload DATA only — never the apps/api/src/uploads source)
+/uploads/
+apps/api/uploads/
 docker/data/
 *.sql
 # ...but Prisma migrations MUST be committed (CI applies them to a clean DB)

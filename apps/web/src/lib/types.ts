@@ -76,3 +76,39 @@ export interface LocalCity {
   slug: string;
   name: string;
 }
+
+/** Ad submission (Phase 5). */
+export interface AdCategoryOption {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string | null;
+  color: string | null;
+}
+
+export interface UploadedImage {
+  id: number;
+  url: string;
+}
+
+export interface CreatedAd {
+  id: number;
+  title: string;
+  status: string;
+  price: number | null;
+  imageUrls: string[];
+  createdAt: string;
+  expiresAt: string | null;
+}
+
+export interface MyAdItem {
+  id: number;
+  title: string;
+  status: string;
+  price: number | null;
+  coverUrl: string | null;
+  imageCount: number;
+  rejectedReason: string | null;
+  createdAt: string;
+  expiresAt: string | null;
+}

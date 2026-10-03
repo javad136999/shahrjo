@@ -23,6 +23,20 @@
 | provinces | GET `/provinces`, GET `/provinces/:id/cities` | ⬜ Planned |
 | users extra | GET `/users/me/ads`, GET `/users/me/favorites` | ⬜ Planned |
 
+## Ads Submission / Uploads (فاز ۵ — ثبت آگهی کاربر)
+
+> ✅ **پیاده‌شده در Phase 5**: فرم ثبت آگهی + آپلود عکس + ارسال برای تأیید (Moderation).
+> شهر از profile کاربر می‌آید (نه از body) · وضعیت همیشه `PENDING` · قیمت اختیاری (خالی = «توافقی»).
+
+| Endpoint | Auth | Body / توضیح |
+|---|---|---|
+| GET `/ad-categories` | @Public | دسته‌بندی‌های فعال برای فرم ثبت آگهی (ترتیب `sortOrder`) |
+| POST `/uploads` | Bearer | multipart با فیلد `file` (JPG/PNG/WebP/GIF، حداکثر ۵MB، magic-byte sniff) → `{ id, url }`؛ سقف ۳۰ آپلود در ساعت |
+| POST `/ads` | Bearer | `{ categoryId, title(4..160), description(10..4000), price?, phone?, address?, imageIds?(≤5) }` → ایجاد آگهی با وضعیت `PENDING`، انقضا +۳۰ روز، سقف ۲۰ آگهی در ساعت؛ تصاویر متعلق به کاربر claim می‌شوند |
+| GET `/ads/mine` | Bearer | آگهی‌های خودِ کاربر با وضعیت نظارت (شامل `rejectedReason`) |
+
+فایل‌های آپلودی از مسیر `/api/v1/files/<storageKey>` (static در همان origin) سرو می‌شوند.
+
 ## Content (همه City-scoped)
 
 > ✅ **پیاده‌شده در Phase 4** (فیدهای عمومی داشبورد شهر — همه با `?city=<slug>&limit=1..50`، فقط شهر فعال):

@@ -32,7 +32,7 @@ pnpm verify:step1             # بررسی ساختار
 
 ## CI (GitHub Actions)
 `.github/workflows/ci.yml` بعد از هر push/PR اجرا می‌شود:
-- **checks**: `pnpm verify:phase1` (ساختار + اسکن Secret + `prisma validate` + typecheck) و سپس تست‌ها (`pnpm run --if-present test`)
+- **checks**: `pnpm verify:phase1..phase5` (ساختار + اسکن Secret + قواعد امنیتی هر فاز + `prisma validate` + typecheck) و سپس تست‌ها (`pnpm run --if-present test`)
 - **database**: `prisma migrate deploy` + seed روی یک PostgreSQL 17 تمیز
 
 ## دستورات مفید
@@ -46,8 +46,8 @@ pnpm db:studio                         # مرور دیتابیس
 
 ## فازها (هر فاز: Build + TypeCheck + Tests + Security Check)
 1. Architecture + Database ✅ · 2. Backend + Auth ✅ · 3. City Selection ✅ · 4. City Dashboard ✅
-5. Map · 6. Chat · 7. Ads · 8. Businesses · 9. News · 10. Admin · 11. Notifications
-12. PWA · 13. Docker · 14. Production Deployment
+5. Ad Submission (ثبت آگهی + آپلود عکس + تأیید) ✅ · 6. Map · 7. Chat · 8. Ads · 9. Businesses
+10. News · 11. Admin · 12. Notifications · 13. PWA · 14. Docker + Production Deployment
 
 ## قوانین
 - هیچ Secret ای در Git قرار نگیرد (فقط `.env.example`).

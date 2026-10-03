@@ -1,6 +1,17 @@
 // ShahrJo API client: same-origin /api/v1, response-envelope unwrap,
 // localStorage tokens with single-flight refresh on 401.
-import type { AdItem, BusinessItem, LocalCity, NewsItem, Tokens } from './types';
+import type {
+  AdCategoryOption,
+  AdItem,
+  BusinessItem,
+  CreatedAd,
+  LocalCity,
+  MeResponse,
+  MyAdItem,
+  NewsItem,
+  Tokens,
+  UploadedImage,
+} from './types';
 
 const API_PREFIX = '/api/v1';
 const TOKEN_KEY = 'shahrjo.tokens';
@@ -60,8 +71,6 @@ type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
 interface RequestOptions {
   body?: unknown;
-  /** internal: prevents infinite refresh-retry loops */
-  retried?: boolean;
 }
 
 let refreshInFlight: Promise<boolean> | null = null;
@@ -103,30 +112,47 @@ async function doRefresh(): Promise<boolean> {
   }
 }
 
+/** Adds the bearer token and replays once after a successful refresh on 401. */
+async function fetchWithAuth(path: string, init: RequestInit, retried = false): Promise<Response> {
+  const headers: Record<string, string> = { ...((init.headers as Record<string, string> | undefined) ?? {}) };
+  const tokens = getTokens();
+  if (tokens) headers['Authorization'] = `Bearer ${tokens.accessToken}`;
+
+  const res = await fetch(`${API_PREFIX}${path}`, { ...init, headers });
+
+  if (res.status === 401 && tokens && !retried) {
+    const refreshed = await tryRefresh();
+    if (refreshed) return fetchWithAuth(path, init, true);
+    throw new ApiError(401, 'نشست شما منقضی شده است؛ دوباره وارد شوید');
+  }
+  return res;
+}
+
+function unwrap<T>(json: { data?: T } | T | null): T {
+  if (json && typeof json === 'object' && 'data' in json) return (json as { data: T }).data;
+  return json as T;
+}
+
 async function request<T>(method: Method, path: string, options: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = {};
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
 
-  const tokens = getTokens();
-  if (tokens) headers['Authorization'] = `Bearer ${tokens.accessToken}`;
-
-  const res = await fetch(`${API_PREFIX}${path}`, {
+  const res = await fetchWithAuth(path, {
     method,
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
 
-  if (res.status === 401 && tokens && !options.retried) {
-    const refreshed = await tryRefresh();
-    if (refreshed) return request<T>(method, path, { ...options, retried: true });
-    throw new ApiError(401, 'نشست شما منقضی شده است؛ دوباره وارد شوید');
-  }
-
   if (!res.ok) throw new ApiError(res.status, await extractError(res));
+  return unwrap<T>(await res.json().catch(() => null));
+}
 
-  const json = (await res.json().catch(() => null)) as { data?: T } | T | null;
-  if (json && typeof json === 'object' && 'data' in json) return (json as { data: T }).data;
-  return json as T;
+/** multipart/form-data POST (image upload) — same envelope + refresh semantics. */
+async function requestForm<T>(path: string, form: FormData): Promise<T> {
+  // No Content-Type header: the browser must set the multipart boundary itself.
+  const res = await fetchWithAuth(path, { method: 'POST', body: form });
+  if (!res.ok) throw new ApiError(res.status, await extractError(res));
+  return unwrap<T>(await res.json().catch(() => null));
 }
 
 export const api = {
@@ -137,6 +163,46 @@ export const api = {
 };
 
 // ---------- domain helpers ----------
+
+// ---------- ad submission (Phase 5) ----------
+
+/** Active ad categories for the submission form (public). */
+export async function getAdCategories(): Promise<AdCategoryOption[]> {
+  return api.get<AdCategoryOption[]>('/ad-categories');
+}
+
+export interface CreateAdInput {
+  categoryId: number;
+  title: string;
+  description: string;
+  /** Rial. Omitted = «توافقی». */
+  price?: number;
+  phone?: string;
+  address?: string;
+  /** ids returned by uploadImage(), in display order. */
+  imageIds?: number[];
+}
+
+/** Submit an ad — always lands as PENDING (moderation queue). */
+export async function createAd(body: CreateAdInput): Promise<CreatedAd> {
+  return api.post<CreatedAd>('/ads', body);
+}
+
+/** The caller's own ads incl. moderation status. */
+export async function getMyAds(): Promise<MyAdItem[]> {
+  return api.get<MyAdItem[]>('/ads/mine');
+}
+
+/** Multipart image upload (≤5MB) — returns the media id + url for createAd. */
+export async function uploadImage(file: File): Promise<UploadedImage> {
+  const form = new FormData();
+  form.append('file', file, file.name);
+  return requestForm<UploadedImage>('/uploads', form);
+}
+
+export async function getProfile(): Promise<MeResponse> {
+  return api.get<MeResponse>('/users/me');
+}
 
 // ---------- city feeds (Phase 4) ----------
 
