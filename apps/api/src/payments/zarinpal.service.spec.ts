@@ -64,6 +64,20 @@ describe('ZarinpalService', () => {
     expect(verify.message).toBe('not paid');
   });
 
+  it('unwraps the real sandbox error envelope { data: null, errors: { code } }', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ data: null, errors: { message: 'Session is not valid', code: -51, validations: [] } }),
+        { status: 401 },
+      ),
+    );
+
+    const verify = await makeService(baseEnv).verifyPayment(4_000_000n, 'A1');
+    expect(verify.code).toBe(-51);
+    expect(verify.message).toBe('Session is not valid');
+    expect(verify.refId).toBeNull();
+  });
+
   it('parses a successful verify envelope', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ data: { code: 100, ref_id: 987654, message: 'OK' } }), { status: 200 }),

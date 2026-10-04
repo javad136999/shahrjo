@@ -125,12 +125,17 @@ export class ZarinpalService {
     }
     const payload = (json ?? {}) as { data?: T; errors?: unknown; code?: number; message?: string };
     if (res.ok && payload.data !== undefined && payload.data !== null) return payload.data;
-    // ZarinPal reports failures (e.g. verify code -51 "not paid") as a
-    // non-2xx body that still carries { code, message }. Surface that shape so
-    // the caller can record the exact result code instead of a generic throw.
-    if (typeof payload.code === 'number') {
-      this.logger.warn(`ZarinPal HTTP ${res.status} from ${url}: code=${payload.code} ${payload.message ?? ''}`);
-      return payload as unknown as T;
+    // ZarinPal reports failures in two shapes:
+    //   { errors: { code, message, validations } }  (HTTP 4xx, e.g. verify -51)
+    //   { code, message }                            (top-level)
+    // Surface either as { code, message } so the caller can record the exact
+    // result code instead of a generic throw.
+    const errors = payload.errors as { code?: unknown; message?: unknown } | undefined;
+    const errCode = typeof errors?.code === 'number' ? errors.code : payload.code;
+    if (typeof errCode === 'number') {
+      const message = (typeof errors?.message === 'string' ? errors.message : payload.message) ?? '';
+      this.logger.warn(`ZarinPal HTTP ${res.status} from ${url}: code=${errCode} ${message}`);
+      return { code: errCode, message } as unknown as T;
     }
     this.logger.warn(`ZarinPal HTTP ${res.status} from ${url}: ${JSON.stringify(payload.errors ?? json)}`);
     throw new HttpException('پاسخ نامعتبر از درگاه پرداخت', HttpStatus.BAD_GATEWAY);
