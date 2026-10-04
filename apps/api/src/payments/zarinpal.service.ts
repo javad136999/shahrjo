@@ -123,11 +123,16 @@ export class ZarinpalService {
     } catch {
       // non-JSON body handled below
     }
-    const envelope = (json ?? {}) as { data?: T; errors?: unknown };
-    if (!res.ok || envelope.data === undefined || envelope.data === null) {
-      this.logger.warn(`ZarinPal HTTP ${res.status} from ${url}: ${JSON.stringify(envelope.errors ?? json)}`);
-      throw new HttpException('پاسخ نامعتبر از درگاه پرداخت', HttpStatus.BAD_GATEWAY);
+    const payload = (json ?? {}) as { data?: T; errors?: unknown; code?: number; message?: string };
+    if (res.ok && payload.data !== undefined && payload.data !== null) return payload.data;
+    // ZarinPal reports failures (e.g. verify code -51 "not paid") as a
+    // non-2xx body that still carries { code, message }. Surface that shape so
+    // the caller can record the exact result code instead of a generic throw.
+    if (typeof payload.code === 'number') {
+      this.logger.warn(`ZarinPal HTTP ${res.status} from ${url}: code=${payload.code} ${payload.message ?? ''}`);
+      return payload as unknown as T;
     }
-    return envelope.data;
+    this.logger.warn(`ZarinPal HTTP ${res.status} from ${url}: ${JSON.stringify(payload.errors ?? json)}`);
+    throw new HttpException('پاسخ نامعتبر از درگاه پرداخت', HttpStatus.BAD_GATEWAY);
   }
 }
