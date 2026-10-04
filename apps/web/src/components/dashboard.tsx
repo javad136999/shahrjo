@@ -104,6 +104,9 @@ export function CityDashboard({ city, news, ads, businesses, loading, feedError 
         </p>
         <h1>{city.name}</h1>
         <div className="dash-header__actions">
+          <Link href="/plans" className="pill pill--gold">
+            👑 اشتراک ویژه
+          </Link>
           <Link href="/ads/new" className="pill pill--accent">
             <span aria-hidden>📝</span> ثبت آگهی
           </Link>

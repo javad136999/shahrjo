@@ -171,6 +171,7 @@ model User {
   businesses    Business[]
   media         Media[]
   payments      Payment[]
+  subscriptions Subscription[]
 
   @@index([cityId])
   @@map("users")
@@ -700,11 +701,14 @@ model SubscriptionPlan {
   @@map("subscription_plans")
 }
 
-// Subscription history per business. Created after successful ZarinPal verify,
-// then activated only by admin approval (PENDING_REVIEW -> ACTIVE).
+// Subscription history: owned by the paying user, optionally bound to one of
+// their businesses. Created after successful ZarinPal verify — business-bound
+// subscriptions still need admin approval (PENDING_REVIEW -> ACTIVE) before
+// they promote anything public; personal ones activate immediately.
 model Subscription {
   id           Int                @id @default(autoincrement())
-  businessId   Int                @map("business_id")
+  userId       Int                @map("user_id")
+  businessId   Int?               @map("business_id")
   planId       Int                @map("plan_id")
   tier         SubscriptionTier
   status       SubscriptionStatus @default(PENDING_REVIEW)
@@ -715,9 +719,11 @@ model Subscription {
   createdAt    DateTime           @default(now()) @map("created_at")
   updatedAt    DateTime           @updatedAt @map("updated_at")
 
-  business Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
   plan     SubscriptionPlan @relation(fields: [planId], references: [id])
 
+  @@index([userId, status])
   @@index([businessId, status])
   @@index([status, expiresAt])
   @@map("subscriptions")

@@ -46,6 +46,10 @@ export function HeaderPills() {
         <span aria-hidden>📝</span>
         <span className="pill__label">ثبت آگهی</span>
       </Link>
+      <Link href="/plans" className="pill pill--gold" data-testid="header-plans-pill">
+        <span aria-hidden>👑</span>
+        <span className="pill__label">اشتراک</span>
+      </Link>
     </div>
   );
 }

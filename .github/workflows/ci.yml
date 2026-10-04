@@ -50,6 +50,9 @@ jobs:
       - name: Phase 6 checks (detail pages + profile + favorites)
         run: pnpm verify:phase6
 
+      - name: Phase 7 checks (ZarinPal payments + subscription invariants)
+        run: pnpm verify:phase7
+
       - name: Typecheck all workspaces
         run: pnpm typecheck:all
 

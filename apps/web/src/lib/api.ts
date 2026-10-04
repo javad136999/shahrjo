@@ -6,12 +6,16 @@ import type {
   AdDetail,
   BusinessDetail,
   BusinessItem,
+  CheckoutSession,
   CreatedAd,
   LocalCity,
   MeResponse,
   MyAdItem,
+  MySubscription,
   NewsDetail,
   NewsItem,
+  PaymentHistoryItem,
+  PlanItem,
   Tokens,
   UploadedImage,
 } from './types';
@@ -231,6 +235,26 @@ export async function getMyFavorites(): Promise<MyAdItem[]> {
 
 export async function updateProfile(patch: { fullName?: string; cityId?: number }): Promise<MeResponse> {
   return api.patch<MeResponse>('/users/me', patch);
+}
+
+// ---------- subscriptions + ZarinPal (Phase 7) ----------
+
+/** Active purchasable plans (public). */
+export async function getPlans(): Promise<PlanItem[]> {
+  return api.get<PlanItem[]>('/subscription-plans');
+}
+
+/** Starts a checkout; the caller must redirect the browser to `payUrl`. */
+export async function checkoutPlan(body: { planId: number; businessId?: number }): Promise<CheckoutSession> {
+  return api.post<CheckoutSession>('/payments/checkout', body);
+}
+
+export async function getPaymentHistory(): Promise<PaymentHistoryItem[]> {
+  return api.get<PaymentHistoryItem[]>('/payments/mine');
+}
+
+export async function getMySubscriptions(): Promise<MySubscription[]> {
+  return api.get<MySubscription[]>('/subscriptions/mine');
 }
 
 // ---------- city feeds (Phase 4) ----------

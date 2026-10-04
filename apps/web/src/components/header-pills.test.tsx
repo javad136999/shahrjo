@@ -35,6 +35,12 @@ describe('HeaderPills', () => {
     expect(screen.getByTestId('header-submit-pill')).toHaveTextContent('ثبت آگهی');
   });
 
+  it('always offers the subscription entry', async () => {
+    render(<HeaderPills />);
+    expect(await screen.findByTestId('header-plans-pill')).toHaveAttribute('href', '/plans');
+    expect(screen.getByTestId('header-plans-pill')).toHaveTextContent('اشتراک');
+  });
+
   it('shows the dedicated city-selection icon whenever a city is remembered', async () => {
     render(<HeaderPills />);
     await screen.findByTestId('header-city-pill');

@@ -113,6 +113,45 @@ export interface MyAdItem {
   expiresAt: string | null;
 }
 
+/** Subscriptions + ZarinPal payments (Phase 7). */
+export interface PlanItem {
+  id: number;
+  code: string;
+  tier: 'GOLD' | 'SILVER' | 'FREE';
+  label: string;
+  badge: string | null;
+  durationDays: number;
+  price: number;
+  sortOrder: number;
+}
+
+export interface CheckoutSession {
+  paymentId: number;
+  payUrl: string;
+  authority: string;
+  amount: number;
+}
+
+export interface PaymentHistoryItem {
+  id: number;
+  amount: number;
+  status: string;
+  refId: string | null;
+  createdAt: string;
+  plan: { code: string; label: string; tier: string };
+}
+
+export interface MySubscription {
+  id: number;
+  tier: string;
+  status: string;
+  startsAt: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+  plan: { code: string; label: string; tier: string };
+  business: { id: number; name: string } | null;
+}
+
 /** Detail pages (Phase 6). */
 export interface AdDetail {
   id: number;
