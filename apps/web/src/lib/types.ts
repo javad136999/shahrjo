@@ -202,6 +202,42 @@ export interface QueueSubscription {
   payer: { id: number; phone: string; fullName: string | null };
 }
 
+/** Golden showcase + city map (Phase 9). */
+export interface ShowcaseItem {
+  id: number;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  address: string | null;
+  rating: number;
+  ratingCount: number;
+  subscriptionTier: string;
+  category: { name: string; slug: string; icon: string | null; color: string | null };
+}
+
+export interface CityMapBusiness {
+  id: number;
+  name: string;
+  slug: string;
+  latitude: number;
+  longitude: number;
+  subscriptionTier: string;
+  category: { name: string; icon: string | null; color: string | null };
+}
+
+export interface CityMapData {
+  city: {
+    id: number;
+    name: string;
+    slug: string;
+    latitude: number | null;
+    longitude: number | null;
+    /** GeoJSON Polygon outline; null → client draws a circle around center */
+    boundary: unknown | null;
+  };
+  businesses: CityMapBusiness[];
+}
+
 /** Detail pages (Phase 6). */
 export interface AdDetail {
   id: number;

@@ -56,6 +56,9 @@ jobs:
       - name: Phase 8 checks (admin panel permissions + scoped moderation)
         run: pnpm verify:phase8
 
+      - name: Phase 9 checks (golden showcase + city map + storage quota)
+        run: pnpm verify:phase9
+
       - name: Typecheck all workspaces
         run: pnpm typecheck:all
 

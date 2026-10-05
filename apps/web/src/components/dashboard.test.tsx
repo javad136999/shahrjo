@@ -1,6 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { CityDashboard } from '@/components/dashboard';
-import type { AdItem, BusinessItem, City, NewsItem } from '@/lib/types';
+import type { AdItem, BusinessItem, City, CityMapData, NewsItem, ShowcaseItem } from '@/lib/types';
+
+// The map is a Leaflet canvas (covered by city-map.test.tsx) — stub it here so
+// dashboard tests stay DOM-only.
+jest.mock('@/components/city-map', () => ({
+  CityMap: ({ data }: { data: CityMapData }) => <div data-testid="city-map" data-pins={data.businesses.length} />,
+}));
 
 const city: City = {
   id: 1,
@@ -51,12 +57,46 @@ function renderDashboard(overrides: Partial<Parameters<typeof CityDashboard>[0]>
       news={[]}
       ads={[]}
       businesses={[]}
+      showcase={[]}
+      mapData={null}
       loading={false}
       feedError={null}
       {...overrides}
     />,
   );
 }
+
+const showcase: ShowcaseItem[] = [
+  {
+    id: 40,
+    name: 'رستوران ویترین',
+    slug: 'showcase-rest',
+    logoUrl: null,
+    address: null,
+    rating: 4.8,
+    ratingCount: 21,
+    subscriptionTier: 'GOLD',
+    category: { name: 'رستوران', slug: 'restaurants', icon: '🍽', color: '#0e7a5f' },
+  },
+  {
+    id: 41,
+    name: 'فروشگاه نقره‌ای',
+    slug: 'silver-shop',
+    logoUrl: null,
+    address: null,
+    rating: 4.1,
+    ratingCount: 9,
+    subscriptionTier: 'SILVER',
+    category: { name: 'فروشگاه', slug: 'shops', icon: '🛍', color: null },
+  },
+];
+
+const mapData: CityMapData = {
+  city: { id: 1, name: 'شهر نمونه', slug: 'sample-city', latitude: 27.83, longitude: 52.32, boundary: null },
+  businesses: [
+    { id: 40, name: 'رستوران ویترین', slug: 'showcase-rest', latitude: 27.831, longitude: 52.321, subscriptionTier: 'GOLD', category: { name: 'رستوران', icon: '🍽', color: '#0e7a5f' } },
+  ],
+};
 
 describe('CityDashboard', () => {
   it('renders the city header with province and featured badge', () => {
@@ -109,11 +149,43 @@ describe('CityDashboard', () => {
 
   it('shows loading placeholders while fetching', () => {
     renderDashboard({ loading: true });
-    expect(screen.getAllByText('در حال بارگذاری…')).toHaveLength(3);
+    // news + ads + businesses + city map sections
+    expect(screen.getAllByText('در حال بارگذاری…')).toHaveLength(4);
+    // the showcase has its own loading copy
+    expect(screen.getByText('در حال بارگذاری ویترین…')).toBeInTheDocument();
   });
 
   it('surfaces a non-fatal feed error banner', () => {
     renderDashboard({ feedError: 'دریافت محتوای شهر ناموفق بود' });
     expect(screen.getByRole('alert')).toHaveTextContent('دریافت محتوای شهر ناموفق بود');
+  });
+
+  it('renders the golden showcase panel with its CTA (Phase 9)', () => {
+    renderDashboard({ showcase });
+    const panel = screen.getByTestId('showcase');
+    expect(panel).toHaveTextContent('ویترین طلایی');
+    expect(screen.getByTestId('showcase-40')).toHaveTextContent('رستوران ویترین');
+    expect(screen.getByTestId('showcase-cta')).toHaveAttribute('href', '/plans');
+    expect(screen.getByRole('link', { name: 'رستوران ویترین' })).toHaveAttribute('href', '/business/40');
+    // the list is rendered twice for the seamless loop; the copy is aria-hidden
+    const hidden = panel.querySelectorAll('[aria-hidden="true"]');
+    expect(hidden.length).toBeGreaterThan(0);
+  });
+
+  it('shows the showcase CTA when the city has no paid businesses', () => {
+    renderDashboard();
+    expect(screen.getByTestId('showcase-empty')).toHaveTextContent('هنوز کسب‌وکار طلایی‌ای در این شهر ثبت نشده');
+  });
+
+  it('renders the city map above the feeds with its pins count (Phase 9)', () => {
+    renderDashboard({ mapData, showcase });
+    expect(screen.getByTestId('city-map')).toHaveAttribute('data-pins', '1');
+    expect(screen.getByRole('heading', { name: 'نقشه شهر' })).toBeInTheDocument();
+    expect(screen.getByText('۱ مکان')).toBeInTheDocument();
+    // showcase sits directly above the map section
+    const showcaseEl = screen.getByTestId('showcase');
+    const mapHeading = screen.getByRole('heading', { name: 'نقشه شهر' });
+    const section = mapHeading.closest('.dash-section') as HTMLElement;
+    expect(showcaseEl.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

@@ -194,3 +194,77 @@ describe('ContentService.businesses', () => {
     expect(args.select).toMatchObject({ subscriptionTier: true, phone: true });
   });
 });
+
+describe('ContentService.showcase (Phase 9)', () => {
+  it('returns only paid-tier, enabled, APPROVED businesses in showcase order', async () => {
+    const { service, prisma } = makeService();
+    prisma.city.findFirst.mockResolvedValue({ id: 7 });
+    prisma.business.findMany.mockResolvedValue([]);
+
+    await service.showcase('sample-city', 10);
+
+    const args = prisma.business.findMany.mock.calls[0][0];
+    expect(args.where).toMatchObject({
+      cityId: 7,
+      status: 'APPROVED',
+      subscriptionTier: { in: ['GOLD', 'SILVER'] },
+      showcaseEnabled: true,
+    });
+    expect(args.orderBy).toEqual([{ showcasePriority: 'asc' }, { rating: 'desc' }]);
+    expect(args.take).toBe(10);
+    expect(args.select).toMatchObject({
+      logoUrl: true,
+      subscriptionTier: true,
+      category: { select: { name: true, slug: true, icon: true, color: true } },
+    });
+    // no phone leak in the marquee payload
+    expect(args.select.phone).toBeUndefined();
+  });
+
+  it('404s for unknown cities', async () => {
+    const { service, prisma } = makeService();
+    prisma.city.findFirst.mockResolvedValue(null);
+    await expect(service.showcase('nope')).rejects.toThrow('شهر یافت نشد');
+    expect(prisma.business.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('ContentService.map (Phase 9)', () => {
+  it('returns the center, boundary and pinned APPROVED businesses', async () => {
+    const { service, prisma } = makeService();
+    const boundary = { type: 'Polygon', coordinates: [[[52.2, 27.7], [52.5, 27.7], [52.5, 27.9], [52.2, 27.9], [52.2, 27.7]]] };
+    prisma.city.findFirst.mockResolvedValue({
+      id: 7,
+      name: 'شهر نمونه',
+      slug: 'sample-city',
+      latitude: 27.83,
+      longitude: 52.32,
+      boundary,
+    });
+    prisma.business.findMany.mockResolvedValue([
+      { id: 40, name: 'رستوران ویترین', slug: 'rest', latitude: 27.831, longitude: 52.321, subscriptionTier: 'GOLD', category: { name: 'رستوران', icon: '🍽', color: '#0e7a5f' } },
+    ]);
+
+    const data = await service.map('sample-city');
+
+    const args = prisma.business.findMany.mock.calls[0][0];
+    // only APPROVED businesses that actually have coordinates reach the map
+    expect(args.where).toMatchObject({
+      cityId: 7,
+      status: 'APPROVED',
+      latitude: { not: null },
+      longitude: { not: null },
+    });
+    expect(args.orderBy).toEqual([{ showcasePriority: 'asc' }, { rating: 'desc' }]);
+    expect(data.city).toMatchObject({ id: 7, slug: 'sample-city', latitude: 27.83, boundary });
+    expect(data.businesses[0]).toMatchObject({ id: 40, latitude: 27.831, longitude: 52.321, subscriptionTier: 'GOLD' });
+    expect(() => JSON.stringify(data)).not.toThrow();
+  });
+
+  it('404s for unknown cities without querying businesses', async () => {
+    const { service, prisma } = makeService();
+    prisma.city.findFirst.mockResolvedValue(null);
+    await expect(service.map('nope')).rejects.toThrow('شهر یافت نشد');
+    expect(prisma.business.findMany).not.toHaveBeenCalled();
+  });
+});

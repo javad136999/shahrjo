@@ -52,6 +52,7 @@ const permissions = [
   { code: 'reports.handle', title: 'رسیدگی به گزارش‌ها' },
   { code: 'banners.manage', title: 'مدیریت بنرها' },
   { code: 'map.manage', title: 'مدیریت مکان‌های نقشه' },
+  { code: 'storage.manage', title: 'مدیریت فضای ذخیره‌سازی و پاک‌سازی' },
   { code: 'roles.manage', title: 'مدیریت نقش‌ها' },
   { code: 'audit.view', title: 'مشاهده لاگ ممیزی' },
 ];

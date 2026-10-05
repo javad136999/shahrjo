@@ -1,12 +1,18 @@
 import Link from 'next/link';
+import { CityMap } from '@/components/city-map';
+import { ShowcaseMarquee } from '@/components/showcase-marquee';
 import { formatDate, formatPrice, formatRating } from '@/lib/format';
-import type { AdItem, BusinessItem, City, NewsItem } from '@/lib/types';
+import type { AdItem, BusinessItem, City, CityMapData, NewsItem, ShowcaseItem } from '@/lib/types';
 
 export interface CityDashboardProps {
   city: City;
   news: NewsItem[];
   ads: AdItem[];
   businesses: BusinessItem[];
+  /** paid-tier businesses for the golden marquee (Phase 9) */
+  showcase: ShowcaseItem[];
+  /** boundary + pinned businesses for the city map (Phase 9) */
+  mapData: CityMapData | null;
   /** true while feeds are still loading */
   loading: boolean;
   /** non-fatal feed error (banner) */
@@ -39,6 +45,7 @@ function Section({
   count,
   loading,
   emptyText,
+  showChildrenWhenEmpty = false,
   children,
 }: {
   id: string;
@@ -51,6 +58,8 @@ function Section({
   count: number;
   loading: boolean;
   emptyText: string;
+  /** keep rendering children even when count is 0 (e.g. the map) */
+  showChildrenWhenEmpty?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -77,7 +86,7 @@ function Section({
         <p className="muted" aria-busy>
           در حال بارگذاری…
         </p>
-      ) : count === 0 ? (
+      ) : count === 0 && !showChildrenWhenEmpty ? (
         <p className="empty-state">{emptyText}</p>
       ) : (
         children
@@ -92,7 +101,7 @@ function Section({
  * pastel-bordered cards with a golden showcase treatment for GOLD businesses.
  * City names always come from the data — never from the code.
  */
-export function CityDashboard({ city, news, ads, businesses, loading, feedError }: CityDashboardProps) {
+export function CityDashboard({ city, news, ads, businesses, showcase, mapData, loading, feedError }: CityDashboardProps) {
   return (
     <div className="dashboard">
       <header className="dash-header">
@@ -130,6 +139,26 @@ export function CityDashboard({ city, news, ads, businesses, loading, feedError 
         <Stat icon="📋" tone="ads" value={ads.length} label="آگهی" />
         <Stat icon="🏬" tone="gold" value={businesses.length} label="کسب‌وکار" />
       </div>
+
+      {/* Golden showcase marquee — sits directly above the city map (Phase 9) */}
+      <ShowcaseMarquee items={showcase} loading={loading} />
+
+      {(loading || mapData) && (
+        <Section
+          id="map"
+          icon="🗺"
+          tone="city"
+          title="نقشه شهر"
+          subtitle="محدوده شهر و کسب‌وکارهای تأییدشده روی نقشه"
+          unit="مکان"
+          count={mapData?.businesses.length ?? 0}
+          loading={loading && !mapData}
+          emptyText="هنوز کسب‌وکاری با مختصات مشخص‌شده روی نقشه ثبت نشده است."
+          showChildrenWhenEmpty
+        >
+          {mapData ? <CityMap data={mapData} /> : null}
+        </Section>
+      )}
 
       <Section
         id="news"

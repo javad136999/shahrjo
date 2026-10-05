@@ -8,6 +8,7 @@ import type {
   BusinessDetail,
   BusinessItem,
   CheckoutSession,
+  CityMapData,
   CreatedAd,
   LocalCity,
   MeResponse,
@@ -20,6 +21,7 @@ import type {
   QueueAd,
   QueueBusiness,
   QueueSubscription,
+  ShowcaseItem,
   Tokens,
   UploadedImage,
 } from './types';
@@ -320,6 +322,16 @@ export async function getCityAds(slug: string, limit = 8): Promise<AdItem[]> {
 
 export async function getCityBusinesses(slug: string, limit = 8): Promise<BusinessItem[]> {
   return api.get<BusinessItem[]>(`/businesses?${cityQS(slug, limit)}`);
+}
+
+// ---------- golden showcase + city map (Phase 9) ----------
+
+export async function getShowcase(slug: string, limit = 12): Promise<ShowcaseItem[]> {
+  return api.get<ShowcaseItem[]>(`/showcase?${cityQS(slug, limit)}`);
+}
+
+export async function getCityMap(slug: string): Promise<CityMapData> {
+  return api.get<CityMapData>(`/map?city=${encodeURIComponent(slug)}`);
 }
 
 export async function sendOtp(phone: string): Promise<{ sent: true; cooldownSeconds: number }> {

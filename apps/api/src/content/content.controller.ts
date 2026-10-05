@@ -28,6 +28,20 @@ export class ContentController {
     return this.content.businesses(query.city, query.limit);
   }
 
+  /** Golden showcase: paid-tier businesses for the animated marquee (Phase 9). */
+  @Public()
+  @Get('showcase')
+  showcase(@Query() query: CityContentQueryDto): ReturnType<ContentService['showcase']> {
+    return this.content.showcase(query.city, query.limit);
+  }
+
+  /** City map: boundary + pinned approved businesses (Phase 9). */
+  @Public()
+  @Get('map')
+  map(@Query() query: CityContentQueryDto): ReturnType<ContentService['map']> {
+    return this.content.map(query.city);
+  }
+
   /** One published news article (Phase 6) — counts a view. */
   @Public()
   @Get('news/:slug')

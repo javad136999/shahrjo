@@ -37,6 +37,40 @@ export interface BusinessItem {
   category: { name: string; slug: string; icon: string | null; color: string | null };
 }
 
+/** One paid-tier business card of the golden showcase. */
+export interface ShowcaseItem {
+  id: number;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  address: string | null;
+  rating: number;
+  ratingCount: number;
+  subscriptionTier: string;
+  category: { name: string; slug: string; icon: string | null; color: string | null };
+}
+
+/** City map payload: center + boundary (GeoJSON) + approved business pins. */
+export interface CityMapData {
+  city: {
+    id: number;
+    name: string;
+    slug: string;
+    latitude: number | null;
+    longitude: number | null;
+    boundary: unknown | null;
+  };
+  businesses: Array<{
+    id: number;
+    name: string;
+    slug: string;
+    latitude: number;
+    longitude: number;
+    subscriptionTier: string;
+    category: { name: string; icon: string | null; color: string | null };
+  }>;
+}
+
 export interface NewsDetail extends NewsItem {
   body: string;
   viewCount: number;
@@ -152,6 +186,81 @@ export class ContentService {
         category: { select: { name: true, slug: true, icon: true, color: true } },
       },
     });
+  }
+
+  /**
+   * Golden showcase (Phase 9): approved GOLD/SILVER businesses of a city,
+   * ordered by showcasePriority (admin-set; gold first) then rating.
+   * Feeds the animated marquee panel above the city map.
+   */
+  async showcase(citySlug: string, limit: number = DEFAULT_CONTENT_LIMIT): Promise<ShowcaseItem[]> {
+    const cityId = await this.resolveCity(citySlug);
+    return this.prisma.business.findMany({
+      where: {
+        cityId,
+        status: 'APPROVED',
+        subscriptionTier: { in: ['GOLD', 'SILVER'] },
+        showcaseEnabled: true,
+      },
+      orderBy: [{ showcasePriority: 'asc' }, { rating: 'desc' }],
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        logoUrl: true,
+        address: true,
+        rating: true,
+        ratingCount: true,
+        subscriptionTier: true,
+        category: { select: { name: true, slug: true, icon: true, color: true } },
+      },
+    });
+  }
+
+  /**
+   * City map (Phase 9): the boundary (GeoJSON Polygon when the admin set one,
+   * otherwise null → client draws a circle around the center) plus every
+   * APPROVED business that has coordinates (pins are stored on approval).
+   * Only pinned businesses leave the API — a business without a pin simply
+   * does not appear on the map.
+   */
+  async map(citySlug: string): Promise<CityMapData> {
+    const city = await this.prisma.city.findFirst({
+      where: { slug: citySlug, isActive: true, province: { isActive: true } },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        latitude: true,
+        longitude: true,
+        boundary: true,
+      },
+    });
+    if (!city) throw new NotFoundException('شهر یافت نشد');
+
+    const businesses = await this.prisma.business.findMany({
+      where: { cityId: city.id, status: 'APPROVED', latitude: { not: null }, longitude: { not: null } },
+      orderBy: [{ showcasePriority: 'asc' }, { rating: 'desc' }],
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        latitude: true,
+        longitude: true,
+        subscriptionTier: true,
+        category: { select: { name: true, icon: true, color: true } },
+      },
+    });
+
+    return {
+      city,
+      businesses: businesses.map((b) => ({
+        ...b,
+        latitude: b.latitude as number,
+        longitude: b.longitude as number,
+      })),
+    };
   }
 
   /** A single published news article + view counting (Phase 6). */

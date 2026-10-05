@@ -4,14 +4,16 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { CityDashboard } from '@/components/dashboard';
-import { api, getCityAds, getCityBusinesses, getCityNews, getTokens, setLocalCity } from '@/lib/api';
-import type { AdItem, BusinessItem, City, MeResponse, NewsItem } from '@/lib/types';
+import { api, getCityAds, getCityBusinesses, getCityMap, getCityNews, getShowcase, getTokens, setLocalCity } from '@/lib/api';
+import type { AdItem, BusinessItem, City, CityMapData, MeResponse, NewsItem, ShowcaseItem } from '@/lib/types';
 
 interface DashboardState {
   city: City | null | undefined; // undefined = loading, null = not found
   news: NewsItem[];
   ads: AdItem[];
   businesses: BusinessItem[];
+  showcase: ShowcaseItem[];
+  mapData: CityMapData | null;
   loading: boolean;
   feedError: string | null;
 }
@@ -21,6 +23,8 @@ const INITIAL: DashboardState = {
   news: [],
   ads: [],
   businesses: [],
+  showcase: [],
+  mapData: null,
   loading: true,
   feedError: null,
 };
@@ -70,14 +74,16 @@ export default function CityPage() {
           .catch(() => {});
       }
 
-      // 3) the three feeds — dashboard still renders the header if they fail
+      // 3) feeds + golden showcase + map (Phase 9) — header still renders on failure
       try {
-        const [news, ads, businesses] = await Promise.all([
+        const [news, ads, businesses, showcase, mapData] = await Promise.all([
           getCityNews(city.slug),
           getCityAds(city.slug),
           getCityBusinesses(city.slug),
+          getShowcase(city.slug),
+          getCityMap(city.slug),
         ]);
-        if (alive) setState((s) => ({ ...s, news, ads, businesses, loading: false }));
+        if (alive) setState((s) => ({ ...s, news, ads, businesses, showcase, mapData, loading: false }));
       } catch (err) {
         if (alive) {
           setState((s) => ({
@@ -119,6 +125,8 @@ export default function CityPage() {
       news={state.news}
       ads={state.ads}
       businesses={state.businesses}
+      showcase={state.showcase}
+      mapData={state.mapData}
       loading={state.loading}
       feedError={state.feedError}
     />

@@ -1,8 +1,9 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { CurrentUser, RequirePermissions } from '../common/decorators';
-import type { BusinessDecisionDto, DecisionDto } from './admin.service';
+import type { BoundaryDto, BusinessDecisionDto, DecisionDto } from './admin.service';
 import { AdminService } from './admin.service';
+import { UploadsService } from '../uploads/uploads.service';
 
 /**
  * Admin panel API (Phase 8). Every route carries @RequirePermissions so the
@@ -11,7 +12,10 @@ import { AdminService } from './admin.service';
  */
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly admin: AdminService) {}
+  constructor(
+    private readonly admin: AdminService,
+    private readonly uploads: UploadsService,
+  ) {}
 
   /** Queue counters for the panel home. */
   @Get('overview')
@@ -88,5 +92,30 @@ export class AdminController {
     @Body() dto: DecisionDto,
   ) {
     return this.admin.rejectSubscription(user, id, dto);
+  }
+
+  /** City map outline (GeoJSON Polygon; null clears) — Phase 9. */
+  @Post('cities/:id/boundary')
+  @RequirePermissions('map.manage')
+  setCityBoundary(
+    @CurrentUser() user: User,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: BoundaryDto,
+  ) {
+    return this.admin.setCityBoundary(user, id, dto);
+  }
+
+  /** Disk usage of uploaded images (Phase 9 — the disk-fill guard). */
+  @Get('storage/overview')
+  @RequirePermissions('storage.manage')
+  storageOverview() {
+    return this.uploads.overview();
+  }
+
+  /** Run the orphan/cleanup sweep now; returns removed files + freed bytes. */
+  @Post('storage/sweep')
+  @RequirePermissions('storage.manage')
+  storageSweep() {
+    return this.uploads.sweep();
   }
 }

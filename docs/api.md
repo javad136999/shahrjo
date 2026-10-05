@@ -115,3 +115,24 @@
 
 Guard: `PermissionsGuard` (کد permission از `role_permissions`) + Scope
 (`CITY_ADMIN` فقط `city_id` خودش، `PROVINCE_ADMIN` فقط استان خودش).
+
+## Showcase + City Map + Storage (فاز ۹ — ویترین طلایی، نقشه شهر، سهمیه ذخیره‌سازی)
+
+> ✅ **پیاده‌شده در Phase 9**: ویترین متحرک بالای نقشه، نقشه محدوده شهر با پین کسب‌وکارهای تأییدشده، و سقف ذخیره‌سازی تصاویر + پاک‌سازی خودکار.
+
+| Endpoint | Auth | توضیح |
+|---|---|---|
+| GET `/showcase?city=<slug>&limit=` | Public | کسب‌وکارهای `GOLD`/`SILVER` تأییدشده با `showcaseEnabled`، در ترتیب `showcasePriority` (طلایی‌ها اول) — تغذیه‌کننده پنل ویترین متحرک؛ شامل `logoUrl`/`category`/`rating`، بدون شماره تلفن |
+| GET `/map?city=<slug>` | Public | مرکز شهر + `boundary` (GeoJSON Polygon یا null) + کسب‌وکارهای تأییدشده‌ای که مختصات دارند (`latitude`/`longitude` نام null نمی‌گیرند) — ترتیب showcase |
+| POST `/admin/cities/:id/boundary` | `map.manage` | ذخیره/پاک‌کردن محدوده شهر `{ boundary: Polygon | null }` (اعتبارسنجی حلقه/دامنه/سقف ۵۰۰۰ نقطه، بستن حلقه باز، محدود به scope اپراتور) + audit `city.boundary` |
+| GET `/admin/storage/overview` | `storage.manage` | مصرف کل تصاویر + سقف کاربر/فایل |
+| POST `/admin/storage/sweep` | `storage.manage` | اجرای دستی پاک‌سازی: حذف فایل‌های soft-delete‌شده قدیمی، آپلودهای بدون آگهی (>۴۸ساعت)، مدیای آگهی حذفشده، و فایل‌های یتیم دیسک |
+
+### قوانین سهمیه (فضای سرور پر نمی‌شود)
+
+- هر فایل حداکثر ۵MB (multer + بررسی مجدد) · هر کاربر حداکثر ۳۰ آپلود در ساعت · **هر کاربر مجموعاً ۱۰۰MB** (`MAX_BYTES_PER_USER`) — با رسیدن به سقف، آپلود بعدی `413` می‌شود.
+- سویپ خودکار هر ۶ ساعت (اولین اجرا ۱۰ دقینه پس از بوت، `unref` — برنامه را نگه نمی‌دارد): آپلودهای ادعاشده‌نشده >۴۸ساعت، مدیای نرم‌حذف‌شده >۷ روز، مدیای آگهی حذفشده، و فایل‌های دیسک بدون ردیف Media (با محافظ سنّ <۴۸ساعت برای آپلود در جریان).
+
+### UI (ویترین + نقشه)
+
+`/city/[slug]`: پنل «ویترین طلایی» بلافاصله **بالای نقشه** — marquee بی‌نهایت (RTL، `translateX(50%)`، تکرار لیست برای حلقه یکپارچه، توقف با hover/focus، احترام به `prefers-reduced-motion`) با تاج طلایی و CTA اشتراک. نقشه Leaflet + OSM (بدون کلید API): محدوده به‌صورت polygon طلایی (fallback: دایره ۳.۵km دور مرکز شهر) + پین‌های رنگی per-tier با popup لینک‌دار.

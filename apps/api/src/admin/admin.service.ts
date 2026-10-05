@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import type { User } from '@prisma/client';
+import { Prisma, type User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService, type AdminScope } from '../rbac/rbac.service';
 
@@ -12,6 +12,57 @@ export interface DecisionDto {
 export interface BusinessDecisionDto extends DecisionDto {
   latitude?: number;
   longitude?: number;
+}
+
+/** GeoJSON Polygon boundary of a city map (null/undefined clears it). */
+export interface BoundaryDto {
+  boundary?: unknown;
+}
+
+/** Hard cap so a boundary cannot bloat the row (and the JSON payload). */
+export const MAX_BOUNDARY_POINTS = 5000;
+
+/**
+ * Validates + normalizes an admin-supplied GeoJSON Polygon: numeric rings with
+ * sane coordinates, auto-closed. Returns `null` (clear) or the normalized
+ * geometry; throws BadRequestException on anything else.
+ */
+export function normalizeBoundary(input: unknown): object | null {
+  if (input === null || input === undefined) return null;
+  if (typeof input !== 'object' || Array.isArray(input)) {
+    throw new BadRequestException('محدوده شهر باید از نوع GeoJSON Polygon باشد');
+  }
+  const geo = input as { type?: unknown; coordinates?: unknown };
+  if (geo.type !== 'Polygon' || !Array.isArray(geo.coordinates) || geo.coordinates.length === 0) {
+    throw new BadRequestException('محدوده شهر باید از نوع GeoJSON Polygon باشد');
+  }
+  let total = 0;
+  const rings: number[][][] = [];
+  for (const ring of geo.coordinates) {
+    if (!Array.isArray(ring) || ring.length < 3) {
+      throw new BadRequestException('حلقه محدوده باید حداقل ۳ نقطه داشته باشد');
+    }
+    const pts: number[][] = [];
+    for (const point of ring) {
+      if (!Array.isArray(point) || point.length < 2 || typeof point[0] !== 'number' || typeof point[1] !== 'number') {
+        throw new BadRequestException('نقاط محدوده معتبر نیستند');
+      }
+      const [lng, lat] = point;
+      if (!Number.isFinite(lng) || !Number.isFinite(lat) || lng < -180 || lng > 180 || lat < -90 || lat > 90) {
+        throw new BadRequestException('مختصات محدوده خارج از محدوده مجاز است');
+      }
+      pts.push([lng, lat]);
+    }
+    total += pts.length;
+    if (total > MAX_BOUNDARY_POINTS) {
+      throw new BadRequestException('محدوده شهر پیچیده‌تر از حد مجاز است');
+    }
+    const first = pts[0];
+    const last = pts[pts.length - 1];
+    if (first[0] !== last[0] || first[1] !== last[1]) pts.push(first);
+    rings.push(pts);
+  }
+  return { type: 'Polygon', coordinates: rings };
 }
 
 export interface AdminOverview {
@@ -385,5 +436,30 @@ export class AdminService {
       reason,
     });
     return { id, status: 'REJECTED' };
+  }
+
+  // ---------- city map boundary (Phase 9) ----------
+
+  /**
+   * Sets (or clears) the GeoJSON boundary of one city — the outline drawn on
+   * the public city map. Scoped like every other admin action; audited.
+   * Without a boundary the client falls back to a circle around the center.
+   */
+  async setCityBoundary(user: User, cityId: number, dto: BoundaryDto) {
+    const boundary = normalizeBoundary(dto.boundary);
+    const scope = await this.scopeOf(user.id);
+    const adminId = await this.adminRowId(user.id);
+    const city = await this.prisma.city.findFirst({
+      where: { id: cityId, ...this.cityFilter(scope) },
+      select: { id: true, name: true, slug: true },
+    });
+    if (!city) throw new NotFoundException('شهر یافت نشد');
+
+    await this.prisma.city.update({
+      where: { id: city.id },
+      data: { boundary: boundary === null ? Prisma.DbNull : (boundary as Prisma.InputJsonValue) },
+    });
+    await this.audit(adminId, 'city.boundary', 'city', String(city.id), { boundary });
+    return { id: city.id, name: city.name, slug: city.slug, boundary };
   }
 }

@@ -8,6 +8,7 @@ function makePrisma() {
     ad: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     business: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     subscription: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
+    city: { findFirst: jest.fn(), update: jest.fn() },
     adminUser: { findUnique: jest.fn() },
     auditLog: { create: jest.fn() },
     $transaction: jest.fn(),
@@ -204,5 +205,79 @@ describe('AdminService business approval', () => {
     await expect(
       service.approveBusiness(admin, 3, { latitude: 999, longitude: 0 }),
     ).rejects.toThrow('مختصات نامعتبر');
+  });
+});
+
+describe('AdminService city boundary (Phase 9)', () => {
+  const ring = {
+    type: 'Polygon',
+    coordinates: [[[52.2, 27.7], [52.5, 27.7], [52.5, 27.95], [52.2, 27.95], [52.2, 27.7]]],
+  };
+
+  it('stores a valid GeoJSON boundary, closes open rings, audits it', async () => {
+    const { service, prisma } = makeService({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+    prisma.city.findFirst.mockResolvedValue({ id: 7, name: 'شهر نمونه', slug: 'sample-city' });
+    prisma.city.update.mockResolvedValue({ id: 7 });
+
+    const openRing = {
+      type: 'Polygon',
+      coordinates: [[[52.2, 27.7], [52.5, 27.7], [52.5, 27.95], [52.2, 27.95]]],
+    };
+    const result = await service.setCityBoundary(admin, 7, { boundary: openRing });
+
+    const data = prisma.city.update.mock.calls[0][0].data;
+    // auto-closed: first point appended to the end
+    const coords = (data.boundary as { coordinates: number[][][] }).coordinates;
+    expect(coords[0][coords[0].length - 1]).toEqual(coords[0][0]);
+    expect(result.slug).toBe('sample-city');
+    expect(prisma.auditLog.create.mock.calls[0][0].data).toMatchObject({
+      action: 'city.boundary',
+      entity: 'city',
+      entityId: '7',
+    });
+  });
+
+  it('clears the boundary with null (Prisma.DbNull)', async () => {
+    const { service, prisma } = makeService({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+    prisma.city.findFirst.mockResolvedValue({ id: 7, name: 'شهر نمونه', slug: 'sample-city' });
+    prisma.city.update.mockResolvedValue({ id: 7 });
+
+    const result = await service.setCityBoundary(admin, 7, { boundary: null });
+
+    expect(prisma.city.update.mock.calls[0][0].data).toEqual({ boundary: expect.anything() });
+    expect(result.boundary).toBeNull();
+  });
+
+  it('rejects non-Polygon geometries, bad rings and out-of-range points', async () => {
+    const { service, prisma } = makeService({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+
+    await expect(service.setCityBoundary(admin, 7, { boundary: { type: 'Point', coordinates: [52, 27] } })).rejects.toThrow('Polygon');
+    await expect(service.setCityBoundary(admin, 7, { boundary: { type: 'Polygon', coordinates: [] } })).rejects.toThrow('Polygon');
+    await expect(
+      service.setCityBoundary(admin, 7, {
+        boundary: { type: 'Polygon', coordinates: [[[52.2, 27.7], [52.5, 27.7]]] },
+      }),
+    ).rejects.toThrow('حداقل ۳ نقطه');
+    await expect(
+      service.setCityBoundary(admin, 7, {
+        boundary: { type: 'Polygon', coordinates: [[[999, 27.7], [52.5, 27.7], [52.2, 27.95], [999, 27.7]]] },
+      }),
+    ).rejects.toThrow('خارج از محدوده');
+    expect(prisma.city.update).not.toHaveBeenCalled();
+  });
+
+  it('scopes city lookup: a city admin cannot outline another city', async () => {
+    const { service, prisma } = makeService({ role: 'CITY_ADMIN', provinceId: null, cityId: 5 });
+    prisma.city.findFirst.mockResolvedValue(null);
+
+    await expect(service.setCityBoundary(admin, 9, { boundary: ring })).rejects.toMatchObject({ status: 404 });
+    expect(prisma.city.findFirst.mock.calls[0][0].where).toMatchObject({ id: 9, cityId: 5 });
+    expect(prisma.city.update).not.toHaveBeenCalled();
+  });
+
+  it('403s without an admin row', async () => {
+    const { service, prisma } = makeService(null);
+    await expect(service.setCityBoundary(admin, 7, { boundary: ring })).rejects.toMatchObject({ status: 403 });
+    expect(prisma.city.update).not.toHaveBeenCalled();
   });
 });

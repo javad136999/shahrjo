@@ -29,6 +29,9 @@ const endpoints = [
   "@Get('subscriptions')",
   "@Post('subscriptions/:id/approve')",
   "@Post('subscriptions/:id/reject')",
+  "@Post('cities/:id/boundary')",
+  "@Get('storage/overview')",
+  "@Post('storage/sweep')",
 ];
 for (const endpoint of endpoints) {
   if (!controller.includes(endpoint)) { console.error('MISSING endpoint:', endpoint); fail++; }

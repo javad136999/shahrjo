@@ -125,6 +125,8 @@ model City {
   // Map center (no hard-coded cities anywhere else)
   latitude   Float?
   longitude  Float?
+  // Map boundary — GeoJSON Polygon (JSONB); null = circle around the center
+  boundary   Json?
   isFeatured Boolean  @default(false) @map("is_featured")
   isActive   Boolean  @default(true) @map("is_active")
   createdAt  DateTime @default(now()) @map("created_at")
