@@ -40,8 +40,16 @@ export function HeaderActions() {
     );
   }
 
+  const isOperator = me.roles.some((r) => r !== 'USER');
+
   return (
     <div className="header-user">
+      {isOperator && (
+        <Link href="/admin" className="pill pill--gold" title="پنل مدیریت" data-testid="header-admin">
+          <span aria-hidden>🛡️</span>
+          <span className="pill__label">مدیریت</span>
+        </Link>
+      )}
       <Link href="/profile" className="header-phone" dir="ltr" title="پروفایل من" data-testid="header-profile">
         {me.phone}
       </Link>

@@ -166,6 +166,10 @@ const subscriptionPlans = [
   { code: 'SILVER_12M', tier: 'SILVER' as const, label: '۱۲ ماهه', badge: 'به‌صرفه‌ترین', durationDays: 365, price: 13_000_000, sortOrder: 6 },
 ];
 
+// Admin panel operator (Phase 8). A phone number is data, never code —
+// the row only grants the SUPER_ADMIN role; login still requires SMS OTP.
+const ADMIN_PHONE = '09174057031';
+
 async function main(): Promise<void> {
   // Provinces
   for (const p of provinces) {
@@ -239,10 +243,23 @@ async function main(): Promise<void> {
     });
   }
 
+  // Admin operator: user row + admin_users binding (idempotent).
+  const adminUser = await prisma.user.upsert({
+    where: { phone: ADMIN_PHONE },
+    update: {},
+    create: { phone: ADMIN_PHONE },
+  });
+  const superAdminRole = await prisma.role.findUniqueOrThrow({ where: { code: 'SUPER_ADMIN' } });
+  await prisma.adminUser.upsert({
+    where: { userId: adminUser.id },
+    update: { roleId: superAdminRole.id, isActive: true },
+    create: { userId: adminUser.id, roleId: superAdminRole.id },
+  });
+
   console.log(
     `Seed OK: ${provinces.length} provinces, ${cities.length} cities, ${roles.length} roles, ` +
       `${permissions.length} permissions, ${adCategories.length} ad categories, ` +
-      `${businessCategories.length} business categories, ${subscriptionPlans.length} plans`,
+      `${businessCategories.length} business categories, ${subscriptionPlans.length} plans, admin ${ADMIN_PHONE}`,
   );
 }
 

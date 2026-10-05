@@ -4,6 +4,7 @@ import type {
   AdCategoryOption,
   AdItem,
   AdDetail,
+  AdminOverview,
   BusinessDetail,
   BusinessItem,
   CheckoutSession,
@@ -16,6 +17,9 @@ import type {
   NewsItem,
   PaymentHistoryItem,
   PlanItem,
+  QueueAd,
+  QueueBusiness,
+  QueueSubscription,
   Tokens,
   UploadedImage,
 } from './types';
@@ -255,6 +259,51 @@ export async function getPaymentHistory(): Promise<PaymentHistoryItem[]> {
 
 export async function getMySubscriptions(): Promise<MySubscription[]> {
   return api.get<MySubscription[]>('/subscriptions/mine');
+}
+
+// ---------- admin panel (Phase 8) ----------
+
+export async function getAdminOverview(): Promise<AdminOverview> {
+  return api.get<AdminOverview>('/admin/overview');
+}
+
+export async function getAdminAds(status: string): Promise<QueueAd[]> {
+  return api.get<QueueAd[]>(`/admin/ads?status=${encodeURIComponent(status)}`);
+}
+
+export async function approveAdminAd(id: number): Promise<{ id: number; status: string }> {
+  return api.post<{ id: number; status: string }>(`/admin/ads/${id}/approve`);
+}
+
+export async function rejectAdminAd(id: number, reason: string): Promise<{ id: number; status: string }> {
+  return api.post<{ id: number; status: string }>(`/admin/ads/${id}/reject`, { reason });
+}
+
+export async function getAdminBusinesses(status: string): Promise<QueueBusiness[]> {
+  return api.get<QueueBusiness[]>(`/admin/businesses?status=${encodeURIComponent(status)}`);
+}
+
+export async function approveAdminBusiness(
+  id: number,
+  body: { reason?: string; latitude?: number; longitude?: number } = {},
+): Promise<{ id: number; status: string }> {
+  return api.post<{ id: number; status: string }>(`/admin/businesses/${id}/approve`, body);
+}
+
+export async function rejectAdminBusiness(id: number, reason: string): Promise<{ id: number; status: string }> {
+  return api.post<{ id: number; status: string }>(`/admin/businesses/${id}/reject`, { reason });
+}
+
+export async function getAdminSubscriptions(status: string): Promise<QueueSubscription[]> {
+  return api.get<QueueSubscription[]>(`/admin/subscriptions?status=${encodeURIComponent(status)}`);
+}
+
+export async function approveAdminSubscription(id: number): Promise<{ id: number; status: string }> {
+  return api.post<{ id: number; status: string }>(`/admin/subscriptions/${id}/approve`);
+}
+
+export async function rejectAdminSubscription(id: number, reason: string): Promise<{ id: number; status: string }> {
+  return api.post<{ id: number; status: string }>(`/admin/subscriptions/${id}/reject`, { reason });
 }
 
 // ---------- city feeds (Phase 4) ----------

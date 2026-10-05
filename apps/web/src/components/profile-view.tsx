@@ -139,6 +139,11 @@ export function ProfileView() {
           <Link href="/ads/new" className="btn btn-ghost">
             📝 ثبت آگهی جدید
           </Link>
+          {me.roles.some((r) => r !== 'USER') && (
+            <Link href="/admin" className="btn btn-ghost" data-testid="profile-admin">
+              🛡️ پنل مدیریت
+            </Link>
+          )}
           <button type="button" className="btn btn-ghost" onClick={logout} data-testid="profile-logout">
             خروج از حساب
           </button>

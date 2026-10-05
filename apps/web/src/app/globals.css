@@ -1375,3 +1375,119 @@ a.my-ads__item:hover {
 .result-card__actions .btn {
   margin-top: 0;
 }
+
+/* ---------- admin panel (Phase 8) ---------- */
+
+.banner--ok {
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+  border: 1px solid rgb(14 122 95 / 30%);
+}
+
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 8px;
+  margin-bottom: 14px;
+}
+.admin-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+}
+.admin-tab:hover {
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+}
+.admin-tab--active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+.admin-tab--active:hover {
+  background: var(--brand-dark);
+  color: #fff;
+}
+.admin-status-select {
+  margin-inline-start: auto;
+  font: inherit;
+  font-size: 13.5px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: inherit;
+}
+
+.admin-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.admin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.admin-row__body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+.admin-row__body strong {
+  font-size: 15px;
+}
+.admin-row__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.admin-action {
+  margin-top: 0;
+  padding: 7px 14px;
+  font-size: 13.5px;
+  border-radius: 10px;
+}
+.admin-action--ok {
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+  border-color: rgb(14 122 95 / 35%);
+}
+.admin-action--ok:hover:not(:disabled) {
+  background: var(--brand);
+  color: #fff;
+}
+.admin-action--err {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: rgb(180 35 24 / 30%);
+}
+.admin-action--err:hover:not(:disabled) {
+  background: var(--danger);
+  color: #fff;
+}

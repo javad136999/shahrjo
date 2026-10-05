@@ -53,6 +53,9 @@ jobs:
       - name: Phase 7 checks (ZarinPal payments + subscription invariants)
         run: pnpm verify:phase7
 
+      - name: Phase 8 checks (admin panel permissions + scoped moderation)
+        run: pnpm verify:phase8
+
       - name: Typecheck all workspaces
         run: pnpm typecheck:all
 

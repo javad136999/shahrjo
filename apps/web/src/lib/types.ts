@@ -152,6 +152,56 @@ export interface MySubscription {
   business: { id: number; name: string } | null;
 }
 
+/** Admin panel (Phase 8). */
+export interface AdminOverview {
+  pendingAds: number;
+  pendingBusinesses: number;
+  pendingSubscriptions: number;
+  approvedAds: number;
+  approvedBusinesses: number;
+  activeSubscriptions: number;
+}
+
+export interface QueueAd {
+  id: number;
+  title: string;
+  status: string;
+  rejectedReason: string | null;
+  createdAt: string;
+  viewCount: number;
+  city: { id: number; name: string };
+  owner: { id: number; phone: string; fullName: string | null };
+  category: { name: string; icon: string | null };
+  coverUrl: string | null;
+  imageCount: number;
+}
+
+export interface QueueBusiness {
+  id: number;
+  name: string;
+  slug: string;
+  status: string;
+  phone: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  subscriptionTier: string;
+  createdAt: string;
+  city: { id: number; name: string };
+  owner: { id: number; phone: string; fullName: string | null };
+  category: { name: string; icon: string | null };
+}
+
+export interface QueueSubscription {
+  id: number;
+  tier: string;
+  status: string;
+  createdAt: string;
+  plan: { code: string; label: string; tier: string; durationDays: number };
+  business: { id: number; name: string; city: { id: number; name: string } } | null;
+  payer: { id: number; phone: string; fullName: string | null };
+}
+
 /** Detail pages (Phase 6). */
 export interface AdDetail {
   id: number;
