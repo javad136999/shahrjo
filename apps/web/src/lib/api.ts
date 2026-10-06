@@ -72,6 +72,11 @@ async function extractError(res: Response): Promise<string> {
   try {
     const body: unknown = await res.json();
     if (body && typeof body === 'object') {
+      // ShahrJo envelope: { data, meta, error: { code, message } } — prefer the
+      // nested message, then Nest's default top-level `message`.
+      const nested = (body as { error?: { message?: unknown } }).error?.message;
+      if (typeof nested === 'string' && nested) return nested;
+      if (Array.isArray(nested) && nested.length) return nested.join('، ');
       const msg = (body as { message?: unknown }).message;
       if (typeof msg === 'string' && msg) return msg;
       if (Array.isArray(msg) && msg.length) return msg.join('، ');

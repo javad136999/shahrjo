@@ -97,6 +97,33 @@ describe('api client', () => {
     expect((err as ApiError).message).toBe('کد نامعتبر است، شماره نادرست');
   });
 
+  it('surfaces the nested envelope error message ({ data, error })', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(
+      jsonResponse(
+        { data: null, error: { code: 'INVALID_OTP', message: 'کد ورود نامعتبر یا منقضی شده است' } },
+        400,
+      ),
+    );
+
+    const err = await api.post('/auth/verify-otp', {}).catch((e: unknown) => e);
+
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).status).toBe(400);
+    expect((err as ApiError).message).toBe('کد ورود نامعتبر یا منقضی شده است');
+  });
+
+  it('falls back to a generic status message when the body is not JSON', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: () => Promise.reject(new Error('not json')),
+    } as Response);
+
+    const err = await api.get('/showcase?city=x').catch((e: unknown) => e);
+
+    expect((err as ApiError).message).toBe('خطای 502');
+  });
+
   it('persists tokens in localStorage only (never in cookies)', () => {
     setTokens({ accessToken: 'a', refreshToken: 'r' });
     expect(window.localStorage.getItem('shahrjo.tokens')).toContain('"accessToken":"a"');
