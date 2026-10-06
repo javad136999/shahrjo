@@ -17,7 +17,30 @@ function asPolygon(value: unknown): Polygon | null {
   return { type: 'Polygon', coordinates: v.coordinates as number[][][] };
 }
 
-/** Minimal HTML escaping for popup content built from DB strings. */
+/** [[minLat, minLng], [maxLat, maxLng]] of a GeoJSON ring set. */
+function boundsOfPolygon(rings: number[][][]): [[number, number], [number, number]] | null {
+  let minLat = Infinity;
+  let minLng = Infinity;
+  let maxLat = -Infinity;
+  let maxLng = -Infinity;
+  for (const ring of rings) {
+    for (const point of ring) {
+      const [lng, lat] = point;
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+      if (lat < minLat) minLat = lat;
+      if (lng < minLng) minLng = lng;
+      if (lat > maxLat) maxLat = lat;
+      if (lng > maxLng) maxLng = lng;
+    }
+  }
+  if (!Number.isFinite(minLat) || !Number.isFinite(minLng)) return null;
+  return [
+    [minLat, minLng],
+    [maxLat, maxLng],
+  ];
+}
+
+/** Minimal HTML escaping for popup/label content built from DB strings. */
 function esc(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -28,13 +51,13 @@ function esc(s: string): string {
 }
 
 /**
- * City map (Phase 9 + JamCity restyle): Leaflet + OSM tiles (no API key),
- * showing only the built-up area of the city — the admin boundary fits the
- * view at high zoom (residential outline), falling back to the marker cluster
- * and finally a circle around the center. Above the canvas sits the JamCity
- * category bar (top-right): picking a category shows only that category's
- * pins and re-zooms onto them. The library loads dynamically so SSR/jest
- * never touch `window`.
+ * City map (Phase 9 + JamCity restyle): Leaflet + OSM tiles (no API key).
+ * The view always frames the whole city (admin boundary when present,
+ * otherwise a wide zoom over the pins) — there is no decorative circle.
+ * Every pin carries its category emoji; zooming in past level 15 reveals the
+ * business name above the pin. Above the canvas sits the JamCity category bar
+ * (top-right): picking a category shows only that category's pins and re-zooms
+ * onto them. The library loads dynamically so SSR/jest never touch `window`.
  */
 export function CityMap({ data }: CityMapProps) {
   const holder = useRef<HTMLDivElement>(null);
@@ -97,19 +120,28 @@ export function CityMap({ data }: CityMapProps) {
         city.latitude !== null && city.longitude !== null ? [city.latitude, city.longitude] : null;
       if (!center && businesses.length === 0) return; // nowhere to look — handled by parent
 
+      const polygon = asPolygon(city.boundary);
+      // bounds of the admin outline, computed before the map exists
+      const outline = polygon ? boundsOfPolygon(polygon.coordinates) : null;
+
+      // stay inside the city — no endless empty countryside
+      const maxBounds: [[number, number], [number, number]] | undefined = outline
+        ? [
+            [outline[0][0] - 0.1, outline[0][1] - 0.1],
+            [outline[1][0] + 0.1, outline[1][1] + 0.1],
+          ]
+        : center
+          ? [
+              [center[0] - 0.4, center[1] - 0.4],
+              [center[0] + 0.4, center[1] + 0.4],
+            ]
+          : undefined;
+
       map = L.map(holder.current, {
         scrollWheelZoom: false,
         zoomControl: true,
-        // stay inside the city — no endless empty countryside
         maxBoundsViscosity: 0.6,
-        ...(center
-          ? {
-              maxBounds: [
-                [center[0] - 0.3, center[1] - 0.3],
-                [center[0] + 0.3, center[1] + 0.3],
-              ] as [[number, number], [number, number]],
-            }
-          : {}),
+        ...(maxBounds ? { maxBounds } : {}),
       });
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -125,22 +157,25 @@ export function CityMap({ data }: CityMapProps) {
         dashArray: '6 5',
       } as const;
 
-      const polygon = asPolygon(city.boundary);
       let outlineBounds: import('leaflet').LatLngBounds | null = null;
       if (polygon) {
-        const outline = L.geoJSON(polygon as unknown as GeoJSON.Polygon, { style }).addTo(map);
-        if (outline.getBounds().isValid()) outlineBounds = outline.getBounds();
-      } else if (center) {
-        L.circle(center, { radius: 3500, ...style }).addTo(map);
+        const drawn = L.geoJSON(polygon as unknown as GeoJSON.Polygon, { style }).addTo(map);
+        if (drawn.getBounds().isValid()) outlineBounds = drawn.getBounds();
       }
+      // no boundary → no decorative circle; the pins below define the view
 
       for (const b of shown) {
         const gold = b.subscriptionTier === 'GOLD';
+        // category emoji instead of a plain dot — the pin says what it is
         const icon = L.divIcon({
           className: 'map-pin-wrap',
-          html: `<span class="map-pin${gold ? ' map-pin--gold' : ''}"><span class="map-pin__dot"></span></span>`,
-          iconSize: [24, 30],
-          iconAnchor: [12, 26],
+          html:
+            `<span class="map-pin map-pin--cat${gold ? ' map-pin--gold' : ''}">` +
+            `<span class="map-pin__icon">${esc(b.category.icon ?? '◆')}</span>` +
+            `<span class="map-pin__name">${esc(b.name)}</span>` +
+            `</span>`,
+          iconSize: [34, 34],
+          iconAnchor: [17, 17],
         });
         const popup =
           `<div class="map-popup">` +
@@ -153,18 +188,35 @@ export function CityMap({ data }: CityMapProps) {
           .bindPopup(popup);
       }
 
-      // ---- view fit: zoom into the built-up area, not the whole region ----
-      if (shown.length === 1) {
-        // a single (category) result: deep residential zoom onto it
-        map.setView([shown[0].latitude, shown[0].longitude], 17);
-      } else if (shown.length > 1) {
-        const bounds = L.latLngBounds(shown.map((b) => [b.latitude, b.longitude] as [number, number]));
-        map.fitBounds(bounds, { padding: [26, 26], maxZoom: 16 });
+      // deep zoom → the business names above their pins become visible
+      const syncZoom = () => {
+        holder.current?.classList.toggle('is-zoomed', map!.getZoom() >= 16);
+      };
+      map.on('zoomend', syncZoom);
+      syncZoom();
+
+      // ---- view fit: the whole city first; a category filter zooms to its pins ----
+      const pins = shown.map((b) => [b.latitude, b.longitude] as [number, number]);
+      if (activeCat) {
+        if (shown.length === 1) {
+          map.setView(pins[0], 17); // single (category) result: deep residential zoom
+        } else if (shown.length > 1) {
+          map.fitBounds(L.latLngBounds(pins), { padding: [26, 26], maxZoom: 15 });
+        } else if (outlineBounds) {
+          map.fitBounds(outlineBounds, { padding: [20, 20], maxZoom: 15 }); // category with no pins: the outline
+        } else if (center) {
+          map.setView(center, 12);
+        }
       } else if (outlineBounds) {
-        // category with no pins still shows the residential outline
-        map.fitBounds(outlineBounds, { padding: [20, 20], maxZoom: 16 });
+        // whole city boundary in frame
+        map.fitBounds(outlineBounds, { padding: [24, 24], maxZoom: 15 });
+      } else if (pins.length > 1) {
+        // no boundary yet: keep a town-wide zoom so the whole area reads at once
+        map.fitBounds(L.latLngBounds(pins), { padding: [56, 56], maxZoom: 13 });
+      } else if (pins.length === 1) {
+        map.setView(pins[0], 14);
       } else if (center) {
-        map.setView(center, 13); // circle fallback: town-scale zoom
+        map.setView(center, 12);
       }
     })();
 
@@ -234,10 +286,16 @@ export function CityMap({ data }: CityMapProps) {
       <div className="city-map__canvas" ref={holder} role="application" aria-label="نقشه شهر" />
       <div className="city-map__legend">
         <span className="city-map__legend-item">
-          <span className="map-pin map-pin--gold map-pin--inline" aria-hidden /> کسب‌وکار طلایی
+          <span className="map-pin map-pin--cat map-pin--gold map-pin--legend" aria-hidden>
+            <span className="map-pin__icon">◆</span>
+          </span>{' '}
+          کسب‌وکار طلایی
         </span>
         <span className="city-map__legend-item">
-          <span className="map-pin map-pin--inline" aria-hidden /> کسب‌وکار نقره‌ای/معمولی
+          <span className="map-pin map-pin--cat map-pin--legend" aria-hidden>
+            <span className="map-pin__icon">◆</span>
+          </span>{' '}
+          کسب‌وکار نقره‌ای/معمولی
         </span>
         <span className="city-map__legend-item city-map__legend-item--muted">🗺 نقشه: OpenStreetMap</span>
       </div>

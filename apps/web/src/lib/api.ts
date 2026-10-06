@@ -24,6 +24,7 @@ import type {
   ShowcaseItem,
   Tokens,
   UploadedImage,
+  VisitStats,
   WallFeed,
   WallPost,
 } from './types';
@@ -274,6 +275,20 @@ export async function getMySubscriptions(): Promise<MySubscription[]> {
 
 export async function getAdminOverview(): Promise<AdminOverview> {
   return api.get<AdminOverview>('/admin/overview');
+}
+
+/** Site visits (daily / monthly / yearly) for the admin panel. */
+export async function getAdminVisits(): Promise<VisitStats> {
+  return api.get<VisitStats>('/admin/analytics/visits');
+}
+
+/** Visit beacon — fired once per page load; failures are ignored. */
+export async function recordVisit(): Promise<void> {
+  try {
+    await api.post<{ ok: true }>('/analytics/visit', {});
+  } catch {
+    // analytics must never break the page
+  }
 }
 
 export async function getAdminAds(status: string): Promise<QueueAd[]> {

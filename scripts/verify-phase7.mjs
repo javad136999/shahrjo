@@ -119,8 +119,10 @@ const plansView = read('apps/web/src/components/plans-view.tsx');
 for (const marker of ['getTokens', 'redirectTo', '/login?next=/plans', 'checkoutPlan', 'payUrl']) {
   if (!plansView.includes(marker)) { console.error(`WEB: plans view missing ${marker}`); fail++; }
 }
-const headerPills = read('apps/web/src/components/header-pills.tsx');
-if (!headerPills.includes('/plans')) { console.error('WEB: header must offer the subscription entry'); fail++; }
+// The subscription entry lives on the golden showcase (the header itself
+// was slimmed down to news + city + submit).
+const showcaseMarquee = read('apps/web/src/components/showcase-marquee.tsx');
+if (!showcaseMarquee.includes('/plans')) { console.error('WEB: showcase must offer the subscription entry'); fail++; }
 const resultPage = read('apps/web/src/app/plans/result/page.tsx');
 if (!resultPage.includes('useSearchParams')) { console.error('WEB: result page must read the callback status'); fail++; }
 

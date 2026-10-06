@@ -12,7 +12,13 @@ jest.mock('leaflet', () => {
     layer.getBounds = jest.fn(() => ({ isValid: () => false }));
     return layer;
   };
-  const mapInstance = { setView: jest.fn(), fitBounds: jest.fn(), remove: jest.fn() };
+  const mapInstance = {
+    setView: jest.fn(),
+    fitBounds: jest.fn(),
+    remove: jest.fn(),
+    on: jest.fn(),
+    getZoom: jest.fn(() => 12),
+  };
   return {
     map: jest.fn(() => mapInstance),
     tileLayer: jest.fn(() => makeLayer()),
@@ -69,8 +75,8 @@ describe('CityMap', () => {
     const { unmount } = render(<CityMap data={data} />);
     await waitFor(() => expect(leaflet.map).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(leaflet.marker).toHaveBeenCalledTimes(2));
-    // city center fallback (no boundary) draws the circle preview
-    expect(leaflet.circle).toHaveBeenCalledTimes(1);
+    // no decorative circle without a boundary — the pins define the view
+    expect(leaflet.circle).not.toHaveBeenCalled();
     unmount();
     expect(leaflet.map.mock.results[0].value.remove).toHaveBeenCalled();
   });
@@ -87,6 +93,8 @@ describe('CityMap', () => {
     render(<CityMap data={bounded} />);
     await waitFor(() => expect(leaflet.geoJSON).toHaveBeenCalledTimes(1));
     expect(leaflet.circle).not.toHaveBeenCalled();
+    // whole boundary in frame
+    await waitFor(() => expect(leaflet.map.mock.results[0].value.fitBounds).toHaveBeenCalled());
   });
 
   it('escapes HTML in popup content', async () => {
@@ -98,6 +106,35 @@ describe('CityMap', () => {
     const popup = leaflet.marker.mock.results[1].value.bindPopup.mock.calls[0][0] as string;
     expect(popup).toContain('&lt;script&gt;');
     expect(popup).not.toContain('<script>');
+  });
+
+  it('gives every pin its category icon and a (hidden) business-name label', async () => {
+    const leaflet = require('leaflet');
+    render(<CityMap data={data} />);
+    await waitFor(() => expect(leaflet.marker).toHaveBeenCalledTimes(2));
+    const icon = leaflet.divIcon.mock.calls[1][0] as { html: string };
+    expect(icon.html).toContain('map-pin--cat');
+    expect(icon.html).toContain('☕'); // category emoji, not a plain dot
+    expect(icon.html).toContain('map-pin__name');
+    expect(icon.html).toContain('&lt;script&gt;'); // label escapes DB strings too
+    expect(icon.html).not.toContain('<script>');
+  });
+
+  it('reveals the business names only once the user zooms in', async () => {
+    const leaflet = require('leaflet');
+    const { container } = render(<CityMap data={data} />);
+    await waitFor(() => expect(leaflet.map).toHaveBeenCalledTimes(1));
+    const canvas = container.querySelector('.city-map__canvas') as HTMLElement;
+    const instance = leaflet.map.mock.results[0].value;
+    const zoomHandler = instance.on.mock.calls.find((c: unknown[]) => c[0] === 'zoomend')[1] as () => void;
+
+    expect(canvas.classList.contains('is-zoomed')).toBe(false);
+    instance.getZoom.mockReturnValue(16);
+    zoomHandler();
+    expect(canvas.classList.contains('is-zoomed')).toBe(true);
+    instance.getZoom.mockReturnValue(14);
+    zoomHandler();
+    expect(canvas.classList.contains('is-zoomed')).toBe(false);
   });
 
   it('shows the category bar above the map (JamCity-style, top-right)', async () => {

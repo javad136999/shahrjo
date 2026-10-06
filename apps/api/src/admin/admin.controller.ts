@@ -5,6 +5,7 @@ import { CurrentUser, RequirePermissions } from '../common/decorators';
 // design:paramtypes and ValidationPipe would never run on these bodies.
 import { AdminService, BoundaryDto, BusinessDecisionDto, DecisionDto } from './admin.service';
 import { UploadsService } from '../uploads/uploads.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 /**
  * Admin panel API (Phase 8). Every route carries @RequirePermissions so the
@@ -16,6 +17,7 @@ export class AdminController {
   constructor(
     private readonly admin: AdminService,
     private readonly uploads: UploadsService,
+    private readonly analytics: AnalyticsService,
   ) {}
 
   /** Queue counters for the panel home. */
@@ -23,6 +25,13 @@ export class AdminController {
   @RequirePermissions('dashboard.view')
   overview(@CurrentUser() user: User) {
     return this.admin.overview(user);
+  }
+
+  /** Site visits: daily (today + last 30 days), monthly, yearly — Phase 13. */
+  @Get('analytics/visits')
+  @RequirePermissions('dashboard.view')
+  visits() {
+    return this.analytics.stats();
   }
 
   /** Ad moderation queue: ?status=PENDING|APPROVED|REJECTED (default PENDING). */

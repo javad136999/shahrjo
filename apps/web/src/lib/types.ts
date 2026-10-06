@@ -162,6 +162,23 @@ export interface AdminOverview {
   activeSubscriptions: number;
 }
 
+/** Site visits (Phase 13): one point per day / month / year bucket. */
+export interface VisitPoint {
+  key: string; // 2026-10-07 | 2026-10 | 2026
+  visits: number;
+}
+
+export interface VisitSeries {
+  total: number; // today / this month / this year
+  series: VisitPoint[]; // last 30 days / 12 months / 3 years
+}
+
+export interface VisitStats {
+  daily: VisitSeries;
+  monthly: VisitSeries;
+  yearly: VisitSeries;
+}
+
 export interface QueueAd {
   id: number;
   title: string;

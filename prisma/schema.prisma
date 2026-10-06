@@ -823,3 +823,15 @@ model Media {
   @@index([deletedAt])
   @@map("media")
 }
+
+// ================= Analytics =================
+
+// One row per Iranian calendar day. Daily rows are the single source of
+// truth: monthly/yearly figures are summed from them in the admin panel.
+model SiteVisit {
+  day       String   @id @db.VarChar(10) // YYYY-MM-DD (Asia/Tehran)
+  visits    Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("site_visits")
+}

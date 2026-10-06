@@ -97,7 +97,9 @@ const adCategories = [
   { name: 'سایر', slug: 'other', icon: '✨', color: '#6b7280' },
 ];
 
-// 48 business categories (JamCity-aligned: name + emoji, familiar UX)
+// Business categories (JamCity-aligned: name + emoji, familiar UX).
+// Deliberately broad: every trade a real city has, so owners always find
+// their own line of business when registering.
 const businessCategories: { name: string; slug: string; icon: string }[] = [
   { name: 'رستوران', slug: 'restaurant', icon: '🍽️' },
   { name: 'کافه', slug: 'cafe', icon: '☕' },
@@ -145,6 +147,110 @@ const businessCategories: { name: string; slug: string; icon: string }[] = [
   { name: 'خدمات عمومی', slug: 'services', icon: '🛠️' },
   { name: 'فروشگاه', slug: 'shop', icon: '🛍️' },
   { name: 'تعمیرگاه', slug: 'repair', icon: '🔧' },
+  // ---- expansion: cover every trade a city actually has ----
+  // food & drink
+  { name: 'سفره خانه', slug: 'traditional_eatery', icon: '🍲' },
+  { name: 'ساندویچی', slug: 'sandwich_shop', icon: '🥪' },
+  { name: 'پیتزا', slug: 'pizzeria', icon: '🍕' },
+  { name: 'کبابی', slug: 'kabab_house', icon: '🍢' },
+  { name: 'رستوران دریایی', slug: 'seafood_restaurant', icon: '🦐' },
+  { name: 'رستوران گیاهی', slug: 'vegetarian_restaurant', icon: '🥦' },
+  { name: 'قنادی و شیرینی', slug: 'confectionery', icon: '🍰' },
+  { name: 'نان بربری و تنوری', slug: 'traditional_bread', icon: '🫓' },
+  { name: 'آبمیوه و بستنی', slug: 'juice_bar', icon: '🥤' },
+  { name: 'قهوه‌خانه', slug: 'coffeehouse', icon: '🫖' },
+  { name: 'چایخانه', slug: 'teahouse', icon: '🍵' },
+  { name: 'کیترینگ و مجالس', slug: 'catering', icon: '🍽️' },
+  // food retail
+  { name: 'لبنیاتی', slug: 'dairy_shop', icon: '🥛' },
+  { name: 'سبزی فروشی', slug: 'greengrocer', icon: '🥬' },
+  { name: 'خواروبار', slug: 'grocery_store', icon: '🥡' },
+  { name: 'عطاری', slug: 'herbalist', icon: '🌿' },
+  { name: 'عسل و محصولات طبیعی', slug: 'honey_shop', icon: '🍯' },
+  { name: 'محصولات ارگانیک', slug: 'organic_store', icon: '🥗' },
+  { name: 'مرغ و تخم‌مرغ', slug: 'poultry_shop', icon: '🐔' },
+  // education & training
+  { name: 'آموزشگاه زبان', slug: 'language_school', icon: '🗣️' },
+  { name: 'آموزشگاه موسیقی', slug: 'music_school', icon: '🎵' },
+  { name: 'آموزشگاه هنری', slug: 'art_school', icon: '🎨' },
+  { name: 'کلاس کنکور و تقویتی', slug: 'tutoring_center', icon: '🎓' },
+  { name: 'مرکز فنی و حرفه‌ای', slug: 'vocational_training', icon: '🧑‍🏫' },
+  { name: 'آموزشگاه رانندگی', slug: 'driving_school', icon: '🚦' },
+  // retail & shops
+  { name: 'لوازم‌التحریر', slug: 'stationery_shop', icon: '✏️' },
+  { name: 'کتاب‌فروشی', slug: 'bookstore', icon: '📖' },
+  { name: 'اسباب‌بازی', slug: 'toy_store', icon: '🧸' },
+  { name: 'لباس بچه و نوزاد', slug: 'baby_store', icon: '👶' },
+  { name: 'مادر و کودک', slug: 'maternity_store', icon: '🍼' },
+  { name: 'خیاطی', slug: 'tailor', icon: '🧵' },
+  { name: 'عطر و ادکلن', slug: 'perfume_shop', icon: '🌸' },
+  { name: 'اثاثیه دست‌دوم', slug: 'second_hand_store', icon: '♻️' },
+  // beauty & personal
+  { name: 'آرایشگاه مردانه', slug: 'barber_shop', icon: '💈' },
+  { name: 'اسپا و اپیلاسیون', slug: 'spa_salon', icon: '🧖' },
+  { name: 'میکاپ و ناخن', slug: 'nail_and_makeup', icon: '💅' },
+  { name: 'عینک‌فروشی', slug: 'eyeglass_shop', icon: '🕶️' },
+  // tech & services
+  { name: 'تعمیر موبایل', slug: 'phone_repair', icon: '🛠️' },
+  { name: 'شارژ و لوازم جانبی موبایل', slug: 'mobile_accessories', icon: '📶' },
+  { name: 'دوربین و تجهیزات حفاظتی', slug: 'security_camera', icon: '📹' },
+  { name: 'اینترنت و شبکه', slug: 'internet_services', icon: '🌐' },
+  { name: 'نمایندگی اپراتور موبایل', slug: 'telecom_agent', icon: '📡' },
+  // finance & legal
+  { name: 'صرافی', slug: 'currency_exchange', icon: '💱' },
+  { name: 'بیمه', slug: 'insurance_office', icon: '🛡️' },
+  { name: 'دفتر خدمات قضایی', slug: 'legal_services', icon: '⚖️' },
+  { name: 'وکالت', slug: 'law_office', icon: '👨‍⚖️' },
+  { name: 'دفاتر پیشخوان', slug: 'service_office', icon: '🏛️' },
+  // health
+  { name: 'کلینیک و مطب', slug: 'medical_clinic', icon: '🏥' },
+  { name: 'فیزیوتراپی', slug: 'physiotherapy', icon: '💆' },
+  { name: 'دامپزشکی', slug: 'veterinary_clinic', icon: '🐕' },
+  { name: 'مراقبت و پرستاری در منزل', slug: 'home_care', icon: '🤱' },
+  // sport & leisure
+  { name: 'استخر و مجموعه آبی', slug: 'swimming_pool', icon: '🏊' },
+  { name: 'لوازم ورزشی', slug: 'sports_store', icon: '🏅' },
+  { name: 'دوچرخه‌فروشی', slug: 'bicycle_shop', icon: '🚲' },
+  { name: 'باشگاه بیلیارد', slug: 'billiard_hall', icon: '🎱' },
+  { name: 'گیم‌نت', slug: 'gaming_cafe', icon: '🎮' },
+  // construction & home
+  { name: 'ابزار فروشی', slug: 'hardware_tools', icon: '🪚' },
+  { name: 'آهن و فلزات', slug: 'metals_trade', icon: '🏭' },
+  { name: 'رنگ و ابزار نقاشی', slug: 'paint_shop', icon: '🖌️' },
+  { name: 'درب و پنجره', slug: 'doors_windows', icon: '🚪' },
+  { name: 'کابینت و ام‌دی‌اف', slug: 'cabinet_shop', icon: '🪵' },
+  { name: 'قالی و موکت', slug: 'carpet_shop', icon: '🧶' },
+  { name: 'کفپوش و پارکت', slug: 'flooring_shop', icon: '🟫' },
+  { name: 'کاغذ دیواری', slug: 'wallpaper_shop', icon: '🖼️' },
+  { name: 'بنایی و بازسازی', slug: 'masonry', icon: '🧱' },
+  { name: 'پیمانکاری ساختمان', slug: 'construction_contractor', icon: '🏗️' },
+  { name: 'نقشه‌برداری و مهندسی', slug: 'survey_office', icon: '📐' },
+  { name: 'شیشه و آینه', slug: 'glass_shop', icon: '🪞' },
+  { name: 'تابلوسازی', slug: 'sign_making', icon: '🪧' },
+  { name: 'کلید و پریز و لوازم برقی', slug: 'electrical_shop', icon: '⚡' },
+  { name: 'نصب و سرویس کولر', slug: 'ac_service', icon: '❄️' },
+  { name: 'سرویس پکیج و شوفاژ', slug: 'heating_service', icon: '🌡️' },
+  { name: 'تعمیر لوازم خانگی', slug: 'appliance_repair', icon: '🧯' },
+  { name: 'نمایندگی لوازم خانگی', slug: 'appliance_dealer', icon: '🏪' },
+  { name: 'مبل‌شویی و رویه‌کوبی', slug: 'upholstery_service', icon: '🧽' },
+  { name: 'تعمیر اثاثیه', slug: 'furniture_repair', icon: '🔨' },
+  { name: 'نظافت منزل و محل کار', slug: 'cleaning_service', icon: '🧼' },
+  { name: 'سمپاشی و مبارزه با آفات', slug: 'pest_control', icon: '🐜' },
+  // transport
+  { name: 'باربری و اتوبار', slug: 'moving_company', icon: '📦' },
+  { name: 'پیک و پیک‌موتوری', slug: 'courier_service', icon: '🛵' },
+  { name: 'تاکسی و سرویس مدرسه', slug: 'taxi_service', icon: '🚕' },
+  { name: 'پمپ بنزین و گاز', slug: 'gas_station', icon: '⛽' },
+  { name: 'صافکاری و رنگ خودرو', slug: 'auto_body_shop', icon: '🚘' },
+  { name: 'تعویض روغن و فیلتر', slug: 'oil_change_service', icon: '🛢️' },
+  { name: 'نمایندگی خودرو', slug: 'car_agency', icon: '🏁' },
+  // creative & agency
+  { name: 'طراحی گرافیک', slug: 'graphic_design', icon: '🖥️' },
+  { name: 'فیلم‌برداری و آتلیه عروسی', slug: 'wedding_video', icon: '🎥' },
+  { name: 'ترجمه زبان', slug: 'translation_office', icon: '🔤' },
+  // agri
+  { name: 'گلخانه و فروش نهال', slug: 'plant_nursery', icon: '🌱' },
+  { name: 'لوازم کشاورزی', slug: 'farm_supply', icon: '🚜' },
   { name: 'سایر', slug: 'other', icon: '✨' },
 ];
 
@@ -224,7 +330,7 @@ async function main(): Promise<void> {
   }
   await prisma.adCategory.deleteMany({ where: { slug: { notIn: adCategories.map((c) => c.slug) } } });
 
-  // Business categories (48, JamCity-aligned)
+  // Business categories (JamCity-aligned + full local-trade coverage)
   for (const c of businessCategories) {
     await prisma.businessCategory.upsert({ where: { slug: c.slug }, update: { name: c.name, icon: c.icon }, create: c });
   }

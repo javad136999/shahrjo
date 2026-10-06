@@ -12,6 +12,7 @@ import {
   getAdminBusinesses,
   getAdminOverview,
   getAdminSubscriptions,
+  getAdminVisits,
   getProfile,
   getTokens,
   rejectAdminAd,
@@ -19,10 +20,17 @@ import {
   rejectAdminSubscription,
 } from '@/lib/api';
 import { formatDate } from '@/lib/format';
-import type { AdminOverview, QueueAd, QueueBusiness, QueueSubscription } from '@/lib/types';
+import type { AdminOverview, QueueAd, QueueBusiness, QueueSubscription, VisitStats } from '@/lib/types';
 
 type Tab = 'ads' | 'businesses' | 'subscriptions';
+type VisitPeriod = 'daily' | 'monthly' | 'yearly';
 type QueueStatus = { ads: string; businesses: string; subscriptions: string };
+
+const VISIT_PERIODS: { key: VisitPeriod; label: string }[] = [
+  { key: 'daily', label: 'روزانه' },
+  { key: 'monthly', label: 'ماهانه' },
+  { key: 'yearly', label: 'سالانه' },
+];
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: 'ads', label: 'آگهی‌ها', icon: '📝' },
@@ -53,6 +61,8 @@ export function AdminPanel() {
   const router = useRouter();
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [visits, setVisits] = useState<VisitStats | null>(null);
+  const [visitPeriod, setVisitPeriod] = useState<VisitPeriod>('daily');
   const [tab, setTab] = useState<Tab>('ads');
   const [status, setStatus] = useState<QueueStatus>({ ads: 'PENDING', businesses: 'PENDING', subscriptions: 'PENDING_REVIEW' });
   const [ads, setAds] = useState<QueueAd[]>([]);
@@ -68,6 +78,14 @@ export function AdminPanel() {
       setOverview(await getAdminOverview());
     } catch {
       // non-fatal: counters are cosmetic
+    }
+  }, []);
+
+  const loadVisits = useCallback(async () => {
+    try {
+      setVisits(await getAdminVisits());
+    } catch {
+      // non-fatal: analytics are informational
     }
   }, []);
 
@@ -98,7 +116,7 @@ export function AdminPanel() {
         const isAdmin = me.roles.some((r) => r !== 'USER');
         setAllowed(isAdmin);
         if (isAdmin) {
-          await loadOverview();
+          await Promise.all([loadOverview(), loadVisits()]);
           await loadQueue('ads', 'PENDING');
         }
       } catch {
@@ -108,7 +126,7 @@ export function AdminPanel() {
     return () => {
       alive = false;
     };
-  }, [router, loadOverview, loadQueue]);
+  }, [router, loadOverview, loadVisits, loadQueue]);
 
   async function switchTab(next: Tab) {
     setTab(next);
@@ -172,6 +190,11 @@ export function AdminPanel() {
   const queue: (QueueAd | QueueBusiness | QueueSubscription)[] =
     tab === 'ads' ? ads : tab === 'businesses' ? businesses : subs;
 
+  // visit chart of the selected period (30 days / 12 months / 3 years)
+  const visitSeries = visits ? visits[visitPeriod].series : [];
+  const visitMax = Math.max(1, ...visitSeries.map((p) => p.visits));
+  const visitSum = visitSeries.reduce((acc, p) => acc + p.visits, 0);
+
   return (
     <div className="ad-page" data-testid="admin-panel">
       <section className="plans-hero">
@@ -202,6 +225,64 @@ export function AdminPanel() {
             <span className="muted small">اشتراک در انتظار</span>
           </div>
         </div>
+      )}
+
+      {visits && (
+        <section className="admin-visits" data-testid="admin-visits">
+          <div className="admin-visits__head">
+            <h2>📊 بازدید سایت</h2>
+            <div className="admin-visits__periods" role="group" aria-label="بازه آمار بازدید">
+              {VISIT_PERIODS.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  aria-pressed={visitPeriod === p.key}
+                  className={`admin-visits__period${visitPeriod === p.key ? ' is-active' : ''}`}
+                  data-testid={`visit-period-${p.key}`}
+                  onClick={() => setVisitPeriod(p.key)}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="stats-row admin-visits__totals">
+            <div className="stat-card">
+              <span aria-hidden>📅</span>
+              <strong>{visits.daily.total.toLocaleString('fa-IR')}</strong>
+              <span className="muted small">بازدید امروز</span>
+            </div>
+            <div className="stat-card">
+              <span aria-hidden>🗓️</span>
+              <strong>{visits.monthly.total.toLocaleString('fa-IR')}</strong>
+              <span className="muted small">بازدید این ماه</span>
+            </div>
+            <div className="stat-card">
+              <span aria-hidden>📆</span>
+              <strong>{visits.yearly.total.toLocaleString('fa-IR')}</strong>
+              <span className="muted small">بازدید امسال</span>
+            </div>
+          </div>
+          <div
+            className="admin-visits__chart"
+            role="img"
+            aria-label={`نمودار بازدید ${VISIT_PERIODS.find((p) => p.key === visitPeriod)?.label ?? ''}`}
+            data-testid="admin-visits-chart"
+          >
+            {visitSeries.map((point) => (
+              <span
+                key={point.key}
+                className={`admin-visits__bar${point.visits === 0 ? ' is-empty' : ''}`}
+                data-testid={`visit-bar-${point.key}`}
+                style={{ height: `${Math.max(3, Math.round((point.visits / visitMax) * 100))}%` }}
+                title={`${point.key}: ${point.visits.toLocaleString('fa-IR')} بازدید`}
+              />
+            ))}
+          </div>
+          <p className="muted small admin-visits__summary" data-testid="admin-visits-summary">
+            مجموع {visitSum.toLocaleString('fa-IR')} بازدید · بیشترین {visitMax.toLocaleString('fa-IR')} · {visitSeries.length.toLocaleString('fa-IR')} بازه
+          </p>
+        </section>
       )}
 
       <div className="admin-tabs" role="tablist">

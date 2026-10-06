@@ -10,6 +10,7 @@ jest.mock('next/navigation', () => ({
 const mockGetTokens = jest.fn();
 const mockGetProfile = jest.fn();
 const mockGetAdminOverview = jest.fn();
+const mockGetAdminVisits = jest.fn();
 const mockGetAdminAds = jest.fn();
 const mockGetAdminBusinesses = jest.fn();
 const mockGetAdminSubscriptions = jest.fn();
@@ -31,6 +32,7 @@ jest.mock('@/lib/api', () => ({
   getTokens: () => mockGetTokens(),
   getProfile: () => mockGetProfile(),
   getAdminOverview: () => mockGetAdminOverview(),
+  getAdminVisits: () => mockGetAdminVisits(),
   getAdminAds: (status: string) => mockGetAdminAds(status),
   getAdminBusinesses: (status: string) => mockGetAdminBusinesses(status),
   getAdminSubscriptions: (status: string) => mockGetAdminSubscriptions(status),
@@ -90,6 +92,12 @@ const overview = {
   activeSubscriptions: 0,
 };
 
+const visitStats = {
+  daily: { total: 12, series: [ { key: '2026-10-06', visits: 8 }, { key: '2026-10-07', visits: 12 } ] },
+  monthly: { total: 140, series: [ { key: '2026-09', visits: 128 }, { key: '2026-10', visits: 140 } ] },
+  yearly: { total: 900, series: [ { key: '2025', visits: 400 }, { key: '2026', visits: 900 } ] },
+};
+
 describe('AdminPanel', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -97,6 +105,7 @@ describe('AdminPanel', () => {
     mockGetTokens.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
     mockGetProfile.mockResolvedValue(adminProfile);
     mockGetAdminOverview.mockResolvedValue(overview);
+    mockGetAdminVisits.mockResolvedValue(visitStats);
     mockGetAdminAds.mockResolvedValue([pendingAd]);
     mockGetAdminBusinesses.mockResolvedValue([]);
     mockGetAdminSubscriptions.mockResolvedValue([pendingSub]);
@@ -187,6 +196,26 @@ describe('AdminPanel', () => {
 
     fireEvent.click(screen.getByTestId('tab-businesses'));
     expect(await screen.findByTestId('empty-queue')).toHaveTextContent('در این فهرست موردی نیست');
+  });
+
+  it('shows site visits daily, monthly and yearly with a period switch', async () => {
+    render(<AdminPanel />);
+
+    const panel = await screen.findByTestId('admin-visits');
+    expect(panel).toHaveTextContent('بازدید امروز');
+    expect(panel).toHaveTextContent('بازدید این ماه');
+    expect(panel).toHaveTextContent('بازدید امسال');
+    expect(panel).toHaveTextContent('۱۲'); // today
+    expect(panel).toHaveTextContent('۱۴۰'); // this month
+    expect(panel).toHaveTextContent('۹۰۰'); // this year
+    expect(mockGetAdminVisits).toHaveBeenCalledTimes(1);
+    // daily bars by default (one per day key)
+    expect(screen.getByTestId('visit-bar-2026-10-07')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('visit-period-yearly'));
+    expect(screen.getByTestId('visit-period-yearly')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('visit-bar-2026')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-visits-summary')).toHaveTextContent('بازه');
   });
 
   it('surfaces API errors from a failed action', async () => {

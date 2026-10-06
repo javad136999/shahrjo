@@ -48,9 +48,13 @@ describe('HeaderPills', () => {
     expect(screen.getByTestId('header-submit-pill')).toHaveTextContent('ثبت آگهی');
   });
 
-  it('always offers the subscription entry', async () => {
+  it('keeps the header to news + city + submit (no subscription pill)', async () => {
     render(<HeaderPills />);
-    expect(await screen.findByTestId('header-plans-pill')).toHaveAttribute('href', '/plans');
-    expect(screen.getByTestId('header-plans-pill')).toHaveTextContent('اشتراک');
+    await screen.findByTestId('header-news-pill');
+    expect(screen.getByTestId('header-city-pill')).toBeInTheDocument();
+    expect(screen.getByTestId('header-submit-pill')).toBeInTheDocument();
+    // اشتراک was removed from the header — plans stay reachable via ویترین
+    expect(screen.queryByTestId('header-plans-pill')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /اشتراک/ })).not.toBeInTheDocument();
   });
 });

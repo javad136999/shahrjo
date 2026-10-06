@@ -32,6 +32,7 @@ const endpoints = [
   "@Post('cities/:id/boundary')",
   "@Get('storage/overview')",
   "@Post('storage/sweep')",
+  "@Get('analytics/visits')",
 ];
 for (const endpoint of endpoints) {
   if (!controller.includes(endpoint)) { console.error('MISSING endpoint:', endpoint); fail++; }

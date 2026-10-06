@@ -80,11 +80,12 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-height: 60px;
-  padding-top: 8px;
-  padding-bottom: 8px;
+  /* single row: brand + pills + session actions never wrap */
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-height: 46px;
+  padding-top: 5px;
+  padding-bottom: 5px;
 }
 
 /* ---------- pill buttons (header quick actions, hero actions) ---------- */
@@ -92,8 +93,19 @@ a:hover {
 .header-pills {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+/* compact sizing inside the header only (hero/showcase pills keep theirs) */
+.site-header .pill {
+  padding: 5px 10px;
+  font-size: 12.5px;
+  gap: 5px;
+}
+.site-header .btn {
+  padding: 5px 11px;
+  font-size: 12.5px;
 }
 
 .pill {
@@ -143,44 +155,47 @@ a:hover {
   border-color: rgb(14 122 95 / 25%);
 }
 
-@media (max-width: 430px) {
-  .header-pills .pill__label {
+@media (max-width: 760px) {
+  /* icons only — the city name stays as text so the header fits one row */
+  .header-pills .pill:not([data-testid='header-city-pill']) .pill__label {
     display: none;
   }
-  .header-pills .pill {
-    padding: 7px 10px;
+  .header-phone {
+    display: none;
   }
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-weight: 800;
-  font-size: 20px;
+  font-size: 17px;
   color: var(--text);
+  flex-shrink: 0;
 }
 .brand:hover {
   text-decoration: none;
 }
 .brand-mark {
-  font-size: 22px;
+  font-size: 18px;
 }
 
 .header-user {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 7px;
+  flex-shrink: 0;
 }
 .header-phone {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 12.5px;
 }
 
 .page {
   flex: 1;
-  padding-top: 28px;
-  padding-bottom: 48px;
+  padding-top: 18px;
+  padding-bottom: 40px;
 }
 
 .site-footer {
@@ -505,6 +520,13 @@ a:hover {
 
 /* ---------- dashboard (Phase 4) ---------- */
 
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
 .stat-card {
   display: flex;
   align-items: center;
@@ -529,57 +551,58 @@ a:hover {
 .dash-welcome {
   position: relative;
   text-align: center;
-  margin-bottom: 22px;
-  padding: 26px 18px 24px;
+  margin-bottom: 14px;
+  padding: 15px 14px 13px;
   border: 1px solid rgb(241 193 203 / 70%);
-  border-radius: 28px;
+  border-radius: 22px;
   background:
     radial-gradient(circle at 12% 110%, rgb(239 71 111 / 14%), transparent 34%),
     radial-gradient(circle at 96% 0%, rgb(220 171 66 / 16%), transparent 36%),
     linear-gradient(135deg, #fff 0%, #fff5f7 60%, #fff9e9 100%);
-  box-shadow: 0 18px 45px rgb(198 38 76 / 10%), inset 0 1px 0 #fff;
+  box-shadow: 0 12px 30px rgb(198 38 76 / 10%), inset 0 1px 0 #fff;
 }
 .dash-welcome h1 {
-  margin: 14px 0 0;
-  font-size: clamp(28px, 5.5vw, 44px);
+  margin: 8px 0 0;
+  font-size: clamp(19px, 3.4vw, 26px);
+  font-weight: 900;
 }
 
 /* Red entry to the city wall — pulses like a beating heart */
 .wall-cta {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 13px 26px;
+  gap: 6px;
+  padding: 8px 17px;
   border-radius: 999px;
   background: linear-gradient(90deg, #c6264c, #ef476f);
   color: #fff;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 900;
   text-decoration: none;
   white-space: nowrap;
-  box-shadow: 0 10px 26px rgb(198 38 76 / 35%);
+  box-shadow: 0 8px 20px rgb(198 38 76 / 32%);
   animation: wall-cta-beat 1.4s ease-in-out infinite;
 }
 .wall-cta:hover {
-  box-shadow: 0 14px 34px rgb(198 38 76 / 50%);
+  box-shadow: 0 11px 26px rgb(198 38 76 / 48%);
 }
 @keyframes wall-cta-beat {
   0%,
   100% {
     transform: scale(1);
-    box-shadow: 0 10px 26px rgb(198 38 76 / 30%);
+    box-shadow: 0 8px 20px rgb(198 38 76 / 28%);
   }
   12% {
-    transform: scale(1.06);
-    box-shadow: 0 14px 36px rgb(198 38 76 / 55%);
+    transform: scale(1.05);
+    box-shadow: 0 11px 28px rgb(198 38 76 / 52%);
   }
   24% {
     transform: scale(1);
-    box-shadow: 0 10px 26px rgb(198 38 76 / 30%);
+    box-shadow: 0 8px 20px rgb(198 38 76 / 28%);
   }
   36% {
-    transform: scale(1.035);
-    box-shadow: 0 12px 30px rgb(198 38 76 / 45%);
+    transform: scale(1.03);
+    box-shadow: 0 10px 24px rgb(198 38 76 / 42%);
   }
   48% {
     transform: scale(1);
@@ -602,9 +625,9 @@ a:hover {
 }
 
 .dash-section {
-  margin-bottom: 30px;
+  margin-bottom: 16px;
   text-align: right;
-  scroll-margin-top: 84px;
+  scroll-margin-top: 60px;
 }
 .dash-section__head {
   display: flex;
@@ -612,9 +635,9 @@ a:hover {
   gap: 10px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 8px 12px;
-  margin-bottom: 14px;
+  border-radius: 16px;
+  padding: 7px 11px;
+  margin-bottom: 10px;
   box-shadow: 0 8px 20px -18px rgb(21 59 45 / 45%);
 }
 .dash-section__title {
@@ -1420,6 +1443,76 @@ a.my-ads__item:hover {
   border: 1px solid rgb(14 122 95 / 30%);
 }
 
+/* ---- site-visit analytics (admin) ---- */
+.admin-visits {
+  margin-bottom: 18px;
+  padding: 14px 16px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 8px 20px -18px rgb(21 59 45 / 45%);
+}
+.admin-visits__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.admin-visits__head h2 {
+  margin: 0;
+  font-size: 17px;
+}
+.admin-visits__periods {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg, #f6faf7);
+}
+.admin-visits__period {
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 5px 13px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--muted);
+  cursor: pointer;
+}
+.admin-visits__period.is-active {
+  background: var(--brand);
+  color: #fff;
+}
+.admin-visits__totals {
+  margin-bottom: 10px;
+}
+.admin-visits__chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 84px;
+  padding: 8px 6px 0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgb(14 122 95 / 4%), transparent);
+  overflow: hidden;
+}
+.admin-visits__bar {
+  flex: 1;
+  min-width: 3px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--brand), rgb(14 122 95 / 55%));
+}
+.admin-visits__bar.is-empty {
+  background: rgb(21 59 45 / 12%);
+}
+.admin-visits__summary {
+  margin: 8px 0 0;
+}
+
 .admin-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -1532,11 +1625,11 @@ a.my-ads__item:hover {
 
 .showcase {
   position: relative;
-  margin-top: 18px;
+  margin-top: 12px;
   border: 1px solid var(--gold-line);
   border-radius: 18px;
   overflow: hidden;
-  padding: 14px 0 16px;
+  padding: 11px 0 13px;
   background:
     radial-gradient(900px 180px at 25% -60%, rgb(217 143 43 / 16%), transparent 65%),
     linear-gradient(180deg, #fffdf4, var(--surface) 70%);
@@ -1565,17 +1658,17 @@ a.my-ads__item:hover {
 .showcase__head {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 2px 16px 12px;
+  gap: 9px;
+  padding: 2px 14px 9px;
   flex-wrap: wrap;
 }
 
 .showcase__crown {
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
-  font-size: 24px;
+  width: 34px;
+  height: 34px;
+  font-size: 18px;
   border-radius: 14px;
   background: linear-gradient(145deg, var(--gold-soft), #ffe9ad);
   border: 1px solid var(--gold-line);
@@ -1600,7 +1693,7 @@ a.my-ads__item:hover {
 
 .showcase__titles h2 {
   margin: 0;
-  font-size: 19px;
+  font-size: 16.5px;
   background: linear-gradient(90deg, var(--gold-dark), var(--gold));
   -webkit-background-clip: text;
   background-clip: text;
@@ -1608,13 +1701,20 @@ a.my-ads__item:hover {
 }
 
 .showcase__titles p {
-  margin: 2px 0 0;
-  font-size: 13px;
+  margin: 1px 0 0;
+  font-size: 12px;
   color: var(--muted, #7c7a6f);
 }
 
 .showcase__cta {
   flex-shrink: 0;
+  padding: 5px 11px;
+  font-size: 12.5px;
+  gap: 5px;
+}
+.showcase__cta-icon {
+  font-size: 11px;
+  line-height: 1;
 }
 
 .showcase__viewport {
@@ -1862,6 +1962,60 @@ a.my-ads__item:hover {
 
 .map-pin--inline .map-pin__dot {
   inset: 2.5px;
+}
+
+/* round category pin: the emoji says what kind of business it is */
+.map-pin--cat {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--brand);
+  transform: none;
+  box-shadow: 0 3px 8px rgb(0 0 0 / 28%);
+  font-size: 15px;
+  line-height: 1;
+}
+.map-pin--cat.map-pin--gold {
+  background: #fffaf0;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgb(242 201 76 / 38%), 0 3px 8px rgb(0 0 0 / 25%);
+}
+.map-pin__icon {
+  font-size: 1em;
+  line-height: 1;
+}
+.map-pin--legend {
+  width: 15px;
+  height: 15px;
+  font-size: 8px;
+  border-width: 1.5px;
+  box-shadow: none;
+}
+
+/* business name above the pin — revealed once the user zooms in */
+.map-pin__name {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 7px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgb(255 255 255 / 96%);
+  color: var(--text);
+  font-size: 11.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  direction: rtl;
+  box-shadow: 0 4px 10px rgb(0 0 0 / 16%);
+  pointer-events: none;
+}
+.city-map__canvas.is-zoomed .map-pin__name {
+  display: block;
 }
 
 .map-pin-wrap {

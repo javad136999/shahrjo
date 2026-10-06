@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { BottomNav } from '@/components/bottom-nav';
 import { HeaderActions } from '@/components/header-actions';
 import { HeaderPills } from '@/components/header-pills';
+import { VisitBeacon } from '@/components/visit-beacon';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="container">شهرجو — پلتفرم شهری چندشهری 🇮🇷</div>
         </footer>
         <BottomNav />
+        <VisitBeacon />
       </body>
     </html>
   );
