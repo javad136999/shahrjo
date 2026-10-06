@@ -505,12 +505,6 @@ a:hover {
 
 /* ---------- dashboard (Phase 4) ---------- */
 
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 22px;
-}
 .stat-card {
   display: flex;
   align-items: center;
@@ -531,38 +525,80 @@ a:hover {
   font-size: 11.5px;
 }
 
-.dash-header {
+/* Compact welcome card: greeting + the beating-heart city wall entry */
+.dash-welcome {
+  position: relative;
   text-align: center;
   margin-bottom: 22px;
-  padding: 22px 18px 20px;
-  border: 1px solid rgb(21 126 87 / 18%);
+  padding: 26px 18px 24px;
+  border: 1px solid rgb(241 193 203 / 70%);
   border-radius: 28px;
   background:
-    radial-gradient(circle at 12% 110%, rgb(220 171 66 / 22%), transparent 31%),
-    radial-gradient(circle at 96% 0%, rgb(22 158 110 / 16%), transparent 36%),
-    linear-gradient(135deg, #fff 0%, #f4fbf6 60%, #fff9e9 100%);
-  box-shadow: 0 18px 45px rgb(22 105 73 / 10%), inset 0 1px 0 #fff;
+    radial-gradient(circle at 12% 110%, rgb(239 71 111 / 14%), transparent 34%),
+    radial-gradient(circle at 96% 0%, rgb(220 171 66 / 16%), transparent 36%),
+    linear-gradient(135deg, #fff 0%, #fff5f7 60%, #fff9e9 100%);
+  box-shadow: 0 18px 45px rgb(198 38 76 / 10%), inset 0 1px 0 #fff;
 }
-.dash-header .icon-tile {
-  margin: 0 auto 8px;
+.dash-welcome h1 {
+  margin: 14px 0 0;
+  font-size: clamp(28px, 5.5vw, 44px);
 }
-.dash-header h1 {
-  font-size: clamp(30px, 6vw, 46px);
-  margin: 6px 0 12px;
-}
-.dash-header__province {
-  color: var(--muted);
-  margin: 0;
-  display: flex;
+
+/* Red entry to the city wall — pulses like a beating heart */
+.wall-cta {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
+  padding: 13px 26px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #c6264c, #ef476f);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 900;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 10px 26px rgb(198 38 76 / 35%);
+  animation: wall-cta-beat 1.4s ease-in-out infinite;
 }
-.dash-header__actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
+.wall-cta:hover {
+  box-shadow: 0 14px 34px rgb(198 38 76 / 50%);
+}
+@keyframes wall-cta-beat {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 10px 26px rgb(198 38 76 / 30%);
+  }
+  12% {
+    transform: scale(1.06);
+    box-shadow: 0 14px 36px rgb(198 38 76 / 55%);
+  }
+  24% {
+    transform: scale(1);
+    box-shadow: 0 10px 26px rgb(198 38 76 / 30%);
+  }
+  36% {
+    transform: scale(1.035);
+    box-shadow: 0 12px 30px rgb(198 38 76 / 45%);
+  }
+  48% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wall-cta {
+    animation: none;
+  }
+}
+
+/* City news page (/city/<slug>/news) */
+.news-page__head {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.news-page__head h1 {
+  margin: 10px 0 6px;
+  font-size: clamp(24px, 5vw, 38px);
 }
 
 .dash-section {
@@ -1892,127 +1928,6 @@ a.my-ads__item:hover {
 
 /* ============ Phase 8b: city wall (دیوار شهر) ============ */
 
-/* JamCity-style rose hero card on the city panel */
-.wall-feature {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-top: 18px;
-  padding: 18px 20px;
-  border-radius: 28px;
-  border: 1px solid #f1c1cb;
-  background: #fff;
-  box-shadow: 0 16px 38px rgb(198 38 76 / 12%);
-}
-
-.wall-feature__blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(48px);
-  pointer-events: none;
-}
-
-.wall-feature__blob--1 {
-  top: -48px;
-  left: -40px;
-  width: 160px;
-  height: 160px;
-  background: rgb(255 217 225 / 70%);
-}
-
-.wall-feature__blob--2 {
-  right: -64px;
-  bottom: -64px;
-  width: 192px;
-  height: 192px;
-  background: rgb(255 232 174 / 55%);
-}
-
-.wall-feature__main {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  min-width: 0;
-  flex: 1;
-}
-
-.wall-feature__icon {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 56px;
-  height: 56px;
-  font-size: 28px;
-  border-radius: 18px;
-  background: linear-gradient(145deg, #ef476f, #c6264c);
-  box-shadow: 0 10px 24px rgb(198 38 76 / 28%);
-}
-
-.wall-feature__tags {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 4px;
-}
-
-.wall-feature__tag {
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: #c6264c;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.wall-feature__sub {
-  font-size: 11px;
-  font-weight: 700;
-  color: #bd6678;
-}
-
-.wall-feature__copy h2 {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 900;
-  color: #351d25;
-}
-
-.wall-feature__copy p {
-  margin: 6px 0 0;
-  max-width: 560px;
-  font-size: 13px;
-  line-height: 1.9;
-  color: #80636b;
-}
-
-.wall-feature__cta {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 13px 22px;
-  border-radius: 18px;
-  background: linear-gradient(90deg, #c6264c, #ef476f);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 900;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: transform 0.16s ease, box-shadow 0.16s ease;
-  box-shadow: 0 10px 24px rgb(198 38 76 / 25%);
-}
-
-.wall-feature__cta:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgb(198 38 76 / 35%);
-}
-
 /* --- wall page --- */
 
 .wall-page__head {
@@ -2280,11 +2195,7 @@ a.my-ads__item:hover {
 }
 
 @media (max-width: 640px) {
-  .wall-feature {
-    padding: 14px;
-    border-radius: 22px;
-  }
-  .wall-feature__cta {
+  .wall-cta {
     width: 100%;
     justify-content: center;
   }

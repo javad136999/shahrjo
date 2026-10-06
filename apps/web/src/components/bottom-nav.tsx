@@ -16,9 +16,9 @@ interface NavItem {
 
 /**
  * Mobile bottom navigation (JamCity-style): home, city news, the primary
- * action (submit an ad) and city businesses. Section links deep-link into the
- * city dashboard via #news / #businesses anchors; without a remembered city
- * they fall back to the city picker.
+ * action (submit an ad) and the city map (business pins). News has its own
+ * page (`/city/<slug>/news`); without a remembered city the entries fall
+ * back to the city picker.
  */
 export function BottomNav() {
   const pathname = usePathname();
@@ -41,20 +41,21 @@ export function BottomNav() {
   }, [pathname]);
 
   const cityBase = city ? `/city/${city.slug}` : '';
+  const isNewsPage = pathname.startsWith('/city/') && pathname.endsWith('/news');
   const items: NavItem[] = [
     { id: 'home', href: '/', icon: '🏠', label: 'خانه' },
-    { id: 'news', href: cityBase ? `${cityBase}#news` : '/', icon: '📰', label: 'اخبار' },
+    { id: 'news', href: cityBase ? `${cityBase}/news` : '/', icon: '📰', label: 'اخبار' },
     { id: 'submit', href: '/ads/new', icon: '📝', label: 'ثبت آگهی', accent: true },
-    { id: 'businesses', href: cityBase ? `${cityBase}#businesses` : '/', icon: '🏬', label: 'کسب‌وکارها' },
+    { id: 'businesses', href: cityBase ? `${cityBase}#map` : '/', icon: '🏬', label: 'کسب‌وکارها' },
     { id: 'profile', href: '/profile', icon: '👤', label: 'پروفایل' },
   ];
 
   const isActive = (item: NavItem): boolean => {
     if (item.accent) return pathname.startsWith('/ads');
     if (item.id === 'profile') return pathname.startsWith('/profile');
-    if (item.id === 'home') return (pathname === '/' || pathname.startsWith('/city/')) && !hash;
-    if (item.id === 'news') return hash === '#news';
-    if (item.id === 'businesses') return hash === '#businesses';
+    if (item.id === 'news') return isNewsPage;
+    if (item.id === 'businesses') return hash === '#map';
+    if (item.id === 'home') return (pathname === '/' || pathname.startsWith('/city/')) && !isNewsPage && !hash;
     return false;
   };
 

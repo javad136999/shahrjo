@@ -120,15 +120,15 @@ for (const marker of [
 const wallPage = read('apps/web/src/app/wall/page.tsx');
 if (!wallPage.includes('WallView')) { console.error('WALL PAGE: does not render WallView'); fail++; }
 
-// --- Web: dashboard order — wall hero, then gold showcase, then map ---
+// --- Web: dashboard order — welcome + wall CTA, then gold showcase, then map ---
 const dashboard = read('apps/web/src/components/dashboard.tsx');
-const wallIdx = dashboard.indexOf('data-testid="wall-feature"');
+const wallIdx = dashboard.indexOf('data-testid="wall-cta"');
 const marqueeIdx = dashboard.indexOf('<ShowcaseMarquee');
 const mapIdx = dashboard.indexOf('<CityMap');
 if (wallIdx === -1 || wallIdx > marqueeIdx || marqueeIdx > mapIdx) {
-  console.error('WEB: dashboard must render wall-feature → showcase marquee → map'); fail++;
+  console.error('WEB: dashboard must render wall CTA → showcase marquee → map'); fail++;
 }
-if (!dashboard.includes('data-testid="wall-cta"')) { console.error('WEB: wall CTA missing'); fail++; }
+if (!dashboard.includes('خوش آمدید')) { console.error('WEB: welcome greeting missing'); fail++; }
 
 // --- Web: login drops the user straight into their own city ---
 const login = read('apps/web/src/components/login-form.tsx');
@@ -161,7 +161,7 @@ for (const helper of ['getWall', 'createWallPost', 'likeWallPost', 'deleteWallPo
 
 // --- CSS: wall + JamCity-style category bar ---
 const css = read('apps/web/src/app/globals.css');
-for (const marker of ['wall-feature', 'wall-feed', 'wall-composer', 'map-catbar', 'map-catbtn', 'map-catmenu']) {
+for (const marker of ['wall-cta', 'wall-feed', 'wall-composer', 'map-catbar', 'map-catbtn', 'map-catmenu']) {
   if (!css.includes(marker)) { console.error(`CSS: missing ${marker}`); fail++; }
 }
 

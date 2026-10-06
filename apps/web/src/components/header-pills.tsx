@@ -6,9 +6,10 @@ import { getLocalCity } from '@/lib/api';
 import type { LocalCity } from '@/lib/types';
 
 /**
- * Header quick actions (JamCity-style pills): the remembered city and the ad
- * submission entry. The city is read client-side after mount so SSR output
- * stays deterministic (no hydration mismatch).
+ * Header quick actions (JamCity-style pills): the city's news page and the
+ * remembered city's name — clicking the city name opens the city picker so
+ * the user can switch cities. The city is read client-side after mount so
+ * SSR output stays deterministic (no hydration mismatch).
  */
 export function HeaderPills() {
   const [city, setCity] = useState<LocalCity | null>(null);
@@ -19,23 +20,21 @@ export function HeaderPills() {
 
   return (
     <div className="header-pills">
+      <Link
+        href={city ? `/city/${city.slug}/news` : '/'}
+        className="pill"
+        title="اخبار شهر"
+        data-testid="header-news-pill"
+      >
+        <span aria-hidden>📰</span>
+        <span className="pill__label">اخبار</span>
+      </Link>
       {city ? (
-        // a city is chosen: a dedicated icon back to the city picker + a link to its dashboard
-        <>
-          <Link
-            href="/"
-            className="pill pill--icon"
-            aria-label="انتخاب شهر"
-            title="انتخاب شهر"
-            data-testid="header-city-select"
-          >
-            <span aria-hidden>📍</span>
-          </Link>
-          <Link href={`/city/${city.slug}`} className="pill" data-testid="header-city-pill">
-            <span aria-hidden>🏙</span>
-            <span className="pill__label">{city.name}</span>
-          </Link>
-        </>
+        // the city's name opens the picker: click → choose another city
+        <Link href="/" className="pill" title="انتخاب شهر" data-testid="header-city-pill">
+          <span aria-hidden>🏙</span>
+          <span className="pill__label">{city.name}</span>
+        </Link>
       ) : (
         <Link href="/" className="pill" data-testid="header-city-pill">
           <span aria-hidden>🏙</span>

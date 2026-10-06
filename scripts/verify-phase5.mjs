@@ -105,8 +105,8 @@ if (!myAds.includes('در انتظار تأیید')) {
 }
 const formPage = read('apps/web/src/app/ads/new/page.tsx');
 if (!formPage.includes('AdForm')) { console.error('WEB: /ads/new must render AdForm'); fail++; }
-const dashboard = read('apps/web/src/components/dashboard.tsx');
-if (!dashboard.includes('/ads/new')) { console.error('WEB: dashboard must link to the ad submission form'); fail++; }
+const headerPills = read('apps/web/src/components/header-pills.tsx');
+if (!headerPills.includes('/ads/new')) { console.error('WEB: header must link to the ad submission form'); fail++; }
 
 // --- Same multi-city rule: no hard-coded city names ---
 const hardcoded = ['جم', 'عسلویه', 'شیراز', 'بوشهر', 'کنگان'];

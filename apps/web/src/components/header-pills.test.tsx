@@ -14,10 +14,10 @@ describe('HeaderPills', () => {
     mockGetLocalCity.mockReturnValue({ id: 5, slug: 'sample-city', name: 'شهر نمونه' });
   });
 
-  it('links to the remembered city once read client-side', async () => {
+  it('shows the remembered city name; clicking it opens the city picker', async () => {
     render(<HeaderPills />);
     const pill = await screen.findByTestId('header-city-pill');
-    expect(pill).toHaveAttribute('href', '/city/sample-city');
+    expect(pill).toHaveAttribute('href', '/');
     expect(pill).toHaveTextContent('شهر نمونه');
   });
 
@@ -27,6 +27,19 @@ describe('HeaderPills', () => {
     const pill = await screen.findByTestId('header-city-pill');
     expect(pill).toHaveAttribute('href', '/');
     expect(pill).toHaveTextContent('انتخاب شهر');
+  });
+
+  it('links the news button to the remembered city news page', async () => {
+    render(<HeaderPills />);
+    const news = await screen.findByTestId('header-news-pill');
+    expect(news).toHaveAttribute('href', '/city/sample-city/news');
+    expect(news).toHaveTextContent('اخبار');
+  });
+
+  it('sends the news button to the city picker when no city is remembered', async () => {
+    mockGetLocalCity.mockReturnValue(null);
+    render(<HeaderPills />);
+    expect(await screen.findByTestId('header-news-pill')).toHaveAttribute('href', '/');
   });
 
   it('always offers the ad submission entry', async () => {
@@ -39,20 +52,5 @@ describe('HeaderPills', () => {
     render(<HeaderPills />);
     expect(await screen.findByTestId('header-plans-pill')).toHaveAttribute('href', '/plans');
     expect(screen.getByTestId('header-plans-pill')).toHaveTextContent('اشتراک');
-  });
-
-  it('shows the dedicated city-selection icon whenever a city is remembered', async () => {
-    render(<HeaderPills />);
-    await screen.findByTestId('header-city-pill');
-    const select = screen.getByTestId('header-city-select');
-    expect(select).toHaveAttribute('href', '/');
-    expect(select).toHaveAccessibleName('انتخاب شهر');
-  });
-
-  it('drops the redundant icon when no city is remembered', async () => {
-    mockGetLocalCity.mockReturnValue(null);
-    render(<HeaderPills />);
-    await screen.findByTestId('header-city-pill');
-    expect(screen.queryByTestId('header-city-select')).not.toBeInTheDocument();
   });
 });

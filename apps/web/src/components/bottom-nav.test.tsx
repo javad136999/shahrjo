@@ -37,11 +37,11 @@ describe('BottomNav', () => {
     expect(screen.getByTestId('bottom-nav-profile')).toHaveAttribute('href', '/profile');
   });
 
-  it('deep-links news and businesses into the remembered city', async () => {
+  it('deep-links news to the city news page and businesses to the map', async () => {
     render(<BottomNav />);
     // the city is read client-side after mount
-    expect(await screen.findByTestId('bottom-nav-news')).toHaveAttribute('href', '/city/sample-city#news');
-    expect(screen.getByTestId('bottom-nav-businesses')).toHaveAttribute('href', '/city/sample-city#businesses');
+    expect(await screen.findByTestId('bottom-nav-news')).toHaveAttribute('href', '/city/sample-city/news');
+    expect(screen.getByTestId('bottom-nav-businesses')).toHaveAttribute('href', '/city/sample-city#map');
     expect(screen.getByTestId('bottom-nav-submit')).toHaveAttribute('href', '/ads/new');
   });
 
@@ -64,6 +64,13 @@ describe('BottomNav', () => {
     render(<BottomNav />);
     expect(screen.getByTestId('bottom-nav-home')).toHaveClass('is-active');
     expect(screen.getByTestId('bottom-nav-submit')).not.toHaveClass('is-active');
+  });
+
+  it('marks news active on the city news page (and not home)', () => {
+    mockPathname.mockReturnValue('/city/sample-city/news');
+    render(<BottomNav />);
+    expect(screen.getByTestId('bottom-nav-news')).toHaveClass('is-active');
+    expect(screen.getByTestId('bottom-nav-home')).not.toHaveClass('is-active');
   });
 
   it('marks the profile item active on /profile', () => {

@@ -4,14 +4,11 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { CityDashboard } from '@/components/dashboard';
-import { api, getCityAds, getCityBusinesses, getCityMap, getCityNews, getShowcase, getTokens, setLocalCity } from '@/lib/api';
-import type { AdItem, BusinessItem, City, CityMapData, MeResponse, NewsItem, ShowcaseItem } from '@/lib/types';
+import { api, getCityMap, getShowcase, getTokens, setLocalCity } from '@/lib/api';
+import type { City, CityMapData, MeResponse, ShowcaseItem } from '@/lib/types';
 
 interface DashboardState {
   city: City | null | undefined; // undefined = loading, null = not found
-  news: NewsItem[];
-  ads: AdItem[];
-  businesses: BusinessItem[];
   showcase: ShowcaseItem[];
   mapData: CityMapData | null;
   loading: boolean;
@@ -20,9 +17,6 @@ interface DashboardState {
 
 const INITIAL: DashboardState = {
   city: undefined,
-  news: [],
-  ads: [],
-  businesses: [],
   showcase: [],
   mapData: null,
   loading: true,
@@ -30,9 +24,10 @@ const INITIAL: DashboardState = {
 };
 
 /**
- * City dashboard (Phase 4): resolves the slug, remembers the selection,
- * syncs `cityId` into the profile when logged in, then loads the three
- * public feeds (news / ads / businesses) of that city.
+ * City home (Phase 4, redesigned): resolves the slug, remembers the selection,
+ * syncs `cityId` into the profile when logged in, then loads the golden
+ * showcase and the city map. News has its own page (`/city/<slug>/news`);
+ * ads and businesses are no longer listed here.
  */
 export default function CityPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -74,16 +69,10 @@ export default function CityPage() {
           .catch(() => {});
       }
 
-      // 3) feeds + golden showcase + map (Phase 9) — header still renders on failure
+      // 3) golden showcase + map (Phase 9) — header still renders on failure
       try {
-        const [news, ads, businesses, showcase, mapData] = await Promise.all([
-          getCityNews(city.slug),
-          getCityAds(city.slug),
-          getCityBusinesses(city.slug),
-          getShowcase(city.slug),
-          getCityMap(city.slug),
-        ]);
-        if (alive) setState((s) => ({ ...s, news, ads, businesses, showcase, mapData, loading: false }));
+        const [showcase, mapData] = await Promise.all([getShowcase(city.slug), getCityMap(city.slug)]);
+        if (alive) setState((s) => ({ ...s, showcase, mapData, loading: false }));
       } catch (err) {
         if (alive) {
           setState((s) => ({
@@ -122,9 +111,6 @@ export default function CityPage() {
   return (
     <CityDashboard
       city={state.city}
-      news={state.news}
-      ads={state.ads}
-      businesses={state.businesses}
       showcase={state.showcase}
       mapData={state.mapData}
       loading={state.loading}

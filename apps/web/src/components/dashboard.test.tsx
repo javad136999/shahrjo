@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { CityDashboard } from '@/components/dashboard';
-import type { AdItem, BusinessItem, City, CityMapData, NewsItem, ShowcaseItem } from '@/lib/types';
+import type { City, CityMapData, ShowcaseItem } from '@/lib/types';
 
 // The map is a Leaflet canvas (covered by city-map.test.tsx) — stub it here so
 // dashboard tests stay DOM-only.
@@ -18,45 +18,10 @@ const city: City = {
   province: { id: 1, name: 'استان نمونه', slug: 'sample-province' },
 };
 
-const news: NewsItem[] = [
-  {
-    id: 10,
-    title: 'خبر نمونه',
-    slug: 'sample-news',
-    excerpt: 'خلاصه خبر',
-    coverUrl: null,
-    publishedAt: '2026-10-01T10:00:00.000Z',
-    category: { name: 'حوادث', slug: 'accidents' },
-  },
-];
-
-const ads: AdItem[] = [
-  { id: 20, title: 'آگهی گران', price: 125000000, coverUrl: null, viewCount: 12, publishedAt: null, category: { name: 'لوازم', slug: 'goods', icon: '🛍️', color: null } },
-  { id: 21, title: 'آگهی توافقی', price: null, coverUrl: null, viewCount: 0, publishedAt: null, category: { name: 'لوازم', slug: 'goods', icon: '🛍️', color: null } },
-];
-
-const businesses: BusinessItem[] = [
-  {
-    id: 30,
-    name: 'کسب‌وکار نمونه',
-    slug: 'sample-business',
-    logoUrl: null,
-    address: 'خیابان اصلی',
-    phone: '09120000000',
-    rating: 4.26,
-    ratingCount: 3,
-    subscriptionTier: 'GOLD',
-    category: { name: 'رستوران', slug: 'restaurants', icon: '🍽', color: '#0e7a5f' },
-  },
-];
-
 function renderDashboard(overrides: Partial<Parameters<typeof CityDashboard>[0]> = {}) {
   return render(
     <CityDashboard
       city={city}
-      news={[]}
-      ads={[]}
-      businesses={[]}
       showcase={[]}
       mapData={null}
       loading={false}
@@ -99,59 +64,44 @@ const mapData: CityMapData = {
 };
 
 describe('CityDashboard', () => {
-  it('renders the city header with province and featured badge', () => {
+  it('greets the visitor with the city name only (no action pills)', () => {
     renderDashboard();
-    expect(screen.getByRole('heading', { level: 1, name: 'شهر نمونه' })).toBeInTheDocument();
-    expect(screen.getByText(/استان نمونه/)).toBeInTheDocument();
-    expect(screen.getByText('ویژه')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /تغییر شهر/ })).toHaveAttribute('href', '/');
-    expect(screen.getByRole('link', { name: /ثبت آگهی/ })).toHaveAttribute('href', '/ads/new');
+    expect(screen.getByRole('heading', { level: 1, name: 'به شهر شهر نمونه خوش آمدید' })).toBeInTheDocument();
+    // the old header actions (subscription / submit / change city) are gone
+    expect(screen.queryByRole('link', { name: /تغییر شهر/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /ثبت آگهی/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /اشتراک ویژه/ })).not.toBeInTheDocument();
   });
 
-  it('renders all three feeds', () => {
-    renderDashboard({ news, ads, businesses });
-    expect(screen.getByTestId('news-10')).toHaveTextContent('خبر نمونه');
-    expect(screen.getByTestId('news-10')).toHaveTextContent('حوادث');
-    expect(screen.getByTestId('ad-20')).toHaveTextContent('آگهی گران');
-    expect(screen.getByTestId('business-30')).toHaveTextContent('کسب‌وکار نمونه');
-    // section counters come from the data (Persian digits, JamCity-style)
-    expect(screen.getByText('۱ خبر')).toBeInTheDocument();
-    expect(screen.getByText('۲ آگهی')).toBeInTheDocument();
-    expect(screen.getByText('۱ کسب‌وکار')).toBeInTheDocument();
-    // quick stat tiles mirror the same counters
-    expect(screen.getByTestId('stat-خبر')).toHaveTextContent('۱');
-    expect(screen.getByTestId('stat-آگهی')).toHaveTextContent('۲');
-    expect(screen.getByTestId('stat-کسب‌وکار')).toHaveTextContent('۱');
-    // every card title deep-links into its detail page (Phase 6)
-    expect(screen.getByRole('link', { name: 'خبر نمونه' })).toHaveAttribute('href', '/news/sample-news');
-    expect(screen.getByRole('link', { name: 'آگهی گران' })).toHaveAttribute('href', '/ad/20');
-    expect(screen.getByRole('link', { name: 'کسب‌وکار نمونه' })).toHaveAttribute('href', '/business/30');
-  });
-
-  it('formats prices as Rial or negotiated', () => {
-    renderDashboard({ ads });
-    expect(screen.getByTestId('ad-20-price')).toHaveTextContent('ریال');
-    expect(screen.getByTestId('ad-21-price')).toHaveTextContent('توافقی');
-  });
-
-  it('marks gold businesses', () => {
-    renderDashboard({ businesses });
-    expect(screen.getByTestId('business-30')).toHaveTextContent('طلایی');
-    expect(screen.getByTestId('business-30')).toHaveTextContent('4.3 از 5');
-  });
-
-  it('shows empty states per section when feeds are empty', () => {
+  it('offers the beating-heart entry to the city wall', () => {
     renderDashboard();
-    expect(screen.getByText('هنوز خبری برای این شهر منتشر نشده است.')).toBeInTheDocument();
-    expect(screen.getByText('فعلاً آگهی فعالی در این شهر نیست.')).toBeInTheDocument();
-    expect(screen.getByText('هنوز کسب‌وکار تأییدشده‌ای در این شهر ثبت نشده است.')).toBeInTheDocument();
+    const cta = screen.getByTestId('wall-cta');
+    expect(cta).toHaveAttribute('href', '/wall');
+    expect(cta).toHaveTextContent('ورود به دیوار شهر');
+    expect(cta).toHaveClass('wall-cta');
+  });
+
+  it('keeps news, ads and businesses off the home page', () => {
+    renderDashboard();
+    // no feed sections, no stat tiles — they live on their own pages now
+    expect(screen.queryByRole('heading', { name: 'اخبار شهر' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'آگهی‌ها' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'کسب‌وکارها' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('news-10')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('stat-خبر')).not.toBeInTheDocument();
+  });
+
+  it('skips the map section until map data (or loading) arrives', () => {
+    renderDashboard();
+    expect(screen.queryByRole('heading', { name: 'نقشه شهر' })).not.toBeInTheDocument();
+    renderDashboard({ loading: true });
+    expect(screen.getByRole('heading', { name: 'نقشه شهر' })).toBeInTheDocument();
   });
 
   it('shows loading placeholders while fetching', () => {
     renderDashboard({ loading: true });
-    // news + ads + businesses + city map sections
-    expect(screen.getAllByText('در حال بارگذاری…')).toHaveLength(4);
-    // the showcase has its own loading copy
+    // the map section keeps its placeholder; the showcase has its own copy
+    expect(screen.getAllByText('در حال بارگذاری…')).toHaveLength(1);
     expect(screen.getByText('در حال بارگذاری ویترین…')).toBeInTheDocument();
   });
 
@@ -177,7 +127,7 @@ describe('CityDashboard', () => {
     expect(screen.getByTestId('showcase-empty')).toHaveTextContent('هنوز کسب‌وکار طلایی‌ای در این شهر ثبت نشده');
   });
 
-  it('renders the city map above the feeds with its pins count (Phase 9)', () => {
+  it('renders the golden showcase above the city map with its pins count', () => {
     renderDashboard({ mapData, showcase });
     expect(screen.getByTestId('city-map')).toHaveAttribute('data-pins', '1');
     expect(screen.getByRole('heading', { name: 'نقشه شهر' })).toBeInTheDocument();

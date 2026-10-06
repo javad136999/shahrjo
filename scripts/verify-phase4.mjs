@@ -9,6 +9,9 @@ const mustExist = [
   'apps/api/src/content/content.dto.ts',
   'apps/web/src/components/dashboard.tsx',
   'apps/web/src/components/dashboard.test.tsx',
+  'apps/web/src/components/city-news.tsx',
+  'apps/web/src/components/city-news.test.tsx',
+  'apps/web/src/app/city/[slug]/news/page.tsx',
   'apps/web/src/components/bottom-nav.tsx',
   'apps/web/src/components/bottom-nav.test.tsx',
   'apps/web/src/components/header-pills.tsx',
@@ -49,16 +52,24 @@ if (service.includes('cityId: query') || service.includes('where: { id: city')) 
 const appModule = read('apps/api/src/app.module.ts');
 if (!appModule.includes('ContentModule')) { console.error('MISSING ContentModule in AppModule'); fail++; }
 
-// --- Frontend: dashboard consumes the same-origin API and renders all feeds ---
+// --- Frontend: light home page (welcome + showcase + map); news on its own page ---
 const page = read('apps/web/src/app/city/[slug]/page.tsx');
-for (const helper of ['getCityNews', 'getCityAds', 'getCityBusinesses']) {
+for (const helper of ['getShowcase', 'getCityMap']) {
   if (!page.includes(helper)) { console.error(`WEB: dashboard must load ${helper}`); fail++; }
 }
 if (!page.includes('Promise.all')) { console.error('WEB: feeds should load in parallel'); fail++; }
 
+// The news feed lives on /city/<slug>/news (linked from the header + bottom nav).
+const newsPage = read('apps/web/src/app/city/[slug]/news/page.tsx');
+if (!newsPage.includes('getCityNews')) { console.error('WEB: city news page must load getCityNews'); fail++; }
+const newsView = read('apps/web/src/components/city-news.tsx');
+for (const marker of ['اخبار شهر', '`/news/${item.slug}`', 'card-grid']) {
+  if (!newsView.includes(marker)) { console.error(`WEB: city news view missing ${marker}`); fail++; }
+}
+
 const dashboard = read('apps/web/src/components/dashboard.tsx');
-for (const section of ['اخبار شهر', 'آگهی‌ها', 'کسب‌وکارها']) {
-  if (!dashboard.includes(section)) { console.error(`WEB: missing dashboard section "${section}"`); fail++; }
+for (const marker of ['dash-welcome', 'data-testid="wall-cta"', 'خوش آمدید', 'dash-section__head', 'id="map"', 'icon-tile']) {
+  if (!dashboard.includes(marker)) { console.error(`WEB: dashboard missing ${marker}`); fail++; }
 }
 
 // --- JamCity-style shell: quick pills, bottom nav, icon tiles, section anchors ---
@@ -67,19 +78,16 @@ for (const comp of ['HeaderPills', 'BottomNav']) {
   if (!layout.includes(comp)) { console.error(`WEB: layout must render ${comp}`); fail++; }
 }
 const bottomNav = read('apps/web/src/components/bottom-nav.tsx');
-for (const marker of ['bottom-nav', 'getLocalCity', '#news', '#businesses', '/ads/new']) {
+for (const marker of ['bottom-nav', 'getLocalCity', '/news', '#map', '/ads/new']) {
   if (!bottomNav.includes(marker)) { console.error(`WEB: bottom nav missing ${marker}`); fail++; }
 }
 const headerPills = read('apps/web/src/components/header-pills.tsx');
-for (const marker of ['getLocalCity', '/ads/new']) {
+for (const marker of ['getLocalCity', '/ads/new', '/news']) {
   if (!headerPills.includes(marker)) { console.error(`WEB: header pills missing ${marker}`); fail++; }
 }
-for (const marker of ['icon-tile', 'stats-row', 'dash-section__head', 'id="news"', 'id="ads"', 'id="businesses"']) {
-  if (!dashboard.includes(marker)) { console.error(`WEB: dashboard missing ${marker}`); fail++; }
-}
-const css = read('apps/web/src/app/globals.css');
-for (const marker of ['.bottom-nav', '.pill', '.icon-tile', '.count-chip', '.stats-row', '.content-card--gold']) {
-  if (!css.includes(marker)) { console.error(`CSS: theme missing ${marker}`); fail++; }
+const css4 = read('apps/web/src/app/globals.css');
+for (const marker of ['.bottom-nav', '.pill', '.icon-tile', '.count-chip', '.dash-welcome', '.wall-cta', '.content-card']) {
+  if (!css4.includes(marker)) { console.error(`CSS: theme missing ${marker}`); fail++; }
 }
 
 const apiClient = read('apps/web/src/lib/api.ts');

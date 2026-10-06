@@ -76,10 +76,14 @@ for (const helper of ['getAdDetail', 'getNewsDetail', 'getBusinessDetail', 'togg
   if (!apiClient.includes(helper)) { console.error(`WEB: api client missing ${helper}`); fail++; }
 }
 
-const dashboard = read('apps/web/src/components/dashboard.tsx');
-for (const link of ['`/news/${item.slug}`', '`/ad/${item.id}`', '`/business/${item.id}`']) {
-  if (!dashboard.includes(link)) { console.error(`WEB: dashboard card must link to ${link}`); fail++; }
-}
+// Deep links live on the page that owns each feed now (home page shows only
+// the welcome card, the golden showcase and the map).
+const newsView = read('apps/web/src/components/city-news.tsx');
+if (!newsView.includes('`/news/${item.slug}`')) { console.error('WEB: news view must link to /news/:slug'); fail++; }
+const myAds = read('apps/web/src/components/my-ads.tsx');
+if (!myAds.includes('`/ad/${ad.id}`')) { console.error('WEB: my-ads must link to /ad/:id'); fail++; }
+const showcaseMarquee = read('apps/web/src/components/showcase-marquee.tsx');
+if (!showcaseMarquee.includes('`/business/${item.id}`')) { console.error('WEB: showcase must link to /business/:id'); fail++; }
 
 const bottomNav = read('apps/web/src/components/bottom-nav.tsx');
 if (!bottomNav.includes('/profile')) { console.error('WEB: bottom nav must link to the profile page'); fail++; }
