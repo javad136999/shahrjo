@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { ConsoleSmsProvider } from './adapters/console.provider';
+import { IpPanelSmsProvider } from './adapters/ippanel.provider';
 import { KavenegarSmsProvider } from './adapters/kavenegar.provider';
 import { SmsIrProvider } from './adapters/smsir.provider';
 import type { SmsProvider } from './sms.types';
@@ -13,6 +14,10 @@ export function createSmsProvider(config: ConfigService): SmsProvider {
   const apiKey = config.get<string>('SMS_API_KEY') || undefined;
   const template = config.get<string>('SMS_OTP_TEMPLATE') || undefined;
   const sender = config.get<string>('SMS_SENDER') || undefined;
+  // IPPanel/KPanel pattern OTP (empty until the pattern is approved — then
+  // setting it activates real sending without touching auth code).
+  const patternCode = config.get<string>('SMS_PATTERN_CODE') || undefined;
+  const patternParam = config.get<string>('SMS_PATTERN_PARAM') || 'code';
 
   switch (provider) {
     case 'console':
@@ -23,7 +28,10 @@ export function createSmsProvider(config: ConfigService): SmsProvider {
     case 'smsir':
       if (!apiKey) throw new Error('SMS_API_KEY is required for SMS_PROVIDER=smsir');
       return new SmsIrProvider(apiKey, template, sender);
+    case 'ippanel':
+      if (!apiKey) throw new Error('SMS_API_KEY is required for SMS_PROVIDER=ippanel');
+      return new IpPanelSmsProvider(apiKey, patternCode, sender, patternParam);
     default:
-      throw new Error(`Unknown SMS_PROVIDER "${provider}" (expected console | kavenegar | smsir)`);
+      throw new Error(`Unknown SMS_PROVIDER "${provider}" (expected console | kavenegar | smsir | ippanel)`);
   }
 }

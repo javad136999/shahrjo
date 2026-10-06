@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { ConsoleSmsProvider } from './adapters/console.provider';
+import { IpPanelSmsProvider } from './adapters/ippanel.provider';
 import { KavenegarSmsProvider } from './adapters/kavenegar.provider';
 import { SmsIrProvider } from './adapters/smsir.provider';
 import { createSmsProvider } from './sms.provider';
@@ -22,13 +23,37 @@ describe('createSmsProvider factory', () => {
     expect(provider).toBeInstanceOf(SmsIrProvider);
   });
 
+  it('creates the ippanel adapter when configured', () => {
+    const provider = createSmsProvider(cfg({ SMS_PROVIDER: 'ippanel', SMS_API_KEY: 'KEY' }));
+    expect(provider).toBeInstanceOf(IpPanelSmsProvider);
+    expect(provider.name).toBe('ippanel');
+  });
+
   it('throws without an API key for paid providers', () => {
     expect(() => createSmsProvider(cfg({ SMS_PROVIDER: 'kavenegar' }))).toThrow('SMS_API_KEY');
     expect(() => createSmsProvider(cfg({ SMS_PROVIDER: 'smsir' }))).toThrow('SMS_API_KEY');
+    expect(() => createSmsProvider(cfg({ SMS_PROVIDER: 'ippanel' }))).toThrow('SMS_API_KEY');
   });
 
   it('throws on unknown providers (fail fast instead of silent fallback)', () => {
     expect(() => createSmsProvider(cfg({ SMS_PROVIDER: 'unknown-vendor' }))).toThrow('Unknown SMS_PROVIDER');
+  });
+
+  it('passes SMS_PATTERN_CODE / SMS_SENDER / SMS_PATTERN_PARAM to the ippanel adapter', () => {
+    const provider = createSmsProvider(
+      cfg({
+        SMS_PROVIDER: 'ippanel',
+        SMS_API_KEY: 'KEY',
+        SMS_PATTERN_CODE: 'PAT123',
+        SMS_SENDER: '+983000505',
+        SMS_PATTERN_PARAM: 'otp',
+      }),
+    ) as IpPanelSmsProvider;
+    expect(provider).toBeInstanceOf(IpPanelSmsProvider);
+    // Activated state: real sends enabled (verified via the sendOtp tests below).
+    expect((provider as unknown as { patternCode: string }).patternCode).toBe('PAT123');
+    expect((provider as unknown as { fromNumber: string }).fromNumber).toBe('+983000505');
+    expect((provider as unknown as { patternParam: string }).patternParam).toBe('otp');
   });
 });
 
@@ -154,5 +179,88 @@ describe('SmsIrProvider', () => {
     const result = await provider.sendOtp('09123456789', '12345');
     expect(result.success).toBe(false);
     expect(result.error).toContain('code=401');
+  });
+});
+
+describe('IpPanelSmsProvider', () => {
+  const originalFetch = global.fetch;
+  let fetchMock: jest.Mock;
+
+  beforeEach(() => {
+    fetchMock = jest.fn();
+    global.fetch = fetchMock as unknown as typeof fetch;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('does NOT call any endpoint while SMS_PATTERN_CODE is missing (pending activation)', async () => {
+    const provider = new IpPanelSmsProvider('KEY');
+    const result = await provider.sendOtp('09123456789', '12345');
+    expect(result.success).toBe(true); // console fallback keeps auth working
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('sends via the documented pattern endpoint when activated', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { message_outbox_ids: [1123594208] }, meta: { status: true } }),
+    });
+    const provider = new IpPanelSmsProvider('APIKEY', 'PAT123', '+983000505');
+
+    const result = await provider.sendOtp('09123456789', '12345');
+
+    expect(result).toEqual({ success: true, messageId: '1123594208' });
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit & { headers: Record<string, string> }];
+    expect(url).toBe('https://edge.ippanel.com/v1/api/send');
+    expect(init.headers['Authorization']).toBe('APIKEY'); // raw key, no Bearer prefix
+    expect(JSON.parse(init.body as string)).toEqual({
+      sending_type: 'pattern',
+      from_number: '+983000505',
+      code: 'PAT123',
+      recipients: ['+989123456789'], // E.164 conversion of 09123456789
+      params: { code: '12345' },
+    });
+  });
+
+  it('uses a custom pattern param name from SMS_PATTERN_PARAM', async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: {}, meta: { status: true } }) });
+    const provider = new IpPanelSmsProvider('KEY', 'PAT', '+983000505', 'otp');
+
+    const result = await provider.sendOtp('09123456789', '99999');
+
+    expect(result.success).toBe(true);
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.params).toEqual({ otp: '99999' });
+  });
+
+  it('fails fast when a pattern exists but from_number (SMS_SENDER) is missing', async () => {
+    const provider = new IpPanelSmsProvider('KEY', 'PAT');
+    const result = await provider.sendOtp('09123456789', '12345');
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('SMS_SENDER');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('reports provider-level errors from meta', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 422,
+      json: async () => ({ data: null, meta: { status: false, message: 'تکمیل گزینه پیام الزامی است', message_code: '400-2' } }),
+    });
+    const provider = new IpPanelSmsProvider('KEY', 'PAT', '+983000505');
+    const result = await provider.sendOtp('09123456789', '12345');
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('400-2');
+    expect(result.error).toContain('422');
+  });
+
+  it('never throws on network failures', async () => {
+    fetchMock.mockRejectedValue(new Error('network down'));
+    const provider = new IpPanelSmsProvider('KEY', 'PAT', '+983000505');
+    const result = await provider.sendOtp('09123456789', '12345');
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('network down');
   });
 });

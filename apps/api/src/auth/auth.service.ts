@@ -65,7 +65,8 @@ export class AuthService {
 
     const code = generateOtpCode(this.int('OTP_LENGTH', 5));
     const codeHash = hmacOtp(this.require('OTP_HASH_SECRET'), phone, code);
-    const ttlSeconds = this.int('OTP_TTL_SECONDS', 120);
+    // OTP_EXPIRES_SECONDS is an alias of OTP_TTL_SECONDS (both accepted).
+    const ttlSeconds = this.int('OTP_TTL_SECONDS', this.int('OTP_EXPIRES_SECONDS', 120));
 
     // Only the newest code stays active.
     await this.prisma.otpCode.updateMany({

@@ -11,7 +11,7 @@ Internet ──HTTPS──► Nginx (Let's Encrypt)  [VPS]
 
 api ──► PostgreSQL 17 (Prisma)   ── داده‌های واقعی، فقط روی VPS
 api ──► Redis 7                  ── Cache / Rate Limit / Presence
-api ──► SMS Provider (Abstract)  ── Kavenegar | SMS.ir | FarazSMS | Console
+api ──► SMS Provider (Abstract)  ── IPPanel/KPanel | Kavenegar | SMS.ir | Console
 api ──► Storage (Abstract)       ── VPS filesystem  |  S3-compatible (بعداً)
 api ◄──► WebSocket (چت Real-Time)
 ```
@@ -35,7 +35,7 @@ api ◄──► WebSocket (چت Real-Time)
 | Backend | NestJS + TypeScript — ماژول‌ها: auth, users, geo, categories, ads, businesses, news, chat, uploads, notifications, admin, audit |
 | Auth | شماره موبایل + SMS OTP (بدون Password) — Access کوتاه + Refresh چرخشی (hash در `user_sessions`) |
 | OTP | در **PostgreSQL** با hash، انقضا، محدودیت تلاش، یک‌بارمصرف؛ Rate Limit روی IP و Phone در Redis |
-| SMS | اینترفیس `SmsProvider` + Adapter — تعویض Provider بدون تغییر Auth |
+| SMS | اینترفیس `SmsProvider` + Adapter — تعویض Provider بدون تغییر Auth (پیش‌فرض پروژه: IPPanel/KPanel با `SMS_PATTERN_CODE`؛ تا زمانی که پترن ثبت نشده بدون فراخوانی API فقط OTP در لاگ ثبت می‌شود) |
 | Realtime | WebSocket (Socket.IO) — یک Chat Room عمومی per-city؛ Presence در Redis؛ پیام‌ها در PostgreSQL |
 | نقشه | OpenStreetMap/Mapbox/سرویس ایرانی — قابل تعویض از طریق abstraction لایه نقشه |
 | Storage | فقط URL/Path در DB؛ ابتدا VPS سپس S3-compatible |
