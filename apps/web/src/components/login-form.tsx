@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ApiError, sendOtp, verifyOtp } from '@/lib/api';
+import { ApiError, api, sendOtp, setLocalCity, verifyOtp } from '@/lib/api';
+import type { City, MeResponse } from '@/lib/types';
 
 const IRANIAN_MOBILE = /^09\d{9}$/;
 const OTP_CODE = /^\d{4,8}$/;
@@ -62,7 +63,24 @@ export function LoginForm() {
     setBusy(true);
     try {
       await verifyOtp(phone.trim(), c);
-      router.push(next && next.startsWith('/') ? next : '/');
+      // به محض ورود: اگر next نداریم، مستقیم به شهر خودِ کاربر برو (وگرنه انتخاب شهر)
+      let target: string | null = next && next.startsWith('/') ? next : null;
+      if (!target) {
+        try {
+          const me = await api.get<MeResponse>('/users/me');
+          if (me.cityId) {
+            const cities = await api.get<City[]>('/cities');
+            const city = cities.find((c) => c.id === me.cityId);
+            if (city) {
+              setLocalCity({ id: city.id, slug: city.slug, name: city.name });
+              target = `/city/${city.slug}`;
+            }
+          }
+        } catch {
+          // بدون پروفایل/شهر → صفحه انتخاب شهر
+        }
+      }
+      router.push(target ?? '/');
       router.refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'کد نامعتبر است');

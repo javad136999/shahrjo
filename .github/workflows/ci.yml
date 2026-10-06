@@ -56,6 +56,9 @@ jobs:
       - name: Phase 8 checks (admin panel permissions + scoped moderation)
         run: pnpm verify:phase8
 
+      - name: Phase 8b checks (city wall + map category filter + login→city)
+        run: pnpm verify:phase8b
+
       - name: Phase 9 checks (golden showcase + city map + storage quota)
         run: pnpm verify:phase9
 

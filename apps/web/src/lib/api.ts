@@ -24,6 +24,8 @@ import type {
   ShowcaseItem,
   Tokens,
   UploadedImage,
+  WallFeed,
+  WallPost,
 } from './types';
 
 const API_PREFIX = '/api/v1';
@@ -322,6 +324,34 @@ export async function getCityAds(slug: string, limit = 8): Promise<AdItem[]> {
 
 export async function getCityBusinesses(slug: string, limit = 8): Promise<BusinessItem[]> {
   return api.get<BusinessItem[]>(`/businesses?${cityQS(slug, limit)}`);
+}
+
+// ---------- city wall (دیوار شهر — Phase 8b) ----------
+
+export async function getWall(citySlug: string, before?: string): Promise<WallFeed> {
+  const cursor = before ? `&before=${encodeURIComponent(before)}` : '';
+  return api.get<WallFeed>(`/wall?city=${encodeURIComponent(citySlug)}${cursor}`);
+}
+
+export async function createWallPost(body: {
+  cityId: number;
+  content: string;
+  replyToId?: number;
+  imageIds?: number[];
+}): Promise<WallPost> {
+  return api.post<WallPost>('/wall', body);
+}
+
+export async function likeWallPost(id: number): Promise<{ liked: boolean; likeCount: number }> {
+  return api.post<{ liked: boolean; likeCount: number }>(`/wall/${id}/like`);
+}
+
+export async function deleteWallPost(id: number): Promise<{ id: number; deleted: boolean }> {
+  return api.delete<{ id: number; deleted: boolean }>(`/wall/${id}`);
+}
+
+export async function pinWallPost(id: number, pinned: boolean): Promise<{ id: number; isPinned: boolean }> {
+  return api.post<{ id: number; isPinned: boolean }>(`/wall/${id}/pin`, { pinned });
 }
 
 // ---------- golden showcase + city map (Phase 9) ----------

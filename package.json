@@ -19,6 +19,7 @@
     "verify:phase6": "node scripts/verify-phase6.mjs",
     "verify:phase7": "node scripts/verify-phase7.mjs",
     "verify:phase8": "node scripts/verify-phase8.mjs",
+    "verify:phase8b": "node scripts/verify-phase8b.mjs",
     "verify:phase9": "node scripts/verify-phase9.mjs",
     "smoke": "node scripts/smoke.mjs",
     "test": "pnpm -r run test",

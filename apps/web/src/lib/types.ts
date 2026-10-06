@@ -222,7 +222,7 @@ export interface CityMapBusiness {
   latitude: number;
   longitude: number;
   subscriptionTier: string;
-  category: { name: string; icon: string | null; color: string | null };
+  category: { name: string; slug: string; icon: string | null; color: string | null };
 }
 
 export interface CityMapData {
@@ -236,6 +236,33 @@ export interface CityMapData {
     boundary: unknown | null;
   };
   businesses: CityMapBusiness[];
+}
+
+/** City wall (دیوار شهر — Phase 8b). */
+export interface WallAuthor {
+  id: number;
+  name: string;
+  avatarUrl: string | null;
+}
+
+export interface WallPost {
+  id: number;
+  content: string;
+  imageUrl: string | null;
+  isPinned: boolean;
+  likeCount: number;
+  likedByMe: boolean;
+  canDelete: boolean;
+  canPin: boolean;
+  createdAt: string;
+  user: WallAuthor;
+  replyTo: { id: number; content: string; userName: string } | null;
+}
+
+export interface WallFeed {
+  posts: WallPost[];
+  pinned: WallPost | null;
+  nextBefore: string | null;
 }
 
 /** Detail pages (Phase 6). */

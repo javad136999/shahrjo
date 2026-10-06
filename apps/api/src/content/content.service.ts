@@ -67,7 +67,7 @@ export interface CityMapData {
     latitude: number;
     longitude: number;
     subscriptionTier: string;
-    category: { name: string; icon: string | null; color: string | null };
+    category: { name: string; slug: string; icon: string | null; color: string | null };
   }>;
 }
 
@@ -249,7 +249,7 @@ export class ContentService {
         latitude: true,
         longitude: true,
         subscriptionTier: true,
-        category: { select: { name: true, icon: true, color: true } },
+        category: { select: { name: true, slug: true, icon: true, color: true } },
       },
     });
 

@@ -189,10 +189,10 @@ export class UploadsService implements OnModuleInit {
       await this.prisma.media.delete({ where: { id: row.id } });
     }
 
-    // (2) uploads that were never attached to an ad (abandoned submissions)
+    // (2) uploads that were never attached to a post/ad (abandoned submissions)
     const unclaimed = await this.prisma.media.findMany({
       where: {
-        entityType: 'AD',
+        entityType: { in: ['AD', 'WALL'] },
         entityId: null,
         deletedAt: null,
         createdAt: { lt: new Date(Date.now() - UNCLAIMED_MAX_AGE_MS) },
@@ -204,22 +204,47 @@ export class UploadsService implements OnModuleInit {
       await this.prisma.media.delete({ where: { id: row.id } });
     }
 
-    // (3) media whose ad was deleted (ad_images cascade, media does not)
+    // (3) media whose ad/wall post was deleted (joins cascade, media does not)
     const attached = await this.prisma.media.findMany({
-      where: { entityType: 'AD', entityId: { not: null }, deletedAt: null },
-      select: { id: true, storageKey: true, sizeBytes: true, entityId: true },
+      where: { entityType: { in: ['AD', 'WALL'] }, entityId: { not: null }, deletedAt: null },
+      select: { id: true, storageKey: true, sizeBytes: true, entityType: true, entityId: true },
     });
-    const adIds = [...new Set(attached.map((r) => Number(r.entityId)).filter((n) => Number.isInteger(n)))];
-    const alive = new Set(
-      (
-        await this.prisma.ad.findMany({
-          where: { id: { in: adIds }, status: { not: 'DELETED' } },
-          select: { id: true },
-        })
-      ).map((a) => a.id),
-    );
+    const adIds = [
+      ...new Set(
+        attached
+          .filter((r) => r.entityType === 'AD')
+          .map((r) => Number(r.entityId))
+          .filter((n) => Number.isInteger(n)),
+      ),
+    ];
+    const wallIds = [
+      ...new Set(
+        attached
+          .filter((r) => r.entityType === 'WALL')
+          .map((r) => Number(r.entityId))
+          .filter((n) => Number.isInteger(n)),
+      ),
+    ];
+    const [aliveAds, alivePosts] = await Promise.all([
+      adIds.length
+        ? this.prisma.ad.findMany({
+            where: { id: { in: adIds }, status: { not: 'DELETED' } },
+            select: { id: true },
+          })
+        : Promise.resolve([]),
+      wallIds.length
+        ? this.prisma.wallPost.findMany({ where: { id: { in: wallIds } }, select: { id: true } })
+        : Promise.resolve([]),
+    ]);
+    const aliveAdSet = new Set(aliveAds.map((a) => a.id));
+    const alivePostSet = new Set(alivePosts.map((p) => p.id));
+    const isAlive = (row: { entityType: string; entityId: string | null }) => {
+      const eid = Number(row.entityId);
+      if (row.entityType === 'AD') return aliveAdSet.has(eid);
+      return alivePostSet.has(eid); // WALL
+    };
     for (const row of attached) {
-      if (!alive.has(Number(row.entityId))) {
+      if (!isAlive(row)) {
         await remove(row.storageKey, row.sizeBytes);
         await this.prisma.media.delete({ where: { id: row.id } });
       }

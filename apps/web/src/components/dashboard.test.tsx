@@ -94,7 +94,7 @@ const showcase: ShowcaseItem[] = [
 const mapData: CityMapData = {
   city: { id: 1, name: 'شهر نمونه', slug: 'sample-city', latitude: 27.83, longitude: 52.32, boundary: null },
   businesses: [
-    { id: 40, name: 'رستوران ویترین', slug: 'showcase-rest', latitude: 27.831, longitude: 52.321, subscriptionTier: 'GOLD', category: { name: 'رستوران', icon: '🍽', color: '#0e7a5f' } },
+    { id: 40, name: 'رستوران ویترین', slug: 'showcase-rest', latitude: 27.831, longitude: 52.321, subscriptionTier: 'GOLD', category: { name: 'رستوران', slug: 'restaurants', icon: '🍽', color: '#0e7a5f' } },
   ],
 };
 

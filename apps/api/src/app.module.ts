@@ -13,6 +13,7 @@ import { RedisModule } from './redis/redis.module';
 import { SmsModule } from './sms/sms.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { UsersModule } from './users/users.module';
+import { WallModule } from './wall/wall.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { UsersModule } from './users/users.module';
     UploadsModule,
     PaymentsModule,
     AdminModule,
+    WallModule,
   ],
   controllers: [HealthController],
 })

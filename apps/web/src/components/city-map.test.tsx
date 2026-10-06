@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { CityMap } from '@/components/city-map';
 import type { CityMapData } from '@/lib/types';
 
@@ -20,6 +20,7 @@ jest.mock('leaflet', () => {
     circle: jest.fn(() => makeLayer()),
     divIcon: jest.fn(() => ({})),
     marker: jest.fn(() => makeLayer()),
+    latLngBounds: jest.fn(() => ({ isValid: () => true })),
     featureGroup: jest.fn(() => ({ getBounds: () => ({ isValid: () => false }) })),
   };
 });
@@ -34,7 +35,7 @@ const data: CityMapData = {
       latitude: 27.831,
       longitude: 52.321,
       subscriptionTier: 'GOLD',
-      category: { name: 'رستوران', icon: '🍽', color: '#0e7a5f' },
+      category: { name: 'رستوران', slug: 'restaurants', icon: '🍽', color: '#0e7a5f' },
     },
     {
       id: 41,
@@ -43,7 +44,7 @@ const data: CityMapData = {
       latitude: 27.84,
       longitude: 52.3,
       subscriptionTier: 'SILVER',
-      category: { name: 'کافه', icon: '☕', color: null },
+      category: { name: 'کافه', slug: 'cafes', icon: '☕', color: null },
     },
   ],
 };
@@ -97,5 +98,55 @@ describe('CityMap', () => {
     const popup = leaflet.marker.mock.results[1].value.bindPopup.mock.calls[0][0] as string;
     expect(popup).toContain('&lt;script&gt;');
     expect(popup).not.toContain('<script>');
+  });
+
+  it('shows the category bar above the map (JamCity-style, top-right)', async () => {
+    render(<CityMap data={data} />);
+    const btn = screen.getByTestId('map-catbtn');
+    expect(btn).toHaveAttribute('aria-label', 'دسته‌بندی کسب‌وکارها');
+    expect(btn).toHaveTextContent('دسته‌بندی کسب‌وکارها');
+    // menu closed initially
+    expect(screen.queryByTestId('map-catmenu')).not.toBeInTheDocument();
+    fireEvent.click(btn);
+    expect(screen.getByTestId('map-catmenu')).toBeInTheDocument();
+    expect(screen.getByTestId('map-cat-option-all')).toBeInTheDocument();
+    expect(screen.getByTestId('map-cat-option-restaurants')).toHaveTextContent('رستوران');
+    expect(screen.getByTestId('map-cat-option-cafes')).toHaveTextContent('کافه');
+  });
+
+  it('filters markers to the chosen category and re-zooms onto them', async () => {
+    const leaflet = require('leaflet');
+    render(<CityMap data={data} />);
+    await waitFor(() => expect(leaflet.marker).toHaveBeenCalledTimes(2));
+
+    fireEvent.click(screen.getByTestId('map-catbtn'));
+    fireEvent.click(screen.getByTestId('map-cat-option-cafes'));
+
+    // menu closes and only the cafe pin remains
+    await waitFor(() => expect(screen.queryByTestId('map-catmenu')).not.toBeInTheDocument());
+    expect(screen.getByTestId('map-catbtn')).toHaveTextContent('کافه');
+    await waitFor(() => {
+      const positions = leaflet.marker.mock.calls.map((c: unknown[][][]) => c[0]);
+      expect(positions[positions.length - 1]).toEqual([27.84, 52.3]);
+    });
+    // single result → deep residential zoom
+    await waitFor(() => expect(leaflet.map.mock.results.at(-1).value.setView).toHaveBeenCalledWith([27.84, 52.3], 17));
+  });
+
+  it('«همه کسب‌وکارها» restores every pin', async () => {
+    const leaflet = require('leaflet');
+    render(<CityMap data={data} />);
+    await waitFor(() => expect(leaflet.marker).toHaveBeenCalledTimes(2));
+
+    fireEvent.click(screen.getByTestId('map-catbtn'));
+    fireEvent.click(screen.getByTestId('map-cat-option-restaurants'));
+    fireEvent.click(screen.getByTestId('map-catbtn'));
+    fireEvent.click(screen.getByTestId('map-cat-option-all'));
+
+    await waitFor(() => {
+      const lastCalls = leaflet.marker.mock.calls.slice(-2);
+      expect(lastCalls).toHaveLength(2);
+    });
+    expect(screen.getByTestId('map-catbtn')).toHaveTextContent('دسته‌بندی کسب‌وکارها');
   });
 });

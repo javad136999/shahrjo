@@ -136,3 +136,24 @@ Guard: `PermissionsGuard` (کد permission از `role_permissions`) + Scope
 ### UI (ویترین + نقشه)
 
 `/city/[slug]`: پنل «ویترین طلایی» بلافاصله **بالای نقشه** — marquee بی‌نهایت (RTL، `translateX(50%)`، تکرار لیست برای حلقه یکپارچه، توقف با hover/focus، احترام به `prefers-reduced-motion`) با تاج طلایی و CTA اشتراک. نقشه Leaflet + OSM (بدون کلید API): محدوده به‌صورت polygon طلایی (fallback: دایره ۳.۵km دور مرکز شهر) + پین‌های رنگی per-tier با popup لینک‌دار.
+
+## City Wall (فاز ۸b — دیوار شهر)
+
+> ✅ **پیاده‌شده در Phase 8b**: دیوار عمومی هر شهر مثل JamCity — پست متنی/عکسی، لایک، پاسخ، پین ناظر؛ به‌علاوه فیلتر دسته‌بندی روی نقشه و ورود مستقیم کاربر به شهر خودش.
+
+| Endpoint | Auth | توضیح |
+|---|---|---|
+| GET `/wall?city=<slug>&limit=&before=` | Login | فید جدیدترین پست‌های شهر + پست پین‌شده جدا؛ شامل `likedByMe` و `canDelete`/`canPin` (از scope اپراتور) و کرسر `nextBefore` |
+| POST `/wall` | Login | پست جدید `{ cityId, content, replyToId?, imageIds? }` — حداکثر ۱۰ پست در دقیقه (`429`)، پاسخ فقط به پستِ همان شهر، ادعای ۱ تصویر (`entityType → WALL`) با rollback در صورت شکست |
+| POST `/wall/:id/like` | Login | toggle لایک در transaction — برمی‌گرداند `{ liked, likeCount }` |
+| DELETE `/wall/:id` | Login | فقط نویسنده یا اپراتور با scope (`403` در غیر این صورت) |
+| POST `/wall/:id/pin` | `chat.moderate` | پین/آнопین — قبلش بقیه پست‌های پین‌شده شهر آزاد می‌شوند |
+
+### UI دیوار
+
+`/wall` (با resolution شهر از localCity → profile → انتخاب‌گر): بنر پین‌شده، فید کارت‌ها (آواتار، `timeAgo`، متن، عکس، لایک optimistic، نقل‌قول پاسخ)، کامپوزر (Enter برای ارسال + پیوست عکس)، بارگذاری قدیمی با کرسور، پولینگ ۱۰ ثانیه‌ای تا فاز WebSocket، و درِ ورود `401 → /login?next=/wall`. کارت قهرمان «دیوار شهر» روی داشبورد بالای ویترین طلایی.
+
+### نقشه: فیلتر دسته‌بندی + ورود به شهر
+
+- دکمه ✨ **بالای گوشه نقشه** (سمت چپ RTL) → منوی `role=listbox` با دسته‌بندی‌های موجود در پین‌ها؛ انتخاب، فقط پین‌های همان دسته را نگه می‌دارد و نما را refit می‌کند (تک‌پین `setView(...,17)`، چندپین `fitBounds maxZoom 16`). payload نقشه شامل `category.slug` است.
+- ورود: بعد از `verify-otp` بدون پارامتر `next`، کاربر از `/users/me` + `/cities` شهر خودش را می‌گیرد، در `localCity` ذخیره می‌کند و مستقیم به `/city/<slug>` می‌رود.

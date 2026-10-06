@@ -140,6 +140,28 @@ export function CityDashboard({ city, news, ads, businesses, showcase, mapData, 
         <Stat icon="🏬" tone="gold" value={businesses.length} label="کسب‌وکار" />
       </div>
 
+      {/* دیوار شهر — JamCity-style hero card, the main social entry */}
+      <section className="wall-feature" aria-label={`دیوار شهر ${city.name}`} data-testid="wall-feature">
+        <span className="wall-feature__blob wall-feature__blob--1" aria-hidden />
+        <span className="wall-feature__blob wall-feature__blob--2" aria-hidden />
+        <div className="wall-feature__main">
+          <span className="wall-feature__icon" aria-hidden>
+            💬
+          </span>
+          <div className="wall-feature__copy">
+            <div className="wall-feature__tags">
+              <span className="wall-feature__tag">محور اصلی شهر</span>
+              <span className="wall-feature__sub">گفتگو، آگهی و خدمات محلی</span>
+            </div>
+            <h2>دیوار شهر {city.name}</h2>
+            <p>صدای شهروندان را ببینید، با همسایه‌ها گفتگو کنید و اتفاقات مهم شهر را زنده دنبال کنید.</p>
+          </div>
+        </div>
+        <Link href="/wall" className="wall-feature__cta" data-testid="wall-cta">
+          <span aria-hidden>💬</span> ورود به دیوار {city.name} <span aria-hidden>←</span>
+        </Link>
+      </section>
+
       {/* Golden showcase marquee — sits directly above the city map (Phase 9) */}
       <ShowcaseMarquee items={showcase} loading={loading} />
 

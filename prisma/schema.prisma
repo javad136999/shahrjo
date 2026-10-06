@@ -141,6 +141,7 @@ model City {
   banners      Banner[]
   mapLocations MapLocation[]
   adminUsers   AdminUser[]
+  wallPosts    WallPost[]
 
   @@index([provinceId])
   @@map("cities")
@@ -174,6 +175,8 @@ model User {
   media         Media[]
   payments      Payment[]
   subscriptions Subscription[]
+  wallPosts     WallPost[]
+  wallLikes     WallPostLike[]
 
   @@index([cityId])
   @@map("users")
@@ -763,6 +766,43 @@ model Payment {
 // ================= Media / file storage metadata =================
 // Binary files live in StorageService (VPS local now, S3-compatible later).
 // Only metadata is stored in PostgreSQL — never the file bytes.
+// ================= City wall (دیوار شهر — Phase 8b) =================
+
+/** A public wall post of one city (JamCity-style city feed). */
+model WallPost {
+  id        Int      @id @default(autoincrement())
+  cityId    Int      @map("city_id")
+  userId    Int      @map("user_id")
+  content   String   @db.Text
+  imageUrl  String?  @map("image_url")
+  replyToId Int?     @map("reply_to_id")
+  isPinned  Boolean  @default(false) @map("is_pinned")
+  likeCount Int      @default(0) @map("like_count")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  city    City           @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replyTo WallPost?      @relation("WallReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies WallPost[]     @relation("WallReplies")
+  likes   WallPostLike[]
+
+  @@index([cityId, createdAt])
+  @@map("wall_posts")
+}
+
+model WallPostLike {
+  postId    Int      @map("post_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post WallPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+  @@map("wall_post_likes")
+}
+
 model Media {
   id          Int       @id @default(autoincrement())
   storageKey  String    @unique @map("storage_key") // e.g. businesses/2026/10/xxx.webp
