@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 const mockGetLocalCity = jest.fn();
 
 jest.mock('@/lib/api', () => ({
+  CITY_CHANGED_EVENT: 'shahrjo:city-changed',
   getLocalCity: () => mockGetLocalCity(),
 }));
 
@@ -46,6 +47,18 @@ describe('HeaderPills', () => {
     render(<HeaderPills />);
     expect(await screen.findByTestId('header-submit-pill')).toHaveAttribute('href', '/ads/new');
     expect(screen.getByTestId('header-submit-pill')).toHaveTextContent('ثبت آگهی');
+  });
+
+  it('re-reads the city when another part of the page stores a new one', async () => {
+    render(<HeaderPills />);
+    await screen.findByTestId('header-city-pill');
+    expect(screen.getByTestId('header-city-pill')).toHaveTextContent('شهر نمونه');
+
+    mockGetLocalCity.mockReturnValue({ id: 7, slug: 'new-city', name: 'شهر جدید' });
+    window.dispatchEvent(new CustomEvent('shahrjo:city-changed'));
+
+    expect(await screen.findByTestId('header-city-pill')).toHaveTextContent('شهر جدید');
+    expect(screen.getByTestId('header-news-pill')).toHaveAttribute('href', '/city/new-city/news');
   });
 
   it('keeps the header to news + city + submit (no subscription pill)', async () => {

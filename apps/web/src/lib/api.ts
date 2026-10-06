@@ -416,6 +416,8 @@ export async function logoutServer(): Promise<void> {
 // ---------- locally remembered city (works logged-out too) ----------
 
 const CITY_KEY = 'shahrjo.city';
+/** Fired whenever the remembered city changes (header/bottom nav re-read it). */
+export const CITY_CHANGED_EVENT = 'shahrjo:city-changed';
 
 export function getLocalCity(): LocalCity | null {
   if (typeof window === 'undefined') return null;
@@ -431,4 +433,6 @@ export function getLocalCity(): LocalCity | null {
 
 export function setLocalCity(city: LocalCity): void {
   window.localStorage.setItem(CITY_KEY, JSON.stringify(city));
+  // notify the shell (header pill, bottom nav) without waiting for a reload
+  window.dispatchEvent(new CustomEvent(CITY_CHANGED_EVENT, { detail: city }));
 }

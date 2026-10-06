@@ -9,6 +9,7 @@ jest.mock('next/navigation', () => ({
 const mockGetLocalCity = jest.fn();
 
 jest.mock('@/lib/api', () => ({
+  CITY_CHANGED_EVENT: 'shahrjo:city-changed',
   getLocalCity: () => mockGetLocalCity(),
 }));
 

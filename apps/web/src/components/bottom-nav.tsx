@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { getLocalCity } from '@/lib/api';
+import { CITY_CHANGED_EVENT, getLocalCity } from '@/lib/api';
 import type { LocalCity } from '@/lib/types';
 
 interface NavItem {
@@ -26,8 +26,15 @@ export function BottomNav() {
   const [hash, setHash] = useState('');
 
   useEffect(() => {
-    setCity(getLocalCity());
-  }, []);
+    const sync = () => setCity(getLocalCity());
+    sync();
+    window.addEventListener(CITY_CHANGED_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(CITY_CHANGED_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     const sync = () => setHash(window.location.hash);

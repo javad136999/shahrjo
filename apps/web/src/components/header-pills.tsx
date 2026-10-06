@@ -2,21 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getLocalCity } from '@/lib/api';
+import { usePathname } from 'next/navigation';
+import { CITY_CHANGED_EVENT, getLocalCity } from '@/lib/api';
 import type { LocalCity } from '@/lib/types';
 
 /**
  * Header quick actions (JamCity-style pills): the city's news page and the
  * remembered city's name — clicking the city name opens the city picker so
- * the user can switch cities. The city is read client-side after mount so
- * SSR output stays deterministic (no hydration mismatch).
+ * the user can switch cities. The city is re-read after mount, on navigation
+ * and whenever another part of the page stores a new city, so SSR output
+ * stays deterministic (no hydration mismatch) and the pill never goes stale.
  */
 export function HeaderPills() {
   const [city, setCity] = useState<LocalCity | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
-    setCity(getLocalCity());
-  }, []);
+    const sync = () => setCity(getLocalCity());
+    sync();
+    window.addEventListener(CITY_CHANGED_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(CITY_CHANGED_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, [pathname]);
 
   return (
     <div className="header-pills">
