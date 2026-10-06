@@ -1,21 +1,42 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, type User } from '@prisma/client';
+import { Type } from 'class-transformer';
+import { IsNumber, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService, type AdminScope } from '../rbac/rbac.service';
 
-/** Reason attached to a rejection (also persisted to the audit log). */
-export interface DecisionDto {
+/**
+ * Body DTOs are decorated CLASSES, not interfaces: Nest's ValidationPipe can
+ * only validate runtime types — an interface erases to `Object` in
+ * design:paramtypes and the whitelist silently never runs.
+ *
+ * Reason attached to a rejection (also persisted to the audit log).
+ */
+export class DecisionDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
   reason?: string;
 }
 
 /** Optional pin dropped by the admin while approving a business (map marker). */
-export interface BusinessDecisionDto extends DecisionDto {
+export class BusinessDecisionDto extends DecisionDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
   latitude?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
   longitude?: number;
 }
 
 /** GeoJSON Polygon boundary of a city map (null/undefined clears it). */
-export interface BoundaryDto {
+export class BoundaryDto {
+  /** Deep shape/range/cap checks live in normalizeBoundary. */
+  @IsOptional()
+  @IsObject()
   boundary?: unknown;
 }
 

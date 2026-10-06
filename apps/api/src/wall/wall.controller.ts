@@ -1,7 +1,10 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { CurrentUser, RequirePermissions } from '../common/decorators';
-import type { CreateWallPostDto, PinWallPostDto, WallListQueryDto } from './wall.dto';
+// Value import on purpose: `import type` would erase the classes and
+// emit `Function` in design:paramtypes, so ValidationPipe would reject
+// every declared property as unknown.
+import { CreateWallPostDto, PinWallPostDto, WallListQueryDto } from './wall.dto';
 import { WallService } from './wall.service';
 
 /**

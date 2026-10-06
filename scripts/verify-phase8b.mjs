@@ -27,6 +27,33 @@ for (const route of ["@Get()", '@Post()', "@Post(':id/like')", "@Delete(':id')",
 }
 // The wall is a members' space: no route may be @Public.
 if (controller.includes('@Public()')) { console.error('WALL: routes must NOT be @Public (login required)'); fail++; }
+// DTOs must be VALUE-imported: `import type` erases them from
+// design:paramtypes (emits `Function`), which makes ValidationPipe reject
+// every declared property as unknown.
+if (/import type \{[^}]*Dto/.test(controller)) {
+  console.error('WALL: controller must value-import its DTOs (no `import type`)'); fail++;
+}
+// Same rule anywhere a DTO type feeds a decorated parameter.
+const scanImportType = (dir) => {
+  if (!existsSync(dir)) return;
+  for (const entry of readdirSync(dir)) {
+    const full = `${dir}/${entry}`;
+    if (statSync(full).isDirectory()) scanImportType(full);
+    else if (/\.controller\.ts$/.test(entry)) {
+      const text = readFileSync(full, 'utf8');
+      if (/import type \{[^}]*Dto/.test(text)) {
+        console.error('DTO value-import violation in', full); fail++;
+      }
+    }
+  }
+};
+scanImportType('apps/api/src');
+// Admin body DTOs must be decorated classes (interfaces erase to `Object`
+// and ValidationPipe silently skips them).
+const adminService = read('apps/api/src/admin/admin.service.ts');
+for (const marker of ['export class DecisionDto', 'export class BoundaryDto', 'export class BusinessDecisionDto']) {
+  if (!adminService.includes(marker)) { console.error(`ADMIN DTO: ${marker} must be a class`); fail++; }
+}
 {
   const idx = controller.indexOf("@Post(':id/pin')");
   const window = controller.slice(idx, idx + 260);

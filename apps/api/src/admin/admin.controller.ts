@@ -1,8 +1,9 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { CurrentUser, RequirePermissions } from '../common/decorators';
-import type { BoundaryDto, BusinessDecisionDto, DecisionDto } from './admin.service';
-import { AdminService } from './admin.service';
+// Value import (incl. DTOs): `import type` would erase them from
+// design:paramtypes and ValidationPipe would never run on these bodies.
+import { AdminService, BoundaryDto, BusinessDecisionDto, DecisionDto } from './admin.service';
 import { UploadsService } from '../uploads/uploads.service';
 
 /**
