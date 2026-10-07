@@ -69,6 +69,18 @@ describe('WallView', () => {
     mockGetWall.mockResolvedValue(feed);
   });
 
+  it('renders post images from the thumbnail variant (lists never fetch the full file)', async () => {
+    mockGetWall.mockResolvedValue({
+      ...feed,
+      posts: [makePost({ id: 5, imageUrl: '/api/v1/files/media/2026/10/abc.webp' })],
+      pinned: null,
+    });
+    render(<WallView city={city} />);
+    expect(await screen.findByTestId('wall-post-5')).toBeInTheDocument();
+    const img = document.querySelector('.wall-post__image');
+    expect(img).toHaveAttribute('src', '/api/v1/files/media/2026/10/abc.thumb.webp');
+  });
+
   it('renders the feed: posts, reply quote, like counts and the pinned banner', async () => {
     render(<WallView city={city} />);
     expect(await screen.findByTestId('wall-post-1')).toHaveTextContent('سلام شهر');

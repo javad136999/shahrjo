@@ -58,6 +58,12 @@ describe('ShowcaseMarquee', () => {
     expect(screen.getByRole('link', { name: 'رستوران ویترین' })).toHaveAttribute('href', '/business/40');
   });
 
+  it('loads logos from the 400px thumbnail instead of the full image', () => {
+    render(<ShowcaseMarquee items={items} loading={false} />);
+    const logo = screen.getByTestId('showcase-41').querySelector('img');
+    expect(logo).toHaveAttribute('src', '/api/v1/files/ads/2026/10/x.thumb.webp');
+  });
+
   it('shows the loading state while fetching', () => {
     render(<ShowcaseMarquee items={[]} loading={true} />);
     expect(screen.getByText('در حال بارگذاری ویترین…')).toBeInTheDocument();

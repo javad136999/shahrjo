@@ -71,6 +71,25 @@ describe('AdDetail', () => {
     );
   });
 
+  it('keeps the full image in the detail pane but loads picker buttons from thumbnails', async () => {
+    mockGetAdDetail.mockResolvedValue(
+      adFixture({ images: ['/api/v1/files/ads/a.png', '/api/v1/files/ads/b.png'] }),
+    );
+    render(<AdDetail id={42} />);
+
+    await screen.findByTestId('ad-detail');
+    // details = full-quality copy…
+    expect(screen.getByTestId('ad-gallery-main')).toHaveAttribute('src', '/api/v1/files/ads/a.png');
+    // …while the tiny picker buttons only need the 400px thumbnails
+    const pickerSrcs = Array.from(document.querySelectorAll('.detail-gallery__thumb img')).map((el) =>
+      el.getAttribute('src'),
+    );
+    expect(pickerSrcs).toEqual([
+      '/api/v1/files/ads/a.thumb.webp',
+      '/api/v1/files/ads/b.thumb.webp',
+    ]);
+  });
+
   it('shows a not-found message when the API answers 404', async () => {
     mockGetAdDetail.mockRejectedValue(new ApiError(404, 'آگهی یافت نشد'));
     render(<AdDetail id={404} />);

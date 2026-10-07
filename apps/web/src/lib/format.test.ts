@@ -1,4 +1,4 @@
-import { formatPrice, formatDate, formatRating } from '@/lib/format';
+import { formatDate, formatPrice, formatRating, thumbUrlFor } from '@/lib/format';
 
 describe('formatPrice', () => {
   it('formats grouped Rial with unit', () => {
@@ -19,6 +19,24 @@ describe('formatDate', () => {
   it('returns empty for missing or invalid dates', () => {
     expect(formatDate(null)).toBe('');
     expect(formatDate('not-a-date')).toBe('');
+  });
+});
+
+describe('thumbUrlFor — lists load the small variant', () => {
+  it('derives the stored thumbnail for our own uploaded files', () => {
+    expect(thumbUrlFor('/api/v1/files/media/2026/10/abc.webp')).toBe(
+      '/api/v1/files/media/2026/10/abc.thumb.webp',
+    );
+    expect(thumbUrlFor('/api/v1/files/ads/2026/10/legacy.png')).toBe(
+      '/api/v1/files/ads/2026/10/legacy.thumb.webp',
+    );
+  });
+
+  it('never rewrites foreign URLs and returns null for empty values', () => {
+    expect(thumbUrlFor('/files/1.jpg')).toBe('/files/1.jpg'); // news CMS cover
+    expect(thumbUrlFor('https://cdn.example.com/logo.png')).toBe('https://cdn.example.com/logo.png');
+    expect(thumbUrlFor(null)).toBeNull();
+    expect(thumbUrlFor(undefined)).toBeNull();
   });
 });
 
