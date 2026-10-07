@@ -11,7 +11,7 @@ import {
   pinWallPost,
   uploadImage,
 } from '@/lib/api';
-import { timeAgo } from '@/lib/format';
+import { thumbFallback, thumbUrlFor, timeAgo } from '@/lib/format';
 import type { WallFeed, WallPost } from '@/lib/types';
 
 export interface WallViewProps {
@@ -224,8 +224,15 @@ export function WallView({ city }: WallViewProps) {
         <p className="wall-post__text">{post.content}</p>
 
         {post.imageUrl && (
+          // feed shows the 400px thumbnail; tapping opens the post where the full copy loads
           // eslint-disable-next-line @next/next/no-img-element -- remote media
-          <img className="wall-post__image" src={post.imageUrl} alt="" loading="lazy" />
+          <img
+            className="wall-post__image"
+            src={thumbUrlFor(post.imageUrl) ?? post.imageUrl}
+            alt=""
+            loading="lazy"
+            onError={thumbFallback(post.imageUrl)}
+          />
         )}
 
         <div className="wall-post__foot">

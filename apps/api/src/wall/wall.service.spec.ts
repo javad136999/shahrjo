@@ -28,9 +28,14 @@ function makePrisma() {
 function makeService(scope: { role: string; provinceId: number | null; cityId: number | null } | null) {
   const prisma = makePrisma();
   const rbac = { getScope: jest.fn().mockResolvedValue(scope) };
-  const service = new WallService(prisma as unknown as PrismaService, rbac as unknown as RbacService);
+  const uploads = { purgeEntity: jest.fn().mockResolvedValue({ removed: 1 }) };
+  const service = new WallService(
+    prisma as unknown as PrismaService,
+    rbac as unknown as RbacService,
+    uploads as unknown as never,
+  );
   prisma.city.findFirst.mockResolvedValue({ id: 1 });
-  return { service, prisma };
+  return { service, prisma, uploads };
 }
 
 const user = { id: 4, phone: '09120000000' } as User;
@@ -183,14 +188,17 @@ describe('WallService.toggleLike', () => {
 });
 
 describe('WallService.remove / setPinned (moderation)', () => {
-  it('lets the author delete, but 403s a stranger', async () => {
-    const { service, prisma } = makeService(null);
+  it('lets the author delete, but 403s a stranger — and purges the post images', async () => {
+    const { service, prisma, uploads } = makeService(null);
     prisma.wallPost.findFirst.mockResolvedValue({ id: 3, userId: 4 });
     await expect(service.remove(user, 3)).resolves.toEqual({ id: 3, deleted: true });
+    // files of the deleted post leave storage immediately (no sweep wait)
+    expect(uploads.purgeEntity).toHaveBeenCalledWith('WALL', 3);
 
     prisma.wallPost.findFirst.mockResolvedValue({ id: 3, userId: 99 });
     await expect(service.remove(user, 3)).rejects.toMatchObject({ status: 403 });
     expect(prisma.wallPost.delete).toHaveBeenCalledTimes(1);
+    expect(uploads.purgeEntity).toHaveBeenCalledTimes(1); // stranger was rejected
   });
 
   it('lets an operator delete any post', async () => {

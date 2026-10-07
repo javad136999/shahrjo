@@ -60,9 +60,15 @@ if (!service.includes("entityId: null")) {
 
 // --- Uploads: never trust the client mimetype, cap size/rate, random storage keys ---
 const uploads = read('apps/api/src/uploads/uploads.service.ts');
-for (const marker of ['sniffImage', 'MAX_UPLOAD_BYTES', 'MAX_UPLOADS_PER_HOUR', 'randomBytes', "flag: 'wx'"]) {
+for (const marker of ['sniffImage', 'MAX_UPLOAD_BYTES', 'MAX_UPLOADS_PER_HOUR', 'randomBytes']) {
   if (!uploads.includes(marker)) { console.error(`UPLOADS: missing ${marker}`); fail++; }
 }
+// Writes never overwrite silently and stay inside the volume root (storage abstraction).
+const localDriver = read('apps/api/src/uploads/storage/local-storage.driver.ts');
+if (!localDriver.includes("'wx'")) { console.error("UPLOADS: storage driver must never overwrite silently ('wx')"); fail++; }
+if (!localDriver.includes('escapes the volume')) { console.error('UPLOADS: storage driver must block path traversal'); fail++; }
+const storageTypes = read('apps/api/src/uploads/storage/storage.types.ts');
+if (!storageTypes.includes('interface StorageDriver')) { console.error('STORAGE: StorageDriver abstraction missing (future Object Storage swap)'); fail++; }
 if (uploads.includes('file.mimetype') || uploads.includes('file.originalname')) {
   console.error('SECURITY: client-declared mimetype/filename must never be trusted');
   fail++;

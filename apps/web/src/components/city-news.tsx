@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { formatDate } from '@/lib/format';
+import { formatDate, thumbFallback, thumbUrlFor } from '@/lib/format';
 import type { City, NewsItem } from '@/lib/types';
 
 export interface CityNewsViewProps {
@@ -45,7 +45,13 @@ export function CityNewsView({ city, news, loading, error }: CityNewsViewProps) 
             <li key={item.id} className="content-card" data-testid={`news-${item.id}`}>
               {item.coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- remote media, no next.config images yet
-                <img className="content-card__cover" src={item.coverUrl} alt="" loading="lazy" />
+                <img
+                  className="content-card__cover"
+                  src={thumbUrlFor(item.coverUrl) ?? item.coverUrl}
+                  alt=""
+                  loading="lazy"
+                  onError={thumbFallback(item.coverUrl)}
+                />
               ) : (
                 <div className="content-card__placeholder" aria-hidden>
                   📰

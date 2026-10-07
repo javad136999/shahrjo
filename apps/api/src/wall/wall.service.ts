@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Injectable, BadRequestException, ForbiddenEx
 import type { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService, type AdminScope } from '../rbac/rbac.service';
+import { UploadsService } from '../uploads/uploads.service';
 import type { CreateWallPostDto } from './wall.dto';
 
 /** Per-user wall flood guard: max 10 posts / minute. */
@@ -57,6 +58,7 @@ export class WallService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly rbac: RbacService,
+    private readonly uploads: UploadsService,
   ) {}
 
   private async resolveCity(slug: string): Promise<number> {
@@ -294,7 +296,8 @@ export class WallService {
       if (!scope) throw new ForbiddenException('فقط نویسنده یا ناظر می‌تواند پیام را پاک کند');
     }
     await this.prisma.wallPost.delete({ where: { id } });
-    // attached media keeps its row; the storage sweep removes it with the post
+    // files follow their post immediately — no waiting for the storage sweep
+    await this.uploads.purgeEntity('WALL', id).catch(() => undefined);
     return { id, deleted: true };
   }
 

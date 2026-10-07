@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { formatRating } from '@/lib/format';
+import { formatRating, thumbFallback, thumbUrlFor } from '@/lib/format';
 import type { ShowcaseItem } from '@/lib/types';
 
 export interface ShowcaseMarqueeProps {
@@ -70,7 +70,12 @@ export function ShowcaseMarquee({ items, loading }: ShowcaseMarqueeProps) {
                 <span className="showcase-card__logo" aria-hidden>
                   {item.logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element -- remote media
-                    <img src={item.logoUrl} alt="" loading="lazy" />
+                    <img
+                      src={thumbUrlFor(item.logoUrl) ?? item.logoUrl}
+                      alt=""
+                      loading="lazy"
+                      onError={thumbFallback(item.logoUrl)}
+                    />
                   ) : (
                     <span className="showcase-card__emoji">🏪</span>
                   )}

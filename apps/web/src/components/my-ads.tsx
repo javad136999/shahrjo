@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { formatDate, formatPrice } from '@/lib/format';
+import { formatDate, formatPrice, thumbFallback, thumbUrlFor } from '@/lib/format';
 import type { MyAdItem } from '@/lib/types';
 
 /** Persian labels for the moderation lifecycle. */
@@ -38,8 +38,15 @@ export function MyAdsList({
         <li key={ad.id} data-testid={`my-ad-${ad.id}`}>
           <Link href={`/ad/${ad.id}`} className="my-ads__item">
             {ad.coverUrl && (
+              // lists load the 400px thumbnail; detail pages fetch the full copy
               // eslint-disable-next-line @next/next/no-img-element -- remote media
-              <img className="my-ads__cover" src={ad.coverUrl} alt="" loading="lazy" />
+              <img
+                className="my-ads__cover"
+                src={thumbUrlFor(ad.coverUrl) ?? ad.coverUrl}
+                alt=""
+                loading="lazy"
+                onError={thumbFallback(ad.coverUrl)}
+              />
             )}
             <div className="my-ads__body">
               <h3>{ad.title}</h3>

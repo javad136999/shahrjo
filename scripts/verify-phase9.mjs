@@ -87,10 +87,8 @@ for (const marker of [
   if (!uploads.includes(marker)) { console.error(`UPLOADS: missing ${marker}`); fail++; }
 }
 // The quota check must run BEFORE any bytes hit the disk.
-const quotaIdx = uploads.indexOf('MAX_BYTES_PER_USER >') === -1
-  ? uploads.indexOf('usedBytes + buffer.length > MAX_BYTES_PER_USER')
-  : uploads.indexOf('MAX_BYTES_PER_USER >');
-const writeIdx = uploads.indexOf('await writeFile(');
+const quotaIdx = uploads.indexOf('usedBytes + buffer.length > MAX_BYTES_PER_USER');
+const writeIdx = uploads.indexOf('await this.storage.put(');
 if (quotaIdx === -1 || writeIdx === -1 || quotaIdx > writeIdx) {
   console.error('UPLOADS: quota must be checked before writing to disk');
   fail++;

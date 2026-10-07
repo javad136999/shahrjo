@@ -38,7 +38,7 @@ api ◄──► WebSocket (چت Real-Time)
 | SMS | اینترفیس `SmsProvider` + Adapter — تعویض Provider بدون تغییر Auth (پیش‌فرض پروژه: IPPanel/KPanel با `SMS_PATTERN_CODE`؛ تا زمانی که پترن ثبت نشده بدون فراخوانی API فقط OTP در لاگ ثبت می‌شود) |
 | Realtime | WebSocket (Socket.IO) — یک Chat Room عمومی per-city؛ Presence در Redis؛ پیام‌ها در PostgreSQL |
 | نقشه | OpenStreetMap/Mapbox/سرویس ایرانی — قابل تعویض از طریق abstraction لایه نقشه |
-| Storage | فقط URL/Path در DB؛ ابتدا VPS سپس S3-compatible |
+| Storage | پردازش تصویر با **sharp** (WebP کیفیت ۸۲، ضلع ≤۱۶۰۰px، Thumbnail ≤۴۰۰px، حذف EXIF)؛ فقط Key/ابعاد/حجم در DB (بدون فایل در PostgreSQL)؛ interface `StorageDriver` — امروز local (Docker volume) فردا Arvan Object Storage + CDN |
 | RBAC | `roles`, `permissions`, `role_permissions`, `admin_users` با scope استان/شهر |
 | Reverse Proxy | Nginx + Let's Encrypt |
 | Backup | `pg_dump` روزانه + Retention |

@@ -1,73 +1,110 @@
 import { mkdtempSync, rmSync } from 'node:fs';
-import { mkdir, stat, utimes, writeFile } from 'node:fs/promises';
+import { utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
-import type { User } from '@prisma/client';
+import { join } from 'node:path';
 import type { ConfigService } from '@nestjs/config';
+import type { User } from '@prisma/client';
+import sharp from 'sharp';
 import type { PrismaService } from '../prisma/prisma.service';
-import { MAX_BYTES_PER_USER, MAX_UPLOAD_BYTES, UploadsService, sniffImage } from './uploads.service';
+import type { StorageDriver } from './storage/storage.types';
+import { LocalStorageDriver } from './storage/local-storage.driver';
+import {
+  MAX_BYTES_PER_USER,
+  MAX_UPLOAD_BYTES,
+  UploadsService,
+  sniffImage,
+  thumbKeyFor,
+  thumbUrlFor,
+} from './uploads.service';
 
 const user = { id: 4, phone: '09120000000' } as User;
 
-let root: string;
+// sharp encode/decode is CPU-bound — never let a loaded machine flake a test
+jest.setTimeout(60_000);
 
-function makeService(overrides: { recent?: number; used?: number } = {}) {
-  const prisma = {
+const roots: string[] = [];
+
+interface PrismaMock {
+  media: {
+    count: jest.Mock;
+    create: jest.Mock;
+    aggregate: jest.Mock;
+    findMany: jest.Mock;
+    delete: jest.Mock;
+    deleteMany: jest.Mock;
+  };
+  ad: { findMany: jest.Mock };
+  wallPost: { findMany: jest.Mock };
+}
+
+function makeService(
+  opts: {
+    recent?: number;
+    used?: number;
+    trash?: unknown[];
+    unclaimed?: unknown[];
+    attached?: unknown[];
+    mediaRows?: { storageKey: string }[];
+    aliveAds?: { id: number }[];
+    alivePosts?: { id: number }[];
+  } = {},
+): { service: UploadsService; prisma: PrismaMock; storage: LocalStorageDriver; root: string } {
+  const root = mkdtempSync(join(tmpdir(), 'shahrjo-up-'));
+  roots.push(root);
+  const storage = new LocalStorageDriver(root, '');
+
+  const prisma: PrismaMock = {
     media: {
-      count: jest.fn(),
-      create: jest.fn(),
-      aggregate: jest.fn(),
-      findMany: jest.fn(),
-      delete: jest.fn(),
+      count: jest.fn().mockResolvedValue(opts.recent ?? 0),
+      create: jest.fn(({ data }: { data: Record<string, unknown> }) =>
+        Promise.resolve({ id: 55, url: (data.url as string) ?? '' }),
+      ),
+      aggregate: jest
+        .fn()
+        .mockResolvedValue({ _sum: { sizeBytes: opts.used ?? 0 }, _count: { id: 0 } }),
+      // dispatch on the WHERE shape instead of call order — robust against
+      // future reordering of the sweep steps
+      findMany: jest.fn(({ where }: { where?: Record<string, unknown> }) => {
+        if (!where) return Promise.resolve(opts.mediaRows ?? []); // step 4: referenced keys
+        if ((where.deletedAt as { lt?: Date } | undefined)?.lt) {
+          return Promise.resolve(opts.trash ?? []); // step 1
+        }
+        if (where.entityId === null) return Promise.resolve(opts.unclaimed ?? []); // step 2
+        if (where.entityId && typeof where.entityId === 'object') {
+          return Promise.resolve(opts.attached ?? []); // step 3
+        }
+        return Promise.resolve([]);
+      }),
+      delete: jest.fn().mockResolvedValue({ id: 1 }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
     },
-    ad: { findMany: jest.fn() },
+    ad: { findMany: jest.fn().mockResolvedValue(opts.aliveAds ?? []) },
+    wallPost: { findMany: jest.fn().mockResolvedValue(opts.alivePosts ?? []) },
   };
-  prisma.media.count.mockResolvedValue(overrides.recent ?? 0);
-  prisma.media.aggregate.mockResolvedValue({ _sum: { sizeBytes: overrides.used ?? 0 }, _count: { id: 0 } });
-  prisma.media.findMany.mockResolvedValue([]);
-  prisma.media.delete.mockResolvedValue({ id: 1 });
-  prisma.ad.findMany.mockResolvedValue([]);
-  prisma.media.create.mockImplementation(({ data }: { data: Record<string, unknown> }) =>
-    Promise.resolve({ id: 55, url: (data.url as string) ?? '' }),
-  );
-  const config = {
-    get: jest.fn((key: string) => (key === 'STORAGE_LOCAL_DIR' ? root : '')),
-  };
+
   const service = new UploadsService(
     prisma as unknown as PrismaService,
-    config as unknown as ConfigService,
+    {} as ConfigService,
+    storage,
   );
-  return { service, prisma };
+  return { service, prisma, storage, root };
+}
+
+afterEach(() => {
+  while (roots.length > 0) rmSync(roots.pop() as string, { recursive: true, force: true });
+});
+
+/** A real, decodable photo-like JPEG (flat gradient — compresses well). */
+async function jpeg(width = 2000, height = 1500): Promise<Buffer> {
+  return sharp({ create: { width, height, channels: 3, background: { r: 10, g: 120, b: 200 } } })
+    .jpeg({ quality: 90 })
+    .toBuffer();
 }
 
 const png = Buffer.concat([
   Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
   Buffer.alloc(64, 7),
 ]);
-
-beforeAll(() => {
-  root = mkdtempSync(join(tmpdir(), 'shahrjo-uploads-'));
-});
-
-afterAll(() => {
-  rmSync(root, { recursive: true, force: true });
-});
-
-async function statOrNull(path: string): Promise<unknown> {
-  try {
-    return await stat(path);
-  } catch {
-    return null;
-  }
-}
-
-/** Write a fixture file under the storage root (creating parent dirs). */
-async function writeAt(rel: string): Promise<string> {
-  const full = join(root, rel);
-  await mkdir(dirname(full), { recursive: true });
-  await writeFile(full, png);
-  return full;
-}
 
 describe('sniffImage — magic bytes, never the client mimetype', () => {
   it('accepts jpg/png/webp/gif by signature', () => {
@@ -86,114 +123,280 @@ describe('sniffImage — magic bytes, never the client mimetype', () => {
   });
 });
 
-describe('UploadsService.save', () => {
-  it('stores a valid image under a random key and records Media metadata', async () => {
-    const { service, prisma } = makeService();
+describe('thumb key/url derivation (frontend lists ↔ storage)', () => {
+  it('derives the thumbnail key for new and legacy images', () => {
+    expect(thumbKeyFor('media/2026/10/ab.webp')).toBe('media/2026/10/ab.thumb.webp');
+    expect(thumbKeyFor('ads/2026/10/x.png')).toBe('ads/2026/10/x.thumb.webp');
+    expect(thumbKeyFor('businesses/2026/01/y.jpg')).toBe('businesses/2026/01/y.thumb.webp');
+  });
 
-    const result = await service.save(user, { buffer: png, size: png.length });
+  it('derives the thumbnail URL and returns null for non-images', () => {
+    expect(thumbUrlFor('/api/v1/files/media/2026/10/a.webp')).toBe(
+      '/api/v1/files/media/2026/10/a.thumb.webp',
+    );
+    expect(thumbUrlFor('/api/v1/files/ads/x.png')).toBe('/api/v1/files/ads/x.thumb.webp');
+    expect(thumbUrlFor('/api/v1/files/no-extension')).toBeNull();
+    expect(thumbUrlFor(null)).toBeNull();
+  });
+});
 
-    expect(result.url).toMatch(/^\/api\/v1\/files\/ads\/\d{4}\/\d{2}\/[0-9a-f]{24}\.png$/);
+describe('UploadsService.save — processing pipeline', () => {
+  it('stores a processed WebP + thumbnail under a random key and records metadata', async () => {
+    const { service, prisma, storage } = makeService();
+    const input = await jpeg();
+
+    const result = await service.save(user, { buffer: input, size: input.length });
+
+    // exactly two objects: display copy + thumbnail, both WebP under media/
+    const files = await storage.list();
+    expect(files).toHaveLength(2);
+    const keys = files.map((f) => f.key).sort();
+    expect(keys[0]).toMatch(/^media\/\d{4}\/\d{2}\/[0-9a-f]{24}\.thumb\.webp$/);
+    expect(keys[1]).toMatch(/^media\/\d{4}\/\d{2}\/[0-9a-f]{24}\.webp$/);
+
+    // the user's original JPEG bytes are nowhere on disk
+    for (const f of files) {
+      const stored = await storage.get(f.key);
+      expect(stored?.equals(input)).toBe(false);
+    }
+
     const data = prisma.media.create.mock.calls[0][0].data;
     expect(data).toMatchObject({
-      mimeType: 'image/png',
-      sizeBytes: png.length,
+      mimeType: 'image/webp',
       ownerUserId: 4,
       entityType: 'AD',
       entityId: null,
+      width: 1600, // resized down from 2000
+      height: 1200,
     });
-    expect(data.storageKey).toMatch(/^ads\/\d{4}\/\d{2}\/[0-9a-f]{24}\.png$/);
+    expect(data.sizeBytes).toBe(files.reduce((sum, f) => sum + f.size, 0));
+    expect(String(data.storageKey)).toMatch(/^media\/\d{4}\/\d{2}\/[0-9a-f]{24}\.webp$/);
+
+    // response carries both variants so lists can pick the small one
+    expect(result.url).toBe(`/api/v1/files/${data.storageKey}`);
+    expect(result.thumbUrl).toBe(thumbUrlFor(result.url));
+    expect(result.thumbUrl).toContain('.thumb.webp');
+    expect(result.id).toBe(55);
   });
 
-  it('400s without a file and 415s on non-image content', async () => {
+  it('400s without a file, 415s on non-image content and on GIF', async () => {
     const { service } = makeService();
     await expect(service.save(user, undefined)).rejects.toMatchObject({ status: 400 });
-    await expect(service.save(user, { buffer: Buffer.from('not an image'), size: 12 })).rejects.toMatchObject({ status: 415 });
+    await expect(
+      service.save(user, { buffer: Buffer.from('not an image'), size: 12 }),
+    ).rejects.toMatchObject({ status: 415 });
+    await expect(
+      service.save(user, { buffer: Buffer.from('GIF89a....'), size: 9 }),
+    ).rejects.toMatchObject({ status: 415 });
   });
 
-  it('413s above the size cap even if multer was bypassed', async () => {
-    const { service } = makeService();
-    const big = Buffer.concat([png, Buffer.alloc(MAX_UPLOAD_BYTES + 1, 0)]);
-    await expect(service.save(user, { buffer: big, size: big.length })).rejects.toMatchObject({ status: 413 });
+  it('413s above the 10MB input cap even if multer was bypassed', async () => {
+    const { service, storage } = makeService();
+    const big = Buffer.alloc(MAX_UPLOAD_BYTES + 1, 0);
+    big.set([0xff, 0xd8, 0xff]); // pretend it is a jpeg header
+    await expect(service.save(user, { buffer: big, size: big.length })).rejects.toMatchObject({
+      status: 413,
+    });
+    expect(await storage.list()).toHaveLength(0);
   });
 
   it('429s after the per-user hourly upload cap', async () => {
     const { service } = makeService({ recent: 30 });
-    await expect(service.save(user, { buffer: png, size: png.length })).rejects.toMatchObject({ status: 429 });
+    const input = await jpeg(64, 64);
+    await expect(service.save(user, { buffer: input, size: input.length })).rejects.toMatchObject({
+      status: 429,
+    });
   });
 
-  it('413s when the owner has exhausted the total storage quota', async () => {
-    const { service, prisma } = makeService({ used: MAX_BYTES_PER_USER });
-    await expect(service.save(user, { buffer: png, size: png.length })).rejects.toMatchObject({ status: 413 });
-    // nothing written to disk and no row created
+  it('413s when the owner has exhausted the storage quota — before any disk write', async () => {
+    const { service, prisma, storage } = makeService({ used: MAX_BYTES_PER_USER });
+    const input = await jpeg(64, 64);
+    await expect(service.save(user, { buffer: input, size: input.length })).rejects.toMatchObject({
+      status: 413,
+    });
     expect(prisma.media.create).not.toHaveBeenCalled();
+    expect(await storage.list()).toHaveLength(0);
   });
 
-  it('counts existing usage so a user exactly at the quota cannot add more', async () => {
-    const { service } = makeService({ used: MAX_BYTES_PER_USER - png.length });
-    // at the boundary the upload still fits
-    await expect(service.save(user, { buffer: png, size: png.length })).resolves.toMatchObject({ id: 55 });
+  it('rejects at the quota boundary (existing usage + input = cap + 1 byte)', async () => {
+    const input = await jpeg(64, 64);
+    const { service, storage } = makeService({ used: MAX_BYTES_PER_USER - input.length + 1 });
+    await expect(service.save(user, { buffer: input, size: input.length })).rejects.toMatchObject({
+      status: 413,
+    });
+    expect(await storage.list()).toHaveLength(0); // rejected before decode/write
+  });
+
+  it('allows uploads while quota headroom remains', async () => {
+    const input = await jpeg(64, 64);
+    const { service } = makeService({ used: MAX_BYTES_PER_USER - 10 * 1024 * 1024 });
+    await expect(service.save(user, { buffer: input, size: input.length })).resolves.toMatchObject({
+      id: 55,
+    });
+  });
+
+  it('removes already-written files when the DB row fails (no orphans)', async () => {
+    const { service, prisma, storage } = makeService();
+    prisma.media.create.mockRejectedValueOnce(new Error('db down'));
+    const input = await jpeg(64, 64);
+
+    await expect(service.save(user, { buffer: input, size: input.length })).rejects.toThrow('db down');
+    expect(await storage.list()).toHaveLength(0); // both variants cleaned up
+  });
+
+  it('removes the first variant when writing the thumbnail fails (no temp leftovers)', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'shahrjo-flaky-'));
+    roots.push(root);
+    const base = new LocalStorageDriver(root, '');
+    const flaky: StorageDriver = {
+      name: 'flaky',
+      put: (key, data, options) =>
+        key.includes('.thumb.')
+          ? Promise.reject(new Error('disk full'))
+          : base.put(key, data, options),
+      get: (key) => base.get(key),
+      delete: (key) => base.delete(key),
+      exists: (key) => base.exists(key),
+      list: (prefix) => base.list(prefix),
+      url: (key) => base.url(key),
+    };
+    const prisma: PrismaMock = {
+      media: {
+        count: jest.fn().mockResolvedValue(0),
+        create: jest.fn(),
+        aggregate: jest.fn().mockResolvedValue({ _sum: { sizeBytes: 0 }, _count: { id: 0 } }),
+        findMany: jest.fn().mockResolvedValue([]),
+        delete: jest.fn(),
+        deleteMany: jest.fn(),
+      },
+      ad: { findMany: jest.fn() },
+      wallPost: { findMany: jest.fn() },
+    };
+    const service = new UploadsService(
+      prisma as unknown as PrismaService,
+      {} as ConfigService,
+      flaky,
+    );
+
+    const input = await jpeg(64, 64);
+    await expect(service.save(user, { buffer: input, size: input.length })).rejects.toMatchObject({
+      status: 502,
+    });
+    expect(await base.list()).toHaveLength(0);
+    expect(prisma.media.create).not.toHaveBeenCalled();
   });
 });
 
-describe('UploadsService.sweep (Phase 9 — disk-fill protection)', () => {
-  it('deletes unclaimed uploads past 48h: file gone, row gone, bytes freed', async () => {
+describe('UploadsService.purgeEntity — files follow their entity', () => {
+  it('deletes both variants and the Media rows for an entity', async () => {
+    const { service, prisma, storage } = makeService();
+    const key = 'media/2026/10/abcdefabcdefabcdefabcdef.webp';
+    await storage.put(key, Buffer.from('full'));
+    await storage.put(thumbKeyFor(key), Buffer.from('thumb'));
+    prisma.media.findMany.mockResolvedValue([{ id: 9, storageKey: key }]);
+    prisma.media.deleteMany.mockResolvedValue({ count: 1 });
+
+    const result = await service.purgeEntity('AD', 5);
+
+    expect(result).toEqual({ removed: 1 });
+    expect(await storage.list()).toHaveLength(0);
+    expect(prisma.media.deleteMany).toHaveBeenCalledWith({ where: { id: { in: [9] } } });
+  });
+
+  it('is a no-op when the entity has no media', async () => {
     const { service, prisma } = makeService();
-    const key = 'ads/2026/10/ghost.png';
-    await writeAt(key); // physical file exists under root
-    // (1) trash → empty, (2) unclaimed → one row, (3) attached → empty, (4) referenced → empty
-    prisma.media.findMany
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([{ id: 1, storageKey: key, sizeBytes: png.length }])
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
+    const result = await service.purgeEntity('AD', 404);
+    expect(result).toEqual({ removed: 0 });
+    expect(prisma.media.deleteMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('UploadsService.sweep — disk-fill protection', () => {
+  it('hard-deletes unclaimed uploads past 48h: files gone, row gone, bytes freed', async () => {
+    const key = 'media/2026/10/0badc0ffeebadc0ffeebadc0ffe.webp';
+    const { service, prisma, storage } = makeService({
+      unclaimed: [{ id: 1, storageKey: key, sizeBytes: 2048 }],
+    });
+    await storage.put(key, Buffer.alloc(2048, 1));
+    await storage.put(thumbKeyFor(key), Buffer.alloc(100, 2));
 
     const result = await service.sweep();
 
+    expect(result).toEqual({ removedFiles: 2, freedBytes: 2048, thumbsCreated: 0 });
     expect(prisma.media.delete).toHaveBeenCalledWith({ where: { id: 1 } });
-    expect(result).toEqual({ removedFiles: 1, freedBytes: png.length });
-    await expect(statOrNull(join(root, key))).resolves.toBeNull();
+    expect(await storage.list()).toHaveLength(0);
   });
 
-  it('unlinks orphan files no Media row references, but keeps referenced ones', async () => {
-    const { service, prisma } = makeService();
-    const orphan = await writeAt('ads/2026/10/orphan.png');
-    const kept = await writeAt('ads/2026/10/kept.png');
+  it('unlinks orphan files no Media row references but keeps referenced ones (incl. thumbs)', async () => {
+    const keptKey = 'media/2026/10/keepkeepkeepkeepkeepkeep.webp';
+    const { service, storage } = makeService({ mediaRows: [{ storageKey: keptKey }] });
+    await storage.put(keptKey, Buffer.from('kept-full'));
+    await storage.put(thumbKeyFor(keptKey), Buffer.from('kept-thumb'));
+    const orphan = 'media/2026/10/orphanorphanorphanorphan.webp';
+    await storage.put(orphan, Buffer.alloc(500, 3));
     const threeDaysAgo = new Date(Date.now() - 3 * 86_400_000);
-    await utimes(orphan, threeDaysAgo, threeDaysAgo);
-    await utimes(kept, threeDaysAgo, threeDaysAgo);
-    // nothing soft-deleted/unclaimed/attached; only `kept.png` is referenced
-    prisma.media.findMany
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([{ storageKey: 'ads/2026/10/kept.png' }]);
+    await utimes(join(roots[roots.length - 1], orphan), threeDaysAgo, threeDaysAgo);
 
     const result = await service.sweep();
 
     expect(result.removedFiles).toBe(1);
-    expect(result.freedBytes).toBe(png.length);
-    await expect(statOrNull(orphan)).resolves.toBeNull();
-    await expect(statOrNull(kept)).resolves.not.toBeNull();
+    expect(result.freedBytes).toBe(500);
+    expect(await storage.exists(orphan)).toBe(false);
+    expect(await storage.exists(keptKey)).toBe(true);
+    expect(await storage.exists(thumbKeyFor(keptKey))).toBe(true);
   });
 
   it('keeps fresh files (possible in-flight uploads) untouched', async () => {
-    const { service, prisma } = makeService();
-    const fresh = await writeAt('ads/2026/10/fresh.png'); // mtime = now → younger than the 48h guard
-    // nothing to purge; the leftover kept.png from the previous test is referenced
-    prisma.media.findMany
-      .mockResolvedValueOnce([]) // trash
-      .mockResolvedValueOnce([]) // unclaimed
-      .mockResolvedValueOnce([]) // attached
-      .mockResolvedValueOnce([{ storageKey: 'ads/2026/10/kept.png' }]); // referenced keys
+    const fresh = 'media/2026/10/inflightinflightinflig.webp';
+    const { service, storage } = makeService();
+    await storage.put(fresh, Buffer.alloc(10, 9)); // mtime = now → inside the 48h guard
 
     const result = await service.sweep();
 
     expect(result.removedFiles).toBe(0);
-    await expect(statOrNull(fresh)).resolves.not.toBeNull();
+    expect(await storage.exists(fresh)).toBe(true);
+  });
+
+  it('purges media whose ad no longer exists, and keeps media of live ads', async () => {
+    // (a) ad 5 was deleted → its media must go
+    const deadKey = 'media/2026/10/deaddeaddeaddeaddeaddead.webp';
+    const dead = makeService({
+      attached: [{ id: 2, storageKey: deadKey, sizeBytes: 111, entityType: 'AD', entityId: '5' }],
+      aliveAds: [],
+    });
+    await dead.storage.put(deadKey, Buffer.from('x'));
+    const first = await dead.service.sweep();
+    expect(first.removedFiles).toBe(1);
+    expect(dead.prisma.media.delete).toHaveBeenCalledWith({ where: { id: 2 } });
+    expect(await dead.storage.exists(deadKey)).toBe(false);
+
+    // (b) ad 7 still exists → media stays
+    const aliveKey = 'media/2026/10/alivealivealivealivealive.webp';
+    const alive = makeService({
+      attached: [{ id: 3, storageKey: aliveKey, sizeBytes: 222, entityType: 'AD', entityId: '7' }],
+      aliveAds: [{ id: 7 }],
+    });
+    await alive.storage.put(aliveKey, Buffer.from('y'));
+    const second = await alive.service.sweep();
+    expect(second.removedFiles).toBe(0);
+    expect(await alive.storage.exists(aliveKey)).toBe(true);
+  });
+
+  it('backfills missing thumbnails for legacy images', async () => {
+    const legacy = 'legacy/2026/08/old-photo.jpg';
+    const { service, storage } = makeService({ mediaRows: [{ storageKey: legacy }] });
+    await storage.put(legacy, await jpeg(640, 480)); // a real, processable image
+
+    const result = await service.sweep();
+
+    expect(result.thumbsCreated).toBe(1);
+    expect(await storage.exists(thumbKeyFor(legacy))).toBe(true);
+    expect(await storage.exists(legacy)).toBe(true); // original kept (it is referenced)
   });
 
   it('reports usage with both quotas for the admin panel', async () => {
     const { service } = makeService({ used: 1234 });
+    // aggregate mock returns _count.id = 0; override for a richer figure
     const overview = await service.overview();
     expect(overview).toEqual({
       usedBytes: 1234,

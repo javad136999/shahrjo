@@ -1,13 +1,13 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable, Logger, OnModuleInit, PayloadTooLargeException, UnsupportedMediaTypeException } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, Logger, OnModuleInit, PayloadTooLargeException, UnsupportedMediaTypeException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { User } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
-import { mkdir, readdir, stat, unlink, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
 import { PrismaService } from '../prisma/prisma.service';
+import { MAX_INPUT_BYTES, processImage } from './image.processor';
+import { STORAGE_DRIVER, type StorageDriver } from './storage/storage.types';
 
-/** Hard cap per image (multer rejects earlier; this is defense in depth). */
-export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+/** Hard cap per incoming image (multer rejects earlier; this is defense in depth). */
+export const MAX_UPLOAD_BYTES = MAX_INPUT_BYTES; // 10 MB
 /** Per-user hourly cap so the disk cannot be filled by one account. */
 const MAX_UPLOADS_PER_HOUR = 30;
 /** Total bytes one account may keep on disk (~100 MB) — the disk-fill guard. */
@@ -20,16 +20,22 @@ const TRASH_MAX_AGE_MS = 7 * 86_400_000;
 const FILE_MIN_AGE_MS = 48 * 3_600_000;
 /** How often the automatic sweep runs. */
 export const SWEEP_INTERVAL_MS = 6 * 3_600_000;
+/** Max thumbnails (re)generated per sweep — keeps CPU bounded on legacy data. */
+const THUMBS_PER_SWEEP = 100;
 
 export interface StoredImage {
   id: number;
   url: string;
+  thumbUrl: string;
+  width: number;
+  height: number;
 }
 
 /** Admin-facing storage usage (Phase 9). */
 export interface SweepResult {
   removedFiles: number;
   freedBytes: number;
+  thumbsCreated: number;
 }
 
 export interface StorageOverview {
@@ -42,6 +48,23 @@ export interface StorageOverview {
 interface Sniffed {
   mime: string;
   ext: string;
+}
+
+const IMAGE_EXT_RE = /\.(jpe?g|png|gif|webp)$/i;
+
+/**
+ * Thumb key of a stored object: `media/2026/10/ab.webp` →
+ * `media/2026/10/ab.thumb.webp` (legacy `x.jpg` → `x.thumb.webp`).
+ * The frontend derives the very same rule from a URL — no schema coupling.
+ */
+export function thumbKeyFor(storageKey: string): string {
+  return `${storageKey.replace(IMAGE_EXT_RE, '')}.thumb.webp`;
+}
+
+/** URL counterpart of {@link thumbKeyFor}; `null` for empty/non-image URLs. */
+export function thumbUrlFor(url: string | null | undefined): string | null {
+  if (!url) return null;
+  return IMAGE_EXT_RE.test(url) ? url.replace(IMAGE_EXT_RE, '.thumb.webp') : null;
 }
 
 /**
@@ -62,34 +85,41 @@ export function sniffImage(buf: Buffer): Sniffed | null {
 }
 
 /**
- * Image upload (Phase 5). Files land on the VPS filesystem under
- * `STORAGE_LOCAL_DIR` with a random content key (never user-controlled names),
- * a Media row is created for ownership/audit, and only a URL is stored in DB —
- * binary data never enters PostgreSQL.
+ * Image upload (Phase 5, hardened for production storage).
+ *
+ * Pipeline: sniff → rate/quota guards → sharp (WebP ≤1600px + thumb ≤400px,
+ * quality 82, EXIF stripped) → `StorageDriver` (Docker volume today, Arvan
+ * Object Storage later) → Media row. The user's original bytes are never
+ * written anywhere; a failed step removes whatever it already wrote.
+ *
+ * Only metadata lives in PostgreSQL — never the file itself.
  */
 @Injectable()
 export class UploadsService implements OnModuleInit {
-  private readonly root: string;
-  private readonly publicBase: string;
   private readonly logger = new Logger(UploadsService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     config: ConfigService,
+    @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
   ) {
-    this.root = resolve(config.get<string>('STORAGE_LOCAL_DIR') ?? './uploads');
-    this.publicBase = (config.get<string>('STORAGE_PUBLIC_BASE_URL') ?? '').trim().replace(/\/+$/, '');
+    // config stays in the signature for the storage factory wiring; the
+    // driver itself already resolved STORAGE_LOCAL_DIR / PUBLIC_BASE_URL.
+    void config;
   }
 
   async save(user: User, file: { buffer?: Buffer; size?: number } | undefined): Promise<StoredImage> {
     const buffer = file?.buffer;
     if (!buffer || buffer.length === 0) throw new BadRequestException('فایل تصویر الزامی است');
     if ((file?.size ?? buffer.length) > MAX_UPLOAD_BYTES || buffer.length > MAX_UPLOAD_BYTES) {
-      throw new PayloadTooLargeException('حجم تصویر نباید بیشتر از ۵ مگابایت باشد');
+      throw new PayloadTooLargeException('حجم تصویر نباید بیشتر از ۱۰ مگابایت باشد');
     }
 
     const kind = sniffImage(buffer);
-    if (!kind) throw new UnsupportedMediaTypeException('فرمت فایل پشتیبانی نمی‌شود (JPG، PNG، WebP یا GIF)');
+    if (!kind) throw new UnsupportedMediaTypeException('فرمت فایل پشتیبانی نمی‌شود (JPG، PNG یا WebP)');
+    if (kind.mime === 'image/gif') {
+      throw new UnsupportedMediaTypeException('فرمت GIF پشتیبانی نمی‌شود (JPG، PNG یا WebP بفرستید)');
+    }
 
     const hourAgo = new Date(Date.now() - 3_600_000);
     const recent = await this.prisma.media.count({
@@ -99,8 +129,8 @@ export class UploadsService implements OnModuleInit {
       throw new HttpException('سقف آپلود تصویر در ساعت پر شده است؛ کمی بعد دوباره تلاش کنید', HttpStatus.TOO_MANY_REQUESTS);
     }
 
-    // Total-per-user quota: the hourly rate limit alone cannot stop a slow
-    // drip from filling the VPS disk over days.
+    // Quota BEFORE the CPU-heavy decode (cheap guard, input is an upper bound
+    // for what we are about to store), then again on the real bytes below.
     const used = await this.prisma.media.aggregate({
       where: { ownerUserId: user.id, deletedAt: null },
       _sum: { sizeBytes: true },
@@ -112,30 +142,83 @@ export class UploadsService implements OnModuleInit {
       );
     }
 
+    // --- process: WebP display copy + list thumbnail (original is discarded) ---
+    const processed = await processImage(buffer);
+    if (usedBytes + processed.bytes > MAX_BYTES_PER_USER) {
+      throw new PayloadTooLargeException(
+        'سقف ذخیره‌سازی تصویر شما تکمیل است (۱۰۰ مگابایت)؛ ابتدا تصاویر آگهی‌های قدیمی را حذف کنید',
+      );
+    }
+
     const now = new Date();
     const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-    const storageKey = `ads/${now.getUTCFullYear()}/${month}/${randomBytes(12).toString('hex')}.${kind.ext}`;
-    await mkdir(dirname(join(this.root, storageKey)), { recursive: true });
-    // 'wx': never overwrite an existing object, even on a (practically impossible) collision
-    await writeFile(join(this.root, storageKey), buffer, { flag: 'wx' });
+    const prefix = `media/${now.getUTCFullYear()}/${month}`;
+    const storageKey = `${prefix}/${randomBytes(12).toString('hex')}.webp`;
+    const thumbKey = thumbKeyFor(storageKey);
+    const url = this.storage.url(storageKey);
 
-    // Relative URL by default: the same origin serves /api/v1/files/* through
-    // the reverse proxy, so the record stays valid on any domain.
-    const url = this.publicBase ? `${this.publicBase}/${storageKey}` : `/api/v1/files/${storageKey}`;
+    // Write both variants; anything already written is removed on failure so
+    // a half-finished upload never leaves a temp/orphan file behind.
+    const written: string[] = [];
+    try {
+      await this.storage.put(storageKey, processed.full.data);
+      written.push(storageKey);
+      await this.storage.put(thumbKey, processed.thumb.data);
+      written.push(thumbKey);
+    } catch {
+      await Promise.all(written.map((key) => this.storage.delete(key).catch(() => undefined)));
+      throw new HttpException('ذخیره تصویر ممکن نشد؛ کمی بعد دوباره تلاش کنید', HttpStatus.BAD_GATEWAY);
+    }
 
-    const media = await this.prisma.media.create({
-      data: {
-        storageKey,
-        url,
-        mimeType: kind.mime,
-        sizeBytes: buffer.length,
-        ownerUserId: user.id,
-        entityType: 'AD',
-        entityId: null, // attached to an ad (and claimed) on POST /ads
-      },
-      select: { id: true, url: true },
+    try {
+      const media = await this.prisma.media.create({
+        data: {
+          storageKey,
+          url,
+          mimeType: 'image/webp',
+          sizeBytes: processed.bytes,
+          width: processed.full.width,
+          height: processed.full.height,
+          ownerUserId: user.id,
+          entityType: 'AD',
+          entityId: null, // attached to an ad (and claimed) on POST /ads
+        },
+        select: { id: true, url: true },
+      });
+      return {
+        id: media.id,
+        url: media.url,
+        thumbUrl: thumbUrlFor(media.url) ?? media.url,
+        width: processed.full.width,
+        height: processed.full.height,
+      };
+    } catch (err) {
+      // no row ⇒ no reference ⇒ drop both files (no orphans)
+      await Promise.all(written.map((key) => this.storage.delete(key).catch(() => undefined)));
+      throw err;
+    }
+  }
+
+  // ---------- deletion (files follow their entity) ----------
+
+  /**
+   * Removes every file + Media row belonging to one entity (ad, wall post, …).
+   * Called at delete time so storage frees up immediately instead of waiting
+   * for the sweep.
+   */
+  async purgeEntity(entityType: string, entityId: string | number): Promise<{ removed: number }> {
+    const rows = await this.prisma.media.findMany({
+      where: { entityType, entityId: String(entityId) },
+      select: { id: true, storageKey: true },
     });
-    return { id: media.id, url: media.url };
+    if (rows.length === 0) return { removed: 0 };
+
+    for (const row of rows) {
+      await this.storage.delete(row.storageKey).catch(() => undefined);
+      await this.storage.delete(thumbKeyFor(row.storageKey)).catch(() => undefined);
+    }
+    await this.prisma.media.deleteMany({ where: { id: { in: rows.map((r) => r.id) } } });
+    return { removed: rows.length };
   }
 
   // ---------- disk protection (Phase 9) ----------
@@ -151,8 +234,11 @@ export class UploadsService implements OnModuleInit {
   private async sweepSafely(): Promise<void> {
     try {
       const result = await this.sweep();
-      if (result.removedFiles > 0) {
-        this.logger.log(`storage sweep: removed ${result.removedFiles} file(s), freed ${result.freedBytes} bytes`);
+      if (result.removedFiles > 0 || result.thumbsCreated > 0) {
+        this.logger.log(
+          `storage sweep: removed ${result.removedFiles} file(s), freed ${result.freedBytes} bytes, ` +
+            `created ${result.thumbsCreated} thumbnail(s)`,
+        );
       }
     } catch (err) {
       this.logger.warn(`storage sweep failed: ${String(err)}`);
@@ -161,21 +247,22 @@ export class UploadsService implements OnModuleInit {
 
   /**
    * Disk-protection sweep: (1) hard-delete soft-deleted media past retention,
-   * (2) drop uploads never claimed by an ad, (3) drop media whose ad is gone,
-   * (4) unlink orphan files on disk that no Media row references anymore.
+   * (2) drop uploads never claimed by an entity, (3) drop media whose entity
+   * is gone, (4) unlink orphan files that no Media row references (thumbnails
+   * are considered too), (5) backfill missing thumbnails for legacy images.
    * Idempotent — safe to run on an interval and on demand from the admin panel.
    */
   async sweep(): Promise<SweepResult> {
     let removedFiles = 0;
     let freedBytes = 0;
+    let thumbsCreated = 0;
 
-    const remove = async (key: string, size: number): Promise<void> => {
-      try {
-        await unlink(join(this.root, key));
+    const remove = async (row: { storageKey: string; sizeBytes?: number }): Promise<void> => {
+      for (const key of [row.storageKey, thumbKeyFor(row.storageKey)]) {
+        if (!(await this.storage.exists(key).catch(() => false))) continue;
+        await this.storage.delete(key).catch(() => undefined);
         removedFiles += 1;
-        freedBytes += size;
-      } catch {
-        // file already gone — the row delete below still cleans the DB
+        if (key === row.storageKey) freedBytes += row.sizeBytes ?? 0;
       }
     };
 
@@ -185,22 +272,23 @@ export class UploadsService implements OnModuleInit {
       select: { id: true, storageKey: true, sizeBytes: true },
     });
     for (const row of trash) {
-      await remove(row.storageKey, row.sizeBytes);
+      await remove(row);
       await this.prisma.media.delete({ where: { id: row.id } });
     }
 
-    // (2) uploads that were never attached to a post/ad (abandoned submissions)
+    // (2) uploads that were never attached to an entity (abandoned submissions)
     const unclaimed = await this.prisma.media.findMany({
       where: {
-        entityType: { in: ['AD', 'WALL'] },
         entityId: null,
         deletedAt: null,
         createdAt: { lt: new Date(Date.now() - UNCLAIMED_MAX_AGE_MS) },
+        // wall uploads are claimed after the post row exists — keep the grace period
+        entityType: { in: ['AD', 'WALL', 'BUSINESS', 'NEWS', 'USER', 'BANNER'] },
       },
       select: { id: true, storageKey: true, sizeBytes: true },
     });
     for (const row of unclaimed) {
-      await remove(row.storageKey, row.sizeBytes);
+      await remove(row);
       await this.prisma.media.delete({ where: { id: row.id } });
     }
 
@@ -245,32 +333,45 @@ export class UploadsService implements OnModuleInit {
     };
     for (const row of attached) {
       if (!isAlive(row)) {
-        await remove(row.storageKey, row.sizeBytes);
+        await remove(row);
         await this.prisma.media.delete({ where: { id: row.id } });
       }
     }
 
-    // (4) files on disk no Media row references (crashes, manual copies, …)
-    const referenced = new Set(
-      (await this.prisma.media.findMany({ select: { storageKey: true } })).map((r) => r.storageKey),
-    );
-    const files = await this.walk(this.root);
+    // (4) files on disk no Media row references (crashes, manual copies, …).
+    // Thumbnails belong to their main file and are referenced implicitly.
+    const mediaRows = await this.prisma.media.findMany({ select: { storageKey: true } });
+    const referenced = new Set<string>();
+    for (const row of mediaRows) {
+      referenced.add(row.storageKey);
+      referenced.add(thumbKeyFor(row.storageKey));
+    }
     const cutoff = Date.now() - FILE_MIN_AGE_MS;
-    for (const rel of files) {
-      if (referenced.has(rel)) continue;
-      const full = join(this.root, rel);
+    for (const obj of await this.storage.list()) {
+      if (referenced.has(obj.key)) continue;
+      if (obj.mtimeMs > cutoff) continue; // may be an in-flight upload
+      await this.storage.delete(obj.key).catch(() => undefined);
+      removedFiles += 1;
+      freedBytes += obj.size;
+    }
+
+    // (5) legacy images uploaded before the pipeline: create their thumbnail
+    for (const row of mediaRows.slice(0, THUMBS_PER_SWEEP)) {
+      const thumbKey = thumbKeyFor(row.storageKey);
+      if (thumbKey === row.storageKey) continue;
+      if (await this.storage.exists(thumbKey).catch(() => true)) continue;
       try {
-        const info = await stat(full);
-        if (info.mtimeMs > cutoff) continue; // may be an in-flight upload
-        await unlink(full);
-        removedFiles += 1;
-        freedBytes += info.size;
-      } catch {
-        // vanished or unreadable — ignore
+        const original = await this.storage.get(row.storageKey);
+        if (!original) continue;
+        const { thumb } = await processImage(original);
+        await this.storage.put(thumbKey, thumb.data, { overwrite: true });
+        thumbsCreated += 1;
+      } catch (err) {
+        this.logger.warn(`thumbnail backfill failed for ${row.storageKey}: ${String(err)}`);
       }
     }
 
-    return { removedFiles, freedBytes };
+    return { removedFiles, freedBytes, thumbsCreated };
   }
 
   /** Usage numbers for the admin storage panel. */
@@ -286,22 +387,5 @@ export class UploadsService implements OnModuleInit {
       perUserQuotaBytes: MAX_BYTES_PER_USER,
       perFileQuotaBytes: MAX_UPLOAD_BYTES,
     };
-  }
-
-  /** All files under root as posix-relative storage keys. */
-  private async walk(dir: string, prefix = ''): Promise<string[]> {
-    let entries;
-    try {
-      entries = await readdir(dir, { withFileTypes: true });
-    } catch {
-      return [];
-    }
-    const keys: string[] = [];
-    for (const entry of entries) {
-      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
-      if (entry.isDirectory()) keys.push(...(await this.walk(join(dir, entry.name), rel)));
-      else if (entry.isFile()) keys.push(rel);
-    }
-    return keys;
   }
 }

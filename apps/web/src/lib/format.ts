@@ -1,4 +1,5 @@
 /** Persian formatting helpers (pure, unit-tested). */
+import type { SyntheticEvent } from 'react';
 
 /** Rial price: null => negotiated; otherwise grouped fa-IR digits + unit. */
 export function formatPrice(price: number | null): string {
@@ -21,6 +22,33 @@ export function formatRating(rating: number, count: number): string {
 }
 
 /** Relative time for the wall feed ("همین الان", "۵ دقیقه پیش", …). */
+/**
+ * Thumbnail variant of a stored image for list/card views. The upload
+ * pipeline keeps two WebP files per image — `<key>.webp` (detail pages,
+ * ≤1600px) and `<key>.thumb.webp` (lists, ≤400px) — so feeds never download
+ * the big file. Only URLs served by our own storage are rewritten; foreign
+ * URLs (news CMS covers, external logos…) are returned untouched.
+ */
+export function thumbUrlFor(url: string | null | undefined): string | null {
+  if (!url) return null;
+  if (!url.startsWith('/api/v1/files/')) return url;
+  return url.replace(/\.(jpe?g|png|gif|webp)$/i, '.thumb.webp');
+}
+
+/**
+ * One-shot fallback for thumbnail <img> tags: a legacy image whose thumbnail
+ * has not been backfilled yet fails once (404) — swap back to the full URL,
+ * and never loop if that one fails too.
+ */
+export function thumbFallback(fullUrl: string) {
+  return (event: SyntheticEvent<HTMLImageElement>): void => {
+    const el = event.currentTarget;
+    if (el.dataset.thumbFallback === '1') return;
+    el.dataset.thumbFallback = '1';
+    el.src = fullUrl;
+  };
+}
+
 export function timeAgo(iso: string | Date): string {
   const d = typeof iso === 'string' ? new Date(iso) : iso;
   const seconds = Math.floor((Date.now() - d.getTime()) / 1000);

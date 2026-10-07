@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ApiError, getAdDetail, getTokens, toggleAdFavorite } from '@/lib/api';
-import { formatDate, formatPrice } from '@/lib/format';
+import { formatDate, formatPrice, thumbFallback, thumbUrlFor } from '@/lib/format';
 import type { AdDetail as AdDetailData } from '@/lib/types';
 import { StatusChip } from './my-ads';
 
@@ -122,8 +122,9 @@ export function AdDetail({ id }: { id: number }) {
                     aria-label={`تصویر ${index + 1}`}
                     onClick={() => setImageIndex(index)}
                   >
+                    {/* gallery picker uses the small thumbnail; the main pane keeps the full copy */}
                     {/* eslint-disable-next-line @next/next/no-img-element -- remote media */}
-                    <img src={url} alt="" />
+                    <img src={thumbUrlFor(url) ?? url} alt="" onError={thumbFallback(url)} />
                   </button>
                 ))}
               </div>

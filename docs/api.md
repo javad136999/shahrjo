@@ -31,11 +31,11 @@
 | Endpoint | Auth | Body / توضیح |
 |---|---|---|
 | GET `/ad-categories` | @Public | دسته‌بندی‌های فعال برای فرم ثبت آگهی (ترتیب `sortOrder`) |
-| POST `/uploads` | Bearer | multipart با فیلد `file` (JPG/PNG/WebP/GIF، حداکثر ۵MB، magic-byte sniff) → `{ id, url }`؛ سقف ۳۰ آپلود در ساعت |
+| POST `/uploads` | Bearer | multipart با فیلد `file` (JPG/PNG/WebP، حداکثر ۱۰MB، magic-byte sniff) → پردازش با **sharp**: WebP کیفیت ۸۲ (ضلع بزرگ ≤۱۶۰۰px، بدون Upscale، حذف EXIF/metadata) + Thumbnail ≤۴۰۰px → `{ id, url, thumbUrl, width, height }`؛ سقف ۳۰ آپلود در ساعت و سهمیهٔ ۱۰۰MB برای هر کاربر |
 | POST `/ads` | Bearer | `{ categoryId, title(4..160), description(10..4000), price?, phone?, address?, imageIds?(≤5) }` → ایجاد آگهی با وضعیت `PENDING`، انقضا +۳۰ روز، سقف ۲۰ آگهی در ساعت؛ تصاویر متعلق به کاربر claim می‌شوند |
 | GET `/ads/mine` | Bearer | آگهی‌های خودِ کاربر با وضعیت نظارت (شامل `rejectedReason`) |
 
-فایل‌های آپلودی از مسیر `/api/v1/files/<storageKey>` (static در همان origin) سرو می‌شوند.
+فایل‌های آپلودی از مسیر `/api/v1/files/<storageKey>` (static در همان origin) سرو می‌شوند. فایل اصلی کاربر هرگز ذخیره نمی‌شود؛ هر تصویر دو نسخه دارد: نمایشی (≤۱۶۰۰px) و `*.thumb.webp` (≤۴۰۰px) که لیست‌ها/کارت‌ها از آن استفاده می‌کنند و صفحهٔ جزئیات نسخهٔ کامل را می‌باید. ذخیره‌سازی پشت interface `StorageDriver` است (`local` = Docker volume امروز، Arvan Object Storage فردا — فقط یک Driver جدید + `STORAGE_DRIVER` در `.env`) و فایل‌های حذف‌شده/یتیم طی Sweep پاک می‌شوند.
 
 ## Detail pages / Profile / Favorites (فاز ۶ — جزئیات و پروفایل)
 

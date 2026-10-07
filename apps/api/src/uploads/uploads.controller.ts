@@ -2,18 +2,18 @@ import { BadRequestException, Controller, Post, UploadedFile, UseInterceptors } 
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { User } from '@prisma/client';
 import { CurrentUser } from '../common/decorators';
-import { UploadsService } from './uploads.service';
-
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+import { MAX_UPLOAD_BYTES, UploadsService } from './uploads.service';
 
 @Controller()
 export class UploadsController {
   constructor(private readonly uploads: UploadsService) {}
 
   /**
-   * Store one image (multipart field `file`) and return its media id + url.
-   * No `storage` option = multer's default memory storage; the buffer is
-   * validated (magic bytes + size) and written to disk by UploadsService.
+   * Store one image (multipart field `file`) and return its media id + url
+   * plus a `thumbUrl` for lists. No `storage` option = multer's default
+   * memory storage; multer caps the stream at MAX_UPLOAD_BYTES (10 MB) and
+   * UploadsService re-checks size + magic bytes before processing with sharp
+   * (WebP ≤1600px + ≤400px thumbnail — the original bytes are never stored).
    */
   @Post('uploads')
   @UseInterceptors(
