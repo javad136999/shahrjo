@@ -255,21 +255,40 @@ export interface CityMapData {
   businesses: CityMapBusiness[];
 }
 
-/** City wall (دیوار شهر — Phase 8b). */
+/** City wall (دیوار شهر — Phase 8b, chat room — Phase 10). */
 export interface WallAuthor {
   id: number;
   name: string;
   avatarUrl: string | null;
 }
 
+/** Promoted ad attached to a republished wall message (Phase 10). */
+export interface WallAdRef {
+  id: number;
+  title: string;
+  price: number | null;
+  image: string | null;
+}
+
+/** Chat-room header meta: wall name + member/message counts. */
+export interface WallRoom {
+  name: string;
+  memberCount: number;
+  messageCount: number;
+}
+
 export interface WallPost {
   id: number;
   content: string;
   imageUrl: string | null;
+  voiceUrl: string | null;
+  editedAt: string | null;
+  ad: WallAdRef | null;
   isPinned: boolean;
   likeCount: number;
   likedByMe: boolean;
   canDelete: boolean;
+  canEdit: boolean;
   canPin: boolean;
   createdAt: string;
   user: WallAuthor;
@@ -280,6 +299,7 @@ export interface WallFeed {
   posts: WallPost[];
   pinned: WallPost | null;
   nextBefore: string | null;
+  room: WallRoom;
 }
 
 /** Detail pages (Phase 6). */

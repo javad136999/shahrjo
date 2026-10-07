@@ -62,6 +62,9 @@ jobs:
       - name: Phase 9 checks (golden showcase + city map + storage quota)
         run: pnpm verify:phase9
 
+      - name: Phase 10 checks (wall chat room + daily ad republication)
+        run: pnpm verify:phase10
+
       - name: Typecheck all workspaces
         run: pnpm typecheck:all
 

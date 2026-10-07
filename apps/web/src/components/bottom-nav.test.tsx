@@ -27,15 +27,17 @@ describe('BottomNav', () => {
     window.location.hash = '';
   });
 
-  it('renders the four quick actions with emoji icons', () => {
+  it('renders the four quick actions with emoji icons (no submit entry)', () => {
     render(<BottomNav />);
     expect(screen.getByRole('navigation', { name: 'ناوبری سریع' })).toBeInTheDocument();
     expect(screen.getByTestId('bottom-nav-home')).toHaveTextContent('خانه');
     expect(screen.getByTestId('bottom-nav-news')).toHaveTextContent('اخبار');
-    expect(screen.getByTestId('bottom-nav-submit')).toHaveTextContent('ثبت آگهی');
     expect(screen.getByTestId('bottom-nav-businesses')).toHaveTextContent('کسب‌وکارها');
     expect(screen.getByTestId('bottom-nav-profile')).toHaveTextContent('پروفایل');
     expect(screen.getByTestId('bottom-nav-profile')).toHaveAttribute('href', '/profile');
+    // «ثبت آگهی» moved into the city-wall composer (Phase 10)
+    expect(screen.queryByTestId('bottom-nav-submit')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /ثبت آگهی/ })).not.toBeInTheDocument();
   });
 
   it('deep-links news to the city news page and businesses to the map', async () => {
@@ -43,7 +45,6 @@ describe('BottomNav', () => {
     // the city is read client-side after mount
     expect(await screen.findByTestId('bottom-nav-news')).toHaveAttribute('href', '/city/sample-city/news');
     expect(screen.getByTestId('bottom-nav-businesses')).toHaveAttribute('href', '/city/sample-city#map');
-    expect(screen.getByTestId('bottom-nav-submit')).toHaveAttribute('href', '/ads/new');
   });
 
   it('falls back to the city picker when no city is remembered', async () => {
@@ -53,18 +54,11 @@ describe('BottomNav', () => {
     expect(screen.getByTestId('bottom-nav-businesses')).toHaveAttribute('href', '/');
   });
 
-  it('marks the submit action active on /ads routes', () => {
-    mockPathname.mockReturnValue('/ads/new');
-    render(<BottomNav />);
-    expect(screen.getByTestId('bottom-nav-submit')).toHaveClass('is-active');
-    expect(screen.getByTestId('bottom-nav-home')).not.toHaveClass('is-active');
-  });
-
-  it('marks home active on the landing page', () => {
+  it('marks home active on the landing page (and never an ads route)', () => {
     mockPathname.mockReturnValue('/');
     render(<BottomNav />);
     expect(screen.getByTestId('bottom-nav-home')).toHaveClass('is-active');
-    expect(screen.getByTestId('bottom-nav-submit')).not.toHaveClass('is-active');
+    expect(screen.getByTestId('bottom-nav-news')).not.toHaveClass('is-active');
   });
 
   it('marks news active on the city news page (and not home)', () => {

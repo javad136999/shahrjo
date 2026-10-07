@@ -34,7 +34,7 @@ export function ShowcaseMarquee({ items, loading }: ShowcaseMarqueeProps) {
         </span>
         <div className="showcase__titles">
           <h2>ویترین طلایی</h2>
-          <p>برترین کسب‌وکارهای این شهر</p>
+          <p>کسب‌وکارهای برتر شهر</p>
         </div>
         <Link href="/plans" className="pill pill--gold showcase__cta" data-testid="showcase-cta">
           <span className="showcase__cta-icon" aria-hidden>

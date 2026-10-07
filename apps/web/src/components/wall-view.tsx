@@ -6,25 +6,38 @@ import {
   ApiError,
   createWallPost,
   deleteWallPost,
+  editWallPost,
   getWall,
   likeWallPost,
   pinWallPost,
   uploadImage,
+  uploadVoice,
 } from '@/lib/api';
-import { thumbFallback, thumbUrlFor, timeAgo } from '@/lib/format';
+import { formatPrice, thumbFallback, thumbUrlFor, timeAgo } from '@/lib/format';
 import type { WallFeed, WallPost } from '@/lib/types';
 
 export interface WallViewProps {
   city: { id: number; slug: string; name: string };
 }
 
-const POLL_MS = 10_000;
+/** Chat cadence: a light poll keeps the room lively without a WS stack. */
+const POLL_MS = 5_000;
+
+/** mm:ss for the recording timer / voice chips. */
+function clock(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 
 /**
- * دیوار شهر (Phase 8b) — JamCity-style members' feed: chat-like cards with
- * avatar/time, likes, one-level replies, image posts, an operator-pinned
- * banner, and a composer. The feed auto-refreshes by polling (realtime comes
- * with the chat phase). A 401 renders the login gate instead of the feed.
+ * دیوار شهر (Phase 8b + Phase 10) — Telegram-style chat room of one city:
+ * a room header (wall name + member count), chat bubbles with avatar/time,
+ * one-level replies, photo + voice notes, own-message editing, a pinned
+ * banner and promoted ad cards (daily republication). The bottom composer
+ * carries text, photo, voice recording — and the «ثبت آگهی» entry, which
+ * used to live in the header and the bottom nav. The feed auto-refreshes by
+ * polling; a 401 renders the login gate instead of the room.
  */
 export function WallView({ city }: WallViewProps) {
   const [feed, setFeed] = useState<WallFeed | null>(null);
@@ -33,9 +46,23 @@ export function WallView({ city }: WallViewProps) {
   const [text, setText] = useState('');
   const [replyTo, setReplyTo] = useState<WallPost | null>(null);
   const [image, setImage] = useState<File | null>(null);
+  const [editing, setEditing] = useState<{ id: number; text: string } | null>(null);
   const [sending, setSending] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // voice recording (Phase 10)
+  const [recording, setRecording] = useState(false);
+  const [recSeconds, setRecSeconds] = useState(0);
+  const [voice, setVoice] = useState<{ file: File; url: string; seconds: number } | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recStartRef = useRef(0);
+  const recTimerRef = useRef<number | null>(null);
+
+  const feedRef = useRef<HTMLDivElement>(null);
+  const newestRef = useRef<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -55,7 +82,7 @@ export function WallView({ city }: WallViewProps) {
     void load();
   }, [load]);
 
-  // polling — cheap fallback until the WebSocket chat phase lands
+  // polling — cheap live delivery for the chat room (no WebSocket needed)
   useEffect(() => {
     if (gate) return;
     const timer = setInterval(() => {
@@ -64,9 +91,101 @@ export function WallView({ city }: WallViewProps) {
     return () => clearInterval(timer);
   }, [load, gate]);
 
+  // keep the newest message in view (but never yank the user while paging back)
+  useEffect(() => {
+    const newest = feed?.posts[0]?.id ?? null;
+    if (newest !== null && newest !== newestRef.current) {
+      requestAnimationFrame(() => {
+        const el = feedRef.current;
+        if (el) el.scrollTop = el.scrollHeight;
+      });
+    }
+    newestRef.current = newest;
+  }, [feed]);
+
+  // stop mic + timers when the room unmounts
+  useEffect(() => {
+    return () => {
+      if (recTimerRef.current !== null) window.clearInterval(recTimerRef.current);
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    };
+  }, []);
+
+  const stopRecorder = (keep: boolean) => {
+    const recorder = recorderRef.current;
+    if (recTimerRef.current !== null) {
+      window.clearInterval(recTimerRef.current);
+      recTimerRef.current = null;
+    }
+    setRecording(false);
+    if (!recorder) return;
+    recorder.onstop = () => {
+      if (keep) {
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        const seconds = Math.max(1, Math.round((Date.now() - recStartRef.current) / 1000));
+        if (blob.size > 0) {
+          const mime = recorder.mimeType || 'audio/webm';
+          const ext = mime.includes('mp4') ? 'm4a' : mime.includes('ogg') ? 'ogg' : 'webm';
+          const file = new File([blob], `voice.${ext}`, { type: mime });
+          setVoice((prev) => {
+            if (prev) URL.revokeObjectURL(prev.url);
+            return { file, url: URL.createObjectURL(file), seconds };
+          });
+        }
+      }
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+      recorderRef.current = null;
+    };
+    try {
+      recorder.stop();
+    } catch {
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+      recorderRef.current = null;
+    }
+  };
+
+  const startRecording = async () => {
+    setError(null);
+    if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setError('ضبط ویس در این مرورگر پشتیبانی نمی‌شود.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      recorderRef.current = recorder;
+      streamRef.current = stream;
+      recStartRef.current = Date.now();
+      setRecSeconds(0);
+      setRecording(true);
+      recTimerRef.current = window.setInterval(
+        () => setRecSeconds(Math.max(0, Math.round((Date.now() - recStartRef.current) / 1000))),
+        500,
+      );
+      recorder.start();
+    } catch {
+      setError('دسترسی به میکروفون ممکن نشد؛ اجازهٔ ضبط صدا را در مرورگر بدهید.');
+    }
+  };
+
+  const discardVoice = () => {
+    setVoice((prev) => {
+      if (prev) URL.revokeObjectURL(prev.url);
+      return null;
+    });
+  };
+
   const send = async () => {
     const content = text.trim();
-    if (!content || sending) return;
+    if (sending) return;
+    if (!content && !image && !voice) return;
     setSending(true);
     setError(null);
     try {
@@ -75,10 +194,16 @@ export function WallView({ city }: WallViewProps) {
         const up = await uploadImage(image);
         imageIds = [up.id];
       }
-      await createWallPost({ cityId: city.id, content, replyToId: replyTo?.id, imageIds });
+      let voiceMediaId: number | undefined;
+      if (voice) {
+        const up = await uploadVoice(voice.file);
+        voiceMediaId = up.id;
+      }
+      await createWallPost({ cityId: city.id, content, replyToId: replyTo?.id, imageIds, voiceMediaId });
       setText('');
       setImage(null);
       setReplyTo(null);
+      discardVoice();
       if (fileRef.current) fileRef.current.value = '';
       await load();
     } catch (err) {
@@ -119,6 +244,19 @@ export function WallView({ city }: WallViewProps) {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'پاک کردن پیام ناموفق بود');
+    }
+  };
+
+  const saveEdit = async (post: WallPost) => {
+    if (!editing) return;
+    const content = editing.text.trim();
+    if (!content) return;
+    try {
+      const updated = await editWallPost(post.id, content);
+      patchPost(post.id, { content: updated.content, editedAt: updated.editedAt });
+      setEditing(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ویرایش پیام ناموفق بود');
     }
   };
 
@@ -171,100 +309,212 @@ export function WallView({ city }: WallViewProps) {
     );
   }
 
-  const renderPost = (post: WallPost, pinnedBanner = false) => (
-    <article
-      key={post.id}
-      className={`wall-post${post.isPinned ? ' wall-post--pinned' : ''}`}
-      data-testid={`wall-post-${post.id}`}
-    >
-      <span className="wall-post__avatar" aria-hidden>
-        {post.user.avatarUrl && !post.user.avatarUrl.startsWith('emoji:') ? (
-          // eslint-disable-next-line @next/next/no-img-element -- remote media
-          <img src={post.user.avatarUrl} alt="" />
-        ) : (
-          post.user.name.slice(0, 1)
-        )}
-      </span>
-      <div className="wall-post__body">
-        <div className="wall-post__head">
-          <strong className="wall-post__name">{post.user.name}</strong>
-          <time className="wall-post__time">{timeAgo(post.createdAt)}</time>
-          <span className="wall-post__actions">
-            {post.canPin && (
+  const renderPost = (post: WallPost, pinnedBanner = false) => {
+    const isEditing = editing?.id === post.id;
+    return (
+      <article
+        key={post.id}
+        className={`wall-post${post.isPinned ? ' wall-post--pinned' : ''}${post.ad ? ' wall-post--ad' : ''}`}
+        data-testid={`wall-post-${post.id}`}
+      >
+        <span className="wall-post__avatar" aria-hidden>
+          {post.user.avatarUrl && !post.user.avatarUrl.startsWith('emoji:') ? (
+            // eslint-disable-next-line @next/next/no-img-element -- remote media
+            <img src={post.user.avatarUrl} alt="" />
+          ) : (
+            post.user.name.slice(0, 1)
+          )}
+        </span>
+        <div className="wall-post__body">
+          <div className="wall-post__head">
+            <strong className="wall-post__name">{post.user.name}</strong>
+            <time className="wall-post__time">{timeAgo(post.createdAt)}</time>
+            {post.editedAt && (
+              <span className="wall-post__edited" data-testid={`wall-edited-${post.id}`}>
+                ویرایش شد
+              </span>
+            )}
+            <span className="wall-post__actions">
+              {post.canPin && (
+                <button
+                  type="button"
+                  className="wall-iconbtn"
+                  aria-label={post.isPinned ? 'برداشتن سنجاق' : 'سنجاق به بالای دیوار'}
+                  data-testid={`wall-pin-${post.id}`}
+                  onClick={() => void pin(post)}
+                >
+                  📌
+                </button>
+              )}
+              {post.canDelete && (
+                <button
+                  type="button"
+                  className="wall-iconbtn"
+                  aria-label="پاک کردن پیام"
+                  data-testid={`wall-delete-${post.id}`}
+                  onClick={() => void remove(post)}
+                >
+                  🗑
+                </button>
+              )}
+            </span>
+          </div>
+
+          {post.replyTo && (
+            <blockquote className="wall-reply" data-testid={`wall-reply-${post.id}`}>
+              <b>{post.replyTo.userName}:</b> {post.replyTo.content}
+            </blockquote>
+          )}
+
+          {isEditing ? (
+            <div className="wall-edit" data-testid={`wall-editbox-${post.id}`}>
+              <textarea
+                className="wall-composer__input"
+                rows={2}
+                maxLength={1000}
+                aria-label="ویرایش پیام"
+                data-testid="wall-edit-input"
+                value={editing?.text ?? ''}
+                onChange={(e) => setEditing({ id: post.id, text: e.target.value })}
+              />
+              <div className="wall-edit__actions">
+                <button
+                  type="button"
+                  className="pill pill--accent"
+                  data-testid="wall-edit-save"
+                  onClick={() => void saveEdit(post)}
+                >
+                  ذخیره
+                </button>
+                <button type="button" className="pill" onClick={() => setEditing(null)}>
+                  انصراف
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {post.content && <p className="wall-post__text">{post.content}</p>}
+
+              {post.imageUrl && (
+                // feed shows the 400px thumbnail; the full copy lives in storage
+                // eslint-disable-next-line @next/next/no-img-element -- remote media
+                <img
+                  className="wall-post__image"
+                  src={thumbUrlFor(post.imageUrl) ?? post.imageUrl}
+                  alt=""
+                  loading="lazy"
+                  onError={thumbFallback(post.imageUrl)}
+                />
+              )}
+
+              {post.voiceUrl && (
+                <audio
+                  className="wall-post__voice"
+                  controls
+                  preload="none"
+                  src={post.voiceUrl}
+                  data-testid={`wall-voice-${post.id}`}
+                  aria-label="پیام صوتی"
+                />
+              )}
+
+              {post.ad && (
+                <Link
+                  href={`/ad/${post.ad.id}`}
+                  className="wall-adcard"
+                  data-testid={`wall-adcard-${post.id}`}
+                >
+                  {post.ad.image && (
+                    // eslint-disable-next-line @next/next/no-img-element -- remote media
+                    <img
+                      className="wall-adcard__img"
+                      src={thumbUrlFor(post.ad.image) ?? post.ad.image}
+                      alt=""
+                      loading="lazy"
+                      onError={thumbFallback(post.ad.image)}
+                    />
+                  )}
+                  <span className="wall-adcard__body">
+                    <strong>{post.ad.title}</strong>
+                    <b className="wall-adcard__price">{formatPrice(post.ad.price)}</b>
+                    <small>مشاهدهٔ کامل آگهی ↗</small>
+                  </span>
+                  <span className="wall-adcard__badge">📝 آگهی</span>
+                </Link>
+              )}
+            </>
+          )}
+
+          {!isEditing && (
+            <div className="wall-post__foot">
+              <button
+                type="button"
+                className={`wall-likebtn${post.likedByMe ? ' wall-likebtn--on' : ''}`}
+                aria-pressed={post.likedByMe}
+                data-testid={`wall-like-${post.id}`}
+                onClick={() => void like(post)}
+              >
+                ❤ {post.likeCount.toLocaleString('fa-IR')}
+              </button>
               <button
                 type="button"
                 className="wall-iconbtn"
-                aria-label={post.isPinned ? 'برداشتن سنجاق' : 'سنجاق به بالای دیوار'}
-                data-testid={`wall-pin-${post.id}`}
-                onClick={() => void pin(post)}
+                aria-label="پاسخ دادن"
+                data-testid={`wall-reply-btn-${post.id}`}
+                onClick={() => {
+                  setReplyTo(post);
+                  setError(null);
+                }}
               >
-                📌
+                ↩ پاسخ
               </button>
-            )}
-            {post.canDelete && (
-              <button
-                type="button"
-                className="wall-iconbtn"
-                aria-label="پاک کردن پیام"
-                data-testid={`wall-delete-${post.id}`}
-                onClick={() => void remove(post)}
-              >
-                🗑
-              </button>
-            )}
-          </span>
+              {post.canEdit && !post.ad && (
+                <button
+                  type="button"
+                  className="wall-iconbtn"
+                  aria-label="ویرایش پیام"
+                  data-testid={`wall-edit-${post.id}`}
+                  onClick={() => setEditing({ id: post.id, text: post.content })}
+                >
+                  ✏️
+                </button>
+              )}
+              {pinnedBanner && <span className="wall-post__pinbadge">📌 سنجاق‌شده</span>}
+            </div>
+          )}
         </div>
+      </article>
+    );
+  };
 
-        {post.replyTo && (
-          <blockquote className="wall-reply" data-testid={`wall-reply-${post.id}`}>
-            <b>{post.replyTo.userName}:</b> {post.replyTo.content}
-          </blockquote>
-        )}
-
-        <p className="wall-post__text">{post.content}</p>
-
-        {post.imageUrl && (
-          // feed shows the 400px thumbnail; tapping opens the post where the full copy loads
-          // eslint-disable-next-line @next/next/no-img-element -- remote media
-          <img
-            className="wall-post__image"
-            src={thumbUrlFor(post.imageUrl) ?? post.imageUrl}
-            alt=""
-            loading="lazy"
-            onError={thumbFallback(post.imageUrl)}
-          />
-        )}
-
-        <div className="wall-post__foot">
-          <button
-            type="button"
-            className={`wall-likebtn${post.likedByMe ? ' wall-likebtn--on' : ''}`}
-            aria-pressed={post.likedByMe}
-            data-testid={`wall-like-${post.id}`}
-            onClick={() => void like(post)}
-          >
-            ❤ {post.likeCount.toLocaleString('fa-IR')}
-          </button>
-          <button
-            type="button"
-            className="wall-iconbtn"
-            aria-label="پاسخ دادن"
-            data-testid={`wall-reply-btn-${post.id}`}
-            onClick={() => {
-              setReplyTo(post);
-              setError(null);
-            }}
-          >
-            ↩ پاسخ
-          </button>
-          {pinnedBanner && <span className="wall-post__pinbadge">📌 سنجاق‌شده</span>}
-        </div>
-      </div>
-    </article>
-  );
+  // newest at the bottom, like any chat room (server keeps a desc cursor)
+  const ordered = [...feed.posts].reverse();
 
   return (
     <div className="wall" data-testid="wall">
+      <header className="wall-room" data-testid="wall-room">
+        <span className="wall-room__avatar" aria-hidden>
+          💬
+        </span>
+        <div className="wall-room__copy">
+          <strong className="wall-room__name" data-testid="wall-room-name">
+            {feed.room.name}
+          </strong>
+          <small className="wall-room__meta" data-testid="wall-room-members">
+            {feed.room.memberCount.toLocaleString('fa-IR')} عضو ·{' '}
+            {feed.room.messageCount.toLocaleString('fa-IR')} پیام
+          </small>
+        </div>
+        <div className="wall-room__actions">
+          <Link href={`/city/${city.slug}`} className="pill" data-testid="wall-back-city">
+            🏙 شهر
+          </Link>
+          <Link href="/" className="pill" data-testid="wall-change-city">
+            🔄 تغییر شهر
+          </Link>
+        </div>
+      </header>
+
       {error && (
         <div className="banner banner--error" role="alert">
           <span>{error}</span>
@@ -278,16 +528,21 @@ export function WallView({ city }: WallViewProps) {
       )}
 
       {feed.nextBefore && (
-        <button type="button" className="btn btn-ghost wall-more" onClick={() => void loadOlder()} disabled={loadingOlder}>
+        <button
+          type="button"
+          className="btn btn-ghost wall-more"
+          onClick={() => void loadOlder()}
+          disabled={loadingOlder}
+        >
           {loadingOlder ? 'در حال بارگذاری…' : 'پیام‌های قدیمی‌تر'}
         </button>
       )}
 
-      <div className="wall-feed">
-        {feed.posts.length === 0 ? (
+      <div className="wall-feed" ref={feedRef} role="log" aria-live="polite">
+        {ordered.length === 0 ? (
           <p className="empty-state">هنوز پیامی در دیوار شهر نیست — اولین نفر باشید.</p>
         ) : (
-          feed.posts.map((post) => renderPost(post))
+          ordered.map((post) => renderPost(post))
         )}
       </div>
 
@@ -302,6 +557,33 @@ export function WallView({ city }: WallViewProps) {
             </button>
           </div>
         )}
+
+        {image && (
+          <div className="wall-composer__chip" data-testid="wall-image-chip">
+            <span>📷 {image.name}</span>
+            <button
+              type="button"
+              className="wall-iconbtn"
+              aria-label="حذف تصویر"
+              onClick={() => {
+                setImage(null);
+                if (fileRef.current) fileRef.current.value = '';
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {voice && (
+          <div className="wall-composer__chip" data-testid="wall-voice-chip">
+            <span>🎤 ویس {clock(voice.seconds)}</span>
+            <button type="button" className="wall-iconbtn" aria-label="حذف ویس" onClick={discardVoice}>
+              ✕
+            </button>
+          </div>
+        )}
+
         <textarea
           className="wall-composer__input"
           rows={2}
@@ -318,29 +600,63 @@ export function WallView({ city }: WallViewProps) {
             }
           }}
         />
-        <div className="wall-composer__bar">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
-            hidden
-            aria-label="انتخاب تصویر"
-            data-testid="wall-image"
-            onChange={(e) => setImage(e.target.files?.[0] ?? null)}
-          />
-          <button type="button" className="pill" onClick={() => fileRef.current?.click()}>
-            📷 {image ? 'تصویر انتخاب شد' : 'عکس'}
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            data-testid="wall-send"
-            disabled={sending || !text.trim()}
-            onClick={() => void send()}
-          >
-            {sending ? 'در حال ارسال…' : 'ارسال پیام'}
-          </button>
-        </div>
+
+        {recording ? (
+          <div className="wall-rec" data-testid="wall-recording">
+            <span className="wall-rec__pulse" aria-hidden />
+            <span className="wall-rec__time">در حال ضبط… {clock(recSeconds)}</span>
+            <button type="button" className="wall-iconbtn" onClick={() => stopRecorder(false)}>
+              انصراف
+            </button>
+            <button
+              type="button"
+              className="pill pill--accent"
+              data-testid="wall-rec-stop"
+              onClick={() => stopRecorder(true)}
+            >
+              پایان ضبط
+            </button>
+          </div>
+        ) : (
+          <div className="wall-composer__bar">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              hidden
+              aria-label="انتخاب تصویر"
+              data-testid="wall-image"
+              onChange={(e) => setImage(e.target.files?.[0] ?? null)}
+            />
+            {/* RIGHT side of the composer: the ad-post entry (moved out of the header + bottom nav) */}
+            <Link
+              href="/ads/new"
+              className="wall-adbtn"
+              data-testid="wall-ad-btn"
+              title="ثبت آگهی در دیوار شهر"
+            >
+              <span aria-hidden>📝</span>
+              <span className="wall-adbtn__label">ثبت آگهی</span>
+            </Link>
+            <div className="wall-composer__tools">
+              <button type="button" className="pill" data-testid="wall-photo-btn" onClick={() => fileRef.current?.click()}>
+                📷 {image ? 'عکس انتخاب شد' : 'عکس'}
+              </button>
+              <button type="button" className="pill" data-testid="wall-voice-btn" onClick={() => void startRecording()}>
+                🎤 ویس
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                data-testid="wall-send"
+                disabled={sending || (!text.trim() && !image && !voice)}
+                onClick={() => void send()}
+              >
+                {sending ? 'در حال ارسال…' : 'ارسال'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

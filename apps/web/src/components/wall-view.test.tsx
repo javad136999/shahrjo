@@ -8,6 +8,8 @@ const mockLike = jest.fn();
 const mockDelete = jest.fn();
 const mockPin = jest.fn();
 const mockUpload = jest.fn();
+const mockUploadVoice = jest.fn();
+const mockEdit = jest.fn();
 
 jest.mock('@/lib/api', () => {
   class ApiError extends Error {
@@ -25,6 +27,8 @@ jest.mock('@/lib/api', () => {
     deleteWallPost: (...args: unknown[]) => mockDelete(...args),
     pinWallPost: (...args: unknown[]) => mockPin(...args),
     uploadImage: (...args: unknown[]) => mockUpload(...args),
+    uploadVoice: (...args: unknown[]) => mockUploadVoice(...args),
+    editWallPost: (...args: unknown[]) => mockEdit(...args),
   };
 });
 
@@ -35,10 +39,14 @@ function makePost(overrides: Partial<WallPost> = {}): WallPost {
     id: 1,
     content: 'سلام شهر',
     imageUrl: null,
+    voiceUrl: null,
+    editedAt: null,
+    ad: null,
     isPinned: false,
     likeCount: 2,
     likedByMe: false,
     canDelete: true,
+    canEdit: true,
     canPin: false,
     createdAt: new Date().toISOString(),
     user: { id: 4, name: 'علی', avatarUrl: null },
@@ -54,6 +62,7 @@ const feed: WallFeed = {
       id: 2,
       content: 'خوش اومدی!',
       canDelete: false,
+      canEdit: false,
       likeCount: 0,
       likedByMe: true,
       replyTo: { id: 1, content: 'سلام شهر', userName: 'علی' },
@@ -61,12 +70,23 @@ const feed: WallFeed = {
   ],
   pinned: makePost({ id: 9, content: 'پیام سنجاق‌شده', isPinned: true, canPin: true }),
   nextBefore: null,
+  room: { name: 'دیوار شهر شهر نمونه', memberCount: 12, messageCount: 34 },
 };
 
 describe('WallView', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetWall.mockResolvedValue(feed);
+  });
+
+  it('renders the room header: wall name + member and message counts', async () => {
+    render(<WallView city={city} />);
+    await screen.findByTestId('wall-room');
+    expect(screen.getByTestId('wall-room-name')).toHaveTextContent('دیوار شهر شهر نمونه');
+    expect(screen.getByTestId('wall-room-members')).toHaveTextContent('۱۲ عضو');
+    expect(screen.getByTestId('wall-room-members')).toHaveTextContent('۳۴ پیام');
+    expect(screen.getByTestId('wall-change-city')).toHaveAttribute('href', '/');
+    expect(screen.getByTestId('wall-back-city')).toHaveAttribute('href', '/city/sample-city');
   });
 
   it('renders post images from the thumbnail variant (lists never fetch the full file)', async () => {
@@ -90,6 +110,49 @@ describe('WallView', () => {
     expect(screen.getByTestId('wall-like-1')).toHaveTextContent('۲');
     expect(screen.getByTestId('wall-post-1')).toHaveTextContent('همین الان');
     expect(mockGetWall).toHaveBeenCalledWith('sample-city');
+  });
+
+  it('plays voice notes inline', async () => {
+    mockGetWall.mockResolvedValue({
+      ...feed,
+      posts: [makePost({ id: 6, content: '', voiceUrl: '/api/v1/files/voice/2026/10/abc.webm' })],
+      pinned: null,
+    });
+    render(<WallView city={city} />);
+    const audio = await screen.findByTestId('wall-voice-6');
+    expect(audio).toHaveAttribute('src', '/api/v1/files/voice/2026/10/abc.webm');
+    expect(audio.tagName).toBe('AUDIO');
+  });
+
+  it('renders a republished ad as a card linking to the ad detail page', async () => {
+    mockGetWall.mockResolvedValue({
+      ...feed,
+      posts: [
+        makePost({
+          id: 7,
+          content: '🌟 پیشنهاد ویژه صبح — ویلا',
+          ad: { id: 42, title: 'ویلای شمال', price: 900_000_000, image: '/api/v1/files/media/2026/10/ad.webp' },
+        }),
+      ],
+      pinned: null,
+    });
+    render(<WallView city={city} />);
+    const card = await screen.findByTestId('wall-adcard-7');
+    expect(card).toHaveAttribute('href', '/ad/42');
+    expect(card).toHaveTextContent('ویلای شمال');
+    expect(card).toHaveTextContent('ریال');
+    const img = card.querySelector('img');
+    expect(img).toHaveAttribute('src', '/api/v1/files/media/2026/10/ad.thumb.webp');
+    // promoted posts are system-authored: no personal edit button
+    expect(screen.queryByTestId('wall-edit-7')).not.toBeInTheDocument();
+  });
+
+  it('offers the ad-post entry on the right of the composer', async () => {
+    render(<WallView city={city} />);
+    await screen.findByTestId('wall-input');
+    const adBtn = screen.getByTestId('wall-ad-btn');
+    expect(adBtn).toHaveAttribute('href', '/ads/new');
+    expect(adBtn).toHaveTextContent('ثبت آگهی');
   });
 
   it('shows the login gate on 401 instead of the feed', async () => {
@@ -128,6 +191,7 @@ describe('WallView', () => {
         content: 'پیام تازه',
         replyToId: undefined,
         imageIds: undefined,
+        voiceMediaId: undefined,
       }),
     );
     await waitFor(() => expect(input).toHaveValue(''));
@@ -135,7 +199,7 @@ describe('WallView', () => {
     await waitFor(() => expect(mockGetWall).toHaveBeenCalledTimes(2));
   });
 
-  it('keeps the send button disabled while the text is empty', async () => {
+  it('keeps the send button disabled while nothing is composed', async () => {
     render(<WallView city={city} />);
     await screen.findByTestId('wall-input');
     expect(screen.getByTestId('wall-send')).toBeDisabled();
@@ -166,5 +230,24 @@ describe('WallView', () => {
     fireEvent.change(screen.getByTestId('wall-input'), { target: { value: 'پاسخ' } });
     fireEvent.click(screen.getByTestId('wall-send'));
     await waitFor(() => expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ replyToId: 1 })));
+  });
+
+  it('edits own message inline and shows the edited marker', async () => {
+    mockEdit.mockResolvedValue(makePost({ id: 1, content: 'متن تازه', editedAt: '2026-10-08T10:00:00.000Z' }));
+    render(<WallView city={city} />);
+    fireEvent.click(await screen.findByTestId('wall-edit-1'));
+    const box = screen.getByTestId('wall-edit-input');
+    expect(box).toHaveValue('سلام شهر');
+    fireEvent.change(box, { target: { value: 'متن تازه' } });
+    fireEvent.click(screen.getByTestId('wall-edit-save'));
+    await waitFor(() => expect(mockEdit).toHaveBeenCalledWith(1, 'متن تازه'));
+    expect(await screen.findByTestId('wall-edited-1')).toHaveTextContent('ویرایش شد');
+  });
+
+  it('does not offer editing on someone else\'s message', async () => {
+    render(<WallView city={city} />);
+    await screen.findByTestId('wall-post-2');
+    expect(screen.getByTestId('wall-edit-1')).toBeInTheDocument();
+    expect(screen.queryByTestId('wall-edit-2')).not.toBeInTheDocument();
   });
 });

@@ -78,13 +78,16 @@ for (const comp of ['HeaderPills', 'BottomNav']) {
   if (!layout.includes(comp)) { console.error(`WEB: layout must render ${comp}`); fail++; }
 }
 const bottomNav = read('apps/web/src/components/bottom-nav.tsx');
-for (const marker of ['bottom-nav', 'getLocalCity', '/news', '#map', '/ads/new']) {
+for (const marker of ['bottom-nav', 'getLocalCity', '/news', '#map']) {
   if (!bottomNav.includes(marker)) { console.error(`WEB: bottom nav missing ${marker}`); fail++; }
 }
+// «ثبت آگهی» moved out of the shell into the city-wall composer (Phase 10).
+if (bottomNav.includes('/ads/new')) { console.error('WEB: bottom nav must not link /ads/new (wall composer owns it)'); fail++; }
 const headerPills = read('apps/web/src/components/header-pills.tsx');
-for (const marker of ['getLocalCity', '/ads/new', '/news']) {
+for (const marker of ['getLocalCity', '/news']) {
   if (!headerPills.includes(marker)) { console.error(`WEB: header pills missing ${marker}`); fail++; }
 }
+if (headerPills.includes('/ads/new')) { console.error('WEB: header must not link /ads/new (wall composer owns it)'); fail++; }
 const css4 = read('apps/web/src/app/globals.css');
 for (const marker of ['.bottom-nav', '.pill', '.icon-tile', '.count-chip', '.dash-welcome', '.wall-cta', '.content-card']) {
   if (!css4.includes(marker)) { console.error(`CSS: theme missing ${marker}`); fail++; }

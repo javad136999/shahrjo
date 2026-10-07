@@ -79,7 +79,7 @@
 | map | GET `/map/:citySlug?bbox=&kind=` — مارکرهای نقشه (کسب‌وکار + آگهی + مکان‌ها) |
 | news | GET `/news?city=`, GET `/news/:slug` |
 | chat | GET `/chat/:citySlug/rooms/:id/messages` + WebSocket برای Real-Time |
-| uploads | POST `/uploads` (multipart) — Storage abstraction |
+| uploads | POST `/uploads` (multipart) — Storage abstraction؛ POST `/uploads/voice` برای ویس دیوار (فاز ۱۰) |
 | notifications | GET `/notifications`, PATCH `/notifications/:id/read`, POST `/notifications/devices` |
 
 ## Admin (فاز ۸ — پنل مدیریت، RBAC + Scope استان/شهر)
@@ -146,21 +146,34 @@ Guard: `PermissionsGuard` (کد permission از `role_permissions`) + Scope
 
 `/city/[slug]`: پنل «ویترین طلایی» بلافاصله **بالای نقشه** — marquee بی‌نهایت (RTL، `translateX(50%)`، تکرار لیست برای حلقه یکپارچه، توقف با hover/focus، احترام به `prefers-reduced-motion`) با تاج طلایی و CTA اشتراک. نقشه Leaflet + OSM (بدون کلید API): محدوده به‌صورت polygon طلایی (fallback: دایره ۳.۵km دور مرکز شهر) + پین‌های رنگی per-tier با popup لینک‌دار.
 
-## City Wall (فاز ۸b — دیوار شهر)
+## City Wall (فاز ۸b + فاز ۱۰ — دیوار شهر / چت‌روم)
 
-> ✅ **پیاده‌شده در Phase 8b**: دیوار عمومی هر شهر مثل JamCity — پست متنی/عکسی، لایک، پاسخ، پین ناظر؛ به‌علاوه فیلتر دسته‌بندی روی نقشه و ورود مستقیم کاربر به شهر خودش.
+> ✅ **پیاده‌شده در Phase 8b + 10**: دیوار عمومی هر شهر مثل JamCity — پست متنی/عکسی/ویسی، لایک، پاسخ، ویرایش پیام، پین ناظر؛ هدر اتاق با اسم دیوار + تعداد اعضا؛ دکمهٔ «ثبت آگهی» سمت راست کامپوزر؛ به‌علاوه **بازنشر روزانهٔ آگهی‌ها**، فیلتر دسته‌بندی روی نقشه و ورود مستقیم کاربر به شهر خودش.
 
 | Endpoint | Auth | توضیح |
 |---|---|---|
-| GET `/wall?city=<slug>&limit=&before=` | Login | فید جدیدترین پست‌های شهر + پست پین‌شده جدا؛ شامل `likedByMe` و `canDelete`/`canPin` (از scope اپراتور) و کرسر `nextBefore` |
-| POST `/wall` | Login | پست جدید `{ cityId, content, replyToId?, imageIds? }` — حداکثر ۱۰ پست در دقیقه (`429`)، پاسخ فقط به پستِ همان شهر، ادعای ۱ تصویر (`entityType → WALL`) با rollback در صورت شکست |
+| GET `/wall?city=<slug>&limit=&before=` | Login | فید جدیدترین پست‌های شهر + پست پین‌شده جدا؛ شامل `likedByMe`، `canDelete`/`canEdit`/`canPin`، کرسر `nextBefore` و **متای اتاق `room { name, memberCount, messageCount }`** (فاز ۱۰) |
+| POST `/wall` | Login | پست جدید `{ cityId, content?, replyToId?, imageIds?, voiceMediaId? }` — حداکثر ۱۰ پست در دقیقه (`429`)، پاسخ فقط به پستِ همان شهر، ادعای ۱ تصویر + ۱ ویس (`entityType → WALL`) با rollback کامل در صورت شکست؛ پیام فقط-ویس با `content` خالی مجاز است |
+| PATCH `/wall/:id` | Login | ویرایش متن پیامِ خود کاربر (فقط نویسنده، غیر از آن `403`) — `editedAt` ست می‌شود و UI «ویرایش شد» نشان می‌دهد |
 | POST `/wall/:id/like` | Login | toggle لایک در transaction — برمی‌گرداند `{ liked, likeCount }` |
-| DELETE `/wall/:id` | Login | فقط نویسنده یا اپراتور با scope (`403` در غیر این صورت) |
+| DELETE `/wall/:id` | Login | فقط نویسنده یا اپراتور با scope (`403` در غیر این صورت) — فایل‌های پست همان لحظه از Storage پاک می‌شوند |
 | POST `/wall/:id/pin` | `chat.moderate` | پین/آнопین — قبلش بقیه پست‌های پین‌شده شهر آزاد می‌شوند |
+| POST `/uploads/voice` | Bearer | multipart (فیلد `file`) — ویس حداکثر **۵MB**، sniff با magic-byte (WebM/OGG/M4A/MP3/WAV ردِ SVG/HTML/تصویر)، کلید تصادفی `voice/YYYY/MM/<rand>.<ext>`، **بدون re-encode** → `{ id, url }`؛ ردیف `WALL` بدون `entityId` تا ادعای پست |
 
-### UI دیوار
+### بازنشر روزانهٔ آگهی‌ها (فاز ۱۰)
 
-`/wall` (با resolution شهر از localCity → profile → انتخاب‌گر): بنر پین‌شده، فید کارت‌ها (آواتار، `timeAgo`، متن، عکس، لایک optimistic، نقل‌قول پاسخ)، کامپوزر (Enter برای ارسال + پیوست عکس)، بارگذاری قدیمی با کرسور، پولینگ ۱۰ ثانیه‌ای تا فاز WebSocket، و درِ ورود `401 → /login?next=/wall`. دکمه قرمز ضربان‌دار «ورود به دیوار شهر» بالای صفحهٔ اصلی شهر، بالای ویترین طلایی.
+`WallRepostScheduler` داخل خود API (تیک هر ۶۰ ثانیه، ساعت تهران UTC+3:30 بدون DST) — هر اسلات **حداکثر یک بار در هر روز شمسی** اجرا می‌شود (ری‌استارت همان روز باعث ارسال دوباره نمی‌شود):
+
+- **۰۸:۰۰ صبح**: ۱ آگهی GOLD (مالک با اشتراک طلایی فعال) + ۳ آگهی قدیمی
+- **۱۲:۰۰ ظهر**: ۲ آگهی قدیمی
+- **۱۸:۰۰ عصر**: ۱ آگهی GOLD + ۳ آگهی قدیمی
+- **۲۲:۰۰ شب**: ۲ آگهی قدیمی
+
+⇒ روزی **۲ تبلیغ طلایی (صبح + عصر)** و **۱۰ آگهی قدیمی** (حداقل ۲ در هر بازه)، انتخاب **تصادفی** از آگهی‌های `APPROVED` و منقضی‌نشدهٔ ≥۷ روز، **بدون تکرار در همان روز** (هر آگهیِ استفاده‌شده از `wall_posts.ad_id` همان روز کنار گذاشته می‌شود). هر پیام به دیوارِ همان شهر با `imageUrl` آگهی + کارت لینک‌دار `/ad/:id` می‌افتد؛ اگر صاحب طلایی‌ای نبود، اسلات GOLD به آگهی قدیمی fallback می‌کند.
+
+### UI دیوار (چت‌روم)
+
+`/wall` (با resolution شهر از localCity → profile → انتخاب‌گر): **هدر چسبان اتاق** (اسم دیوار + تعداد اعضا و پیام‌ها + دکمه‌های شهر/تغییر شهر)، بنر پین‌شده، فید **کرونولوژیکال** (جدیدترین پایین، اسکرول خودکار) با حباب‌ها (آواتار، `timeAgo`، «ویرایش شد»، نقل‌قول پاسخ، عکس thumbnail، پلیر ویس، کارت آگهی)، لایک optimistic، پاسخ/ویرایش/حذف/پین روی هر پیام؛ کامپوزر پایین با **دکمهٔ «ثبت آگهی» سمت راست** (جابه‌جایی از هدر و ناوبری پایین)، پیوست عکس، **ضبط ویس** (`MediaRecorder` با تایمر و انصراف) و ارسال با Enter؛ بارگذاری قدیمی با کرسور، پولینگ ۵ ثانیه‌ای، و درِ ورود `401 → /login?next=/wall`. دکمه قرمز ضربان‌دار «ورود به دیوار شهر» بالای صفحهٔ اصلی شهر، بالای ویترین طلایی.
 
 ### نقشه: فیلتر دسته‌بندی + ورود به شهر
 

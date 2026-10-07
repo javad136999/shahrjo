@@ -353,6 +353,7 @@ model Ad {
   favorites    Favorite[]
   comments     Comment[]
   mapLocations MapLocation[]
+  wallPosts    WallPost[] // promoted republications on the city wall
 
   @@index([cityId, categoryId, status])
   @@index([status, expiresAt])
@@ -775,7 +776,10 @@ model WallPost {
   userId    Int      @map("user_id")
   content   String   @db.Text
   imageUrl  String?  @map("image_url")
+  voiceUrl  String?  @map("voice_url") // voice note (Phase 10 chat room)
+  adId      Int?     @map("ad_id") // daily promoted-ad republication
   replyToId Int?     @map("reply_to_id")
+  editedAt  DateTime? @map("edited_at") // set when the author edits their message
   isPinned  Boolean  @default(false) @map("is_pinned")
   likeCount Int      @default(0) @map("like_count")
   createdAt DateTime @default(now()) @map("created_at")
@@ -783,11 +787,13 @@ model WallPost {
 
   city    City           @relation(fields: [cityId], references: [id], onDelete: Cascade)
   user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ad      Ad?            @relation(fields: [adId], references: [id], onDelete: Cascade)
   replyTo WallPost?      @relation("WallReplies", fields: [replyToId], references: [id], onDelete: SetNull)
   replies WallPost[]     @relation("WallReplies")
   likes   WallPostLike[]
 
   @@index([cityId, createdAt])
+  @@index([adId, createdAt])
   @@map("wall_posts")
 }
 

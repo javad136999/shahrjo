@@ -8,6 +8,8 @@ import { STORAGE_DRIVER, type StorageDriver } from './storage/storage.types';
 
 /** Hard cap per incoming image (multer rejects earlier; this is defense in depth). */
 export const MAX_UPLOAD_BYTES = MAX_INPUT_BYTES; // 10 MB
+/** Hard cap per incoming voice note (browser recordings are well under this). */
+export const MAX_VOICE_BYTES = 5 * 1024 * 1024; // 5 MB
 /** Per-user hourly cap so the disk cannot be filled by one account. */
 const MAX_UPLOADS_PER_HOUR = 30;
 /** Total bytes one account may keep on disk (~100 MB) — the disk-fill guard. */
@@ -29,6 +31,12 @@ export interface StoredImage {
   thumbUrl: string;
   width: number;
   height: number;
+}
+
+/** A stored voice note has no thumbnail — only the playable file. */
+export interface StoredVoice {
+  id: number;
+  url: string;
 }
 
 /** Admin-facing storage usage (Phase 9). */
@@ -71,6 +79,29 @@ export function thumbUrlFor(url: string | null | undefined): string | null {
  * Magic-byte sniffing — the client-declared mimetype is never trusted.
  * SVG and anything else executable are rejected by construction.
  */
+/**
+ * Audio counterpart of {@link sniffImage} — accepts exactly what browsers
+ * record/upload (WebM/Opus, OGG, MP4/M4A, MP3, WAV). Everything else —
+ * including files with a forged `.mp3` name — is rejected by construction.
+ */
+export function sniffAudio(buf: Buffer): Sniffed | null {
+  // Matroska/WebM (MediaRecorder in Chrome/Firefox/Edge)
+  if (buf.length >= 4 && buf[0] === 0x1a && buf[1] === 0x45 && buf[2] === 0xdf && buf[3] === 0xa3) {
+    return { mime: 'audio/webm', ext: 'webm' };
+  }
+  if (buf.length >= 4 && buf.subarray(0, 4).toString('ascii') === 'OggS') return { mime: 'audio/ogg', ext: 'ogg' };
+  // RIFF/WAVE (uncompressed mic dumps)
+  if (buf.length >= 12 && buf.subarray(0, 4).toString('ascii') === 'RIFF' && buf.subarray(8, 12).toString('ascii') === 'WAVE') {
+    return { mime: 'audio/wav', ext: 'wav' };
+  }
+  // ISO-BMFF `….ftyp` (MediaRecorder in Safari → audio/mp4)
+  if (buf.length >= 12 && buf.subarray(4, 8).toString('ascii') === 'ftyp') return { mime: 'audio/mp4', ext: 'm4a' };
+  // MP3: ID3 tag or a raw frame sync (0xFFEx)
+  if (buf.length >= 3 && buf[0] === 0x49 && buf[1] === 0x44 && buf[2] === 0x33) return { mime: 'audio/mpeg', ext: 'mp3' };
+  if (buf.length >= 2 && buf[0] === 0xff && (buf[1] & 0xe0) === 0xe0) return { mime: 'audio/mpeg', ext: 'mp3' };
+  return null;
+}
+
 export function sniffImage(buf: Buffer): Sniffed | null {
   if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
     return { mime: 'image/jpeg', ext: 'jpg' };
@@ -195,6 +226,70 @@ export class UploadsService implements OnModuleInit {
     } catch (err) {
       // no row ⇒ no reference ⇒ drop both files (no orphans)
       await Promise.all(written.map((key) => this.storage.delete(key).catch(() => undefined)));
+      throw err;
+    }
+  }
+
+  /**
+   * Store one voice note (Phase 10 chat room). The bytes are kept as-is —
+   * audio is already compressed and must stay playable — but the path is
+   * identical to images: sniff → rate/quota guards → random storage key →
+   * Media row (`WALL`, unclaimed until the post exists) → rollback on error.
+   */
+  async saveVoice(user: User, file: { buffer?: Buffer; size?: number } | undefined): Promise<StoredVoice> {
+    const buffer = file?.buffer;
+    if (!buffer || buffer.length === 0) throw new BadRequestException('فایل صوتی الزامی است');
+    if ((file?.size ?? buffer.length) > MAX_VOICE_BYTES || buffer.length > MAX_VOICE_BYTES) {
+      throw new PayloadTooLargeException('حجم ویس نباید بیشتر از ۵ مگابایت باشد');
+    }
+
+    const kind = sniffAudio(buffer);
+    if (!kind) throw new UnsupportedMediaTypeException('فرمت صوتی پشتیبانی نمی‌شود (WebM، OGG، M4A، MP3 یا WAV بفرستید)');
+
+    const hourAgo = new Date(Date.now() - 3_600_000);
+    const recent = await this.prisma.media.count({
+      where: { ownerUserId: user.id, createdAt: { gte: hourAgo } },
+    });
+    if (recent >= MAX_UPLOADS_PER_HOUR) {
+      throw new HttpException('سقف آپلود در ساعت پر شده است؛ کمی بعد دوباره تلاش کنید', HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    const used = await this.prisma.media.aggregate({
+      where: { ownerUserId: user.id, deletedAt: null },
+      _sum: { sizeBytes: true },
+    });
+    if ((used._sum.sizeBytes ?? 0) + buffer.length > MAX_BYTES_PER_USER) {
+      throw new PayloadTooLargeException('سقف ذخیره‌سازی شما تکمیل است (۱۰۰ مگابایت)؛ ابتدا فایل‌های قدیمی را حذف کنید');
+    }
+
+    const now = new Date();
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const storageKey = `voice/${now.getUTCFullYear()}/${month}/${randomBytes(12).toString('hex')}.${kind.ext}`;
+    const url = this.storage.url(storageKey);
+
+    try {
+      await this.storage.put(storageKey, buffer);
+    } catch {
+      throw new HttpException('ذخیره ویس ممکن نشد؛ کمی بعد دوباره تلاش کنید', HttpStatus.BAD_GATEWAY);
+    }
+
+    try {
+      const media = await this.prisma.media.create({
+        data: {
+          storageKey,
+          url,
+          mimeType: kind.mime,
+          sizeBytes: buffer.length,
+          ownerUserId: user.id,
+          entityType: 'WALL',
+          entityId: null, // claimed by the wall post (voiceMediaId) right after it exists
+        },
+        select: { id: true, url: true },
+      });
+      return { id: media.id, url: media.url };
+    } catch (err) {
+      // no row ⇒ no reference ⇒ drop the file (no orphans)
+      await this.storage.delete(storageKey).catch(() => undefined);
       throw err;
     }
   }
@@ -340,7 +435,7 @@ export class UploadsService implements OnModuleInit {
 
     // (4) files on disk no Media row references (crashes, manual copies, …).
     // Thumbnails belong to their main file and are referenced implicitly.
-    const mediaRows = await this.prisma.media.findMany({ select: { storageKey: true } });
+    const mediaRows = await this.prisma.media.findMany({ select: { storageKey: true, mimeType: true } });
     const referenced = new Set<string>();
     for (const row of mediaRows) {
       referenced.add(row.storageKey);
@@ -356,7 +451,9 @@ export class UploadsService implements OnModuleInit {
     }
 
     // (5) legacy images uploaded before the pipeline: create their thumbnail
-    for (const row of mediaRows.slice(0, THUMBS_PER_SWEEP)) {
+    // (voice notes and other audio never get one — sharp cannot decode them)
+    const imageRows = mediaRows.filter((row) => row.mimeType?.startsWith('image/'));
+    for (const row of imageRows.slice(0, THUMBS_PER_SWEEP)) {
       const thumbKey = thumbKeyFor(row.storageKey);
       if (thumbKey === row.storageKey) continue;
       if (await this.storage.exists(thumbKey).catch(() => true)) continue;

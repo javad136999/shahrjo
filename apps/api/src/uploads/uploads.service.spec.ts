@@ -11,7 +11,9 @@ import { LocalStorageDriver } from './storage/local-storage.driver';
 import {
   MAX_BYTES_PER_USER,
   MAX_UPLOAD_BYTES,
+  MAX_VOICE_BYTES,
   UploadsService,
+  sniffAudio,
   sniffImage,
   thumbKeyFor,
   thumbUrlFor,
@@ -44,7 +46,7 @@ function makeService(
     trash?: unknown[];
     unclaimed?: unknown[];
     attached?: unknown[];
-    mediaRows?: { storageKey: string }[];
+    mediaRows?: { storageKey: string; mimeType?: string }[];
     aliveAds?: { id: number }[];
     alivePosts?: { id: number }[];
   } = {},
@@ -120,6 +122,94 @@ describe('sniffImage — magic bytes, never the client mimetype', () => {
     expect(sniffImage(Buffer.from('<html><body>hi</body></html>'))).toBeNull();
     expect(sniffImage(Buffer.from('<?php echo 1; ?>'))).toBeNull();
     expect(sniffImage(Buffer.alloc(0))).toBeNull();
+  });
+});
+
+describe('sniffAudio — voice notes judged by magic bytes (Phase 10)', () => {
+  it('accepts exactly what browsers record or upload', () => {
+    // MediaRecorder in Chrome/Firefox (Matroska/WebM)
+    expect(sniffAudio(Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0x00]))).toEqual({
+      mime: 'audio/webm',
+      ext: 'webm',
+    });
+    expect(sniffAudio(Buffer.from('OggS....'))).toEqual({ mime: 'audio/ogg', ext: 'ogg' });
+    expect(
+      sniffAudio(Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WAVEfmt')])),
+    ).toEqual({ mime: 'audio/wav', ext: 'wav' });
+    // MediaRecorder in Safari (ISO-BMFF audio/mp4)
+    expect(sniffAudio(Buffer.concat([Buffer.alloc(4), Buffer.from('ftypM4A ')]))).toEqual({
+      mime: 'audio/mp4',
+      ext: 'm4a',
+    });
+    // MP3 with an ID3 tag and with a raw frame sync
+    expect(sniffAudio(Buffer.from('ID3\u0004'))).toEqual({ mime: 'audio/mpeg', ext: 'mp3' });
+    expect(sniffAudio(Buffer.from([0xff, 0xfb, 0x90, 0x00]))).toEqual({
+      mime: 'audio/mpeg',
+      ext: 'mp3',
+    });
+  });
+
+  it('rejects images, markup and empty buffers (forged .mp3 names)', () => {
+    expect(sniffAudio(png)).toBeNull();
+    expect(sniffAudio(Buffer.from('<svg onload="alert(1)"></svg>'))).toBeNull();
+    expect(sniffAudio(Buffer.from('<?php echo 1; ?>'))).toBeNull();
+    expect(sniffAudio(Buffer.alloc(0))).toBeNull();
+  });
+});
+
+describe('UploadsService.saveVoice — wall voice notes (Phase 10)', () => {
+  it('stores the bytes untouched under a random voice/ key with an unclaimed WALL row', async () => {
+    const { service, prisma, storage } = makeService();
+    const input = Buffer.concat([Buffer.from([0x1a, 0x45, 0xdf, 0xa3]), Buffer.alloc(64, 7)]);
+
+    const result = await service.saveVoice(user, { buffer: input, size: input.length });
+
+    const files = await storage.list();
+    expect(files).toHaveLength(1);
+    expect(files[0].key).toMatch(/^voice\/\d{4}\/\d{2}\/[0-9a-f]{24}\.webm$/);
+    const stored = await storage.get(files[0].key);
+    expect(stored?.equals(input)).toBe(true); // audio is never re-encoded
+
+    expect(prisma.media.create.mock.calls[0][0].data).toMatchObject({
+      mimeType: 'audio/webm',
+      ownerUserId: 4,
+      entityType: 'WALL',
+      entityId: null, // claimed by the wall post right after it exists
+      sizeBytes: input.length,
+    });
+    expect(result).toEqual({ id: 55, url: `/api/v1/files/${files[0].key}` });
+  });
+
+  it('400s empty input, 415s non-audio and 413s above the 5MB cap', async () => {
+    const { service, storage } = makeService();
+    await expect(service.saveVoice(user, undefined)).rejects.toMatchObject({ status: 400 });
+    await expect(
+      service.saveVoice(user, { buffer: png, size: png.length }),
+    ).rejects.toMatchObject({ status: 415 });
+    const big = Buffer.alloc(MAX_VOICE_BYTES + 1, 0);
+    big.set([0x1a, 0x45, 0xdf, 0xa3]); // looks like a webm, still too big
+    await expect(service.saveVoice(user, { buffer: big, size: big.length })).rejects.toMatchObject({
+      status: 413,
+    });
+    expect(await storage.list()).toHaveLength(0);
+  });
+
+  it('429s after the per-user hourly upload cap', async () => {
+    const { service } = makeService({ recent: 30 });
+    const input = Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0x00]);
+    await expect(service.saveVoice(user, { buffer: input, size: input.length })).rejects.toMatchObject({
+      status: 429,
+    });
+  });
+
+  it('removes the file when the DB row fails (no orphans)', async () => {
+    const { service, prisma, storage } = makeService();
+    prisma.media.create.mockRejectedValueOnce(new Error('db down'));
+    const input = Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0x01]);
+    await expect(service.saveVoice(user, { buffer: input, size: input.length })).rejects.toThrow(
+      'db down',
+    );
+    expect(await storage.list()).toHaveLength(0);
   });
 });
 
@@ -384,7 +474,9 @@ describe('UploadsService.sweep — disk-fill protection', () => {
 
   it('backfills missing thumbnails for legacy images', async () => {
     const legacy = 'legacy/2026/08/old-photo.jpg';
-    const { service, storage } = makeService({ mediaRows: [{ storageKey: legacy }] });
+    const { service, storage } = makeService({
+      mediaRows: [{ storageKey: legacy, mimeType: 'image/jpeg' }],
+    });
     await storage.put(legacy, await jpeg(640, 480)); // a real, processable image
 
     const result = await service.sweep();
@@ -392,6 +484,20 @@ describe('UploadsService.sweep — disk-fill protection', () => {
     expect(result.thumbsCreated).toBe(1);
     expect(await storage.exists(thumbKeyFor(legacy))).toBe(true);
     expect(await storage.exists(legacy)).toBe(true); // original kept (it is referenced)
+  });
+
+  it('never tries to thumbnail audio (voice notes stay untouched)', async () => {
+    const voice = 'voice/2026/10/abcdefabcdefabcdefabcdef.webm';
+    const { service, storage } = makeService({
+      mediaRows: [{ storageKey: voice, mimeType: 'audio/webm' }],
+    });
+    await storage.put(voice, Buffer.from([0x1a, 0x45, 0xdf, 0xa3]));
+
+    const result = await service.sweep();
+
+    expect(result.thumbsCreated).toBe(0);
+    expect(await storage.exists(voice)).toBe(true);
+    expect(await storage.exists(`${voice}.thumb.webp`)).toBe(false);
   });
 
   it('reports usage with both quotas for the admin panel', async () => {

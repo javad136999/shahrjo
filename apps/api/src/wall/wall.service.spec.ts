@@ -6,6 +6,7 @@ import { WallService } from './wall.service';
 function makePrisma() {
   const prisma = {
     city: { findFirst: jest.fn() },
+    user: { count: jest.fn().mockResolvedValue(12) },
     wallPost: {
       findFirst: jest.fn(),
       findMany: jest.fn(),
@@ -14,7 +15,7 @@ function makePrisma() {
       update: jest.fn(),
       updateMany: jest.fn(),
       delete: jest.fn(),
-      count: jest.fn(),
+      count: jest.fn().mockResolvedValue(34),
     },
     wallPostLike: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn(), delete: jest.fn() },
     media: { updateMany: jest.fn(), findUnique: jest.fn() },
@@ -34,7 +35,7 @@ function makeService(scope: { role: string; provinceId: number | null; cityId: n
     rbac as unknown as RbacService,
     uploads as unknown as never,
   );
-  prisma.city.findFirst.mockResolvedValue({ id: 1 });
+  prisma.city.findFirst.mockResolvedValue({ id: 1, name: 'شهر نمونه' });
   return { service, prisma, uploads };
 }
 
@@ -44,6 +45,9 @@ const basePost = {
   id: 10,
   content: 'سلام شهر',
   imageUrl: null,
+  voiceUrl: null,
+  editedAt: null,
+  ad: null,
   isPinned: false,
   likeCount: 2,
   createdAt: new Date('2026-10-05T10:00:00Z'),
@@ -76,6 +80,11 @@ describe('WallService.list', () => {
     expect(feed.posts[0].canDelete).toBe(true); // own post
     expect(feed.posts[0].canPin).toBe(false); // not an operator
     expect(feed.nextBefore).toBeNull(); // fewer rows than limit
+    expect(feed.room).toEqual({
+      name: 'دیوار شهر شهر نمونه',
+      memberCount: 12,
+      messageCount: 34,
+    });
     expect(() => JSON.stringify(feed)).not.toThrow();
   });
 
@@ -140,6 +149,79 @@ describe('WallService.create', () => {
     prisma.media.updateMany.mockResolvedValue({ count: 0 });
     await expect(service.create(user, { cityId: 1, content: 'با عکس', imageIds: [56] })).rejects.toThrow('تصویر');
     expect(prisma.wallPost.delete).toHaveBeenCalledWith({ where: { id: 7 } });
+  });
+
+  it('claims a voice note like an image and rolls back everything when it fails', async () => {
+    const { service, prisma } = makeService(null);
+    prisma.wallPost.count.mockResolvedValue(0);
+    prisma.wallPost.create.mockResolvedValue({ id: 8 });
+    prisma.media.updateMany.mockResolvedValue({ count: 1 });
+    prisma.media.findUnique.mockResolvedValue({ url: '/api/v1/files/voice/2026/10/x.webm' });
+    prisma.wallPost.findUnique.mockResolvedValue({
+      ...basePost,
+      id: 8,
+      content: '',
+      voiceUrl: '/api/v1/files/voice/2026/10/x.webm',
+    });
+
+    // voice-only message: empty content is accepted
+    const created = await service.create(user, { cityId: 1, content: '', voiceMediaId: 77 });
+    expect(prisma.media.updateMany.mock.calls[0][0].where).toMatchObject({
+      id: 77,
+      mimeType: { startsWith: 'audio/' },
+    });
+    expect(prisma.media.updateMany.mock.calls[0][0].data).toMatchObject({
+      entityType: 'WALL',
+      entityId: '8',
+    });
+    expect(created.voiceUrl).toBe('/api/v1/files/voice/2026/10/x.webm');
+
+    // a failed voice claim releases the claim and deletes the half-built post
+    prisma.media.updateMany.mockResolvedValue({ count: 0 });
+    await expect(service.create(user, { cityId: 1, content: '', voiceMediaId: 78 })).rejects.toThrow('ویس');
+    expect(prisma.wallPost.delete).toHaveBeenCalledWith({ where: { id: 8 } });
+  });
+});
+
+describe('WallService.edit (Phase 10)', () => {
+  it('404s unknown posts', async () => {
+    const { service, prisma } = makeService(null);
+    prisma.wallPost.findFirst.mockResolvedValue(null);
+    await expect(service.edit(user, 3, 'تازه')).rejects.toThrow('پیام یافت نشد');
+  });
+
+  it('rejects a blank body', async () => {
+    const { service } = makeService(null);
+    await expect(service.edit(user, 3, '   ')).rejects.toThrow('خالی');
+  });
+
+  it('403s an edit attempt by someone else', async () => {
+    const { service, prisma } = makeService(null);
+    prisma.wallPost.findFirst.mockResolvedValue({ id: 3, userId: 99 });
+    await expect(service.edit(user, 3, 'تازه')).rejects.toMatchObject({ status: 403 });
+    expect(prisma.wallPost.update).not.toHaveBeenCalled();
+  });
+
+  it('saves the new text with an editedAt stamp and returns the fresh view', async () => {
+    const { service, prisma } = makeService(null);
+    prisma.wallPost.findFirst.mockResolvedValue({ id: 3, userId: 4 });
+    prisma.wallPost.findUnique.mockResolvedValue({
+      ...basePost,
+      id: 3,
+      content: 'متن تازه',
+      editedAt: new Date('2026-10-08T10:00:00Z'),
+    });
+    prisma.wallPostLike.findUnique.mockResolvedValue(null);
+
+    const view = await service.edit(user, 3, 'متن تازه');
+
+    expect(prisma.wallPost.update).toHaveBeenCalledWith({
+      where: { id: 3 },
+      data: { content: 'متن تازه', editedAt: expect.any(Date) },
+    });
+    expect(view.content).toBe('متن تازه');
+    expect(view.editedAt).not.toBeNull();
+    expect(view.canEdit).toBe(true);
   });
 });
 

@@ -21,17 +21,18 @@ export class WallListQueryDto {
   before?: string;
 }
 
-/** POST /wall — publish a post (optionally replying + one image). */
+/** POST /wall — publish a post (optionally replying + one image + one voice note). */
 export class CreateWallPostDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
   cityId!: number;
 
+  /** Optional: a voice-only or image-only message sends an empty body. */
+  @IsOptional()
   @IsString()
-  @MinLength(1)
   @MaxLength(1000)
-  content!: string;
+  content?: string;
 
   @IsOptional()
   @Type(() => Number)
@@ -46,6 +47,21 @@ export class CreateWallPostDto {
   @Type(() => Number)
   @IsInt({ each: true })
   imageIds?: number[];
+
+  /** Media id from POST /uploads/voice — claimed like an image once the post exists. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  voiceMediaId?: number;
+}
+
+/** PATCH /wall/:id — the author edits their own message (Telegram-style). */
+export class EditWallPostDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(1000)
+  content!: string;
 }
 
 /** POST /wall/:id/pin — operators pin at most one post per city. */

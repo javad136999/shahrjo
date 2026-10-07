@@ -43,10 +43,11 @@ describe('HeaderPills', () => {
     expect(await screen.findByTestId('header-news-pill')).toHaveAttribute('href', '/');
   });
 
-  it('always offers the ad submission entry', async () => {
+  it('no longer offers the ad submission entry — it lives in the city wall now', async () => {
     render(<HeaderPills />);
-    expect(await screen.findByTestId('header-submit-pill')).toHaveAttribute('href', '/ads/new');
-    expect(screen.getByTestId('header-submit-pill')).toHaveTextContent('ثبت آگهی');
+    await screen.findByTestId('header-news-pill');
+    expect(screen.queryByTestId('header-submit-pill')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /ثبت آگهی/ })).not.toBeInTheDocument();
   });
 
   it('re-reads the city when another part of the page stores a new one', async () => {
@@ -61,13 +62,14 @@ describe('HeaderPills', () => {
     expect(screen.getByTestId('header-news-pill')).toHaveAttribute('href', '/city/new-city/news');
   });
 
-  it('keeps the header to news + city + submit (no subscription pill)', async () => {
+  it('keeps the header to news + city (no subscription, no submit pill)', async () => {
     render(<HeaderPills />);
     await screen.findByTestId('header-news-pill');
     expect(screen.getByTestId('header-city-pill')).toBeInTheDocument();
-    expect(screen.getByTestId('header-submit-pill')).toBeInTheDocument();
     // اشتراک was removed from the header — plans stay reachable via ویترین
     expect(screen.queryByTestId('header-plans-pill')).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /اشتراک/ })).not.toBeInTheDocument();
+    // «ثبت آگهی» moved to the wall composer (Phase 10)
+    expect(screen.queryByTestId('header-submit-pill')).not.toBeInTheDocument();
   });
 });

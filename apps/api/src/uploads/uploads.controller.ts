@@ -2,7 +2,7 @@ import { BadRequestException, Controller, Post, UploadedFile, UseInterceptors } 
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { User } from '@prisma/client';
 import { CurrentUser } from '../common/decorators';
-import { MAX_UPLOAD_BYTES, UploadsService } from './uploads.service';
+import { MAX_UPLOAD_BYTES, MAX_VOICE_BYTES, UploadsService } from './uploads.service';
 
 @Controller()
 export class UploadsController {
@@ -24,5 +24,21 @@ export class UploadsController {
   upload(@CurrentUser() user: User, @UploadedFile() file?: Express.Multer.File) {
     if (!file) throw new BadRequestException('فایل تصویر الزامی است');
     return this.uploads.save(user, file);
+  }
+
+  /**
+   * Store one voice note for the city wall chat (Phase 10): 5 MB cap,
+   * magic-byte sniffing (WebM/OGG/M4A/MP3/WAV), random storage key, no
+   * re-encoding — the bytes are already compressed and must stay playable.
+   */
+  @Post('uploads/voice')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: MAX_VOICE_BYTES, files: 1 },
+    }),
+  )
+  uploadVoice(@CurrentUser() user: User, @UploadedFile() file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException('فایل صوتی الزامی است');
+    return this.uploads.saveVoice(user, file);
   }
 }

@@ -86,20 +86,6 @@ export default function WallPage() {
     );
   }
 
-  return (
-    <div className="wall-page">
-      <header className="wall-page__head">
-        <h1 data-testid="wall-title">دیوار شهر {state.city.name}</h1>
-        <div className="wall-page__actions">
-          <Link href={`/city/${state.city.slug}`} className="pill">
-            🏙 بازگشت به شهر
-          </Link>
-          <Link href="/" className="pill">
-            🔄 تغییر شهر
-          </Link>
-        </div>
-      </header>
-      <WallView city={{ id: state.city.id, slug: state.city.slug, name: state.city.name }} />
-    </div>
-  );
+  // The room header (wall name + member count + actions) lives inside WallView.
+  return <WallView city={{ id: state.city.id, slug: state.city.slug, name: state.city.name }} />;
 }

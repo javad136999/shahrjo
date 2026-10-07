@@ -15,14 +15,33 @@ export interface WallAuthor {
   avatarUrl: string | null;
 }
 
+/** Snapshot of the promoted ad behind a republished post (Phase 10). */
+export interface WallAdRef {
+  id: number;
+  title: string;
+  price: number | null;
+  image: string | null;
+}
+
+/** Chat-room header: wall name + membership figures (Phase 10). */
+export interface WallRoomMeta {
+  name: string;
+  memberCount: number;
+  messageCount: number;
+}
+
 export interface WallPostView {
   id: number;
   content: string;
   imageUrl: string | null;
+  voiceUrl: string | null;
+  editedAt: Date | null;
+  ad: WallAdRef | null;
   isPinned: boolean;
   likeCount: number;
   likedByMe: boolean;
   canDelete: boolean;
+  canEdit: boolean;
   canPin: boolean;
   createdAt: Date;
   user: WallAuthor;
@@ -34,17 +53,27 @@ export interface WallFeed {
   pinned: WallPostView | null;
   /** ISO timestamp of the oldest returned post — pass as `before` for more. */
   nextBefore: string | null;
+  /** Chat-room header meta (name + members). */
+  room: WallRoomMeta;
 }
 
 type PostWithRel = {
   id: number;
   content: string;
   imageUrl: string | null;
+  voiceUrl: string | null;
+  editedAt: Date | null;
   isPinned: boolean;
   likeCount: number;
   createdAt: Date;
   user: { id: number; fullName: string | null; avatarUrl: string | null };
   replyTo: { id: number; content: string; user: { fullName: string | null } } | null;
+  ad: {
+    id: number;
+    title: string;
+    price: bigint | null;
+    images: { url: string }[];
+  } | null;
 };
 
 /**
@@ -61,13 +90,13 @@ export class WallService {
     private readonly uploads: UploadsService,
   ) {}
 
-  private async resolveCity(slug: string): Promise<number> {
+  private async resolveCity(slug: string): Promise<{ id: number; name: string }> {
     const city = await this.prisma.city.findFirst({
       where: { slug, isActive: true, province: { isActive: true } },
-      select: { id: true },
+      select: { id: true, name: true },
     });
     if (!city) throw new NotFoundException('شهر یافت نشد');
-    return city.id;
+    return city;
   }
 
   private async scopeOf(userId: number): Promise<AdminScope | null> {
@@ -81,14 +110,26 @@ export class WallService {
     scope: AdminScope | null,
   ): WallPostView {
     const isOperator = scope !== null;
+    const adImage = post.ad?.images?.[0]?.url ?? null;
     return {
       id: post.id,
       content: post.content,
       imageUrl: post.imageUrl,
+      voiceUrl: post.voiceUrl ?? null,
+      editedAt: post.editedAt ?? null,
+      ad: post.ad
+        ? {
+            id: post.ad.id,
+            title: post.ad.title,
+            price: post.ad.price === null || post.ad.price === undefined ? null : Number(post.ad.price),
+            image: adImage,
+          }
+        : null,
       isPinned: post.isPinned,
       likeCount: post.likeCount,
       likedByMe: liked,
       canDelete: post.user.id === viewerId || isOperator,
+      canEdit: post.user.id === viewerId,
       canPin: isOperator,
       createdAt: post.createdAt,
       user: {
@@ -110,6 +151,8 @@ export class WallService {
     id: true,
     content: true,
     imageUrl: true,
+    voiceUrl: true,
+    editedAt: true,
     isPinned: true,
     likeCount: true,
     createdAt: true,
@@ -117,19 +160,28 @@ export class WallService {
     replyTo: {
       select: { id: true, content: true, user: { select: { fullName: true } } },
     },
+    ad: {
+      select: {
+        id: true,
+        title: true,
+        price: true,
+        images: { orderBy: { sortOrder: 'asc' as const }, take: 1, select: { url: true } },
+      },
+    },
   } as const;
 
-  /** Newest-first feed + the single pinned post of the city. */
+  /** Newest-first feed + the single pinned post of the city + room meta. */
   async list(
     user: User,
     citySlug: string,
     limit: number = DEFAULT_WALL_LIMIT,
     before?: string,
   ): Promise<WallFeed> {
-    const cityId = await this.resolveCity(citySlug);
+    const city = await this.resolveCity(citySlug);
+    const cityId = city.id;
     const scope = await this.scopeOf(user.id);
 
-    const [pinnedRow, rows] = await Promise.all([
+    const [pinnedRow, rows, memberCount, messageCount] = await Promise.all([
       this.prisma.wallPost.findFirst({
         where: { cityId, isPinned: true },
         select: this.select,
@@ -143,6 +195,9 @@ export class WallService {
         take: limit,
         select: this.select,
       }),
+      // members of the wall = residents who chose this city
+      this.prisma.user.count({ where: { cityId, status: 'ACTIVE' } }),
+      this.prisma.wallPost.count({ where: { cityId } }),
     ]);
 
     const likedRows = rows.length
@@ -161,13 +216,20 @@ export class WallService {
       posts: feedRows.map((r) => this.view(r, user.id, liked.has(r.id), scope)),
       pinned: pinnedRow ? this.view(pinnedRow, user.id, liked.has(pinnedRow.id), scope) : null,
       nextBefore: rows.length === limit && oldest ? oldest.createdAt.toISOString() : null,
+      room: {
+        name: `دیوار شهر ${city.name}`,
+        memberCount,
+        messageCount,
+      },
     };
   }
 
-  /** Publish a post; optionally claim one uploaded image for it. */
+  /** Publish a post; optionally claim one uploaded image / voice note for it. */
   async create(user: User, dto: CreateWallPostDto): Promise<WallPostView> {
-    const content = dto.content.trim();
-    if (!content) throw new BadRequestException('متن پیام الزامی است');
+    const content = dto.content?.trim() ?? '';
+    if (!content && !dto.imageIds?.length && !dto.voiceMediaId) {
+      throw new BadRequestException('متن پیام الزامی است');
+    }
 
     const city = await this.prisma.city.findFirst({
       where: { id: dto.cityId, isActive: true, province: { isActive: true } },
@@ -200,33 +262,79 @@ export class WallService {
       select: { id: true },
     });
 
-    let imageUrl: string | null = null;
-    if (dto.imageIds && dto.imageIds.length > 0) {
-      const claimed = await this.prisma.media.updateMany({
-        where: {
-          id: dto.imageIds[0],
-          ownerUserId: user.id,
-          entityId: null,
-          deletedAt: null,
-          entityType: { in: ['AD', 'WALL'] },
-        },
-        data: { entityType: 'WALL', entityId: String(post.id) },
-      });
-      if (claimed.count !== 1) {
-        await this.prisma.wallPost.delete({ where: { id: post.id } });
-        throw new BadRequestException('تصویر پیدا نشد یا متعلق به شما نیست');
+    // Claim the uploaded attachments (image + voice). Any failure rolls the
+    // claims and the half-created post back — a broken message never leaks
+    // files or rows ("unclaimed" uploads are swept after 48h anyway).
+    const claimedIds: number[] = [];
+    try {
+      let imageUrl: string | null = null;
+      if (dto.imageIds && dto.imageIds.length > 0) {
+        const claimed = await this.prisma.media.updateMany({
+          where: {
+            id: dto.imageIds[0],
+            ownerUserId: user.id,
+            entityId: null,
+            deletedAt: null,
+            mimeType: { startsWith: 'image/' },
+            entityType: { in: ['AD', 'WALL'] },
+          },
+          data: { entityType: 'WALL', entityId: String(post.id) },
+        });
+        if (claimed.count !== 1) {
+          throw new BadRequestException('تصویر پیدا نشد یا متعلق به شما نیست');
+        }
+        claimedIds.push(dto.imageIds[0]);
+        const media = await this.prisma.media.findUnique({
+          where: { id: dto.imageIds[0] },
+          select: { url: true },
+        });
+        imageUrl = media?.url ?? null;
       }
-      const media = await this.prisma.media.findUnique({
-        where: { id: dto.imageIds[0] },
-        select: { url: true },
-      });
-      imageUrl = media?.url ?? null;
-      if (imageUrl) {
+
+      let voiceUrl: string | null = null;
+      if (dto.voiceMediaId) {
+        const claimedVoice = await this.prisma.media.updateMany({
+          where: {
+            id: dto.voiceMediaId,
+            ownerUserId: user.id,
+            entityId: null,
+            deletedAt: null,
+            mimeType: { startsWith: 'audio/' },
+            entityType: { in: ['AD', 'WALL'] },
+          },
+          data: { entityType: 'WALL', entityId: String(post.id) },
+        });
+        if (claimedVoice.count !== 1) {
+          throw new BadRequestException('ویس پیدا نشد یا متعلق به شما نیست');
+        }
+        claimedIds.push(dto.voiceMediaId);
+        const media = await this.prisma.media.findUnique({
+          where: { id: dto.voiceMediaId },
+          select: { url: true },
+        });
+        voiceUrl = media?.url ?? null;
+      }
+
+      if (imageUrl || voiceUrl) {
         await this.prisma.wallPost.update({
           where: { id: post.id },
-          data: { imageUrl },
+          data: {
+            ...(imageUrl ? { imageUrl } : {}),
+            ...(voiceUrl ? { voiceUrl } : {}),
+          },
         });
       }
+    } catch (err) {
+      if (claimedIds.length > 0) {
+        await Promise.resolve(
+          this.prisma.media.updateMany({
+            where: { id: { in: claimedIds } },
+            data: { entityType: 'WALL', entityId: null },
+          }),
+        ).catch(() => undefined);
+      }
+      await Promise.resolve(this.prisma.wallPost.delete({ where: { id: post.id } })).catch(() => undefined);
+      throw err;
     }
 
     const created = await this.prisma.wallPost.findUnique({
@@ -236,6 +344,37 @@ export class WallService {
     if (!created) throw new NotFoundException('پیام یافت نشد');
     const scope = await this.scopeOf(user.id);
     return this.view(created, user.id, false, scope);
+  }
+
+  /** Edit own message text (Telegram-style) — stamps `editedAt`. */
+  async edit(user: User, id: number, rawContent: string): Promise<WallPostView> {
+    const content = rawContent.trim();
+    if (!content) throw new BadRequestException('متن پیام نمی‌تواند خالی باشد');
+
+    const post = await this.prisma.wallPost.findFirst({
+      where: { id },
+      select: { id: true, userId: true },
+    });
+    if (!post) throw new NotFoundException('پیام یافت نشد');
+    if (post.userId !== user.id) {
+      throw new ForbiddenException('فقط نویسنده می‌تواند پیام خود را ویرایش کند');
+    }
+
+    await this.prisma.wallPost.update({
+      where: { id },
+      data: { content, editedAt: new Date() },
+    });
+
+    const fresh = await this.prisma.wallPost.findUnique({ where: { id }, select: this.select });
+    if (!fresh) throw new NotFoundException('پیام یافت نشد');
+    const [scope, liked] = await Promise.all([
+      this.scopeOf(user.id),
+      this.prisma.wallPostLike.findUnique({
+        where: { postId_userId: { postId: id, userId: user.id } },
+        select: { postId: true },
+      }),
+    ]);
+    return this.view(fresh, user.id, Boolean(liked), scope);
   }
 
   /** Like / unlike — returns the fresh count. */

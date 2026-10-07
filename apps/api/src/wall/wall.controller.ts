@@ -1,10 +1,10 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { CurrentUser, RequirePermissions } from '../common/decorators';
 // Value import on purpose: `import type` would erase the classes and
 // emit `Function` in design:paramtypes, so ValidationPipe would reject
 // every declared property as unknown.
-import { CreateWallPostDto, PinWallPostDto, WallListQueryDto } from './wall.dto';
+import { CreateWallPostDto, EditWallPostDto, PinWallPostDto, WallListQueryDto } from './wall.dto';
 import { WallService } from './wall.service';
 
 /**
@@ -24,6 +24,12 @@ export class WallController {
   @Post()
   create(@CurrentUser() user: User, @Body() dto: CreateWallPostDto) {
     return this.wall.create(user, dto);
+  }
+
+  /** Edit own message text — the feed shows an «ویرایش شد» marker. */
+  @Patch(':id')
+  edit(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number, @Body() dto: EditWallPostDto) {
+    return this.wall.edit(user, id, dto.content);
   }
 
   /** Like toggle — returns { liked, likeCount }. */

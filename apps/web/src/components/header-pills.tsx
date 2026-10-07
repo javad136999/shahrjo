@@ -9,9 +9,11 @@ import type { LocalCity } from '@/lib/types';
 /**
  * Header quick actions (JamCity-style pills): the city's news page and the
  * remembered city's name — clicking the city name opens the city picker so
- * the user can switch cities. The city is re-read after mount, on navigation
- * and whenever another part of the page stores a new city, so SSR output
- * stays deterministic (no hydration mismatch) and the pill never goes stale.
+ * the user can switch cities. The «ثبت آگهی» entry no longer lives here: it
+ * moved to the composer of the city wall (Phase 10). The city is re-read
+ * after mount, on navigation and whenever another part of the page stores a
+ * new city, so SSR output stays deterministic (no hydration mismatch) and
+ * the pill never goes stale.
  */
 export function HeaderPills() {
   const [city, setCity] = useState<LocalCity | null>(null);
@@ -51,10 +53,6 @@ export function HeaderPills() {
           <span className="pill__label">انتخاب شهر</span>
         </Link>
       )}
-      <Link href="/ads/new" className="pill pill--brand" data-testid="header-submit-pill">
-        <span aria-hidden>📝</span>
-        <span className="pill__label">ثبت آگهی</span>
-      </Link>
     </div>
   );
 }

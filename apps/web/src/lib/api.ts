@@ -358,8 +358,21 @@ export async function createWallPost(body: {
   content: string;
   replyToId?: number;
   imageIds?: number[];
+  voiceMediaId?: number;
 }): Promise<WallPost> {
   return api.post<WallPost>('/wall', body);
+}
+
+/** Edit own wall message text (Telegram-style). */
+export async function editWallPost(id: number, content: string): Promise<WallPost> {
+  return api.patch<WallPost>(`/wall/${id}`, { content });
+}
+
+/** Multipart voice-note upload (≤5MB) for the wall composer. */
+export async function uploadVoice(file: File): Promise<{ id: number; url: string }> {
+  const form = new FormData();
+  form.append('file', file, file.name);
+  return requestForm<{ id: number; url: string }>('/uploads/voice', form);
 }
 
 export async function likeWallPost(id: number): Promise<{ liked: boolean; likeCount: number }> {
