@@ -11,17 +11,31 @@ import type { SmsProvider, SmsSendResult } from '../sms.types';
  *   { sending_type: "pattern", from_number, code: <pattern code>,
  *     recipients: ["+989..."], params: { <param>: <otp> } }
  *
- * Behavior without a pattern code (current state of the project):
- *   SMS_PATTERN_CODE is NOT required and NO request is made to any endpoint.
- *   sendOtp() delegates to the console adapter and logs a "pending activation"
- *   warning, so auth keeps working and enabling real sending later is a pure
- *   config change (set SMS_PATTERN_CODE + SMS_SENDER) — no code rewrite.
+ * Behavior without a pattern code (pending activation):
+ *   NO request is made to any endpoint; sendOtp() delegates to the console
+ *   adapter and logs a "pending activation" warning, so auth keeps working.
+ *   Enabling real sending is a pure config change — SMS_PATTERN_CODE
+ *   (+ SMS_SENDER, + SMS_PATTERN_PARAM matching the pattern's %variable%)
+ *   — no code rewrite. Verified live against pattern type "otp".
  */
 const BASE_URL = 'https://edge.ippanel.com/v1';
 
 interface IpPanelResponse {
   data?: { message_outbox_ids?: number[] } | null;
   meta?: { status?: boolean; message?: string; message_code?: string };
+}
+
+/**
+ * Edge base64-decodes the Authorization header before matching the key, so a
+ * raw uuid-style key would be rejected ("Invalid token") unless encoded first.
+ * A key already provided in base64 form (as displayed in the KPanel/IPPanel
+ * panel) passes through untouched.
+ */
+function authHeader(apiKey: string): string {
+  const key = apiKey.trim();
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(key)
+    ? Buffer.from(key, 'utf8').toString('base64')
+    : key;
 }
 
 /** `09XXXXXXXXX` (our normalized form) → E.164 `+989XXXXXXXXX` as required by the API. */
@@ -64,7 +78,7 @@ export class IpPanelSmsProvider implements SmsProvider {
       const res = await fetch(`${BASE_URL}/api/send`, {
         method: 'POST',
         headers: {
-          Authorization: this.apiKey,
+          Authorization: authHeader(this.apiKey),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -80,6 +94,7 @@ export class IpPanelSmsProvider implements SmsProvider {
       const meta = body?.meta;
       if (res.ok && meta?.status === true) {
         const outboxId = body?.data?.message_outbox_ids?.[0];
+        this.logger.log(`pattern SMS accepted for ${to} (outbox ${outboxId ?? 'n/a'})`);
         return { success: true, messageId: outboxId !== undefined ? String(outboxId) : undefined };
       }
       return {

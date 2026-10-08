@@ -224,6 +224,28 @@ describe('IpPanelSmsProvider', () => {
     });
   });
 
+  it('base64-encodes a raw uuid-style API key for the Authorization header', async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: {}, meta: { status: true } }) });
+    const raw = '11111111-2222-4333-8444-555555555555';
+    const provider = new IpPanelSmsProvider(raw, 'PAT', '+983000505');
+
+    await provider.sendOtp('09123456789', '12345');
+
+    const init = fetchMock.mock.calls[0][1] as RequestInit & { headers: Record<string, string> };
+    expect(init.headers['Authorization']).toBe(Buffer.from(raw, 'utf8').toString('base64'));
+  });
+
+  it('passes an already base64-encoded key through unchanged', async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: {}, meta: { status: true } }) });
+    const b64 = Buffer.from('11111111-2222-4333-8444-555555555555', 'utf8').toString('base64');
+    const provider = new IpPanelSmsProvider(b64, 'PAT', '+983000505');
+
+    await provider.sendOtp('09123456789', '12345');
+
+    const init = fetchMock.mock.calls[0][1] as RequestInit & { headers: Record<string, string> };
+    expect(init.headers['Authorization']).toBe(b64);
+  });
+
   it('uses a custom pattern param name from SMS_PATTERN_PARAM', async () => {
     fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: {}, meta: { status: true } }) });
     const provider = new IpPanelSmsProvider('KEY', 'PAT', '+983000505', 'otp');
