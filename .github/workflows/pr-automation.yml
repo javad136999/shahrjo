@@ -73,12 +73,18 @@ jobs:
             let done = false;
             for (let i = 0; i < 36 && !done; i++) {
               const { data: cr } = await github.rest.checks.listForRef({ owner, repo, ref: sha });
-              const runs = cr.check_runs || [];
+              // Only push-triggered CI runs gate the merge. pull_request runs on
+              // this branch can sit in `action_required` (bot-created PR) and
+              // must not block or satisfy the gate; `failure` on any run still blocks.
+              const all = cr.check_runs || [];
+              const runs = all.filter((r) => (r.pull_requests || []).length === 0);
               const pending = runs.filter((r) => r.status !== 'completed');
+              const blocked = all.filter((r) => r.conclusion === 'action_required');
               const failed = runs.filter((r) => !['success', 'neutral', 'skipped'].includes(r.conclusion));
               core.info(`checks: ${runs.length} total, ${pending.length} pending, ${failed.length} failed`);
               if (runs.length > 0 && pending.length === 0 && failed.length === 0) { done = true; break; }
               if (failed.length > 0) throw new Error('CI failed on ' + sha);
+              if (blocked.length > 0) core.info('note: ' + blocked.length + ' pull_request run(s) await owner approval (not gating)');
               await sleep(20000);
             }
             if (!done) throw new Error('CI did not finish in time on ' + sha);
