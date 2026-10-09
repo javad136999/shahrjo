@@ -32,7 +32,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <main className="container page">{children}</main>
         <footer className="site-footer">
-          <div className="container">شهرجو — پلتفرم شهری چندشهری 🇮🇷</div>
+          <div className="container footer-inner">
+            <span>شهرجو — پلتفرم شهری چندشهری 🇮🇷</span>
+            <Link href="/contact" className="footer-link" data-testid="footer-contact">
+              تماس با ما
+            </Link>
+          </div>
         </footer>
         <BottomNav />
         <VisitBeacon />
