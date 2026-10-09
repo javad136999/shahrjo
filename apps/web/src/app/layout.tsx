@@ -37,6 +37,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/contact" className="footer-link" data-testid="footer-contact">
               تماس با ما
             </Link>
+            <Link href="/privacy">حریم خصوصی</Link>
+            <Link href="/terms">شرایط استفاده</Link>
           </div>
         </footer>
         <BottomNav />
