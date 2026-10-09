@@ -13,14 +13,22 @@ const provinces = [
 ];
 
 const cities = [
-  { province: 'bushehr', name: 'جم', slug: 'jam', latitude: 27.83, longitude: 52.32, featured: true },
-  { province: 'bushehr', name: 'عسلویه', slug: 'asaluyeh', latitude: 27.48, longitude: 52.6, featured: true },
-  { province: 'bushehr', name: 'کنگان', slug: 'kangan', latitude: 27.89, longitude: 52.49, featured: false },
+  { province: 'bushehr', name: 'جم', slug: 'jam', latitude: 27.83, longitude: 52.32, featured: true, boundary: [[[52.2945534, 27.7750899], [52.2945534, 27.842128], [52.3825848, 27.842128], [52.3825848, 27.7750899], [52.2945534, 27.7750899]]] },
+  { province: 'bushehr', name: 'عسلویه', slug: 'asaluyeh', latitude: 27.48, longitude: 52.6, featured: true, boundary: [[[52.5843733, 27.4642088], [52.5843733, 27.4937237], [52.6277437, 27.4937237], [52.6277437, 27.4642088], [52.5843733, 27.4642088]]] },
+  { province: 'bushehr', name: 'کنگان', slug: 'kangan', latitude: 27.89, longitude: 52.49, featured: false, boundary: [[[52.0339702, 27.8030094], [52.0339702, 27.8706114], [52.0973476, 27.8706114], [52.0973476, 27.8030094], [52.0339702, 27.8030094]]] },
   { province: 'bushehr', name: 'دیر', slug: 'dayer', latitude: 27.84, longitude: 51.94, featured: false },
-  { province: 'bushehr', name: 'بوشهر', slug: 'bushehr-city', latitude: 28.97, longitude: 50.84, featured: true },
-  { province: 'fars', name: 'شیراز', slug: 'shiraz', latitude: 29.59, longitude: 52.58, featured: true },
-  { province: 'fars', name: 'جهرم', slug: 'jahrom', latitude: 28.5, longitude: 53.56, featured: false },
-  { province: 'fars', name: 'لار', slug: 'lar', latitude: 27.69, longitude: 54.3, featured: false },
+  { province: 'bushehr', name: 'بوشهر', slug: 'bushehr-city', latitude: 28.97, longitude: 50.84, featured: true, boundary: [[[50.802536, 28.8539379], [50.802536, 29.0045185], [50.9044647, 29.0045185], [50.9044647, 28.8539379], [50.802536, 28.8539379]]] },
+  { province: 'fars', name: 'شیراز', slug: 'shiraz', latitude: 29.59, longitude: 52.58, featured: true, boundary: [[[52.3822546, 29.4987382], [52.3822546, 29.8403461], [52.6675129, 29.8403461], [52.6675129, 29.4987382], [52.3822546, 29.4987382]]] },
+  { province: 'fars', name: 'جهرم', slug: 'jahrom', latitude: 28.5, longitude: 53.56, featured: false, boundary: [[[53.5266763, 28.4675892], [53.5266763, 28.5630963], [53.6485027, 28.5630963], [53.6485027, 28.4675892], [53.5266763, 28.4675892]]] },
+  { province: 'fars', name: 'لار', slug: 'lar', latitude: 27.69, longitude: 54.3, featured: false, boundary: [[[54.2748937, 27.6259389], [54.2748937, 27.697492], [54.3679046, 27.697492], [54.3679046, 27.6259389], [54.2748937, 27.6259389]]] },
+  { province: 'fars', name: 'آباده', slug: 'abadeh', latitude: 31.1627, longitude: 52.649, featured: false, boundary: [[[52.5999551, 31.1315691], [52.5999551, 31.2161316], [52.7046522, 31.2161316], [52.7046522, 31.1315691], [52.5999551, 31.1315691]]] },
+  { province: 'fars', name: 'اقلید', slug: 'eghlid', latitude: 30.8926, longitude: 52.6885, featured: false, boundary: [[[52.637185, 30.8370564], [52.637185, 30.9405076], [52.7431217, 30.9405076], [52.7431217, 30.8370564], [52.637185, 30.8370564]]] },
+  { province: 'fars', name: 'صفاشهر', slug: 'safashahr', latitude: 30.6114, longitude: 53.1913, featured: false, boundary: [[[53.1053291, 30.5654504], [53.1053291, 30.6325877], [53.2225953, 30.6325877], [53.2225953, 30.5654504], [53.1053291, 30.5654504]]] },
+  { province: 'fars', name: 'مرودشت', slug: 'marvdasht', latitude: 29.8763, longitude: 52.8063, featured: false, boundary: [[[52.7788576, 29.8489797], [52.7788576, 29.9021739], [52.8348901, 29.9021739], [52.8348901, 29.8489797], [52.7788576, 29.8489797]]] },
+  { province: 'fars', name: 'سپیدان', slug: 'sepidan', latitude: 30.2624, longitude: 51.9837, featured: false, boundary: [[[51.9768823, 30.2504693], [51.9768823, 30.2700376], [51.9914075, 30.2700376], [51.9914075, 30.2504693], [51.9768823, 30.2504693]]] },
+  { province: 'fars', name: 'کازرون', slug: 'kazerun', latitude: 29.6203, longitude: 51.6521, featured: false, boundary: [[[51.6129551, 29.5926109], [51.6129551, 29.6415886], [51.694292, 29.6415886], [51.694292, 29.5926109], [51.6129551, 29.5926109]]] },
+  { province: 'fars', name: 'فسا', slug: 'fasa', latitude: 28.9366, longitude: 53.6511, featured: false, boundary: [[[53.587253, 28.9177436], [53.587253, 28.9867452], [53.6696769, 28.9867452], [53.6696769, 28.9177436], [53.587253, 28.9177436]]] },
+  { province: 'fars', name: 'نیریز', slug: 'neyriz', latitude: 29.1973, longitude: 54.3268, featured: false, boundary: [[[54.284563, 29.1706744], [54.284563, 29.2154068], [54.3600511, 29.2154068], [54.3600511, 29.1706744], [54.284563, 29.1706744]]] },
 ];
 
 const roles = [
@@ -288,7 +296,7 @@ async function main(): Promise<void> {
     const province = await prisma.province.findUniqueOrThrow({ where: { slug: c.province } });
     await prisma.city.upsert({
       where: { slug: c.slug },
-      update: { name: c.name, latitude: c.latitude, longitude: c.longitude, isFeatured: c.featured },
+      update: { name: c.name, latitude: c.latitude, longitude: c.longitude, isFeatured: c.featured, ...(c.boundary ? { boundary: c.boundary } : {}) },
       create: {
         provinceId: province.id,
         name: c.name,
@@ -296,6 +304,7 @@ async function main(): Promise<void> {
         latitude: c.latitude,
         longitude: c.longitude,
         isFeatured: c.featured,
+        ...(c.boundary ? { boundary: c.boundary } : {}),
       },
     });
   }
