@@ -24,7 +24,7 @@ describe('CategoryAds (میانبر دسته‌بندی چت روم)', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('shows six shortcuts and the filtered ads of the chosen city', async () => {
-    mockCity.mockReturnValue({ id: 1, slug: 'jam', name: 'جم' });
+    mockCity.mockReturnValue({ id: 1, slug: 'sample-city', name: 'شهر نمونه' });
     mockCats.mockResolvedValue(CATS);
     mockAds.mockResolvedValue([
       {
@@ -41,7 +41,7 @@ describe('CategoryAds (میانبر دسته‌بندی چت روم)', () => {
     render(<CategoryAds category="real-estate" />);
 
     expect(await screen.findByTestId('category-ads')).toBeTruthy();
-    expect(mockAds).toHaveBeenCalledWith('jam', 40, 'real-estate');
+    expect(mockAds).toHaveBeenCalledWith('sample-city', 40, 'real-estate');
     expect(screen.getByTestId('catad-cat-real-estate')).toHaveAttribute('href', '/ads?category=real-estate');
     expect(screen.getByTestId('catad-cat-services')).toHaveAttribute('href', '/ads?category=services');
     expect(screen.getByTestId('catad-card-9')).toHaveAttribute('href', '/ad/9');
