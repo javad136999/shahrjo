@@ -43,6 +43,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
       this.logger.error(`${request.method} ${request.url} 500 ${exception.stack ?? exception.message}`);
     }
 
+    // Error responses may leak state (rate-limit details, auth failures) —
+    // never let a browser or proxy cache them.
+    if (!response.getHeader('Cache-Control')) {
+      response.setHeader('Cache-Control', 'no-store');
+    }
+
     response.status(status).json({
       data: null,
       error: { code, message, details, path: request.url, timestamp: new Date().toISOString() },

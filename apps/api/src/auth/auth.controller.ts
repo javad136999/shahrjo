@@ -1,10 +1,12 @@
 import { Body, Controller, Get, Headers, HttpCode, Post } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { ClientIp } from '../common/client-ip.decorator';
-import { CurrentUser, Public } from '../common/decorators';
+import { CurrentUser, NoStore, Public } from '../common/decorators';
 import { AuthService } from './auth.service';
 import { RefreshTokenDto, SendOtpDto, VerifyOtpDto } from './dto/auth.dto';
 
+// پاسخ‌های این کنترلر حساس‌اند (توکن/نوتیفیکیشن/نشست‌ها): هرگز کش نشوند.
+@NoStore()
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
