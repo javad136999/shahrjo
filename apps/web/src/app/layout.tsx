@@ -33,15 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <main className="container page">{children}</main>
         <footer className="site-footer">
-          <div className="container site-footer-inner">
-            <span>شهرجو — پلتفرم شهری چندشهری 🇮🇷</span>
-            <nav className="site-footer-links" aria-label="پیوندهای پاورقی">
-              <Link href="/about">درباره ما</Link>
-              <Link href="/contact">تماس با ما</Link>
-              <Link href="/privacy">حریم خصوصی</Link>
-              <Link href="/terms">قوانین</Link>
-            </nav>
-          </div>
+          <div className="container">شهرجو — پلتفرم شهری چندشهری 🇮🇷</div>
         </footer>
         <BottomNav />
         <VisitBeacon />
