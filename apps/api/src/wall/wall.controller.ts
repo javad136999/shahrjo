@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import type { User } from '@prisma/client';
-import { CurrentUser, RequirePermissions } from '../common/decorators';
+import { CurrentUser, RequirePermissions, RateLimit } from '../common/decorators';
+import { RateLimitGuard } from '../common/rate-limit.guard';
 // Value import on purpose: `import type` would erase the classes and
 // emit `Function` in design:paramtypes, so ValidationPipe would reject
 // every declared property as unknown.
@@ -21,6 +22,10 @@ export class WallController {
     return this.wall.list(user, query.city, query.limit, query.before);
   }
 
+  // هم‌سطح با سقف DB سرویس (۱۰ پست/دقیقه) اما در لایه Redis و پیش از اعتبارسنجی؛
+  // فقط POST محدود می‌شود چون GET /wall هر ۵ ثانیه توسط کلاینت poll می‌شود.
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'wall:post', limit: 10, windowSeconds: 60, subject: 'user' })
   @Post()
   create(@CurrentUser() user: User, @Body() dto: CreateWallPostDto) {
     return this.wall.create(user, dto);

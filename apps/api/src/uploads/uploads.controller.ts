@@ -1,7 +1,8 @@
-import { BadRequestException, Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Controller, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { User } from '@prisma/client';
-import { CurrentUser } from '../common/decorators';
+import { CurrentUser, RateLimit } from '../common/decorators';
+import { RateLimitGuard } from '../common/rate-limit.guard';
 import { MAX_UPLOAD_BYTES, MAX_VOICE_BYTES, UploadsService } from './uploads.service';
 
 @Controller()
@@ -15,6 +16,10 @@ export class UploadsController {
    * UploadsService re-checks size + magic bytes before processing with sharp
    * (WebP ≤1600px + ≤400px thumbnail — the original bytes are never stored).
    */
+  // پیش‌فیلتر Redis پیش از خواندن بدنه توسط multer (جلوگیری از مصرف CPU/حافظه
+  // با درخواست‌های نامعتبر)؛ سقف آپلودِ موفق همچنان در service روی DB اعمال می‌شود.
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'uploads', limit: 30, windowSeconds: 3600, subject: 'user' })
   @Post('uploads')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -31,6 +36,8 @@ export class UploadsController {
    * magic-byte sniffing (WebM/OGG/M4A/MP3/WAV), random storage key, no
    * re-encoding — the bytes are already compressed and must stay playable.
    */
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ key: 'uploads', limit: 30, windowSeconds: 3600, subject: 'user' })
   @Post('uploads/voice')
   @UseInterceptors(
     FileInterceptor('file', {
