@@ -21,6 +21,7 @@
 | GET `/ads/:id` | کاربر یا IP (اگر واردشده باشد کاربر، وگرنه IP) | ۳۰۰ در دقیقه |
 | POST `/uploads` و POST `/uploads/voice` | کاربر | ۳۰ تلاش در ساعت (پیش‌فیلتر پیش از خواندن بدنه؛ سقف ۳۰ آپلود موفق روی DB همچنان برقرار) |
 | POST `/wall` | کاربر | ۱۰ در دقیقه (پیش‌فیلتر؛ سقف DB سرویس مرجع نهایی) |
+| POST `/businesses` | کاربر | ۱۰ تلاش در ساعت |
 | POST `/analytics/visit` | IP | ۱۲۰ در ساعت (بی‌صدا نادیده گرفته می‌شود) |
 
 پاسخ ۴۲۹: `{ data: null, error: { code: 'RATE_LIMITED', details: { retryAfterSeconds } } }`.
@@ -62,6 +63,19 @@ GET `/wall` عمداً محدود نشده چون کلاینت هر ۵ ثانی�
 
 فایل‌های آپلودی از مسیر `/api/v1/files/<storageKey>` (static در همان origin) سرو می‌شوند. فایل اصلی کاربر هرگز ذخیره نمی‌شود؛ هر تصویر دو نسخه دارد: نمایشی (≤۱۶۰۰px) و `*.thumb.webp` (≤۴۰۰px) که لیست‌ها/کارت‌ها از آن استفاده می‌کنند و صفحهٔ جزئیات نسخهٔ کامل را می‌باید. ذخیره‌سازی پشت interface `StorageDriver` است (`local` = Docker volume امروز، Arvan Object Storage فردا — فقط یک Driver جدید + `STORAGE_DRIVER` در `.env`) و فایل‌های حذف‌شده/یتیم طی Sweep پاک می‌شوند.
 
+## Business Registration (ثبت کسب‌وکار)
+
+> ✅ **پیاده‌شده**: فرم چندمرحله‌ای وب در `/businesses/new` (اطلاعات، دسته، تماس، تصاویر، پین نقشه).
+> وضعیت همیشه `PENDING` است و فقط تأیید مدیر در پنل، کسب‌وکار را منتشر می‌کند؛ مجوز `businesses.create`
+> روی endpoint اعمال می‌شود (نه فقط در UI) و نقش `USER` در seed این مجوز را دارد. سطح اشتراک
+> (`subscriptionTier=FREE`) هنگام ثبت هرگز از ورودی کاربر پر نمی‌شود.
+
+| Endpoint | Auth | Body / توضیح |
+|---|---|---|
+| GET `/business-categories` | @Public | دسته‌بندی‌های فعال برای فرم ثبت (ترتیب `sortOrder`) |
+| POST `/businesses` | Bearer + `businesses.create` | `{ categoryId, name(3..160), description?, phone?, address?, latitude?, longitude?, logoMediaId?, coverMediaId?, socialLinks? }` — شهر از profile کاربر (نه body)؛ مختصات «هر دو یا هیچ» با بازه استاندارد؛ جلوگیری از تکرار: یک درخواست `PENDING` باز در همان شهر + نام فعال تکراری → `409 DUPLICATE_BUSINESS`؛ سقف ۱۰ تلاش در ساعت (Redis)؛ لوگو/کاور از `POST /uploads?entity=business` و claim در همان تراکنش (`slug = b-<id>`) → `{ id, name, status: 'PENDING' }` |
+| GET `/businesses/mine` | Bearer | درخواست‌های خودِ کاربر با وضعیت نظارت (نمایش «در انتظار بررسی» در فرم) |
+
 ## Detail pages / Profile / Favorites (فاز ۶ — جزئیات و پروفایل)
 
 > ✅ **پیاده‌شده در Phase 6**: صفحات جزئیات آگهی/خبر/کسب‌وکار + پروفایل کاربر + علاقه‌مندی‌ها.
@@ -102,16 +116,16 @@ GET `/wall` عمداً محدود نشده چون کلاینت هر ۵ ثانی�
 |---|---|
 | news | GET `/news?city=`, GET `/news/:slug` |
 | ads | GET `/ads?city=&limit=` (فقط `APPROVED`)؛ عملیات دیگر در بخش‌های فاز ۵/۶: POST `/ads`, GET `/ads/:id`, POST `/ads/:id/favorite`, GET `/ads/mine` |
-| businesses | GET `/businesses?city=&limit=` (فقط `APPROVED`)، GET `/businesses/:id` |
+| businesses | GET `/businesses?city=&limit=` (فقط `APPROVED`)، GET `/businesses/:id`، GET `/businesses/mine`، POST `/businesses`، GET `/business-categories` (بخش «ثبت کسب‌وکار») |
 | map | GET `/map?city=<slug>` — مرکز + boundary + پین کسب‌وکارهای دارای مختصات (جزئیات در فاز ۹) |
-| uploads | POST `/uploads` (multipart — فاز ۵)؛ POST `/uploads/voice` برای ویس دیوار (فاز ۱۰) |
+| uploads | POST `/uploads` (multipart — فاز ۵؛ پارامتر اختیاری `?entity=ad\|business` تعیین می‌کند کدام ردیف Media را می‌گیرد)؛ POST `/uploads/voice` برای ویس دیوار (فاز ۱۰) |
 
 **برنامه‌ریزی‌شده (⬜ هنوز پیاده‌نشده — به‌عنوان پیاده‌شده محسوب نشود):**
 
 | Module | Endpoint | فاز |
 |---|---|---|
 | categories | GET `/categories?scope=ad\|business&city=` (امروز فقط GET `/ad-categories` برای فرم آگهی وجود دارد) | ۱۱ |
-| businesses | POST `/businesses`, PATCH `/businesses/:id`, GET `/businesses/:slug`, GET `/businesses/:id/stats` | ۱۱ |
+| businesses | PATCH `/businesses/:id`, GET `/businesses/:slug`, GET `/businesses/:id/stats` (ایجاد با POST `/businesses` پیاده شد) | ۱۱ |
 | chat | GET `/chat/:citySlug/rooms/:id/messages` + WebSocket — دیوار شهر فعلاً با HTTP polling کار می‌کند | ۱۳ |
 | notifications | GET `/notifications`, PATCH `/notifications/:id/read`, POST `/notifications/devices` | ۱۳ |
 
