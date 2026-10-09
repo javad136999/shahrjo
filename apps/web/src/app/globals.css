@@ -3044,6 +3044,22 @@ a.my-ads__item:hover {
   border-bottom: 1px dashed currentColor;
   padding-bottom: 1px;
 }
+.footer-trust {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+.footer-trust a {
+  display: inline-flex;
+  align-items: center;
+}
+.footer-trust img {
+  max-height: 96px;
+  width: auto;
+  cursor: pointer;
+}
 .footer-link:hover,
 .footer-link:focus-visible {
   color: var(--brand-dark);

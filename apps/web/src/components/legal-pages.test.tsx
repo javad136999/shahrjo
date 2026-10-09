@@ -87,4 +87,23 @@ describe('فوتر سایت', () => {
     expect(hrefs('شرایط استفاده')).toEqual(['/terms']);
     expect(hrefs('تماس با ما')).toEqual(['/contact']);
   });
+
+  it('includes the official enamad trust seal with the exact id and code', () => {
+    render(<RootLayout><div /></RootLayout> as ReactElement);
+    const seal = document.querySelector('a[href^="https://trustseal.enamad.ir/"]');
+    expect(seal).toBeTruthy();
+    const a = seal as HTMLAnchorElement;
+    expect(a.getAttribute('href')).toBe(
+      'https://trustseal.enamad.ir/?id=8111140&Code=u7380vU9WmqBYskeJn9MKLrd0AjOqbPz',
+    );
+    expect(a.getAttribute('referrerpolicy')).toBe('origin');
+    expect(a.getAttribute('target')).toBe('_blank');
+    const img = a.querySelector('img');
+    expect(img).toBeTruthy();
+    expect(img!.getAttribute('src')).toBe(
+      'https://trustseal.enamad.ir/logo.aspx?id=8111140&Code=u7380vU9WmqBYskeJn9MKLrd0AjOqbPz',
+    );
+    expect(img!.getAttribute('referrerpolicy')).toBe('origin');
+    expect(img!.getAttribute('code')).toBe('u7380vU9WmqBYskeJn9MKLrd0AjOqbPz');
+  });
 });

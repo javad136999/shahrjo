@@ -40,6 +40,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/privacy">حریم خصوصی</Link>
             <Link href="/terms">شرایط استفاده</Link>
           </div>
+          <div className="container footer-trust" aria-label="نمادهای اعتماد">
+            <a
+              referrerPolicy="origin"
+              target="_blank"
+              rel="noopener noreferrer"
+              href="https://trustseal.enamad.ir/?id=8111140&Code=u7380vU9WmqBYskeJn9MKLrd0AjOqbPz"
+              aria-label="نماد اعتماد الکترونیکی"
+              data-testid="footer-enamad"
+              {...{ code: 'u7380vU9WmqBYskeJn9MKLrd0AjOqbPz' }}
+            >
+              <img
+                referrerPolicy="origin"
+                src="https://trustseal.enamad.ir/logo.aspx?id=8111140&Code=u7380vU9WmqBYskeJn9MKLrd0AjOqbPz"
+                alt=""
+                style={{ cursor: 'pointer' }}
+                {...{ code: 'u7380vU9WmqBYskeJn9MKLrd0AjOqbPz' }}
+              />
+            </a>
+          </div>
         </footer>
         <BottomNav />
         <VisitBeacon />
