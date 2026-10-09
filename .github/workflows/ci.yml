@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
       - name: Phase checks (structure + secret scan + prisma validate + typecheck)
         run: pnpm verify:phase1
 
@@ -67,9 +70,6 @@ jobs:
 
       - name: Typecheck all workspaces
         run: pnpm typecheck:all
-
-      - name: Generate Prisma Client
-        run: pnpm db:generate
 
       - name: Tests
         run: pnpm run --if-present test
@@ -112,6 +112,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
 
       - name: Apply migrations to a clean database
         run: pnpm db:deploy
