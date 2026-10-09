@@ -2,6 +2,31 @@
 
 قالب پاسخ: `{ data, meta, error }`
 
+## سیاست کش (Cache-Control) و محدودیت نرخ (Rate Limit)
+
+**کش** — پاسخ‌های JSON شخصی/حساس هرگز کش نمی‌شوند (`Cache-Control: private, no-store`):
+
+- وقتی درخواست کاربر واردشده باشد (حتی مسیرهای عمومی، چون `favorited`/مالکیت در پاسخ می‌آید): `/users/me`، `/payments/mine`، `/subscriptions/mine`، `/ads/mine`، `/ads/favorites`، `/auth/sessions`، `/wall` و…
+- یا وقتی مسیر با `@NoStore()` علامت خورده باشد: همهٔ `/auth/*` (توکن‌ها) و `GET /ads/:id`.
+- پاسخ‌های خطا همیشه `Cache-Control: no-store`.
+- استثنا: فایل‌های آپلودی `/api/v1/files/*` برعکس `public, max-age=31536000, immutable` می‌گیرند.
+
+**Rate Limit** — لایهٔ Redis (`RateLimitGuard`) جلوی endpointهای عمومی/قابل سوءاستفاده؛
+سقف‌های قبلی OTP، checkout و سرویس‌ها (DB) دست‌نخورده‌اند:
+
+| مسیر | کلید | سقف |
+|---|---|---|
+| POST `/auth/send-otp`، POST `/auth/verify-otp` | IP ساعتی + شماره ساعتی + cooldown ارسال (داخل سرویس auth) | همان سقف‌های قبلی |
+| POST `/payments/checkout` | کاربر | ۱۰ در ساعت (داخل سرویس payments) |
+| GET `/ads/:id` | کاربر یا IP (اگر واردشده باشد کاربر، وگرنه IP) | ۳۰۰ در دقیقه |
+| POST `/uploads` و POST `/uploads/voice` | کاربر | ۳۰ تلاش در ساعت (پیش‌فیلتر پیش از خواندن بدنه؛ سقف ۳۰ آپلود موفق روی DB همچنان برقرار) |
+| POST `/wall` | کاربر | ۱۰ در دقیقه (پیش‌فیلتر؛ سقف DB سرویس مرجع نهایی) |
+| POST `/analytics/visit` | IP | ۱۲۰ در ساعت (بی‌صدا نادیده گرفته می‌شود) |
+
+پاسخ ۴۲۹: `{ data: null, error: { code: 'RATE_LIMITED', details: { retryAfterSeconds } } }`.
+GET `/wall` عمداً محدود نشده چون کلاینت هر ۵ ثانیه آن را poll می‌کند.
+
+
 ## Auth (شماره موبایل + OTP — بدون Password)
 
 | Endpoint | Body | توضیح |
@@ -68,19 +93,27 @@
 
 ## Content (همه City-scoped)
 
-> ✅ **پیاده‌شده در Phase 4** (فیدهای عمومی داشبورد شهر — همه با `?city=<slug>&limit=1..50`، فقط شهر فعال):
+> ✅ **پیاده‌شده در Phase 4** (فیدهای عمومی داشبورد شهر — همه با `?city=<slug>&limit=1..50`، فقط شهر فعال؛ جدول پایین بخش Content را با وضعیت واقعی کد ببینید):
 > `GET /news` فقط `PUBLISHED` · `GET /ads` فقط `APPROVED` و بدون انقضا (قیمت BigInt → عدد در JSON؛ دسته‌بندی با `icon`/`color` برای چیپ‌های ایموجی UI) · `GET /businesses` فقط `APPROVED` با ترتیب showcase (طلایی‌ها اول، بعد بالاترین امتیاز).
+
+**پیاده‌شده (وضعیت فعلی کد):**
 
 | Module | Endpoint |
 |---|---|
-| categories | GET `/categories?scope=ad\|business&city=` |
-| ads | GET/POST `/ads`, GET/PATCH/DELETE `/ads/:id`, POST `/ads/:id/submit`, POST `/ads/:id/favorite` |
-| businesses | GET/POST `/businesses`, GET `/businesses/:slug`, PATCH `/businesses/:id`, GET `/businesses/:id/stats` |
-| map | GET `/map/:citySlug?bbox=&kind=` — مارکرهای نقشه (کسب‌وکار + آگهی + مکان‌ها) |
 | news | GET `/news?city=`, GET `/news/:slug` |
-| chat | GET `/chat/:citySlug/rooms/:id/messages` + WebSocket برای Real-Time |
-| uploads | POST `/uploads` (multipart) — Storage abstraction؛ POST `/uploads/voice` برای ویس دیوار (فاز ۱۰) |
-| notifications | GET `/notifications`, PATCH `/notifications/:id/read`, POST `/notifications/devices` |
+| ads | GET `/ads?city=&limit=` (فقط `APPROVED`)؛ عملیات دیگر در بخش‌های فاز ۵/۶: POST `/ads`, GET `/ads/:id`, POST `/ads/:id/favorite`, GET `/ads/mine` |
+| businesses | GET `/businesses?city=&limit=` (فقط `APPROVED`)، GET `/businesses/:id` |
+| map | GET `/map?city=<slug>` — مرکز + boundary + پین کسب‌وکارهای دارای مختصات (جزئیات در فاز ۹) |
+| uploads | POST `/uploads` (multipart — فاز ۵)؛ POST `/uploads/voice` برای ویس دیوار (فاز ۱۰) |
+
+**برنامه‌ریزی‌شده (⬜ هنوز پیاده‌نشده — به‌عنوان پیاده‌شده محسوب نشود):**
+
+| Module | Endpoint | فاز |
+|---|---|---|
+| categories | GET `/categories?scope=ad\|business&city=` (امروز فقط GET `/ad-categories` برای فرم آگهی وجود دارد) | ۱۱ |
+| businesses | POST `/businesses`, PATCH `/businesses/:id`, GET `/businesses/:slug`, GET `/businesses/:id/stats` | ۱۱ |
+| chat | GET `/chat/:citySlug/rooms/:id/messages` + WebSocket — دیوار شهر فعلاً با HTTP polling کار می‌کند | ۱۳ |
+| notifications | GET `/notifications`, PATCH `/notifications/:id/read`, POST `/notifications/devices` | ۱۳ |
 
 ## Admin (فاز ۸ — پنل مدیریت، RBAC + Scope استان/شهر)
 
