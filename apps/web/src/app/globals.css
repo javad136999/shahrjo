@@ -2964,3 +2964,198 @@ a.my-ads__item:hover {
     min-height: 72px;
   }
 }
+
+/* ===== Compact chat room + category shortcuts (city icons removed) ===== */
+.wall-room {
+  gap: 9px;
+  padding: 8px 11px;
+  margin-bottom: 9px;
+  border-radius: 16px;
+}
+.wall-room__avatar {
+  width: 34px;
+  height: 34px;
+  font-size: 15px;
+}
+.wall-room__eyebrow {
+  display: none;
+}
+.wall-room__name {
+  font-size: 14.5px;
+}
+.wall-room__meta {
+  margin-top: 1px;
+  font-size: 11px;
+}
+
+/* The six category shortcuts that replaced the city/change-city pills. */
+.wall-cats {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 1px;
+}
+.wall-cats::-webkit-scrollbar {
+  display: none;
+}
+.wall-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: inherit;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.wall-cat small {
+  font-size: 11px;
+  font-weight: 700;
+}
+.wall-cat:hover,
+.wall-cat:focus-visible,
+.wall-cat.is-active {
+  text-decoration: none;
+  background: var(--brand-soft);
+  border-color: rgb(14 122 95 / 40%);
+}
+
+/* Feed: slightly tighter rhythm. */
+.wall-feed {
+  gap: 9px;
+}
+.wall-post {
+  gap: 9px;
+  padding: 9px 11px;
+}
+
+/* Composer: compact, sitting right under the chat box. */
+.wall-composer {
+  margin-top: 9px;
+  padding: 8px;
+  border-radius: 16px;
+}
+.wall-composer__input {
+  min-height: 38px;
+  padding: 7px 10px;
+  line-height: 1.8;
+}
+.wall-composer__bar {
+  margin-top: 6px;
+  gap: 8px;
+}
+.wall-composer__tools {
+  gap: 6px;
+}
+.wall-composer__tools .pill {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+.wall-adbtn {
+  padding: 6px 11px;
+  font-size: 12px;
+  box-shadow: none;
+}
+.wall-more {
+  margin-bottom: 8px;
+  padding: 5px 12px;
+  font-size: 12px;
+}
+@media (max-width: 640px) {
+  .wall-cat small {
+    display: none;
+  }
+  .wall-cat {
+    padding: 5px 7px;
+    font-size: 13px;
+  }
+  .wall-post {
+    padding: 9px;
+  }
+}
+
+/* ===== Category ads listing (chat-room shortcut destination) ===== */
+.catad {
+  max-width: 900px;
+  margin: 0 auto;
+  padding-bottom: 48px;
+}
+.catad__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.catad__head h1 {
+  font-size: clamp(1.15rem, 3.4vw, 1.5rem);
+  font-weight: 900;
+}
+.catad__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.wall-cats--page {
+  margin-inline-start: 0;
+  flex-wrap: wrap;
+  overflow: visible;
+  margin-bottom: 14px;
+}
+.catad-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  gap: 10px;
+}
+.catad-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.catad-card:hover {
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px -16px rgb(21 59 45 / 45%);
+}
+.catad-card__img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 12px;
+  background: var(--line);
+}
+.catad-card__noimg {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  font-size: 30px;
+  background: var(--brand-soft);
+}
+.catad-card__title {
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.6;
+}
+.catad-card__cat {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.catad-card__price {
+  font-size: 13px;
+  color: var(--brand-dark);
+}
