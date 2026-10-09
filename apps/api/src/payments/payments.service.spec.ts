@@ -150,6 +150,7 @@ describe('PaymentsService.handleCallback', () => {
     expect(result).toBe('CANCELED');
     expect(zarinpal.verifyPayment).not.toHaveBeenCalled();
     expect(prisma.payment.updateMany.mock.calls[0][0].data.status).toBe('CANCELED');
+    expect(prisma.subscription.create).not.toHaveBeenCalled();
   });
 
   it('returns ALREADY_PAID for an already-successful payment without verifying', async () => {
@@ -158,6 +159,7 @@ describe('PaymentsService.handleCallback', () => {
 
     expect(await service.handleCallback('A123', 'OK')).toBe('ALREADY_PAID');
     expect(zarinpal.verifyPayment).not.toHaveBeenCalled();
+    expect(prisma.subscription.create).not.toHaveBeenCalled(); // a replayed callback must not activate twice
   });
 
   it('marks FAILED when verify returns an error code', async () => {
@@ -171,6 +173,17 @@ describe('PaymentsService.handleCallback', () => {
     expect(prisma.payment.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ status: 'FAILED', resultCode: 102 }) }),
     );
+    expect(prisma.subscription.create).not.toHaveBeenCalled(); // failed verify must never activate anything
+  });
+
+  it('leaves the payment retryable (no SUCCESS claim) and creates no subscription when verify throws', async () => {
+    const { service, prisma, zarinpal } = makeService();
+    prisma.payment.findUnique.mockResolvedValue(storedPayment());
+    zarinpal.verifyPayment.mockRejectedValue(new Error('gateway down'));
+
+    await expect(service.handleCallback('A123', 'OK')).rejects.toThrow('gateway down');
+    expect(prisma.payment.updateMany).not.toHaveBeenCalled(); // stays STARTED — re-hit of the callback can finish it
+    expect(prisma.subscription.create).not.toHaveBeenCalled();
   });
 
   it('treats verify code 101 (already verified) as a success', async () => {

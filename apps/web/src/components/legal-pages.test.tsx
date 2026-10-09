@@ -52,7 +52,7 @@ describe('صفحه شرایط استفاده', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'شرایط استفاده' })).toBeTruthy();
     expect(screen.getByTestId('legal-date').textContent).toContain('آخرین به‌روزرسانی');
     const text = screen.getByTestId('terms-page').textContent ?? '';
-    for (const keyword of ['طلایی', 'نقره‌ای', 'زرین‌پال', 'تأیید موفق پرداخت توسط سرور', 'تمدید خودکار وجود ندارد', 'گزارش تخلف', 'بازپرداخت', 'پیش‌نویس']) {
+    for (const keyword of ['طلایی', 'نقره‌ای', 'زرین‌پال', 'تأیید موفق پرداخت توسط سرور', 'تأیید مدیر', 'تمدید خودکار وجود ندارد', 'گزارش تخلف', 'بازپرداخت', 'شناسه پیگیری', 'خودکار انجام نمی‌شود', 'CVV2', 'پیش‌نویس']) {
       expect(text).toContain(keyword);
     }
   });
@@ -63,6 +63,8 @@ describe('صفحه شرایط استفاده', () => {
     expect(text).not.toContain('تضمین فروش');
     expect(text).not.toContain('تضمین بازپرداخت');
     expect(text).not.toMatch(/ظرف \d+ روز بازپرداخت/);
+    expect(text).not.toMatch(/۷۲\s*ساعت/); // no unbacked refund deadline
+    expect(text).not.toMatch(/بازپرداخت خودکار (انجام|می‌شود)/);
     expect(text).not.toMatch(SENSITIVE);
     expect(text).not.toMatch(/اینماد|نماد اعتماد/);
   });
