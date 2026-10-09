@@ -293,6 +293,15 @@ export function BusinessForm() {
                   {b.categoryName} · {b.cityName}
                 </span>
               </div>
+              <Link
+                href={`/plans?business=${b.id}`}
+                className="pill"
+                title="انتخاب اشتراک طلایی/نقره‌ای"
+                data-testid={`plan-link-${b.id}`}
+              >
+                <span aria-hidden>⭐</span>
+                <span className="pill__label">اشتراک</span>
+              </Link>
               <StatusChip status={b.status} />
             </li>
           ))}
