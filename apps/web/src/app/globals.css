@@ -3159,3 +3159,27 @@ a.my-ads__item:hover {
   font-size: 13px;
   color: var(--brand-dark);
 }
+
+/* ---- Footer links (static pages) ---- */
+.site-footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.site-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 0.8rem;
+}
+.site-footer-links a {
+  color: inherit;
+  opacity: 0.85;
+  text-decoration: none;
+}
+.site-footer-links a:hover {
+  text-decoration: underline;
+  opacity: 1;
+}
