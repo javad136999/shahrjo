@@ -1,9 +1,10 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 const mockReplace = jest.fn();
+const mockPush = jest.fn();
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: mockReplace, push: jest.fn(), refresh: jest.fn() }),
+  useRouter: () => ({ replace: mockReplace, push: mockPush, refresh: jest.fn() }),
 }));
 
 const mockGetTokens = jest.fn();
@@ -89,7 +90,7 @@ describe('AdForm', () => {
 
   it('requires a category before submitting', async () => {
     render(<AdForm />);
-    fireEvent.click(screen.getByRole('button', { name: 'ارسال برای تأیید' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ارسال' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('دسته‌بندی آگهی را انتخاب کنید');
     expect(mockCreateAd).not.toHaveBeenCalled();
@@ -101,7 +102,7 @@ describe('AdForm', () => {
     await screen.findByRole('option', { name: 'لوازم' });
     fillValidFields();
     fireEvent.change(screen.getByLabelText(/قیمت/), { target: { value: 'قیمت توافقی' } });
-    fireEvent.click(screen.getByRole('button', { name: 'ارسال برای تأیید' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ارسال' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('قیمت باید عدد صحیح');
     expect(mockCreateAd).not.toHaveBeenCalled();
@@ -129,7 +130,7 @@ describe('AdForm', () => {
     const second = new File(['b'], 'two.png', { type: 'image/png' });
     fireEvent.change(screen.getByLabelText(/تصاویر/), { target: { files: [first, second] } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'ارسال برای تأیید' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ارسال' }));
 
     await waitFor(() => expect(mockCreateAd).toHaveBeenCalledTimes(1));
     expect(mockUploadImage).toHaveBeenCalledTimes(2);
@@ -147,7 +148,8 @@ describe('AdForm', () => {
     // moderation result: never "published" — always pending
     expect(await screen.findByTestId('ad-success')).toBeInTheDocument();
     expect(screen.getByTestId('ad-status')).toHaveTextContent('در انتظار تأیید');
-    expect(screen.getByRole('link', { name: 'مشاهده شهر' })).toHaveAttribute('href', '/city/sample-city');
+    expect(screen.getByRole('link', { name: 'مشاهده دیوار شهر' })).toHaveAttribute('href', '/wall');
+    expect(mockPush).toHaveBeenCalledWith('/wall');
   });
 
   it('sends no price field when the price is left empty (negotiated)', async () => {
@@ -155,7 +157,7 @@ describe('AdForm', () => {
     await screen.findByRole('option', { name: 'لوازم' });
     fillValidFields();
 
-    fireEvent.click(screen.getByRole('button', { name: 'ارسال برای تأیید' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ارسال' }));
 
     await waitFor(() => expect(mockCreateAd).toHaveBeenCalledTimes(1));
     expect(mockUploadImage).not.toHaveBeenCalled();
@@ -171,11 +173,11 @@ describe('AdForm', () => {
     await screen.findByRole('option', { name: 'لوازم' });
     fillValidFields();
 
-    fireEvent.click(screen.getByRole('button', { name: 'ارسال برای تأیید' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ارسال' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('سقف ثبت آگهی در ساعت پر شده است');
     expect(screen.queryByTestId('ad-success')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'ارسال برای تأیید' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'ارسال' })).toBeEnabled();
   });
 
   it('lists the owner ads with their moderation status', async () => {

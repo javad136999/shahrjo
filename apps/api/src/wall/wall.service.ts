@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import type { User } from '@prisma/client';
+import type { Prisma, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService, type AdminScope } from '../rbac/rbac.service';
 import { UploadsService } from '../uploads/uploads.service';
@@ -19,8 +19,10 @@ export interface WallAuthor {
 export interface WallAdRef {
   id: number;
   title: string;
+  description: string;
   price: number | null;
   image: string | null;
+  status: string;
 }
 
 /** Chat-room header: wall name + membership figures (Phase 10). */
@@ -71,7 +73,9 @@ type PostWithRel = {
   ad: {
     id: number;
     title: string;
+    description: string;
     price: bigint | null;
+    status: string;
     images: { url: string }[];
   } | null;
 };
@@ -119,10 +123,12 @@ export class WallService {
       editedAt: post.editedAt ?? null,
       ad: post.ad
         ? {
-            id: post.ad.id,
-            title: post.ad.title,
-            price: post.ad.price === null || post.ad.price === undefined ? null : Number(post.ad.price),
-            image: adImage,
+          id: post.ad.id,
+          title: post.ad.title,
+          description: post.ad.description,
+          price: post.ad.price === null || post.ad.price === undefined ? null : Number(post.ad.price),
+          image: adImage,
+          status: post.ad.status,
           }
         : null,
       isPinned: post.isPinned,
@@ -164,7 +170,9 @@ export class WallService {
       select: {
         id: true,
         title: true,
+        description: true,
         price: true,
+        status: true,
         images: { orderBy: { sortOrder: 'asc' as const }, take: 1, select: { url: true } },
       },
     },
@@ -180,15 +188,23 @@ export class WallService {
     const city = await this.resolveCity(citySlug);
     const cityId = city.id;
     const scope = await this.scopeOf(user.id);
+    const visibleAdStatuses: ('PENDING' | 'APPROVED')[] = ['PENDING', 'APPROVED'];
+    const visibleWallPosts: Prisma.WallPostWhereInput = {
+      OR: [
+        { adId: null },
+        { ad: { is: { status: { in: visibleAdStatuses } } } },
+      ],
+    };
 
     const [pinnedRow, rows, memberCount, messageCount] = await Promise.all([
       this.prisma.wallPost.findFirst({
-        where: { cityId, isPinned: true },
+        where: { cityId, isPinned: true, ...visibleWallPosts },
         select: this.select,
       }),
       this.prisma.wallPost.findMany({
         where: {
           cityId,
+          ...visibleWallPosts,
           ...(before ? { createdAt: { lt: new Date(before) } } : {}),
         },
         orderBy: { createdAt: 'desc' },
@@ -197,7 +213,7 @@ export class WallService {
       }),
       // members of the wall = residents who chose this city
       this.prisma.user.count({ where: { cityId, status: 'ACTIVE' } }),
-      this.prisma.wallPost.count({ where: { cityId } }),
+      this.prisma.wallPost.count({ where: { cityId, ...visibleWallPosts } }),
     ]);
 
     const likedRows = rows.length

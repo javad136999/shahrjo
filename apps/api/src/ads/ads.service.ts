@@ -138,6 +138,16 @@ export class AdsService {
           data: { entityId: String(created.id) },
         });
       }
+      // Put the newly submitted ad straight into its city's wall. Its status
+      // stays PENDING: the wall shows a review badge until moderation approves it.
+      await tx.wallPost.create({
+        data: {
+          cityId: city.id,
+          userId: user.id,
+          adId: created.id,
+          content: 'آگهی تازه در دیوار شهر',
+        },
+      });
       return created;
     });
 

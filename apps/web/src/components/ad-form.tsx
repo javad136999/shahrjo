@@ -7,7 +7,6 @@ import {
   ApiError,
   createAd,
   getAdCategories,
-  getLocalCity,
   getMyAds,
   getProfile,
   getTokens,
@@ -189,6 +188,7 @@ export function AdForm() {
 
       const created = await createAd(body);
       setSubmitted(created);
+      router.push('/wall');
       // reset for the next ad
       setCategoryId('');
       setTitle('');
@@ -207,14 +207,12 @@ export function AdForm() {
     }
   };
 
-  const citySlug = getLocalCity()?.slug;
-
   if (submitted) {
     return (
       <div className="form-card ad-success" data-testid="ad-success">
         <h1>آگهی شما ثبت شد</h1>
         <p className="muted">
-          «{submitted.title}» برای بررسی به ناظر ارسال شد؛ پس از تأیید در صفحه شهر نمایش داده می‌شود.
+          «{submitted.title}» برای بررسی ناظر ثبت شد و پیش‌نمایش آن همین حالا در دیوار شهر قرار گرفت.
         </p>
         <p>
           <span data-testid="ad-status">
@@ -222,8 +220,8 @@ export function AdForm() {
           </span>
         </p>
         <div className="auth-actions">
-          <Link href={citySlug ? `/city/${citySlug}` : '/'} className="btn btn-ghost">
-            مشاهده شهر
+          <Link href="/wall" className="btn btn-ghost">
+            مشاهده دیوار شهر
           </Link>
           <button type="button" className="btn btn-ghost" onClick={() => setSubmitted(null)}>
             ثبت آگهی دیگر
@@ -239,7 +237,7 @@ export function AdForm() {
     <div className="ad-page">
       <form className="form-card ad-form" onSubmit={submit} noValidate>
         <h1>ثبت آگهی</h1>
-        <p className="muted">آگهی شما پس از ارسال، برای تأیید ناظر بررسی می‌شود.</p>
+        <p className="muted">آگهی پس از ارسال برای بررسی ناظر می‌رود و پیش‌نمایش آن در دیوار شهر دیده می‌شود.</p>
 
         {noCity && (
           <div className="banner banner--warn" role="status">
@@ -378,7 +376,7 @@ export function AdForm() {
           </p>
         )}
         <button type="submit" className="btn btn-primary" disabled={busy}>
-          {busy ? 'در حال ارسال…' : 'ارسال برای تأیید'}
+          {busy ? 'در حال ارسال…' : 'ارسال'}
         </button>
       </form>
 

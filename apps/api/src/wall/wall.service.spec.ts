@@ -88,6 +88,38 @@ describe('WallService.list', () => {
     expect(() => JSON.stringify(feed)).not.toThrow();
   });
 
+  it('returns pending ad previews with moderation status and filters rejected ad posts', async () => {
+    const { service, prisma } = makeService(null);
+    prisma.wallPost.findFirst.mockResolvedValue(null);
+    prisma.wallPost.findMany.mockResolvedValue([{
+      ...basePost,
+      ad: {
+        id: 33,
+        title: 'آگهی تازه',
+        description: 'توضیحات آگهی',
+        price: 1200n,
+        status: 'PENDING',
+        images: [{ url: '/pending.jpg' }],
+      },
+    }]);
+    prisma.wallPostLike.findMany.mockResolvedValue([]);
+
+    const feed = await service.list(user, 'jam');
+
+    expect(feed.posts[0].ad).toMatchObject({
+      id: 33,
+      title: 'آگهی تازه',
+      description: 'توضیحات آگهی',
+      price: 1200,
+      image: '/pending.jpg',
+      status: 'PENDING',
+    });
+    expect(prisma.wallPost.findMany.mock.calls[0][0].where.OR).toEqual([
+      { adId: null },
+      { ad: { is: { status: { in: ['PENDING', 'APPROVED'] } } } },
+    ]);
+  });
+
   it('hands back a cursor when the page is full and passes `before` through', async () => {
     const { service, prisma } = makeService(null);
     prisma.wallPost.findFirst.mockResolvedValue(null);

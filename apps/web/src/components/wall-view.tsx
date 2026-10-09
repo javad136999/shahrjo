@@ -14,7 +14,7 @@ import {
   uploadVoice,
 } from '@/lib/api';
 import { formatPrice, thumbFallback, thumbUrlFor, timeAgo } from '@/lib/format';
-import type { WallFeed, WallPost } from '@/lib/types';
+import type { WallAdRef, WallFeed, WallPost } from '@/lib/types';
 
 export interface WallViewProps {
   city: { id: number; slug: string; name: string };
@@ -22,6 +22,32 @@ export interface WallViewProps {
 
 /** Chat cadence: a light poll keeps the room lively without a WS stack. */
 const POLL_MS = 5_000;
+
+function WallAdCardContent({ ad }: { ad: WallAdRef }) {
+  return (
+    <>
+      {ad.image && (
+        // eslint-disable-next-line @next/next/no-img-element -- remote media
+        <img
+          className="wall-adcard__img"
+          src={thumbUrlFor(ad.image) ?? ad.image}
+          alt=""
+          loading="lazy"
+          onError={thumbFallback(ad.image)}
+        />
+      )}
+      <span className="wall-adcard__body">
+        <strong>{ad.title}</strong>
+        <span className="wall-adcard__details">{ad.description}</span>
+        <b className="wall-adcard__price">{formatPrice(ad.price)}</b>
+        <small>{ad.status === 'PENDING' ? 'پیش‌نمایش تا پایان بررسی ناظر' : 'مشاهدهٔ کامل آگهی ↗'}</small>
+      </span>
+      <span className={`wall-adcard__badge${ad.status === 'PENDING' ? ' wall-adcard__badge--pending' : ''}`}>
+        {ad.status === 'PENDING' ? '⏳ در انتظار تأیید' : '📝 آگهی'}
+      </span>
+    </>
+  );
+}
 
 /** mm:ss for the recording timer / voice chips. */
 function clock(seconds: number): string {
@@ -419,28 +445,23 @@ export function WallView({ city }: WallViewProps) {
               )}
 
               {post.ad && (
-                <Link
-                  href={`/ad/${post.ad.id}`}
-                  className="wall-adcard"
-                  data-testid={`wall-adcard-${post.id}`}
-                >
-                  {post.ad.image && (
-                    // eslint-disable-next-line @next/next/no-img-element -- remote media
-                    <img
-                      className="wall-adcard__img"
-                      src={thumbUrlFor(post.ad.image) ?? post.ad.image}
-                      alt=""
-                      loading="lazy"
-                      onError={thumbFallback(post.ad.image)}
-                    />
-                  )}
-                  <span className="wall-adcard__body">
-                    <strong>{post.ad.title}</strong>
-                    <b className="wall-adcard__price">{formatPrice(post.ad.price)}</b>
-                    <small>مشاهدهٔ کامل آگهی ↗</small>
-                  </span>
-                  <span className="wall-adcard__badge">📝 آگهی</span>
-                </Link>
+                post.ad.status === 'PENDING' ? (
+                  <div
+                    className="wall-adcard wall-adcard--pending"
+                    data-testid={`wall-adcard-${post.id}`}
+                    role="status"
+                  >
+                    <WallAdCardContent ad={post.ad} />
+                  </div>
+                ) : (
+                  <Link
+                    href={`/ad/${post.ad.id}`}
+                    className="wall-adcard"
+                    data-testid={`wall-adcard-${post.id}`}
+                  >
+                    <WallAdCardContent ad={post.ad} />
+                  </Link>
+                )
               )}
             </>
           )}
@@ -497,6 +518,7 @@ export function WallView({ city }: WallViewProps) {
           💬
         </span>
         <div className="wall-room__copy">
+          <small className="wall-room__eyebrow">گفت‌وگوی زندهٔ شهر</small>
           <strong className="wall-room__name" data-testid="wall-room-name">
             {feed.room.name}
           </strong>

@@ -18,6 +18,7 @@ function makeService() {
       update: jest.fn(),
     },
     adImage: { createMany: jest.fn() },
+    wallPost: { create: jest.fn() },
     media: { findMany: jest.fn(), updateMany: jest.fn() },
     favorite: {
       count: jest.fn(),
@@ -67,6 +68,14 @@ describe('AdsService.create — moderation first', () => {
     expect(created.expiresAt).toBeInstanceOf(Date);
     expect(result.status).toBe('PENDING');
     expect(result.price).toBe(125_000_000); // JSON-safe number
+    expect(prisma.wallPost.create).toHaveBeenCalledWith({
+      data: {
+        cityId: 7,
+        userId: 11,
+        adId: 99,
+        content: 'آگهی تازه در دیوار شهر',
+      },
+    });
     expect(adImage.createMany).not.toHaveBeenCalled();
   });
 

@@ -97,6 +97,34 @@ describe('CityMap', () => {
     await waitFor(() => expect(leaflet.map.mock.results[0].value.fitBounds).toHaveBeenCalled());
   });
 
+  it('supports MultiPolygon boundaries such as coastal or island-shaped cities', async () => {
+    const leaflet = require('leaflet');
+    const multipart: CityMapData = {
+      ...data,
+      city: {
+        ...data.city,
+        boundary: {
+          type: 'MultiPolygon',
+          coordinates: [
+            [[[52.2, 27.7], [52.5, 27.7], [52.5, 27.95], [52.2, 27.95], [52.2, 27.7]]],
+            [[[52.6, 27.8], [52.7, 27.8], [52.7, 27.9], [52.6, 27.9], [52.6, 27.8]]],
+          ],
+        },
+      },
+    };
+    render(<CityMap data={multipart} />);
+    await waitFor(() => expect(leaflet.geoJSON).toHaveBeenCalledTimes(1));
+    expect(leaflet.map.mock.results[0].value.fitBounds).toHaveBeenCalled();
+  });
+
+  it('frames the whole city when its boundary and businesses are not available', async () => {
+    const leaflet = require('leaflet');
+    render(<CityMap data={{ ...data, businesses: [] }} />);
+    await waitFor(() => expect(leaflet.map).toHaveBeenCalledTimes(1));
+    expect(leaflet.map.mock.results[0].value.fitBounds).toHaveBeenCalled();
+    expect(leaflet.map.mock.results[0].value.setView).not.toHaveBeenCalled();
+  });
+
   it('escapes HTML in popup content', async () => {
     const leaflet = require('leaflet');
     render(<CityMap data={data} />);

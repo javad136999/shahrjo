@@ -8,29 +8,44 @@ export interface CityMapProps {
   data: CityMapData;
 }
 
-/** Loose runtime check for the admin-supplied GeoJSON Polygon. */
-type Polygon = { type: 'Polygon'; coordinates: number[][][] };
-function asPolygon(value: unknown): Polygon | null {
+/** Loose runtime check for admin-supplied GeoJSON city boundaries. */
+type CityBoundary =
+  | { type: 'Polygon'; coordinates: number[][][] }
+  | { type: 'MultiPolygon'; coordinates: number[][][][] };
+
+function asBoundary(value: unknown): CityBoundary | null {
   if (!value || typeof value !== 'object') return null;
-  const v = value as { type?: unknown; coordinates?: unknown };
-  if (v.type !== 'Polygon' || !Array.isArray(v.coordinates) || v.coordinates.length === 0) return null;
-  return { type: 'Polygon', coordinates: v.coordinates as number[][][] };
+  const raw = value as { type?: unknown; coordinates?: unknown; geometry?: unknown };
+  const candidate = raw.type === 'Feature' ? raw.geometry : raw;
+  if (!candidate || typeof candidate !== 'object') return null;
+  const geometry = candidate as { type?: unknown; coordinates?: unknown };
+  if (!Array.isArray(geometry.coordinates) || geometry.coordinates.length === 0) return null;
+  if (geometry.type === 'Polygon') {
+    return { type: 'Polygon', coordinates: geometry.coordinates as number[][][] };
+  }
+  if (geometry.type === 'MultiPolygon') {
+    return { type: 'MultiPolygon', coordinates: geometry.coordinates as number[][][][] };
+  }
+  return null;
 }
 
-/** [[minLat, minLng], [maxLat, maxLng]] of a GeoJSON ring set. */
-function boundsOfPolygon(rings: number[][][]): [[number, number], [number, number]] | null {
+/** [[minLat, minLng], [maxLat, maxLng]] across every ring of a city boundary. */
+function boundsOfBoundary(boundary: CityBoundary): [[number, number], [number, number]] | null {
   let minLat = Infinity;
   let minLng = Infinity;
   let maxLat = -Infinity;
   let maxLng = -Infinity;
-  for (const ring of rings) {
-    for (const point of ring) {
-      const [lng, lat] = point;
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
-      if (lat < minLat) minLat = lat;
-      if (lng < minLng) minLng = lng;
-      if (lat > maxLat) maxLat = lat;
-      if (lng > maxLng) maxLng = lng;
+  const polygons = boundary.type === 'Polygon' ? [boundary.coordinates] : boundary.coordinates;
+  for (const polygon of polygons) {
+    for (const ring of polygon) {
+      for (const point of ring) {
+        const [lng, lat] = point;
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+        if (lat < minLat) minLat = lat;
+        if (lng < minLng) minLng = lng;
+        if (lat > maxLat) maxLat = lat;
+        if (lng > maxLng) maxLng = lng;
+      }
     }
   }
   if (!Number.isFinite(minLat) || !Number.isFinite(minLng)) return null;
@@ -52,8 +67,8 @@ function esc(s: string): string {
 
 /**
  * City map (Phase 9 + JamCity restyle): Leaflet + OSM tiles (no API key).
- * The view always frames the whole city (admin boundary when present,
- * otherwise a wide zoom over the pins) — there is no decorative circle.
+ * The view frames the whole city (Polygon/MultiPolygon boundary when present,
+ * otherwise a broad frame around the city center and any pins).
  * Every pin carries its category emoji; zooming in past level 15 reveals the
  * business name above the pin. Above the canvas sits the JamCity category bar
  * (top-right): picking a category shows only that category's pins and re-zooms
@@ -120,9 +135,9 @@ export function CityMap({ data }: CityMapProps) {
         city.latitude !== null && city.longitude !== null ? [city.latitude, city.longitude] : null;
       if (!center && businesses.length === 0) return; // nowhere to look — handled by parent
 
-      const polygon = asPolygon(city.boundary);
+      const boundary = asBoundary(city.boundary);
       // bounds of the admin outline, computed before the map exists
-      const outline = polygon ? boundsOfPolygon(polygon.coordinates) : null;
+      const outline = boundary ? boundsOfBoundary(boundary) : null;
 
       // stay inside the city — no endless empty countryside
       const maxBounds: [[number, number], [number, number]] | undefined = outline
@@ -158,11 +173,11 @@ export function CityMap({ data }: CityMapProps) {
       } as const;
 
       let outlineBounds: import('leaflet').LatLngBounds | null = null;
-      if (polygon) {
-        const drawn = L.geoJSON(polygon as unknown as GeoJSON.Polygon, { style }).addTo(map);
+      if (boundary) {
+        const drawn = L.geoJSON(boundary as unknown as GeoJSON.Polygon | GeoJSON.MultiPolygon, { style }).addTo(map);
         if (drawn.getBounds().isValid()) outlineBounds = drawn.getBounds();
       }
-      // no boundary → no decorative circle; the pins below define the view
+      // no boundary → no outline; fit logic below uses a broad city-level frame
 
       for (const b of shown) {
         const gold = b.subscriptionTier === 'GOLD';
@@ -205,18 +220,28 @@ export function CityMap({ data }: CityMapProps) {
         } else if (outlineBounds) {
           map.fitBounds(outlineBounds, { padding: [20, 20], maxZoom: 15 }); // category with no pins: the outline
         } else if (center) {
-          map.setView(center, 12);
+          const cityFrame = [
+            [center[0] - 0.12, center[1] - 0.15],
+            [center[0] + 0.12, center[1] + 0.15],
+            ...pins,
+          ] as [number, number][];
+          map.fitBounds(L.latLngBounds(cityFrame), { padding: [24, 24], maxZoom: 12 });
         }
       } else if (outlineBounds) {
         // whole city boundary in frame
         map.fitBounds(outlineBounds, { padding: [24, 24], maxZoom: 15 });
+      } else if (center) {
+        // No boundary yet: frame a generous city-wide envelope, not just its business pins.
+        const cityFrame = [
+          [center[0] - 0.12, center[1] - 0.15],
+          [center[0] + 0.12, center[1] + 0.15],
+          ...pins,
+        ] as [number, number][];
+        map.fitBounds(L.latLngBounds(cityFrame), { padding: [24, 24], maxZoom: 12 });
       } else if (pins.length > 1) {
-        // no boundary yet: keep a town-wide zoom so the whole area reads at once
         map.fitBounds(L.latLngBounds(pins), { padding: [56, 56], maxZoom: 13 });
       } else if (pins.length === 1) {
         map.setView(pins[0], 14);
-      } else if (center) {
-        map.setView(center, 12);
       }
     })();
 

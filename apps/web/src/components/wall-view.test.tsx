@@ -131,7 +131,14 @@ describe('WallView', () => {
         makePost({
           id: 7,
           content: '🌟 پیشنهاد ویژه صبح — ویلا',
-          ad: { id: 42, title: 'ویلای شمال', price: 900_000_000, image: '/api/v1/files/media/2026/10/ad.webp' },
+          ad: {
+            id: 42,
+            title: 'ویلای شمال',
+            description: 'ویلای دلباز نزدیک ساحل با حیاط بزرگ',
+            price: 900_000_000,
+            image: '/api/v1/files/media/2026/10/ad.webp',
+            status: 'APPROVED',
+          },
         }),
       ],
       pinned: null,
@@ -140,11 +147,37 @@ describe('WallView', () => {
     const card = await screen.findByTestId('wall-adcard-7');
     expect(card).toHaveAttribute('href', '/ad/42');
     expect(card).toHaveTextContent('ویلای شمال');
+    expect(card).toHaveTextContent('نزدیک ساحل');
     expect(card).toHaveTextContent('ریال');
     const img = card.querySelector('img');
     expect(img).toHaveAttribute('src', '/api/v1/files/media/2026/10/ad.thumb.webp');
     // promoted posts are system-authored: no personal edit button
     expect(screen.queryByTestId('wall-edit-7')).not.toBeInTheDocument();
+  });
+
+  it('shows a pending ad preview in the wall without linking to a hidden detail page', async () => {
+    mockGetWall.mockResolvedValue({
+      ...feed,
+      posts: [makePost({
+        id: 19,
+        content: 'آگهی تازه در دیوار شهر',
+        ad: {
+          id: 43,
+          title: 'دوچرخه سالم',
+          description: 'دوچرخه تمیز و آماده استفاده',
+          price: 12_000_000,
+          image: null,
+          status: 'PENDING',
+        },
+      })],
+      pinned: null,
+    });
+    render(<WallView city={city} />);
+    const card = await screen.findByTestId('wall-adcard-19');
+    expect(card.tagName).toBe('DIV');
+    expect(card).toHaveTextContent('دوچرخه تمیز و آماده استفاده');
+    expect(card).toHaveTextContent('در انتظار تأیید');
+    expect(card).not.toHaveAttribute('href');
   });
 
   it('offers the ad-post entry on the right of the composer', async () => {

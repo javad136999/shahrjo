@@ -249,7 +249,7 @@ export interface CityMapData {
     slug: string;
     latitude: number | null;
     longitude: number | null;
-    /** GeoJSON Polygon outline; null → client draws a circle around center */
+    /** GeoJSON Polygon/MultiPolygon outline; null → client frames a broad city area */
     boundary: unknown | null;
   };
   businesses: CityMapBusiness[];
@@ -266,8 +266,10 @@ export interface WallAuthor {
 export interface WallAdRef {
   id: number;
   title: string;
+  description: string;
   price: number | null;
   image: string | null;
+  status: string;
 }
 
 /** Chat-room header meta: wall name + member/message counts. */
