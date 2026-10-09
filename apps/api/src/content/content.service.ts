@@ -136,12 +136,18 @@ export class ContentService {
     });
   }
 
-  async ads(citySlug: string, limit: number = DEFAULT_CONTENT_LIMIT): Promise<AdItem[]> {
+  async ads(
+    citySlug: string,
+    limit: number = DEFAULT_CONTENT_LIMIT,
+    categorySlug?: string,
+  ): Promise<AdItem[]> {
     const cityId = await this.resolveCity(citySlug);
     const rows = await this.prisma.ad.findMany({
       where: {
         cityId,
         status: 'APPROVED',
+        // category shortcut of the chat room (optional filter)
+        ...(categorySlug ? { category: { slug: categorySlug } } : {}),
         // never surface expired listings even if the nightly sweep has not run yet
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
