@@ -6,6 +6,11 @@ import 'leaflet/dist/leaflet.css';
 
 export interface CityMapProps {
   data: CityMapData;
+  /**
+   * Fires whenever the ✨ category filter changes so a sibling list can stay
+   * in sync with what the map shows (filter/list parity).
+   */
+  onCategoryChange?: (categorySlug: string | null) => void;
 }
 
 /** Loose runtime check for admin-supplied GeoJSON city boundaries. */
@@ -74,7 +79,7 @@ function esc(s: string): string {
  * (top-right): picking a category shows only that category's pins and re-zooms
  * onto them. The library loads dynamically so SSR/jest never touch `window`.
  */
-export function CityMap({ data }: CityMapProps) {
+export function CityMap({ data, onCategoryChange }: CityMapProps) {
   const holder = useRef<HTMLDivElement>(null);
   const catWrapRef = useRef<HTMLDivElement>(null);
   const [catOpen, setCatOpen] = useState(false);
@@ -119,6 +124,7 @@ export function CityMap({ data }: CityMapProps) {
   const choose = (slug: string | null) => {
     setActiveCat(slug);
     setCatOpen(false);
+    onCategoryChange?.(slug);
   };
 
   useEffect(() => {

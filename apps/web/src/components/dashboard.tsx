@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { CityMap } from '@/components/city-map';
 import { ShowcaseMarquee } from '@/components/showcase-marquee';
@@ -84,6 +87,15 @@ function Section({
  * City names always come from the data — never from the code.
  */
 export function CityDashboard({ city, showcase, mapData, loading, feedError }: CityDashboardProps) {
+  // Mirrors the map's ✨ category filter so the list below always agrees
+  // with the pins on screen (same data source: /map payload).
+  const [mapCat, setMapCat] = useState<string | null>(null);
+  const mapBusinesses = mapData?.businesses ?? [];
+  const shownBusinesses = mapBusinesses.filter((b) => mapCat === null || b.category.slug === mapCat);
+  const catName = mapCat
+    ? (mapBusinesses.find((b) => b.category.slug === mapCat)?.category.name ?? mapCat)
+    : null;
+
   return (
     <div className="dashboard">
       <header className="dash-welcome" data-testid="dash-welcome">
@@ -118,8 +130,50 @@ export function CityDashboard({ city, showcase, mapData, loading, feedError }: C
           emptyText="هنوز کسب‌وکاری با مختصات مشخص‌شده روی نقشه ثبت نشده است."
           showChildrenWhenEmpty
         >
-          {mapData ? <CityMap data={mapData} /> : null}
+          {mapData ? <CityMap data={mapData} onCategoryChange={setMapCat} /> : null}
         </Section>
+      )}
+
+      {mapData && (
+        <section className="dash-section" aria-label="فهرست کسب‌وکارهای نقشه" id="map-list">
+          <div className="dash-section__head">
+            <span className="icon-tile" aria-hidden>📌</span>
+            <div className="dash-section__title">
+              <h2>فهرست همین نقشه</h2>
+              <p className="dash-section__sub">
+                {catName ? `فیلتر دسته: ${catName}` : 'کسب‌وکارهای دارای موقعیت، همراه با دسته‌بندی'}
+              </p>
+            </div>
+            <span className="chip" data-testid="map-list-count">
+              {shownBusinesses.length.toLocaleString('fa-IR')}
+            </span>
+          </div>
+
+          {shownBusinesses.length === 0 ? (
+            <p className="empty-state" data-testid="map-list-empty">
+              🗂 کسب‌وکاری با این دسته‌بندی روی نقشه نیست.
+            </p>
+          ) : (
+            <ul className="map-bizlist" data-testid="map-bizlist">
+              {shownBusinesses.map((b) => (
+                <li key={b.id}>
+                  <a href={`/business/${b.id}`} className="map-bizlist__row">
+                    <span className="map-bizlist__icon" aria-hidden>
+                      {b.category.icon ?? '🏪'}
+                    </span>
+                    <strong className="map-bizlist__name">{b.name}</strong>
+                    <span className="chip">{b.category.name}</span>
+                    {b.subscriptionTier === 'GOLD' && (
+                      <span className="map-bizlist__gold" title="کسب‌وکار طلایی">
+                        👑
+                      </span>
+                    )}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       )}
     </div>
   );

@@ -79,6 +79,27 @@ describe('WallView', () => {
     mockGetWall.mockResolvedValue(feed);
   });
 
+  it('filters the feed with the in-wall search and can close it', async () => {
+    render(<WallView city={city} />);
+    await screen.findByTestId('wall-room');
+    expect(screen.getByTestId('wall-post-1')).toBeInTheDocument();
+    expect(screen.getByTestId('wall-post-2')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId('wall-search'), { target: { value: 'خوش' } });
+    expect(screen.getByTestId('wall-post-2')).toBeInTheDocument();
+    expect(screen.queryByTestId('wall-post-1')).not.toBeInTheDocument();
+    // the pinned banner is a separate strip — it stays visible while searching
+    expect(screen.getByTestId('wall-pinned')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByTestId('wall-search'), { target: { value: 'چیزی که نیست' } });
+    expect(screen.getByTestId('wall-search-empty')).toBeInTheDocument();
+    expect(screen.queryByTestId('wall-post-2')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('wall-search-close'));
+    expect(screen.getByTestId('wall-post-1')).toBeInTheDocument();
+    expect(screen.queryByTestId('wall-search-empty')).not.toBeInTheDocument();
+  });
+
   it('renders the room header: wall name + member and message counts', async () => {
     render(<WallView city={city} />);
     await screen.findByTestId('wall-room');

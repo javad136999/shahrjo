@@ -1,11 +1,29 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within, fireEvent } from '@testing-library/react';
 import { CityDashboard } from '@/components/dashboard';
 import type { City, CityMapData, ShowcaseItem } from '@/lib/types';
 
 // The map is a Leaflet canvas (covered by city-map.test.tsx) — stub it here so
 // dashboard tests stay DOM-only.
 jest.mock('@/components/city-map', () => ({
-  CityMap: ({ data }: { data: CityMapData }) => <div data-testid="city-map" data-pins={data.businesses.length} />,
+  CityMap: ({
+    data,
+    onCategoryChange,
+  }: {
+    data: CityMapData;
+    onCategoryChange?: (slug: string | null) => void;
+  }) => (
+    <div data-testid="city-map" data-pins={data.businesses.length}>
+      <button type="button" data-testid="mock-filter-restaurant" onClick={() => onCategoryChange?.('restaurant')}>
+        فیلتر رستوران
+      </button>
+      <button type="button" data-testid="mock-filter-jobs" onClick={() => onCategoryChange?.('jobs')}>
+        فیلتر استخدام
+      </button>
+      <button type="button" data-testid="mock-filter-clear" onClick={() => onCategoryChange?.(null)}>
+        حذف فیلتر
+      </button>
+    </div>
+  ),
 }));
 
 const city: City = {
@@ -137,5 +155,61 @@ describe('CityDashboard', () => {
     const mapHeading = screen.getByRole('heading', { name: 'نقشه شهر' });
     const section = mapHeading.closest('.dash-section') as HTMLElement;
     expect(showcaseEl.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
+
+const parityMap: CityMapData = {
+  city: { id: 1, name: 'شهر نمونه', slug: 'sample-city', latitude: 27.5, longitude: 52.4, boundary: null },
+  businesses: [
+    {
+      id: 1,
+      name: 'رستوران نمونه',
+      slug: 'rest-1',
+      latitude: 27.5,
+      longitude: 52.4,
+      subscriptionTier: 'GOLD',
+      category: { name: 'رستوران', slug: 'restaurant', icon: '🍽️', color: null },
+    },
+    {
+      id: 2,
+      name: 'کافه نمونه',
+      slug: 'cafe-1',
+      latitude: 27.51,
+      longitude: 52.41,
+      subscriptionTier: 'FREE',
+      category: { name: 'کافه', slug: 'cafe', icon: '☕', color: null },
+    },
+  ],
+};
+
+describe('CityDashboard — map ↔ list parity', () => {
+  it('lists every map business and keeps the list in sync with the map filter', async () => {
+    renderDashboard({ mapData: parityMap });
+
+    const list = await screen.findByTestId('map-bizlist');
+    expect(list).toHaveTextContent('رستوران نمونه');
+    expect(list).toHaveTextContent('کافه نمونه');
+    expect(screen.getByTestId('map-list-count')).toHaveTextContent('۲');
+    // gold marker hint comes from the API tier, not from styling guesses
+    const rows = within(screen.getByTestId('map-bizlist')).getAllByRole('link');
+    expect(rows[0]).toHaveTextContent('👑'); // GOLD row
+    expect(rows[1]).not.toHaveTextContent('👑'); // FREE row
+
+    fireEvent.click(screen.getByTestId('mock-filter-restaurant'));
+    const filtered = screen.getByTestId('map-bizlist');
+    expect(filtered).toHaveTextContent('رستوران نمونه');
+    expect(filtered).not.toHaveTextContent('کافه نمونه');
+    expect(screen.getByTestId('map-list-count')).toHaveTextContent('۱');
+    expect(screen.getByText('فیلتر دسته: رستوران')).toBeInTheDocument();
+
+    // a category with no pinned businesses → the shared empty state
+    fireEvent.click(screen.getByTestId('mock-filter-jobs'));
+    expect(screen.getByTestId('map-list-empty')).toBeInTheDocument();
+    expect(screen.getByTestId('map-list-count')).toHaveTextContent('۰');
+
+    // clearing the filter restores the full list
+    fireEvent.click(screen.getByTestId('mock-filter-clear'));
+    expect(screen.getByTestId('map-bizlist')).toHaveTextContent('کافه نمونه');
+    expect(screen.getByText('کسب‌وکارهای دارای موقعیت، همراه با دسته‌بندی')).toBeInTheDocument();
   });
 });

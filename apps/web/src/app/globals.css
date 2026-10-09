@@ -3118,3 +3118,187 @@ a.my-ads__item:hover {
 .compare-table td {
   color: var(--muted);
 }
+
+/* ================================================================
+   Stage 4 — JamCity-aligned restyle of the city wall + map list.
+   Appended (not rewritten) so the existing Phase 8b/10 styles keep
+   working as fallbacks; later rules win at equal specificity.
+   ================================================================ */
+.wall {
+  background: #eaf1e7;
+}
+.wall-room {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgb(255 255 255 / 95%);
+  border-bottom: 1px solid #e3ebde;
+  border-radius: 16px 16px 0 0;
+  backdrop-filter: blur(6px);
+}
+.wall-room__copy {
+  text-align: center;
+  min-width: 0;
+}
+.wall-room__eyebrow {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #147a4b;
+}
+.wall-room__name {
+  display: block;
+  font-size: 14px;
+  font-weight: 900;
+  color: #1d2b1f;
+}
+.wall-room__meta {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #e2574c;
+}
+.wall-room__avatar {
+  display: flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  background: #e3f3e9;
+  border-radius: 999px;
+}
+.wall-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: #fff;
+  border-bottom: 1px solid #e3ebde;
+}
+.wall-search__input {
+  flex: 1;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  color: #1d2b1f;
+  background: #f7f9f4;
+  border: 1px solid #e3ebde;
+  border-radius: 999px;
+  outline: none;
+}
+.wall-search__input:focus-visible {
+  border-color: #147a4b;
+  box-shadow: 0 0 0 2px rgb(20 122 75 / 18%);
+}
+.wall-search__close {
+  color: #66766a;
+}
+.wall-feed {
+  background: transparent;
+  gap: 8px;
+}
+.wall-post {
+  background: #fff;
+  border: 1px solid #e7ede5;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgb(29 43 31 / 5%);
+}
+.wall-post__name {
+  color: #147a4b;
+}
+.wall-post__time,
+.wall-post__edited {
+  color: #b0bab1;
+}
+.wall-pinned {
+  background: transparent;
+}
+.wall-pinned .wall-post {
+  background: #fff7f6;
+  border: 1px solid #f3d9d5;
+  border-right: 4px solid #e2574c;
+  box-shadow: 0 2px 10px rgb(226 87 76 / 14%);
+}
+.wall-composer {
+  background: #fff;
+  border: 1px solid #e3ebde;
+  border-radius: 16px;
+  box-shadow: 0 -2px 12px rgb(29 43 31 / 6%);
+}
+.wall-adcard {
+  background: linear-gradient(to left, #fff9e8, #fff);
+  border: 1px solid #e7c777;
+}
+.wall-adcard__price {
+  color: #8a5a16;
+}
+.wall-more {
+  align-self: center;
+}
+.wall .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 34px 12px;
+  text-align: center;
+  color: #8a968c;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.wall .banner--error {
+  border-radius: 14px;
+}
+
+/* Map ↔ list parity (same filter, same data) */
+.map-bizlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.map-bizlist__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.map-bizlist__row:hover,
+.map-bizlist__row:focus-visible {
+  background: var(--brand-soft);
+  border-color: var(--brand-dark);
+}
+.map-bizlist__icon {
+  display: flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand-soft);
+  border-radius: 10px;
+}
+.map-bizlist__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+}
+.map-bizlist__gold {
+  font-size: 14px;
+}

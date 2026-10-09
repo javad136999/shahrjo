@@ -69,6 +69,8 @@ export function WallView({ city }: WallViewProps) {
   const [feed, setFeed] = useState<WallFeed | null>(null);
   const [gate, setGate] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // JamCity-style in-wall search: filters the loaded feed by text/author.
+  const [query, setQuery] = useState('');
   const [text, setText] = useState('');
   const [replyTo, setReplyTo] = useState<WallPost | null>(null);
   const [image, setImage] = useState<File | null>(null);
@@ -510,6 +512,10 @@ export function WallView({ city }: WallViewProps) {
 
   // newest at the bottom, like any chat room (server keeps a desc cursor)
   const ordered = [...feed.posts].reverse();
+  const q = query.trim();
+  const visible = q
+    ? ordered.filter((post) => (post.content ?? '').toLowerCase().includes(q.toLowerCase()) || post.user.name.includes(q))
+    : ordered;
 
   return (
     <div className="wall" data-testid="wall">
@@ -537,6 +543,29 @@ export function WallView({ city }: WallViewProps) {
         </div>
       </header>
 
+      <div className="wall-search" role="search">
+        <input
+          type="search"
+          className="wall-search__input"
+          placeholder="جستجو در دیوار شهر…"
+          aria-label="جستجو در دیوار شهر"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          data-testid="wall-search"
+        />
+        {q && (
+          <button
+            type="button"
+            className="wall-iconbtn wall-search__close"
+            aria-label="بستن جستجو"
+            data-testid="wall-search-close"
+            onClick={() => setQuery('')}
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
       {error && (
         <div className="banner banner--error" role="alert">
           <span>{error}</span>
@@ -549,7 +578,7 @@ export function WallView({ city }: WallViewProps) {
         </section>
       )}
 
-      {feed.nextBefore && (
+      {feed.nextBefore && !q && (
         <button
           type="button"
           className="btn btn-ghost wall-more"
@@ -563,8 +592,12 @@ export function WallView({ city }: WallViewProps) {
       <div className="wall-feed" ref={feedRef} role="log" aria-live="polite">
         {ordered.length === 0 ? (
           <p className="empty-state">هنوز پیامی در دیوار شهر نیست — اولین نفر باشید.</p>
+        ) : q && visible.length === 0 ? (
+          <p className="empty-state" data-testid="wall-search-empty">
+            🔎 پیامی با این جستجو پیدا نشد.
+          </p>
         ) : (
-          ordered.map((post) => renderPost(post))
+          visible.map((post) => renderPost(post))
         )}
       </div>
 
