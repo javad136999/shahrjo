@@ -139,7 +139,12 @@ export class UploadsService implements OnModuleInit {
     void config;
   }
 
-  async save(user: User, file: { buffer?: Buffer; size?: number } | undefined): Promise<StoredImage> {
+  async save(
+    user: User,
+    file: { buffer?: Buffer; size?: number } | undefined,
+    // What will claim this row: an ad (default) or a business logo/cover.
+    entity: 'ad' | 'business' = 'ad',
+  ): Promise<StoredImage> {
     const buffer = file?.buffer;
     if (!buffer || buffer.length === 0) throw new BadRequestException('فایل تصویر الزامی است');
     if ((file?.size ?? buffer.length) > MAX_UPLOAD_BYTES || buffer.length > MAX_UPLOAD_BYTES) {
@@ -211,8 +216,8 @@ export class UploadsService implements OnModuleInit {
           width: processed.full.width,
           height: processed.full.height,
           ownerUserId: user.id,
-          entityType: 'AD',
-          entityId: null, // attached to an ad (and claimed) on POST /ads
+          entityType: entity === 'business' ? 'BUSINESS' : 'AD',
+          entityId: null, // claimed by POST /ads (AD) or POST /businesses (BUSINESS)
         },
         select: { id: true, url: true },
       });

@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Controller, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { User } from '@prisma/client';
 import { CurrentUser, RateLimit } from '../common/decorators';
@@ -26,9 +26,18 @@ export class UploadsController {
       limits: { fileSize: MAX_UPLOAD_BYTES, files: 1 },
     }),
   )
-  upload(@CurrentUser() user: User, @UploadedFile() file?: Express.Multer.File) {
+  upload(
+    @CurrentUser() user: User,
+    // Which entity will claim this upload. Only `ad` (default) and `business`
+    // are accepted — anything else is a client bug or an injection attempt.
+    @Query('entity') entity?: string,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
     if (!file) throw new BadRequestException('فایل تصویر الزامی است');
-    return this.uploads.save(user, file);
+    if (entity !== undefined && entity !== '' && entity !== 'ad' && entity !== 'business') {
+      throw new BadRequestException('نوع آپلود نامعتبر است');
+    }
+    return this.uploads.save(user, file, entity === 'business' ? 'business' : 'ad');
   }
 
   /**

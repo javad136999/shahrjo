@@ -1,5 +1,6 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
-import { Public } from '../common/decorators';
+import type { User } from '@prisma/client';
+import { CurrentUser, Public } from '../common/decorators';
 import { CityContentQueryDto } from './content.dto';
 import { ContentService } from './content.service';
 
@@ -47,6 +48,22 @@ export class ContentController {
   @Get('news/:slug')
   newsDetail(@Param('slug') slug: string): ReturnType<ContentService['newsDetail']> {
     return this.content.newsDetail(slug);
+  }
+
+  /** Active business categories for the registration form (public). */
+  @Public()
+  @Get('business-categories')
+  businessCategories(): ReturnType<ContentService['businessCategories']> {
+    return this.content.businessCategories();
+  }
+
+  /**
+   * The caller's own business requests + status. Declared BEFORE
+   * `businesses/:id` so `mine` never falls into the `:id` ParseIntPipe.
+   */
+  @Get('businesses/mine')
+  myBusinesses(@CurrentUser() user: User): ReturnType<ContentService['myBusinesses']> {
+    return this.content.myBusinesses(user.id);
   }
 
   /** One approved business profile (Phase 6) — counts a view. */

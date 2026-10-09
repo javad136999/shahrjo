@@ -37,6 +37,25 @@ export interface BusinessItem {
   category: { name: string; slug: string; icon: string | null; color: string | null };
 }
 
+/** Business categories for the registration form (public, active only). */
+export interface BusinessCategoryOption {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string | null;
+}
+
+/** One of the caller's own business requests + moderation status. */
+export interface MyBusinessItem {
+  id: number;
+  name: string;
+  status: string;
+  createdAt: Date;
+  cityName: string;
+  categoryName: string;
+  categoryIcon: string | null;
+}
+
 /** One paid-tier business card of the golden showcase. */
 export interface ShowcaseItem {
   id: number;
@@ -324,5 +343,42 @@ export class ContentService {
       select: { viewCount: true },
     });
     return { ...business, viewCount: updated.viewCount };
+  }
+
+  /** Active business categories for the registration form (public). */
+  async businessCategories(): Promise<BusinessCategoryOption[]> {
+    return this.prisma.businessCategory.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      select: { id: true, name: true, slug: true, icon: true },
+    });
+  }
+
+  /**
+   * The caller's own business requests with moderation status — how the user
+   * sees where their request stands (PENDING/APPROVED/REJECTED).
+   */
+  async myBusinesses(userId: number): Promise<MyBusinessItem[]> {
+    const rows = await this.prisma.business.findMany({
+      where: { ownerId: userId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        createdAt: true,
+        city: { select: { name: true } },
+        category: { select: { name: true, icon: true } },
+      },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      status: row.status,
+      createdAt: row.createdAt,
+      cityName: row.city.name,
+      categoryName: row.category.name,
+      categoryIcon: row.category.icon,
+    }));
   }
 }

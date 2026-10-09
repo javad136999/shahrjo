@@ -4,6 +4,7 @@ import { AdsModule } from './ads/ads.module';
 import { AdminModule } from './admin/admin.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
+import { BusinessesModule } from './businesses/businesses.module';
 import { CitiesModule } from './cities/cities.module';
 import { ContentModule } from './content/content.module';
 import { HealthController } from './health/health.controller';
@@ -28,6 +29,7 @@ import { WallModule } from './wall/wall.module';
     UsersModule,
     CitiesModule,
     ContentModule,
+    BusinessesModule,
     AdsModule,
     UploadsModule,
     PaymentsModule,

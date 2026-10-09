@@ -81,7 +81,7 @@ const rolePermissions: Record<string, string[]> = {
     'chat.moderate', 'reports.handle',
   ],
   BUSINESS_OWNER: ['ads.view', 'ads.create', 'businesses.view', 'businesses.create'],
-  USER: ['ads.view', 'ads.create'],
+  USER: ['ads.view', 'ads.create', 'businesses.create'], // registration stays behind admin approval
 };
 
 // 9 ad categories (JamCity-aligned)
