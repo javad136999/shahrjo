@@ -10,6 +10,7 @@ export const STATUS_LABEL: Record<string, string> = {
   REJECTED: 'رد شده',
   EXPIRED: 'منقضی',
   SOLD: 'فروخته شده',
+  CLOSED: 'بسته شده',
   DELETED: 'حذف شده',
 };
 

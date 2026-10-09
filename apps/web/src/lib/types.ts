@@ -77,6 +77,30 @@ export interface LocalCity {
   name: string;
 }
 
+/** Business registration. */
+export interface BusinessCategoryOption {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string | null;
+}
+
+export interface CreatedBusiness {
+  id: number;
+  name: string;
+  status: 'PENDING';
+}
+
+export interface MyBusinessItem {
+  id: number;
+  name: string;
+  status: string;
+  createdAt: string;
+  cityName: string;
+  categoryName: string;
+  categoryIcon: string | null;
+}
+
 /** Ad submission (Phase 5). */
 export interface AdCategoryOption {
   id: number;

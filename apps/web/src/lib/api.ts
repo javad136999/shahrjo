@@ -26,8 +26,7 @@ import type {
   UploadedImage,
   VisitStats,
   WallFeed,
-  WallPost,
-} from './types';
+  WallPost, BusinessCategoryOption, CreatedBusiness, MyBusinessItem} from './types';
 
 const API_PREFIX = '/api/v1';
 const TOKEN_KEY = 'shahrjo.tokens';
@@ -214,11 +213,45 @@ export async function getMyAds(): Promise<MyAdItem[]> {
   return api.get<MyAdItem[]>('/ads/mine');
 }
 
-/** Multipart image upload (≤5MB) — returns the media id + url for createAd. */
-export async function uploadImage(file: File): Promise<UploadedImage> {
+// ---------- business registration ----------
+
+/** Active business categories for the registration form (public). */
+export async function getBusinessCategories(): Promise<BusinessCategoryOption[]> {
+  return api.get<BusinessCategoryOption[]>('/business-categories');
+}
+
+export interface CreateBusinessInput {
+  categoryId: number;
+  name: string;
+  description?: string;
+  phone?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  logoMediaId?: number;
+  coverMediaId?: number;
+  socialLinks?: { instagram?: string; telegram?: string; website?: string };
+}
+
+/** Submit a business request — always lands as PENDING (admin queue). */
+export async function createBusiness(body: CreateBusinessInput): Promise<CreatedBusiness> {
+  return api.post<CreatedBusiness>('/businesses', body);
+}
+
+/** The caller's own business requests incl. moderation status. */
+export async function getMyBusinesses(): Promise<MyBusinessItem[]> {
+  return api.get<MyBusinessItem[]>('/businesses/mine');
+}
+
+/**
+ * Multipart image upload (≤5MB) — returns the media id + url. `entity`
+ * decides which row claims it later: an ad (`/ads`) or a business
+ * (`/businesses`); the API rejects any other value.
+ */
+export async function uploadImage(file: File, entity: 'ad' | 'business' = 'ad'): Promise<UploadedImage> {
   const form = new FormData();
   form.append('file', file, file.name);
-  return requestForm<UploadedImage>('/uploads', form);
+  return requestForm<UploadedImage>(entity === 'ad' ? '/uploads' : '/uploads?entity=business', form);
 }
 
 export async function getProfile(): Promise<MeResponse> {

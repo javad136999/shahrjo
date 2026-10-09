@@ -7,7 +7,7 @@ import { CITY_CHANGED_EVENT, getLocalCity } from '@/lib/api';
 import type { LocalCity } from '@/lib/types';
 
 interface NavItem {
-  id: 'home' | 'news' | 'businesses' | 'profile';
+  id: 'home' | 'news' | 'businesses' | 'business-new' | 'profile';
   href: string;
   icon: string;
   label: string;
@@ -17,7 +17,8 @@ interface NavItem {
  * Mobile bottom navigation (JamCity-style): home, city news and the city
  * map (business pins). News has its own page (`/city/<slug>/news`); without
  * a remembered city the entries fall back to the city picker. The «ثبت آگهی»
- * action moved into the city-wall composer (Phase 10), so it is gone here.
+ * action moved into the city-wall composer (Phase 10), so it is gone here;
+ * «ثبت کسب‌وکار» lives in the bar as a direct link to the registration wizard.
  */
 export function BottomNav() {
   const pathname = usePathname();
@@ -52,6 +53,7 @@ export function BottomNav() {
     { id: 'home', href: '/', icon: '🏠', label: 'خانه' },
     { id: 'news', href: cityBase ? `${cityBase}/news` : '/', icon: '📰', label: 'اخبار' },
     { id: 'businesses', href: cityBase ? `${cityBase}#map` : '/', icon: '🏬', label: 'کسب‌وکارها' },
+    { id: 'business-new', href: '/businesses/new', icon: '➕', label: 'ثبت کسب‌وکار' },
     { id: 'profile', href: '/profile', icon: '👤', label: 'پروفایل' },
   ];
 
@@ -59,6 +61,7 @@ export function BottomNav() {
     if (item.id === 'profile') return pathname.startsWith('/profile');
     if (item.id === 'news') return isNewsPage;
     if (item.id === 'businesses') return hash === '#map';
+    if (item.id === 'business-new') return pathname.startsWith('/businesses/new');
     if (item.id === 'home') return (pathname === '/' || pathname.startsWith('/city/')) && !isNewsPage && !hash;
     return false;
   };

@@ -32,11 +32,26 @@ export function HeaderActions() {
     window.location.assign('/');
   };
 
+  const businessLink = (
+    <Link
+      href="/businesses/new"
+      className="pill"
+      title="ثبت کسب‌وکار"
+      data-testid="header-business-new"
+    >
+      <span aria-hidden>🏪</span>
+      <span className="pill__label">ثبت کسب‌وکار</span>
+    </Link>
+  );
+
   if (!me) {
     return (
-      <Link href="/login" className="btn btn-ghost">
-        ورود
-      </Link>
+      <div className="header-user">
+        {businessLink}
+        <Link href="/login" className="btn btn-ghost">
+          ورود
+        </Link>
+      </div>
     );
   }
 
@@ -44,6 +59,7 @@ export function HeaderActions() {
 
   return (
     <div className="header-user">
+      {businessLink}
       {isOperator && (
         <Link href="/admin" className="pill pill--gold" title="پنل مدیریت" data-testid="header-admin">
           <span aria-hidden>🛡️</span>
