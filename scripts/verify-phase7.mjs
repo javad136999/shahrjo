@@ -13,6 +13,10 @@ const mustExist = [
   'apps/web/src/app/plans/page.tsx',
   'apps/web/src/app/plans/result/page.tsx',
   'apps/web/src/lib/navigation.ts',
+  'apps/web/src/app/business/register/page.tsx',
+  'apps/web/src/components/business-registration-form.tsx',
+  'apps/web/src/components/business-registration-form.test.tsx',
+  'apps/web/src/components/business-location-picker.tsx',
 ];
 
 let fail = 0;
@@ -118,6 +122,13 @@ for (const helper of ['getPlans', 'checkoutPlan', 'getPaymentHistory', 'getMySub
 const plansView = read('apps/web/src/components/plans-view.tsx');
 for (const marker of ['getTokens', 'redirectTo', '/login?next=/plans', 'checkoutPlan', 'payUrl']) {
   if (!plansView.includes(marker)) { console.error(`WEB: plans view missing ${marker}`); fail++; }
+}
+const businessForm = read('apps/web/src/components/business-registration-form.tsx');
+for (const marker of ['getBusinessCategories()', 'createBusiness({', 'checkoutPlan({ planId: Number(planId), businessId: business.id })', '<BusinessLocationPicker', "plan.tier === 'SILVER'", "plan.tier === 'GOLD'", 'ثبت کسب‌وکار']) {
+  if (!businessForm.includes(marker)) { console.error(`BUSINESS REGISTRATION: missing ${marker}`); fail++; }
+}
+if (!read('apps/web/src/app/business/register/page.tsx').includes('BusinessRegistrationForm')) {
+  console.error('BUSINESS REGISTRATION: route must render BusinessRegistrationForm'); fail++;
 }
 // The subscription entry lives on the golden showcase (the header itself
 // was slimmed down to news + city + submit).

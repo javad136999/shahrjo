@@ -75,12 +75,17 @@
 |---|---|
 | categories | GET `/categories?scope=ad\|business&city=` |
 | ads | GET/POST `/ads`, GET/PATCH/DELETE `/ads/:id`, POST `/ads/:id/submit`, POST `/ads/:id/favorite` |
-| businesses | GET/POST `/businesses`, GET `/businesses/:slug`, PATCH `/businesses/:id`, GET `/businesses/:id/stats` |
-| map | GET `/map/:citySlug?bbox=&kind=` — مارکرهای نقشه (کسب‌وکار + آگهی + مکان‌ها) |
+| businesses | GET `/businesses?city=<slug>&limit=`, GET `/businesses/:id`, POST `/businesses` |
+| business categories | GET `/business-categories` — دسته‌بندی‌های فعال برای فرم ثبت |
+| map | GET `/map?city=<slug>` — مرز شهر + کسب‌وکارهای تأییدشدهٔ دارای مختصات |
 | news | GET `/news?city=`, GET `/news/:slug` |
 | chat | GET `/chat/:citySlug/rooms/:id/messages` + WebSocket برای Real-Time |
 | uploads | POST `/uploads` (multipart) — Storage abstraction؛ POST `/uploads/voice` برای ویس دیوار (فاز ۱۰) |
 | notifications | GET `/notifications`, PATCH `/notifications/:id/read`, POST `/notifications/devices` |
+
+### ثبت کسب‌وکار و خرید اشتراک
+
+`GET /business-categories` عمومی است و فقط دسته‌بندی‌های فعال را برمی‌گرداند. `POST /businesses` به Bearer token نیاز دارد و ورودی آن `{ categoryId, name, description?, phone?, address?, latitude, longitude }` است؛ شهر و مالک از پروفایل احراز‌شده گرفته می‌شوند، نه از بدنهٔ کاربر. کسب‌وکار جدید با وضعیت `PENDING` ساخته می‌شود و محدودیت ثبت روزانه دارد. فرم `/business/register` محل را روی نقشه می‌گیرد، فقط پلن‌های نقره‌ای/طلایی را ارائه می‌کند و سپس `POST /payments/checkout` را با `businessId` صدا می‌زند تا کاربر به زرین‌پال منتقل شود. پرداخت تأییدشده به‌تنهایی کسب‌وکار را عمومی نمی‌کند؛ انتشار نیازمند تأیید مدیر است.
 
 ## Admin (فاز ۸ — پنل مدیریت، RBAC + Scope استان/شهر)
 
@@ -144,7 +149,7 @@ Guard: `PermissionsGuard` (کد permission از `role_permissions`) + Scope
 
 ### UI (ویترین + نقشه)
 
-`/city/[slug]`: پنل «ویترین طلایی» بلافاصله **بالای نقشه** — marquee بی‌نهایت (RTL، `translateX(50%)`، تکرار لیست برای حلقه یکپارچه، توقف با hover/focus، احترام به `prefers-reduced-motion`) با تاج طلایی و CTA اشتراک. نقشه Leaflet + OSM (بدون کلید API): مرز GeoJSON از نوع `Polygon` یا `MultiPolygon` با قاب کامل شهر؛ اگر مرزی ثبت نشده باشد، قاب وسیع شهر از مرکز و پین‌ها ساخته می‌شود؛ پین‌های رنگی per-tier با popup لینک‌دار.
+`/city/[slug]`: نقشهٔ شهر در بالای ویترین قرار می‌گیرد تا زودتر دیده شود و عنوان تکراریِ نقشه حذف شده است. نقشه Leaflet + OSM (بدون کلید API): مرز GeoJSON از نوع `Polygon` یا `MultiPolygon` با قاب کامل شهر؛ اگر مرزی ثبت نشده باشد، قاب شهر از مرکز و پین‌ها ساخته می‌شود؛ پین‌های رنگی per-tier با popup لینک‌دار. پنل «ویترین طلایی» زیر نقشه marquee بی‌نهایت RTL با توقف hover/focus و احترام به `prefers-reduced-motion` است.
 
 ## City Wall (فاز ۸b + فاز ۱۰ — دیوار شهر / چت‌روم)
 
@@ -155,6 +160,7 @@ Guard: `PermissionsGuard` (کد permission از `role_permissions`) + Scope
 | Endpoint | Auth | توضیح |
 |---|---|---|
 | GET `/wall?city=<slug>&limit=&before=` | Login | فید جدیدترین پست‌های شهر + پست پین‌شده جدا؛ شامل `likedByMe`، `canDelete`/`canEdit`/`canPin`، کرسر `nextBefore` و **متای اتاق `room { name, memberCount, messageCount }`** (فاز ۱۰) |
+| GET `/wall/unread?city=<slug>&after=<ISO8601>` | Login | تعداد پست‌های قابل‌نمایش از کاربران دیگر پس از آخرین زمان بازدید دیوار؛ برای badge شهر در نوار پایین |
 | POST `/wall` | Login | پست جدید `{ cityId, content?, replyToId?, imageIds?, voiceMediaId? }` — حداکثر ۱۰ پست در دقیقه (`429`)، پاسخ فقط به پستِ همان شهر، ادعای ۱ تصویر + ۱ ویس (`entityType → WALL`) با rollback کامل در صورت شکست؛ پیام فقط-ویس با `content` خالی مجاز است |
 | PATCH `/wall/:id` | Login | ویرایش متن پیامِ خود کاربر (فقط نویسنده، غیر از آن `403`) — `editedAt` ست می‌شود و UI «ویرایش شد» نشان می‌دهد |
 | POST `/wall/:id/like` | Login | toggle لایک در transaction — برمی‌گرداند `{ liked, likeCount }` |
@@ -181,3 +187,16 @@ Guard: `PermissionsGuard` (کد permission از `role_permissions`) + Scope
 
 - دکمه ✨ **بالای گوشه نقشه** (سمت چپ RTL) → منوی `role=listbox` با دسته‌بندی‌های موجود در پین‌ها؛ انتخاب، فقط پین‌های همان دسته را نگه می‌دارد و نما را refit می‌کند (تک‌پین `setView(...,17)`، چندپین `fitBounds maxZoom 16`). payload نقشه شامل `category.slug` است.
 - ورود: بعد از `verify-otp` بدون پارامتر `next`، کاربر از `/users/me` + `/cities` شهر خودش را می‌گیرد، در `localCity` ذخیره می‌کند و مستقیم به `/city/<slug>` می‌رود.
+
+
+## پیام‌های خصوصی
+
+گفت‌وگوها یک‌به‌یک و فقط برای دو عضو همان گفت‌وگو قابل دسترسی‌اند؛ همهٔ routeها Bearer token می‌خواهند. ارسال پیام به ۲۰ پیام در دقیقه برای هر کاربر محدود است (`429`). صفحهٔ `/messages` صندوق گفتگوها، تعداد پیام‌های خوانده‌نشده و متن گفتگو را نشان می‌دهد؛ بازکردن گفتگو پیام‌های دریافتی را به‌عنوان خوانده‌شده ثبت می‌کند. لینک «پیام خصوصی» در پروفایل عمومی کسب‌وکار به گفت‌وگوی مالک آن کسب‌وکار می‌رود.
+
+| Endpoint | Auth | توضیح |
+|---|---|---|
+| GET `/messages/conversations` | Login | فهرست گفتگوهای کاربر، آخرین پیام و تعداد خوانده‌نشده |
+| POST `/messages/conversations` | Login | آغاز/بازیابی گفت‌وگوی دونفره `{ recipientId }`؛ گفت‌وگو با خود کاربر رد می‌شود |
+| GET `/messages/conversations/:id` | Login | دریافت پیام‌های گفتگو؛ عضویت بررسی و پیام‌های دریافتی خوانده‌شده علامت‌گذاری می‌شوند |
+| POST `/messages/conversations/:id` | Login | ارسال `{ body }` تا ۲۰۰۰ نویسه؛ فقط عضو گفتگو، با محدودیت نرخ |
+| PATCH `/messages/conversations/:id/read` | Login | علامت‌گذاری پیام‌های دریافتی گفتگو به‌عنوان خوانده‌شده |

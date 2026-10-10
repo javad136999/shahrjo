@@ -52,7 +52,7 @@ if (service.includes('cityId: query') || service.includes('where: { id: city')) 
 const appModule = read('apps/api/src/app.module.ts');
 if (!appModule.includes('ContentModule')) { console.error('MISSING ContentModule in AppModule'); fail++; }
 
-// --- Frontend: light home page (welcome + showcase + map); news on its own page ---
+// --- Frontend: light home page (welcome + map + showcase); news on its own page ---
 const page = read('apps/web/src/app/city/[slug]/page.tsx');
 for (const helper of ['getShowcase', 'getCityMap']) {
   if (!page.includes(helper)) { console.error(`WEB: dashboard must load ${helper}`); fail++; }
@@ -68,8 +68,14 @@ for (const marker of ['اخبار شهر', '`/news/${item.slug}`', 'card-grid'])
 }
 
 const dashboard = read('apps/web/src/components/dashboard.tsx');
-for (const marker of ['dash-welcome', 'data-testid="wall-cta"', 'خوش آمدید', 'dash-section__head', 'id="map"', 'icon-tile']) {
+for (const marker of ['dash-welcome', 'data-testid="wall-cta"', 'خوش آمدید', 'dash-map', 'aria-label={`نقشهٔ ${city.name}`}', 'id="map"']) {
   if (!dashboard.includes(marker)) { console.error(`WEB: dashboard missing ${marker}`); fail++; }
+}
+const dashboardMapIdx = dashboard.indexOf('<CityMap');
+const dashboardShowcaseIdx = dashboard.indexOf('<ShowcaseMarquee');
+if (dashboardMapIdx === -1 || dashboardShowcaseIdx === -1 || dashboardMapIdx > dashboardShowcaseIdx) {
+  console.error('WEB: city map must appear before the showcase on the city home page');
+  fail++;
 }
 
 // --- JamCity-style shell: quick pills, bottom nav, icon tiles, section anchors ---
@@ -78,7 +84,7 @@ for (const comp of ['HeaderPills', 'BottomNav']) {
   if (!layout.includes(comp)) { console.error(`WEB: layout must render ${comp}`); fail++; }
 }
 const bottomNav = read('apps/web/src/components/bottom-nav.tsx');
-for (const marker of ['bottom-nav', 'getLocalCity', '/news', '#map']) {
+for (const marker of ['bottom-nav', 'getLocalCity', '/news', '#map', '/wall', '/messages', '/business/register', 'getWallUnread', 'getConversations']) {
   if (!bottomNav.includes(marker)) { console.error(`WEB: bottom nav missing ${marker}`); fail++; }
 }
 // «ثبت آگهی» moved out of the shell into the city-wall composer (Phase 10).

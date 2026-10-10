@@ -36,12 +36,6 @@ export function ShowcaseMarquee({ items, loading }: ShowcaseMarqueeProps) {
           <h2>ویترین طلایی</h2>
           <p>کسب‌وکارهای برتر شهر</p>
         </div>
-        <Link href="/plans" className="pill pill--gold showcase__cta" data-testid="showcase-cta">
-          <span className="showcase__cta-icon" aria-hidden>
-            ✨
-          </span>{' '}
-          معرفی کسب‌وکار من
-        </Link>
       </div>
 
       {loading ? (

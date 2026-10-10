@@ -71,6 +71,20 @@ export interface BusinessItem {
   category: { name: string; slug: string; icon: string | null; color: string | null };
 }
 
+export interface BusinessCategoryOption {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string | null;
+  color: string | null;
+}
+
+export interface CreatedBusiness {
+  id: number;
+  name: string;
+  status: string;
+}
+
 export interface LocalCity {
   id: number;
   slug: string;
@@ -304,6 +318,22 @@ export interface WallFeed {
   room: WallRoom;
 }
 
+export interface DirectConversationSummary {
+  id: number;
+  person: { id: number; name: string; avatarUrl: string | null };
+  lastMessage: { body: string; senderId: number; createdAt: string } | null;
+  unreadCount: number;
+  updatedAt: string;
+}
+
+export interface DirectMessageItem {
+  id: number;
+  senderId: number;
+  body: string;
+  readAt: string | null;
+  createdAt: string;
+}
+
 /** Detail pages (Phase 6). */
 export interface AdDetail {
   id: number;
@@ -340,6 +370,7 @@ export interface NewsDetail {
 
 export interface BusinessDetail {
   id: number;
+  ownerId: number;
   name: string;
   slug: string;
   description: string | null;

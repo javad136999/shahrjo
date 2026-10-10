@@ -7,12 +7,14 @@ import {
   createWallPost,
   deleteWallPost,
   editWallPost,
+  getProfile,
   getWall,
   likeWallPost,
   pinWallPost,
   uploadImage,
   uploadVoice,
 } from '@/lib/api';
+import { markWallRead } from '@/lib/wall-read-state';
 import { formatPrice, thumbFallback, thumbUrlFor, timeAgo } from '@/lib/format';
 import type { WallAdRef, WallFeed, WallPost } from '@/lib/types';
 
@@ -89,6 +91,7 @@ export function WallView({ city }: WallViewProps) {
 
   const feedRef = useRef<HTMLDivElement>(null);
   const newestRef = useRef<number | null>(null);
+  const readerIdRef = useRef<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -96,6 +99,15 @@ export function WallView({ city }: WallViewProps) {
       setFeed(next);
       setGate(false);
       setError(null);
+      try {
+        if (readerIdRef.current === null) {
+          const profile = await getProfile();
+          readerIdRef.current = profile.id;
+        }
+        markWallRead(readerIdRef.current, city.slug);
+      } catch {
+        // Loading the wall must not depend on the optional read-marker request.
+      }
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) setGate(true);
       else setError(err instanceof Error ? err.message : 'دریافت دیوار شهر ناموفق بود');

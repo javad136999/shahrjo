@@ -10,6 +10,16 @@ const mustExist = [
   'prisma/migrations/20261008000000_phase10_wall_chat/migration.sql',
   'apps/web/src/components/wall-view.tsx',
   'apps/web/src/components/wall-view.test.tsx',
+  'apps/api/src/messages/messages.controller.ts',
+  'apps/api/src/messages/messages.dto.ts',
+  'apps/api/src/messages/messages.module.ts',
+  'apps/api/src/messages/messages.service.ts',
+  'apps/api/src/messages/messages.service.spec.ts',
+  'apps/web/src/app/messages/page.tsx',
+  'apps/web/src/components/messages-view.tsx',
+  'apps/web/src/lib/message-read-state.ts',
+  'apps/web/src/lib/wall-read-state.ts',
+  'prisma/migrations/20261009090000_private_messages/migration.sql',
 ];
 
 let fail = 0;
@@ -92,6 +102,35 @@ for (const marker of ['"voice_url"', '"ad_id"', '"edited_at"', 'wall_posts_ad_id
   if (!migration.includes(marker)) { console.error(`MIGRATION: missing ${marker}`); fail++; }
 }
 
+// --- Private messages: participant-only access, read tracking and anti-spam ---
+const messagesController = read('apps/api/src/messages/messages.controller.ts');
+for (const route of ["@Get('conversations')", "@Post('conversations')", "@Get('conversations/:id')", "@Post('conversations/:id')", "@Patch('conversations/:id/read')"]) {
+  if (!messagesController.includes(route)) { console.error(`MESSAGES: missing route ${route}`); fail++; }
+}
+if (messagesController.includes('@Public()')) { console.error('MESSAGES: private-message routes must require login'); fail++; }
+const messagesService = read('apps/api/src/messages/messages.service.ts');
+for (const marker of ['requireMember', 'RateLimiterService', 'MAX_DIRECT_MESSAGES_PER_MINUTE', 'markRead']) {
+  if (!messagesService.includes(marker)) { console.error(`MESSAGES: missing ${marker}`); fail++; }
+}
+const privateMigration = read('prisma/migrations/20261009090000_private_messages/migration.sql');
+for (const marker of ['"direct_conversations"', '"direct_messages"', 'FOREIGN KEY', 'direct_conversations_users_ordered_check']) {
+  if (!privateMigration.includes(marker)) { console.error(`PRIVATE MESSAGE MIGRATION: missing ${marker}`); fail++; }
+}
+const privateSchema = read('prisma/schema.prisma');
+for (const marker of ['model DirectConversation', 'model DirectMessage']) {
+  if (!privateSchema.includes(marker)) { console.error(`PRIVATE MESSAGE SCHEMA: missing ${marker}`); fail++; }
+}
+const messagesView = read('apps/web/src/components/messages-view.tsx');
+for (const marker of ['getConversations', 'getConversationMessages', 'sendDirectMessage', 'notifyPrivateMessagesRead']) {
+  if (!messagesView.includes(marker)) { console.error(`MESSAGES UI: missing ${marker}`); fail++; }
+}
+const messageReadState = read('apps/web/src/lib/message-read-state.ts');
+if (!messageReadState.includes('PRIVATE_MESSAGES_READ_EVENT')) { console.error('MESSAGES UI: read event missing'); fail++; }
+const bottomNavChecks = read('apps/web/src/components/bottom-nav.tsx');
+for (const marker of ['/wall', '/messages', '/business/register', 'getWallUnread', 'getConversations', 'bottom-nav__badge']) {
+  if (!bottomNavChecks.includes(marker)) { console.error(`BOTTOM NAV: missing ${marker}`); fail++; }
+}
+
 // --- Web: the chat room ---
 const wallView = read('apps/web/src/components/wall-view.tsx');
 for (const marker of [
@@ -155,9 +194,9 @@ if (!read('package.json').includes('verify:phase10')) { console.error('ROOT: ver
 const phase10Row = read('docs/architecture.md').split('\n').find((l) => /^\|\s*10\s*\|/.test(l));
 if (!phase10Row || !phase10Row.includes('✅')) { console.error('DOCS: phase 10 must be marked ✅ in docs/architecture.md'); fail++; }
 const apiDoc = read('docs/api.md');
-for (const endpoint of ['PATCH `/wall/:id`', 'POST `/uploads/voice`', 'GET `/wall?city=<slug>&limit=&before=`']) {
+for (const endpoint of ['PATCH `/wall/:id`', 'POST `/uploads/voice`', 'GET `/wall?city=<slug>&limit=&before=`', 'GET `/wall/unread?city=<slug>&after=<ISO8601>`', 'GET `/messages/conversations`']) {
   if (!apiDoc.includes(endpoint)) { console.error(`DOCS: ${endpoint} missing from docs/api.md`); fail++; }
 }
 
 if (fail) { console.error(`\nPhase 10 FAILED (${fail} problem${fail > 1 ? 's' : ''})`); process.exit(1); }
-console.log('Phase 10 OK: Telegram-style wall chat room (voice/edit/ad entry) + daily 2 GOLD / 10 old ad republication, docs/CI in sync');
+console.log('Phase 10 OK: city wall + private inbox (access checks, unread badges, rate limits) + daily ad republication, docs/CI in sync');

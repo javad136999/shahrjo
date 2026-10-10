@@ -629,6 +629,10 @@ a:hover {
   text-align: right;
   scroll-margin-top: 60px;
 }
+.dash-map {
+  margin: 2px 0 18px;
+  scroll-margin-top: 72px;
+}
 .dash-section__head {
   display: flex;
   align-items: center;
@@ -1164,6 +1168,10 @@ a.my-ads__item:hover {
   bottom: 0;
   z-index: 20;
   display: flex;
+  justify-content: flex-start;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
   background: rgb(255 255 255 / 92%);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -1171,14 +1179,21 @@ a.my-ads__item:hover {
   padding-bottom: env(safe-area-inset-bottom);
   box-shadow: 0 -10px 26px -18px rgb(21 59 45 / 50%);
 }
+.bottom-nav::-webkit-scrollbar {
+  display: none;
+}
 .bottom-nav__item {
-  flex: 1;
+  flex: 0 0 64px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  padding: 9px 4px 8px;
-  font-size: 11px;
+  padding: 9px 2px 8px;
+  font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
   font-weight: 800;
   color: var(--muted);
   transition: color 0.15s;
@@ -1187,11 +1202,35 @@ a.my-ads__item:hover {
   text-decoration: none;
 }
 .bottom-nav__icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 19px;
   line-height: 1;
   opacity: 0.8;
   filter: grayscale(0.3);
   transition: transform 0.15s, filter 0.15s;
+}
+.bottom-nav__badge {
+  position: absolute;
+  top: -8px;
+  inset-inline-start: -10px;
+  z-index: 2;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #d92d45;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
 }
 .bottom-nav__item.is-active {
   color: var(--brand-dark);

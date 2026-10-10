@@ -1,5 +1,7 @@
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
-import { Public } from '../common/decorators';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import type { User } from '@prisma/client';
+import { CurrentUser, Public } from '../common/decorators';
+import { CreateBusinessDto } from './business.dto';
 import { CityContentQueryDto } from './content.dto';
 import { ContentService } from './content.service';
 
@@ -26,6 +28,19 @@ export class ContentController {
   @Get('businesses')
   businesses(@Query() query: CityContentQueryDto): ReturnType<ContentService['businesses']> {
     return this.content.businesses(query.city, query.limit);
+  }
+
+  /** Active business categories for the registration form. */
+  @Public()
+  @Get('business-categories')
+  businessCategories(): ReturnType<ContentService['businessCategories']> {
+    return this.content.businessCategories();
+  }
+
+  /** Create a pending business in the authenticated user's selected city. */
+  @Post('businesses')
+  createBusiness(@CurrentUser() user: User, @Body() dto: CreateBusinessDto): ReturnType<ContentService['createBusiness']> {
+    return this.content.createBusiness(user, dto);
   }
 
   /** Golden showcase: paid-tier businesses for the animated marquee (Phase 9). */

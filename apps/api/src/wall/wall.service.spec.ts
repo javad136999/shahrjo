@@ -55,6 +55,27 @@ const basePost = {
   replyTo: null,
 };
 
+describe('WallService.unreadCount', () => {
+  it('counts only visible posts from other users after the last visit', async () => {
+    const { service, prisma } = makeService(null);
+    prisma.wallPost.count.mockResolvedValue(3);
+
+    await expect(service.unreadCount(user, 'jam', '2026-10-09T08:00:00.000Z')).resolves.toEqual({ count: 3 });
+    expect(prisma.wallPost.count.mock.calls[0][0].where).toMatchObject({
+      cityId: 1,
+      userId: { not: user.id },
+      createdAt: { gt: new Date('2026-10-09T08:00:00.000Z') },
+      OR: [{ adId: null }, { ad: { is: { status: { in: ['PENDING', 'APPROVED'] } } } }],
+    });
+  });
+
+  it('returns zero before a last-visit marker exists', async () => {
+    const { service, prisma } = makeService(null);
+    await expect(service.unreadCount(user, 'jam')).resolves.toEqual({ count: 0 });
+    expect(prisma.wallPost.count).not.toHaveBeenCalled();
+  });
+});
+
 describe('WallService.list', () => {
   it('404s unknown/inactive cities', async () => {
     const { service, prisma } = makeService(null);

@@ -107,12 +107,12 @@ if (!migration.includes('ADD COLUMN') || !migration.includes('boundary')) {
 const seed = read('prisma/seed/index.ts');
 if (!seed.includes("'storage.manage'")) { console.error('SEED: storage.manage permission missing'); fail++; }
 
-// --- Web: marquee sits above the map, no hard-coded cities ---
+// --- Web: map is pulled up above the marquee, no hard-coded cities ---
 const dashboard = read('apps/web/src/components/dashboard.tsx');
 const marqueeIdx = dashboard.indexOf('<ShowcaseMarquee');
 const mapIdx = dashboard.indexOf('<CityMap');
-if (marqueeIdx === -1 || mapIdx === -1 || marqueeIdx > mapIdx) {
-  console.error('WEB: golden showcase must be rendered above the city map');
+if (marqueeIdx === -1 || mapIdx === -1 || mapIdx > marqueeIdx) {
+  console.error('WEB: city map must be rendered above the golden showcase');
   fail++;
 }
 const marquee = read('apps/web/src/components/showcase-marquee.tsx');
@@ -164,4 +164,4 @@ for (const endpoint of ['GET `/showcase?city=<slug>&limit=`', 'GET `/map?city=<s
 }
 
 if (fail) { console.error(`\nPhase 9 FAILED (${fail} problem${fail > 1 ? 's' : ''})`); process.exit(1); }
-console.log('Phase 9 OK: golden showcase marquee above the boundary map, pinned approved businesses, per-user storage quota + sweep, docs/CI in sync');
+console.log('Phase 9 OK: boundary map above the golden showcase, pinned approved businesses, per-user storage quota + sweep, docs/CI in sync');

@@ -67,7 +67,6 @@ describe('CityDashboard', () => {
   it('greets the visitor with the city name only (no action pills)', () => {
     renderDashboard();
     expect(screen.getByRole('heading', { level: 1, name: 'به شهر شهر نمونه خوش آمدید' })).toBeInTheDocument();
-    // the old header actions (subscription / submit / change city) are gone
     expect(screen.queryByRole('link', { name: /تغییر شهر/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /ثبت آگهی/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /اشتراک ویژه/ })).not.toBeInTheDocument();
@@ -83,7 +82,6 @@ describe('CityDashboard', () => {
 
   it('keeps news, ads and businesses off the home page', () => {
     renderDashboard();
-    // no feed sections, no stat tiles — they live on their own pages now
     expect(screen.queryByRole('heading', { name: 'اخبار شهر' })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'آگهی‌ها' })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'کسب‌وکارها' })).not.toBeInTheDocument();
@@ -91,17 +89,18 @@ describe('CityDashboard', () => {
     expect(screen.queryByTestId('stat-خبر')).not.toBeInTheDocument();
   });
 
-  it('skips the map section until map data (or loading) arrives', () => {
+  it('skips the map section until map data (or loading) arrives, without a redundant title', () => {
     renderDashboard();
-    expect(screen.queryByRole('heading', { name: 'نقشه شهر' })).not.toBeInTheDocument();
-    renderDashboard({ loading: true });
-    expect(screen.getByRole('heading', { name: 'نقشه شهر' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'نقشهٔ شهر نمونه' })).not.toBeInTheDocument();
+    const view = renderDashboard({ loading: true });
+    expect(screen.getByRole('region', { name: 'نقشهٔ شهر نمونه' })).toBeInTheDocument();
+    expect(screen.getByText('در حال بارگذاری نقشه…')).toBeInTheDocument();
+    view.unmount();
   });
 
   it('shows loading placeholders while fetching', () => {
     renderDashboard({ loading: true });
-    // the map section keeps its placeholder; the showcase has its own copy
-    expect(screen.getAllByText('در حال بارگذاری…')).toHaveLength(1);
+    expect(screen.getByText('در حال بارگذاری نقشه…')).toBeInTheDocument();
     expect(screen.getByText('در حال بارگذاری ویترین…')).toBeInTheDocument();
   });
 
@@ -110,32 +109,30 @@ describe('CityDashboard', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('دریافت محتوای شهر ناموفق بود');
   });
 
-  it('renders the golden showcase panel with its CTA (Phase 9)', () => {
+  it('renders the golden showcase panel without a duplicate business-registration CTA', () => {
     renderDashboard({ showcase });
     const panel = screen.getByTestId('showcase');
     expect(panel).toHaveTextContent('ویترین طلایی');
     expect(screen.getByTestId('showcase-40')).toHaveTextContent('رستوران ویترین');
-    expect(screen.getByTestId('showcase-cta')).toHaveAttribute('href', '/plans');
+    expect(screen.queryByTestId('showcase-cta')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /معرفی کسب‌وکار من/ })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'رستوران ویترین' })).toHaveAttribute('href', '/business/40');
-    // the list is rendered twice for the seamless loop; the copy is aria-hidden
     const hidden = panel.querySelectorAll('[aria-hidden="true"]');
     expect(hidden.length).toBeGreaterThan(0);
   });
 
-  it('shows the showcase CTA when the city has no paid businesses', () => {
+  it('shows the plan CTA when the city has no paid businesses', () => {
     renderDashboard();
     expect(screen.getByTestId('showcase-empty')).toHaveTextContent('هنوز کسب‌وکار طلایی‌ای در این شهر ثبت نشده');
+    expect(screen.getByRole('link', { name: /مشاهده اشتراک‌ها/ })).toHaveAttribute('href', '/plans');
   });
 
-  it('renders the golden showcase above the city map with its pins count', () => {
+  it('renders the map before the showcase so it appears higher on the city page', () => {
     renderDashboard({ mapData, showcase });
-    expect(screen.getByTestId('city-map')).toHaveAttribute('data-pins', '1');
-    expect(screen.getByRole('heading', { name: 'نقشه شهر' })).toBeInTheDocument();
-    expect(screen.getByText('۱ مکان')).toBeInTheDocument();
-    // showcase sits directly above the map section
+    const map = screen.getByTestId('city-map');
+    expect(map).toHaveAttribute('data-pins', '1');
+    expect(screen.queryByRole('heading', { name: 'نقشه شهر' })).not.toBeInTheDocument();
     const showcaseEl = screen.getByTestId('showcase');
-    const mapHeading = screen.getByRole('heading', { name: 'نقشه شهر' });
-    const section = mapHeading.closest('.dash-section') as HTMLElement;
-    expect(showcaseEl.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(map.compareDocumentPosition(showcaseEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

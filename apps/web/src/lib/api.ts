@@ -5,11 +5,15 @@ import type {
   AdItem,
   AdDetail,
   AdminOverview,
+  BusinessCategoryOption,
   BusinessDetail,
   BusinessItem,
+  CreatedBusiness,
   CheckoutSession,
   CityMapData,
   CreatedAd,
+  DirectConversationSummary,
+  DirectMessageItem,
   LocalCity,
   MeResponse,
   MyAdItem,
@@ -224,6 +228,20 @@ export async function uploadImage(file: File): Promise<UploadedImage> {
 export async function getProfile(): Promise<MeResponse> {
   return api.get<MeResponse>('/users/me');
 }
+export async function getBusinessCategories(): Promise<BusinessCategoryOption[]> {
+  return api.get<BusinessCategoryOption[]>('/business-categories');
+}
+export async function createBusiness(body: {
+  categoryId: number;
+  name: string;
+  description?: string;
+  phone?: string;
+  address?: string;
+  latitude: number;
+  longitude: number;
+}): Promise<CreatedBusiness> {
+  return api.post<CreatedBusiness>('/businesses', body);
+}
 
 // ---------- detail pages (Phase 6) ----------
 
@@ -351,6 +369,27 @@ export async function getCityBusinesses(slug: string, limit = 8): Promise<Busine
 export async function getWall(citySlug: string, before?: string): Promise<WallFeed> {
   const cursor = before ? `&before=${encodeURIComponent(before)}` : '';
   return api.get<WallFeed>(`/wall?city=${encodeURIComponent(citySlug)}${cursor}`);
+}
+export async function getWallUnread(citySlug: string, after?: string): Promise<{ count: number }> {
+  const cursor = after ? `&after=${encodeURIComponent(after)}` : '';
+  return api.get<{ count: number }>(`/wall/unread?city=${encodeURIComponent(citySlug)}${cursor}`);
+}
+
+// ---------- private messages ----------
+export async function getConversations(): Promise<DirectConversationSummary[]> {
+  return api.get<DirectConversationSummary[]>('/messages/conversations');
+}
+export async function startConversation(recipientId: number): Promise<{ id: number }> {
+  return api.post<{ id: number }>('/messages/conversations', { recipientId });
+}
+export async function getConversationMessages(id: number): Promise<DirectMessageItem[]> {
+  return api.get<DirectMessageItem[]>(`/messages/conversations/${id}`);
+}
+export async function sendDirectMessage(id: number, body: string): Promise<DirectMessageItem> {
+  return api.post<DirectMessageItem>(`/messages/conversations/${id}`, { body });
+}
+export async function markConversationRead(id: number): Promise<{ updated: number }> {
+  return api.patch<{ updated: number }>(`/messages/conversations/${id}/read`);
 }
 
 export async function createWallPost(body: {

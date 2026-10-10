@@ -4,7 +4,7 @@ import { CurrentUser, RequirePermissions } from '../common/decorators';
 // Value import on purpose: `import type` would erase the classes and
 // emit `Function` in design:paramtypes, so ValidationPipe would reject
 // every declared property as unknown.
-import { CreateWallPostDto, EditWallPostDto, PinWallPostDto, WallListQueryDto } from './wall.dto';
+import { CreateWallPostDto, EditWallPostDto, PinWallPostDto, WallListQueryDto, WallUnreadQueryDto } from './wall.dto';
 import { WallService } from './wall.service';
 
 /**
@@ -14,6 +14,12 @@ import { WallService } from './wall.service';
 @Controller('wall')
 export class WallController {
   constructor(private readonly wall: WallService) {}
+
+  /** Visible messages since the user's last visit, excluding their own posts. */
+  @Get('unread')
+  unread(@CurrentUser() user: User, @Query() query: WallUnreadQueryDto) {
+    return this.wall.unreadCount(user, query.city, query.after);
+  }
 
   /** Newest-first feed of one city + its pinned post. */
   @Get()

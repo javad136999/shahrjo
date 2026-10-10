@@ -6,7 +6,8 @@ function makeService() {
     city: { findFirst: jest.fn() },
     news: { findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     ad: { findMany: jest.fn() },
-    business: { findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
+    businessCategory: { findMany: jest.fn(), findFirst: jest.fn() },
+    business: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn(), count: jest.fn(), update: jest.fn() },
   };
   const service = new ContentService(prisma as unknown as PrismaService);
   return { service, prisma };
@@ -55,6 +56,7 @@ describe('ContentService.businessDetail', () => {
     const { service, prisma } = makeService();
     prisma.business.findFirst.mockResolvedValue({
       id: 30,
+      ownerId: 12,
       name: 'کسب‌وکار نمونه',
       slug: 'sample-business',
       description: null,
@@ -84,6 +86,7 @@ describe('ContentService.businessDetail', () => {
     });
     expect(prisma.business.update.mock.calls[0][0].data).toEqual({ viewCount: { increment: 1 } });
     expect(detail.viewCount).toBe(10);
+    expect(detail.ownerId).toBe(12);
     expect(detail.subscriptionTier).toBe('GOLD');
     expect(detail.category.icon).toBe('🍽️');
   });

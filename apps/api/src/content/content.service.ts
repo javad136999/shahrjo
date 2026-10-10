@@ -1,7 +1,25 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import type { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateBusinessDto } from './business.dto';
 
 export const DEFAULT_CONTENT_LIMIT = 12;
+const MAX_BUSINESSES_PER_DAY = 5;
+
+export interface BusinessCategoryItem {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string | null;
+  color: string | null;
+}
+
+export interface CreatedBusiness {
+  id: number;
+  name: string;
+  status: string;
+}
 
 export interface NewsItem {
   id: number;
@@ -79,6 +97,7 @@ export interface NewsDetail extends NewsItem {
 
 export interface BusinessDetail {
   id: number;
+  ownerId: number;
   name: string;
   slug: string;
   description: string | null;
@@ -107,6 +126,57 @@ export interface BusinessDetail {
 @Injectable()
 export class ContentService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** Active business categories available to the registration form. */
+  async businessCategories(): Promise<BusinessCategoryItem[]> {
+    return this.prisma.businessCategory.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      select: { id: true, name: true, slug: true, icon: true, color: true },
+    });
+  }
+
+  /** Create a pending business; city and owner are never trusted from the client. */
+  async createBusiness(user: User, dto: CreateBusinessDto): Promise<CreatedBusiness> {
+    if (!user.cityId) throw new BadRequestException('ابتدا شهر خودت را انتخاب کن');
+
+    const city = await this.prisma.city.findFirst({
+      where: { id: user.cityId, isActive: true, province: { isActive: true } },
+      select: { id: true },
+    });
+    if (!city) throw new NotFoundException('شهر انتخاب‌شده یافت نشد');
+
+    const category = await this.prisma.businessCategory.findFirst({
+      where: { id: dto.categoryId, isActive: true },
+      select: { id: true },
+    });
+    if (!category) throw new NotFoundException('دسته‌بندی کسب‌وکار یافت نشد');
+
+    const dayAgo = new Date(Date.now() - 86_400_000);
+    const recent = await this.prisma.business.count({
+      where: { ownerId: user.id, createdAt: { gte: dayAgo } },
+    });
+    if (recent >= MAX_BUSINESSES_PER_DAY) {
+      throw new HttpException('سقف ثبت کسب‌وکار روزانه پر شده است؛ فردا دوباره تلاش کنید', HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    return this.prisma.business.create({
+      data: {
+        cityId: city.id,
+        ownerId: user.id,
+        categoryId: category.id,
+        name: dto.name,
+        slug: `business-${city.id}-${randomUUID().replace(/-/g, '').slice(0, 16)}`,
+        description: dto.description || null,
+        phone: dto.phone || null,
+        address: dto.address || null,
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        status: 'PENDING',
+      },
+      select: { id: true, name: true, status: true },
+    });
+  }
 
   /** slug -> id, only for active cities of active provinces (404 otherwise). */
   private async resolveCity(slug: string): Promise<number> {
@@ -296,6 +366,7 @@ export class ContentService {
       where: { id, status: 'APPROVED' },
       select: {
         id: true,
+        ownerId: true,
         name: true,
         slug: true,
         description: true,

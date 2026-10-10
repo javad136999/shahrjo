@@ -21,6 +21,18 @@ export class WallListQueryDto {
   before?: string;
 }
 
+/** GET /wall/unread — posts after the viewer's last visit. */
+export class WallUnreadQueryDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
+  city!: string;
+
+  @IsOptional()
+  @IsISO8601()
+  after?: string;
+}
+
 /** POST /wall — publish a post (optionally replying + one image + one voice note). */
 export class CreateWallPostDto {
   @Type(() => Number)

@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { CitiesModule } from './cities/cities.module';
 import { ContentModule } from './content/content.module';
 import { HealthController } from './health/health.controller';
+import { MessagesModule } from './messages/messages.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RbacModule } from './rbac/rbac.module';
@@ -33,6 +34,7 @@ import { WallModule } from './wall/wall.module';
     PaymentsModule,
     AdminModule,
     WallModule,
+    MessagesModule,
     AnalyticsModule,
   ],
   controllers: [HealthController],

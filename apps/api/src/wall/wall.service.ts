@@ -103,6 +103,25 @@ export class WallService {
     return city;
   }
 
+  /** Count other members' visible posts since the supplied last-read timestamp. */
+  async unreadCount(user: User, citySlug: string, after?: string): Promise<{ count: number }> {
+    const city = await this.resolveCity(citySlug);
+    if (!after) return { count: 0 };
+    const visibleAdStatuses: ('PENDING' | 'APPROVED')[] = ['PENDING', 'APPROVED'];
+    const count = await this.prisma.wallPost.count({
+      where: {
+        cityId: city.id,
+        userId: { not: user.id },
+        createdAt: { gt: new Date(after) },
+        OR: [
+          { adId: null },
+          { ad: { is: { status: { in: visibleAdStatuses } } } },
+        ],
+      },
+    });
+    return { count };
+  }
+
   private async scopeOf(userId: number): Promise<AdminScope | null> {
     return this.rbac.getScope(userId);
   }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ApiError, getBusinessDetail } from '@/lib/api';
+import { ApiError, getBusinessDetail, getProfile, getTokens } from '@/lib/api';
 import { formatDate, formatRating } from '@/lib/format';
 import type { BusinessDetail as BusinessDetailData } from '@/lib/types';
 
@@ -53,7 +53,12 @@ function readSocials(socialLinks: unknown): { label: string; href: string | null
 /** Single business profile (Phase 6). */
 export function BusinessDetail({ id }: { id: number }) {
   const [detail, setDetail] = useState<BusinessDetailData | null | undefined>(undefined);
+  const [viewerId, setViewerId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (getTokens()) getProfile().then((profile) => setViewerId(profile.id)).catch(() => setViewerId(null));
+  }, []);
 
   useEffect(() => {
     if (!Number.isInteger(id) || id < 1) {
@@ -96,6 +101,8 @@ export function BusinessDetail({ id }: { id: number }) {
 
   const hours = readHours(detail.workingHours);
   const socials = readSocials(detail.socialLinks);
+  const next = `/messages?to=${detail.ownerId}`;
+  const messageHref = getTokens() ? next : `/login?next=${encodeURIComponent(next)}`;
 
   return (
     <div className="detail-page">
@@ -182,6 +189,14 @@ export function BusinessDetail({ id }: { id: number }) {
                 </span>
               ),
             )}
+          </div>
+        )}
+
+        {viewerId !== detail.ownerId && (
+          <div className="detail-actions">
+            <Link href={messageHref} className="btn btn-primary" data-testid="business-private-message">
+              💬 پیام خصوصی به کسب‌وکار
+            </Link>
           </div>
         )}
       </article>
