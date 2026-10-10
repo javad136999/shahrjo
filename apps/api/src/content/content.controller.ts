@@ -18,7 +18,7 @@ export class ContentController {
   @Public()
   @Get('ads')
   ads(@Query() query: CityContentQueryDto): ReturnType<ContentService['ads']> {
-    return this.content.ads(query.city, query.limit);
+    return this.content.ads(query.city, query.limit, query.category);
   }
 
   /** Approved businesses of one city (showcase order). */

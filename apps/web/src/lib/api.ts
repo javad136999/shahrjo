@@ -338,8 +338,9 @@ export async function getCityNews(slug: string, limit = 6): Promise<NewsItem[]> 
   return api.get<NewsItem[]>(`/news?${cityQS(slug, limit)}`);
 }
 
-export async function getCityAds(slug: string, limit = 8): Promise<AdItem[]> {
-  return api.get<AdItem[]>(`/ads?${cityQS(slug, limit)}`);
+export async function getCityAds(slug: string, limit = 8, category?: string): Promise<AdItem[]> {
+  const cat = category ? `&category=${encodeURIComponent(category)}` : '';
+  return api.get<AdItem[]>(`/ads?${cityQS(slug, limit)}${cat}`);
 }
 
 export async function getCityBusinesses(slug: string, limit = 8): Promise<BusinessItem[]> {

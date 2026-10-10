@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   ApiError,
   createWallPost,
   deleteWallPost,
   editWallPost,
+  getAdCategories,
   getWall,
   likeWallPost,
   pinWallPost,
@@ -14,7 +15,7 @@ import {
   uploadVoice,
 } from '@/lib/api';
 import { formatPrice, thumbFallback, thumbUrlFor, timeAgo } from '@/lib/format';
-import type { WallAdRef, WallFeed, WallPost } from '@/lib/types';
+import type { AdCategoryOption, WallAdRef, WallFeed, WallPost } from '@/lib/types';
 
 export interface WallViewProps {
   city: { id: number; slug: string; name: string };
@@ -75,7 +76,11 @@ export function WallView({ city }: WallViewProps) {
   const [editing, setEditing] = useState<{ id: number; text: string } | null>(null);
   const [sending, setSending] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
+  // Category shortcuts in the room header: املاک، خودرو + ۴ دسته مهم (server order).
+  const [cats, setCats] = useState<AdCategoryOption[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const pagingRef = useRef(false);
+  const restoreRef = useRef<number | null>(null);
 
   // voice recording (Phase 10)
   const [recording, setRecording] = useState(false);
@@ -107,6 +112,31 @@ export function WallView({ city }: WallViewProps) {
     setGate(false);
     void load();
   }, [load]);
+
+  // category shortcuts (first six by server sortOrder — real data, not code)
+  useEffect(() => {
+    let alive = true;
+    getAdCategories()
+      .then((all) => {
+        if (alive) setCats(all.slice(0, 6));
+      })
+      .catch(() => {
+        if (alive) setCats([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // keep the reading position when older pages are prepended above
+  useLayoutEffect(() => {
+    const keep = restoreRef.current;
+    const el = feedRef.current;
+    if (keep !== null && el) {
+      el.scrollTop = el.scrollHeight - keep;
+      restoreRef.current = null;
+    }
+  }, [feed]);
 
   // polling — cheap live delivery for the chat room (no WebSocket needed)
   useEffect(() => {
@@ -296,20 +326,33 @@ export function WallView({ city }: WallViewProps) {
   };
 
   const loadOlder = async () => {
-    if (!feed?.nextBefore || loadingOlder) return;
+    if (!feed?.nextBefore || pagingRef.current) return;
+    pagingRef.current = true;
     setLoadingOlder(true);
     try {
       const older = await getWall(city.slug, feed.nextBefore);
+      // distance-from-bottom stays constant while the page grows upward
+      const el = feedRef.current;
+      restoreRef.current = el ? el.scrollHeight - el.scrollTop : null;
       setFeed({
         ...feed,
         posts: [...feed.posts, ...older.posts],
         nextBefore: older.nextBefore,
       });
     } catch {
+      restoreRef.current = null;
       setError('دریافت پیام‌های قدیمی‌تر ناموفق بود');
     } finally {
       setLoadingOlder(false);
+      pagingRef.current = false;
     }
+  };
+
+  /** Scrolling to the top of the room loads the previous page (infinite chat history). */
+  const onFeedScroll = () => {
+    const el = feedRef.current;
+    if (!el || !feed?.nextBefore || pagingRef.current) return;
+    if (el.scrollTop < 80) void loadOlder();
   };
 
   if (gate) {
@@ -527,14 +570,20 @@ export function WallView({ city }: WallViewProps) {
             {feed.room.messageCount.toLocaleString('fa-IR')} پیام
           </small>
         </div>
-        <div className="wall-room__actions">
-          <Link href={`/city/${city.slug}`} className="pill" data-testid="wall-back-city">
-            🏙 شهر
-          </Link>
-          <Link href="/" className="pill" data-testid="wall-change-city">
-            🔄 تغییر شهر
-          </Link>
-        </div>
+        <nav className="wall-cats" aria-label="دسته‌بندی آگهی‌ها" data-testid="wall-cats">
+          {cats.map((c) => (
+            <Link
+              key={c.slug}
+              href={`/ads?category=${encodeURIComponent(c.slug)}`}
+              className="wall-cat"
+              data-testid={`wall-cat-${c.slug}`}
+              title={`آگهی‌های ${c.name}`}
+            >
+              <span aria-hidden>{c.icon ?? '◆'}</span>
+              <small>{c.name}</small>
+            </Link>
+          ))}
+        </nav>
       </header>
 
       {error && (
@@ -560,7 +609,7 @@ export function WallView({ city }: WallViewProps) {
         </button>
       )}
 
-      <div className="wall-feed" ref={feedRef} role="log" aria-live="polite">
+      <div className="wall-feed" ref={feedRef} role="log" aria-live="polite" onScroll={onFeedScroll}>
         {ordered.length === 0 ? (
           <p className="empty-state">هنوز پیامی در دیوار شهر نیست — اولین نفر باشید.</p>
         ) : (
@@ -608,7 +657,7 @@ export function WallView({ city }: WallViewProps) {
 
         <textarea
           className="wall-composer__input"
-          rows={2}
+          rows={1}
           maxLength={1000}
           placeholder={`چیزی بنویسید برای شهر ${city.name}…`}
           aria-label="متن پیام"
