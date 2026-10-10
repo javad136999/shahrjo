@@ -1,5 +1,5 @@
 'use client';
-
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ApiError, api, sendOtp, setLocalCity, verifyOtp } from '@/lib/api';
@@ -108,6 +108,12 @@ export function LoginForm() {
         <form onSubmit={submitPhone} noValidate>
           <h1>ورود به شهرجو</h1>
           <p className="muted">شماره موبایل خود را وارد کنید؛ کد تأیید پیامک می‌شود.</p>
+          <p className="legal-inline-links">
+            برای آگاهی:{' '}
+            <Link href="/terms">شرایط استفاده</Link>
+            <span aria-hidden="true"> · </span>
+            <Link href="/privacy">حریم خصوصی</Link>
+          </p>
           <label htmlFor="phone">شماره موبایل</label>
           <input
             id="phone"

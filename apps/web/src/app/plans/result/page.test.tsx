@@ -36,5 +36,8 @@ describe('PaymentResultPage', () => {
     const card = screen.getByTestId('payment-result');
     expect(card).toHaveAttribute('data-status', 'FAILED');
     expect(card).toHaveTextContent('پرداخت ناموفق بود');
+    // no unbacked refund deadline may be promised on the public result page
+    expect(card.textContent).not.toMatch(/۷۲\s*ساعت/);
+    expect(card).toHaveTextContent('اشتراکی فعال نشد');
   });
 });

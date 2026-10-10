@@ -1,11 +1,16 @@
-# ShahrJo CI - runs on every push / PR:
+# ShahrJo CI - runs on PRs targeting main and pushes to main:
 #   1) checks:    structure check + prisma validate + typecheck + tests (when present)
 #   2) database:  migrations + seed against a clean PostgreSQL 17
 name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -65,7 +70,7 @@ jobs:
       - name: Phase 9 checks (golden showcase + city map + storage quota)
         run: pnpm verify:phase9
 
-      - name: Phase 10 checks (wall chat room + daily ad republication)
+      - name: Phase 10 checks (wall, private messages + daily ad republication)
         run: pnpm verify:phase10
 
       - name: Typecheck all workspaces
@@ -79,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:17-alpine
+        image: public.ecr.aws/docker/library/postgres:17-alpine
         env:
           POSTGRES_USER: shahrjo
           POSTGRES_PASSWORD: ci_strong_password
@@ -88,7 +93,7 @@ jobs:
           - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
       redis:
-        image: redis:7-alpine
+        image: public.ecr.aws/docker/library/redis:7-alpine
         ports:
           - 6379:6379
         options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5

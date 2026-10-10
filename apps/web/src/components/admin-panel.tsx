@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { SITE_CONTACT } from '@/lib/site-contact';
 import { useRouter } from 'next/navigation';
 import {
   ApiError,
@@ -176,7 +177,7 @@ export function AdminPanel() {
             🔒
           </div>
           <h1>دسترسی ندارید</h1>
-          <p>این بخش فقط برای مدیران شهرجو است. اگر فکر می‌کنید این اشتباه است، با پشتیبانی تماس بگیرید.</p>
+          <p>این بخش فقط برای مدیران شهرجو است. اگر فکر می‌کنید این اشتباه است، با <a href={SITE_CONTACT.phoneHref} dir="ltr" className="support-tel">پشتیبانی</a> تماس بگیرید.</p>
           <div className="result-card__actions">
             <Link href="/" className="btn btn-primary">
               صفحه اصلی

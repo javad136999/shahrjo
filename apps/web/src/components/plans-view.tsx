@@ -195,6 +195,12 @@ export function PlansView() {
         <p>
           کسب‌وکار داری؟ <Link href="/profile">از پروفایل</Link> اشتراک را به کسب‌وکارت متصل کن.
         </p>
+      <p className="legal-inline-links">
+        پیش از خرید:{' '}
+        <Link href="/terms">شرایط استفاده</Link>
+        <span aria-hidden="true"> · </span>
+        <Link href="/privacy">حریم خصوصی</Link>
+      </p>
       </section>
     </div>
   );
