@@ -65,10 +65,50 @@ function esc(s: string): string {
     .replace(/'/g, '&#39;');
 }
 
+
+type LatLngBox = [[number, number], [number, number]];
+
+/** An urban-scale view never shows less than ~4.5 km, however small the box. */
+const MIN_HALF_LAT = 0.02;
+const MIN_HALF_LNG = 0.025;
+/** Widest zoom we ever force: a town/city overview, never a single street. */
+const URBAN_MAX_ZOOM = 14;
+const FILTER_MAX_ZOOM = 15;
+
+function growBox(box: LatLngBox, lat: number, lng: number): LatLngBox {
+  return [
+    [Math.min(box[0][0], lat), Math.min(box[0][1], lng)],
+    [Math.max(box[1][0], lat), Math.max(box[1][1], lng)],
+  ];
+}
+
+/** Pad a box (about its centre) so it spans at least the minimum urban extent. */
+function withMinSpan(box: LatLngBox): LatLngBox {
+  const cLat = (box[0][0] + box[1][0]) / 2;
+  const cLng = (box[0][1] + box[1][1]) / 2;
+  const halfLat = Math.max((box[1][0] - box[0][0]) / 2, MIN_HALF_LAT);
+  const halfLng = Math.max((box[1][1] - box[0][1]) / 2, MIN_HALF_LNG);
+  return [
+    [cLat - halfLat, cLng - halfLng],
+    [cLat + halfLat, cLng + halfLng],
+  ];
+}
+
+function boxOfPoints(points: [number, number][]): LatLngBox | null {
+  if (points.length === 0) return null;
+  let box: LatLngBox = [
+    [points[0][0], points[0][1]],
+    [points[0][0], points[0][1]],
+  ];
+  for (const [lat, lng] of points) box = growBox(box, lat, lng);
+  return box;
+}
+
 /**
  * City map (Phase 9 + JamCity restyle): Leaflet + OSM tiles (no API key).
- * The view frames the whole city (Polygon/MultiPolygon boundary when present,
- * otherwise a broad frame around the city center and any pins).
+ * The view frames the urban area (Polygon/MultiPolygon boundary when present,
+ * otherwise a town-sized window around the city center stretched to any pins);
+ * it never zooms past street-overview level, even for a single business.
  * Every pin carries its category emoji; zooming in past level 15 reveals the
  * business name above the pin. Above the canvas sits the JamCity category bar
  * (top-right): picking a category shows only that category's pins and re-zooms
@@ -139,8 +179,9 @@ export function CityMap({ data }: CityMapProps) {
       // bounds of the admin outline, computed before the map exists
       const outline = boundary ? boundsOfBoundary(boundary) : null;
 
-      // stay inside the city — no endless empty countryside
-      const maxBounds: [[number, number], [number, number]] | undefined = outline
+      // stay inside the city — no endless empty countryside (but every pin stays reachable)
+      const pinPoints = businesses.map((b) => [b.latitude, b.longitude] as [number, number]);
+      const baseBox: LatLngBox | undefined = outline
         ? [
             [outline[0][0] - 0.1, outline[0][1] - 0.1],
             [outline[1][0] + 0.1, outline[1][1] + 0.1],
@@ -151,6 +192,11 @@ export function CityMap({ data }: CityMapProps) {
               [center[0] + 0.4, center[1] + 0.4],
             ]
           : undefined;
+      let maxBounds: LatLngBox | undefined = baseBox;
+      for (const [lat, lng] of pinPoints) {
+        if (maxBounds) maxBounds = growBox(maxBounds, lat - 0.1, lng - 0.1);
+        if (maxBounds) maxBounds = growBox(maxBounds, lat + 0.1, lng + 0.1);
+      }
 
       map = L.map(holder.current, {
         scrollWheelZoom: false,
@@ -172,10 +218,8 @@ export function CityMap({ data }: CityMapProps) {
         dashArray: '6 5',
       } as const;
 
-      let outlineBounds: import('leaflet').LatLngBounds | null = null;
       if (boundary) {
-        const drawn = L.geoJSON(boundary as unknown as GeoJSON.Polygon | GeoJSON.MultiPolygon, { style }).addTo(map);
-        if (drawn.getBounds().isValid()) outlineBounds = drawn.getBounds();
+        L.geoJSON(boundary as unknown as GeoJSON.Polygon | GeoJSON.MultiPolygon, { style }).addTo(map);
       }
       // no boundary → no outline; fit logic below uses a broad city-level frame
 
@@ -210,38 +254,49 @@ export function CityMap({ data }: CityMapProps) {
       map.on('zoomend', syncZoom);
       syncZoom();
 
-      // ---- view fit: the whole city first; a category filter zooms to its pins ----
+      // ---- view fit: always the URBAN area first; a category filter narrows to its pins ----
       const pins = shown.map((b) => [b.latitude, b.longitude] as [number, number]);
-      if (activeCat) {
-        if (shown.length === 1) {
-          map.setView(pins[0], 17); // single (category) result: deep residential zoom
-        } else if (shown.length > 1) {
-          map.fitBounds(L.latLngBounds(pins), { padding: [26, 26], maxZoom: 15 });
-        } else if (outlineBounds) {
-          map.fitBounds(outlineBounds, { padding: [20, 20], maxZoom: 15 }); // category with no pins: the outline
-        } else if (center) {
-          const cityFrame = [
-            [center[0] - 0.12, center[1] - 0.15],
-            [center[0] + 0.12, center[1] + 0.15],
-            ...pins,
-          ] as [number, number][];
-          map.fitBounds(L.latLngBounds(cityFrame), { padding: [24, 24], maxZoom: 12 });
+      const allPins = pinPoints;
+      // Urban frame: the admin outline when present; otherwise a town-sized window around the
+      // centre (never the whole countryside), always stretched to include the real pins.
+      let urban: LatLngBox | null = outline
+        ? [
+            [outline[0][0], outline[0][1]],
+            [outline[1][0], outline[1][1]],
+          ]
+        : center
+          ? [
+              [center[0] - 0.035, center[1] - 0.045],
+              [center[0] + 0.035, center[1] + 0.045],
+            ]
+          : null;
+      if (!outline) {
+        const pinBox = boxOfPoints(allPins);
+        if (pinBox) {
+          // A stored centre far from every real pin is bad data (it would frame empty countryside):
+          // trust the pins then; otherwise stretch the centre window to include them.
+          const centreNearPins =
+            center !== null &&
+            center[0] > pinBox[0][0] - 0.15 &&
+            center[0] < pinBox[1][0] + 0.15 &&
+            center[1] > pinBox[0][1] - 0.15 &&
+            center[1] < pinBox[1][1] + 0.15;
+          if (centreNearPins && urban) {
+            for (const [lat, lng] of allPins) urban = growBox(urban, lat, lng);
+          } else {
+            urban = pinBox;
+          }
         }
-      } else if (outlineBounds) {
-        // whole city boundary in frame
-        map.fitBounds(outlineBounds, { padding: [24, 24], maxZoom: 15 });
-      } else if (center) {
-        // No boundary yet: frame a generous city-wide envelope, not just its business pins.
-        const cityFrame = [
-          [center[0] - 0.12, center[1] - 0.15],
-          [center[0] + 0.12, center[1] + 0.15],
-          ...pins,
-        ] as [number, number][];
-        map.fitBounds(L.latLngBounds(cityFrame), { padding: [24, 24], maxZoom: 12 });
-      } else if (pins.length > 1) {
-        map.fitBounds(L.latLngBounds(pins), { padding: [56, 56], maxZoom: 13 });
-      } else if (pins.length === 1) {
-        map.setView(pins[0], 14);
+      }
+
+      if (activeCat && pins.length > 0) {
+        // Never a street-level view: at least a neighbourhood-sized window, max level 15.
+        const focus = withMinSpan(boxOfPoints(pins) as LatLngBox);
+        map.fitBounds(focus, { padding: [26, 26], maxZoom: FILTER_MAX_ZOOM });
+      } else if (urban) {
+        map.fitBounds(withMinSpan(urban), { padding: [24, 24], maxZoom: URBAN_MAX_ZOOM });
+      } else if (pins.length > 0) {
+        map.fitBounds(withMinSpan(boxOfPoints(pins) as LatLngBox), { padding: [56, 56], maxZoom: URBAN_MAX_ZOOM });
       }
     })();
 
