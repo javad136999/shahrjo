@@ -15,7 +15,7 @@ const provinces = [
 const cities = [
   { province: 'bushehr', name: 'جم', slug: 'jam', latitude: 27.83, longitude: 52.32, featured: true, boundary: [[[52.2945534, 27.7750899], [52.2945534, 27.842128], [52.3825848, 27.842128], [52.3825848, 27.7750899], [52.2945534, 27.7750899]]] },
   { province: 'bushehr', name: 'عسلویه', slug: 'asaluyeh', latitude: 27.48, longitude: 52.6, featured: true, boundary: [[[52.5843733, 27.4642088], [52.5843733, 27.4937237], [52.6277437, 27.4937237], [52.6277437, 27.4642088], [52.5843733, 27.4642088]]] },
-  { province: 'bushehr', name: 'کنگان', slug: 'kangan', latitude: 27.89, longitude: 52.49, featured: false, boundary: [[[52.0339702, 27.8030094], [52.0339702, 27.8706114], [52.0973476, 27.8706114], [52.0973476, 27.8030094], [52.0339702, 27.8030094]]] },
+  { province: 'bushehr', name: 'کنگان', slug: 'kangan', latitude: 27.8368, longitude: 52.0657, featured: false, boundary: [[[52.0339702, 27.8030094], [52.0339702, 27.8706114], [52.0973476, 27.8706114], [52.0973476, 27.8030094], [52.0339702, 27.8030094]]] },
   { province: 'bushehr', name: 'دیر', slug: 'dayer', latitude: 27.84, longitude: 51.94, featured: false },
   { province: 'bushehr', name: 'بوشهر', slug: 'bushehr-city', latitude: 28.97, longitude: 50.84, featured: true, boundary: [[[50.802536, 28.8539379], [50.802536, 29.0045185], [50.9044647, 29.0045185], [50.9044647, 28.8539379], [50.802536, 28.8539379]]] },
   { province: 'fars', name: 'شیراز', slug: 'shiraz', latitude: 29.59, longitude: 52.58, featured: true, boundary: [[[52.3822546, 29.4987382], [52.3822546, 29.8403461], [52.6675129, 29.8403461], [52.6675129, 29.4987382], [52.3822546, 29.4987382]]] },
