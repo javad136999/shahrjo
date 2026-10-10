@@ -14,4 +14,10 @@ export class CityContentQueryDto {
   @Min(1)
   @Max(50)
   limit?: number;
+
+  /** Optional ad-category slug — only ads of that category are returned. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  category?: string;
 }

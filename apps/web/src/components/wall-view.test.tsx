@@ -10,6 +10,7 @@ const mockPin = jest.fn();
 const mockUpload = jest.fn();
 const mockUploadVoice = jest.fn();
 const mockEdit = jest.fn();
+const mockGetCats = jest.fn();
 
 jest.mock('@/lib/api', () => {
   class ApiError extends Error {
@@ -21,6 +22,7 @@ jest.mock('@/lib/api', () => {
   }
   return {
     ApiError,
+    getAdCategories: (...args: unknown[]) => mockGetCats(...args),
     getWall: (...args: unknown[]) => mockGetWall(...args),
     createWallPost: (...args: unknown[]) => mockCreate(...args),
     likeWallPost: (...args: unknown[]) => mockLike(...args),
@@ -33,6 +35,17 @@ jest.mock('@/lib/api', () => {
 });
 
 const city = { id: 1, slug: 'sample-city', name: 'شهر نمونه' };
+
+const CATS = [
+  { id: 1, name: 'املاک', slug: 'real-estate', icon: '🏠', color: '#16a34a' },
+  { id: 2, name: 'وسایل نقلیه', slug: 'car', icon: '🚗', color: '#2563eb' },
+  { id: 3, name: 'موبایل', slug: 'mobile', icon: '📱', color: '#7c3aed' },
+  { id: 4, name: 'لوازم خانه', slug: 'home-appliances', icon: '🛋️', color: '#ea580c' },
+  { id: 5, name: 'استخدام', slug: 'jobs', icon: '💼', color: '#0891b2' },
+  { id: 6, name: 'خدمات', slug: 'services', icon: '🛠️', color: '#ca8a04' },
+  { id: 7, name: 'خرید و فروش', slug: 'market', icon: '🛒', color: '#db2777' },
+  { id: 8, name: 'سایر', slug: 'other', icon: '✨', color: '#6b7280' },
+];
 
 function makePost(overrides: Partial<WallPost> = {}): WallPost {
   return {
@@ -77,6 +90,7 @@ describe('WallView', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetWall.mockResolvedValue(feed);
+    mockGetCats.mockResolvedValue(CATS);
   });
 
   it('renders the room header: wall name + member and message counts', async () => {
@@ -85,8 +99,15 @@ describe('WallView', () => {
     expect(screen.getByTestId('wall-room-name')).toHaveTextContent('دیوار شهر شهر نمونه');
     expect(screen.getByTestId('wall-room-members')).toHaveTextContent('۱۲ عضو');
     expect(screen.getByTestId('wall-room-members')).toHaveTextContent('۳۴ پیام');
-    expect(screen.getByTestId('wall-change-city')).toHaveAttribute('href', '/');
-    expect(screen.getByTestId('wall-back-city')).toHaveAttribute('href', '/city/sample-city');
+    // the city/change-city pills are gone — six category shortcuts took their place
+    const strip = screen.getByTestId('wall-cats');
+    expect(strip).toBeTruthy();
+    expect(screen.getByTestId('wall-cat-real-estate')).toHaveAttribute('href', '/ads?category=real-estate');
+    expect(screen.getByTestId('wall-cat-car')).toHaveAttribute('href', '/ads?category=car');
+    expect(screen.getByTestId('wall-cat-services')).toHaveAttribute('href', '/ads?category=services');
+    expect(screen.queryByTestId('wall-cat-market')).toBeNull(); // only the first six are shown
+    expect(screen.queryByTestId('wall-change-city')).toBeNull();
+    expect(screen.queryByTestId('wall-back-city')).toBeNull();
   });
 
   it('renders post images from the thumbnail variant (lists never fetch the full file)', async () => {

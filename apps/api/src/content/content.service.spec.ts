@@ -179,6 +179,24 @@ describe('ContentService.ads', () => {
     expect(() => JSON.stringify(result)).not.toThrow();
   });
 });
+  it('filters by category slug when one is given (category shortcuts)', async () => {
+    const { service, prisma } = makeService();
+    prisma.city.findFirst.mockResolvedValue({ id: 7 });
+    prisma.ad.findMany.mockResolvedValue([]);
+
+    await service.ads('sample-city', 8, 'real-estate');
+    const filtered = prisma.ad.findMany.mock.calls[0][0];
+    expect(filtered.where).toMatchObject({
+      cityId: 7,
+      status: 'APPROVED',
+      category: { slug: 'real-estate' },
+    });
+
+    await service.ads('sample-city', 8);
+    const plain = prisma.ad.findMany.mock.calls[1][0];
+    expect(plain.where.category).toBeUndefined();
+  });
+
 
 describe('ContentService.businesses', () => {
   it('returns APPROVED businesses in showcase order', async () => {
