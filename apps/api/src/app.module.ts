@@ -5,6 +5,7 @@ import { AdminModule } from './admin/admin.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
 import { CitiesModule } from './cities/cities.module';
+import { BusinessesModule } from './businesses/businesses.module';
 import { ContentModule } from './content/content.module';
 import { HealthController } from './health/health.controller';
 import { PaymentsModule } from './payments/payments.module';
@@ -27,6 +28,7 @@ import { WallModule } from './wall/wall.module';
     AuthModule,
     UsersModule,
     CitiesModule,
+    BusinessesModule,
     ContentModule,
     AdsModule,
     UploadsModule,

@@ -7,7 +7,7 @@ const mustExist = [
   'apps/web/next.config.ts',
   'apps/web/jest.config.js',
   'apps/web/jest.setup.ts',
-  'apps/web/public/robots.txt',
+  'apps/web/src/app/robots.ts',
   'apps/web/src/app/layout.tsx',
   'apps/web/src/app/globals.css',
   'apps/web/src/app/page.tsx',

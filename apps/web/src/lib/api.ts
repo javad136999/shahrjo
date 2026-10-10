@@ -2,6 +2,8 @@
 // localStorage tokens with single-flight refresh on 401.
 import type {
   AdCategoryOption,
+  BusinessCategoryOption,
+  CreatedBusiness,
   AdItem,
   AdDetail,
   AdminOverview,
@@ -449,4 +451,22 @@ export function setLocalCity(city: LocalCity): void {
   window.localStorage.setItem(CITY_KEY, JSON.stringify(city));
   // notify the shell (header pill, bottom nav) without waiting for a reload
   window.dispatchEvent(new CustomEvent(CITY_CHANGED_EVENT, { detail: city }));
+}
+
+/** Active business categories for the registration form (public). */
+export async function getBusinessCategories(): Promise<BusinessCategoryOption[]> {
+  return api.get<BusinessCategoryOption[]>('/business-categories');
+}
+
+/** Registers a new business (auth) — starts PENDING + FREE; tier is applied after payment. */
+export async function createBusiness(body: {
+  name: string;
+  categoryId: number;
+  description?: string;
+  phone?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+}): Promise<CreatedBusiness> {
+  return api.post<CreatedBusiness>('/businesses', body);
 }

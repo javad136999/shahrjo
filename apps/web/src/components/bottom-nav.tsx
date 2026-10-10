@@ -7,7 +7,7 @@ import { CITY_CHANGED_EVENT, getLocalCity } from '@/lib/api';
 import type { LocalCity } from '@/lib/types';
 
 interface NavItem {
-  id: 'home' | 'news' | 'businesses' | 'profile';
+  id: 'home' | 'news' | 'register-business' | 'profile';
   href: string;
   icon: string;
   label: string;
@@ -51,14 +51,14 @@ export function BottomNav() {
   const items: NavItem[] = [
     { id: 'home', href: '/', icon: '🏠', label: 'خانه' },
     { id: 'news', href: cityBase ? `${cityBase}/news` : '/', icon: '📰', label: 'اخبار' },
-    { id: 'businesses', href: cityBase ? `${cityBase}#map` : '/', icon: '🏬', label: 'کسب‌وکارها' },
+    { id: 'register-business', href: '/business/new', icon: '🏪', label: 'ثبت کسب‌وکار' },
     { id: 'profile', href: '/profile', icon: '👤', label: 'پروفایل' },
   ];
 
   const isActive = (item: NavItem): boolean => {
     if (item.id === 'profile') return pathname.startsWith('/profile');
     if (item.id === 'news') return isNewsPage;
-    if (item.id === 'businesses') return hash === '#map';
+    if (item.id === 'register-business') return pathname.startsWith('/business/new');
     if (item.id === 'home') return (pathname === '/' || pathname.startsWith('/city/')) && !isNewsPage && !hash;
     return false;
   };

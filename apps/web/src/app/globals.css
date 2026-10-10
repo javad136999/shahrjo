@@ -3336,3 +3336,41 @@ a.my-ads__item:hover {
   font-size: 13px;
   color: var(--brand-dark);
 }
+
+/* ---- Business registration (steps + map picker) ---- */
+.biz-steps {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  font-size: 0.82rem;
+}
+.biz-steps__item {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface, #f4f4f5);
+  color: var(--muted, #71717a);
+  border: 1px solid var(--line, #e4e4e7);
+}
+.biz-steps__item.is-active {
+  background: var(--primary, #c9971f);
+  color: #fff;
+  border-color: transparent;
+}
+.biz-steps__item.is-done {
+  color: var(--primary, #c9971f);
+  border-color: var(--primary, #c9971f);
+}
+.biz-map {
+  height: 320px;
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line, #e4e4e7);
+  margin: 10px 0;
+}
+@media (max-width: 480px) {
+  .biz-map {
+    height: 260px;
+  }
+}

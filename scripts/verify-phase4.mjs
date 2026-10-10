@@ -78,7 +78,7 @@ for (const comp of ['HeaderPills', 'BottomNav']) {
   if (!layout.includes(comp)) { console.error(`WEB: layout must render ${comp}`); fail++; }
 }
 const bottomNav = read('apps/web/src/components/bottom-nav.tsx');
-for (const marker of ['bottom-nav', 'getLocalCity', '/news', '#map']) {
+for (const marker of ['bottom-nav', 'getLocalCity', '/news', '/business/new']) {
   if (!bottomNav.includes(marker)) { console.error(`WEB: bottom nav missing ${marker}`); fail++; }
 }
 // «ثبت آگهی» moved out of the shell into the city-wall composer (Phase 10).

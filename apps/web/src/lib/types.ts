@@ -359,3 +359,18 @@ export interface BusinessDetail {
   city: { name: string; slug: string };
   category: { name: string; slug: string; icon: string | null; color: string | null };
 }
+
+export interface BusinessCategoryOption {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string | null;
+}
+
+export interface CreatedBusiness {
+  id: number;
+  name: string;
+  slug: string;
+  status: string;
+  subscriptionTier: string;
+}
