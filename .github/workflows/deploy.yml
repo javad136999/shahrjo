@@ -1,15 +1,15 @@
-# Auto-deploy the production VPS on every push to main (or manually).
+# Deploy the production VPS using a SELF-HOSTED runner installed on the server.
 #
-# One-time setup → repo Settings → Secrets and variables → Actions:
-#   VPS_HOST     server IP / domain        (required)  e.g. 87.107.191.61
-#   VPS_SSH_KEY  private key (no passphrase) (required) — public half must be
-#                in the SSH user's ~/.ssh/authorized_keys on the server
-#   VPS_USER     SSH user                  (optional, default: deploy)
-#   VPS_PORT     SSH port                  (optional, default: 22)
-#   VPS_PATH     repo checkout on server   (optional, default: /home/deploy/shahrjo)
+# Why self-hosted: inbound SSH (port 22) to the server is firewalled — both the
+# sandbox and GitHub-hosted runners time out ("dial tcp :22: i/o timeout").
+# A self-hosted runner connects OUTBOUND to GitHub (port 443) and executes the
+# deploy locally on the server, so no inbound port and no SSH are needed.
 #
-# Then: run this workflow once via the "Run workflow" button (workflow_dispatch),
-# or just push/merge to main. GitHub runners reach SSH directly.
+# One-time server setup (see repo docs / runner install commands):
+#   1. Register a runner with labels: self-hosted + shahrjo-prod
+#   2. Install the runner service as a user that can run docker (e.g. `deploy`,
+#      which docs/deploy.md adds to the docker group).
+#   3. Ensure that user can `git pull` the repo (repo is public -> no token needed).
 name: Deploy to VPS
 
 on:
@@ -17,40 +17,63 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# One deploy at a time; never cancel a half-done deploy.
 concurrency:
   group: deploy-production
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Pull · rebuild · migrate · seed · health-check
-    runs-on: ubuntu-latest
-    # Optional gate: create a "production" environment with required reviewers
-    # in repo settings to require a manual approval before each deploy.
+    name: Pull · rebuild · migrate · seed · health
+    runs-on: [self-hosted, shahrjo-prod]
     environment: production
+    env:
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/home/deploy/shahrjo' }}
     steps:
-      - name: Deploy on server
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER || 'deploy' }}
-          port: ${{ secrets.VPS_PORT || '22' }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            set -euo pipefail
-            cd "${{ secrets.VPS_PATH || '/home/deploy/shahrjo' }}"
-            echo "==> git pull (main)"
-            git fetch origin
-            git checkout main
-            git pull --ff-only origin main
-            echo "==> rebuild + up"
-            docker compose -f docker-compose.prod.yml up -d --build
-            echo "==> migrate"
-            docker compose -f docker-compose.prod.yml exec -T api npx prisma migrate deploy
-            echo "==> seed (idempotent upsert: cities, boundaries, coord fixes)"
-            docker compose -f docker-compose.prod.yml exec -T api npx prisma db seed
-            echo "==> container status"
-            docker compose -f docker-compose.prod.yml ps
-            echo "==> health check"
-            curl -sf http://127.0.0.1/api/v1/health >/dev/null && echo "DEPLOY OK"
+      - name: Preflight (user · docker · path)
+        run: |
+          set -uo pipefail
+          echo "whoami=$(whoami) groups=$(groups)"
+          echo "docker=$(docker compose version 2>&1 | head -1)"
+          echo "deploy_path=$DEPLOY_PATH"
+          if ! docker compose version >/dev/null 2>&1; then
+            echo "::error::runner user cannot run docker — add it to the docker group and restart the runner service"
+            exit 1
+          fi
+          if [ ! -d "$DEPLOY_PATH/.git" ]; then
+            echo "::error::DEPLOY_PATH ($DEPLOY_PATH) is not a git checkout"
+            exit 1
+          fi
+
+      - name: git pull (main)
+        run: |
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          git fetch origin
+          git checkout main
+          git pull --ff-only origin main
+          echo "deployed_sha=$(git rev-parse --short HEAD)"
+
+      - name: rebuild + up
+        run: |
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          docker compose -f docker-compose.prod.yml up -d --build
+
+      - name: migrate
+        run: |
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          docker compose -f docker-compose.prod.yml exec -T api npx prisma migrate deploy
+
+      - name: seed (idempotent upsert)
+        run: |
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          docker compose -f docker-compose.prod.yml exec -T api npx prisma db seed
+
+      - name: health check
+        run: |
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          docker compose -f docker-compose.prod.yml ps
+          curl -sf http://127.0.0.1/api/v1/health >/dev/null && echo "DEPLOY OK"
