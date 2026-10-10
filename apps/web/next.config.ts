@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          // HTTPS-only hint; browsers ignore it over plain http, no
+          // includeSubDomains so unrelated subdomains are unaffected.
+          { key: 'Strict-Transport-Security', value: 'max-age=15552000' },
           {
             key: 'Permissions-Policy',
             value: 'camera=(), geolocation=(self), payment=(self)',
