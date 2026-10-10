@@ -194,8 +194,46 @@ describe('CityMap', () => {
       const positions = leaflet.marker.mock.calls.map((c: unknown[][][]) => c[0]);
       expect(positions[positions.length - 1]).toEqual([27.84, 52.3]);
     });
-    // single result → deep residential zoom
-    await waitFor(() => expect(leaflet.map.mock.results.at(-1).value.setView).toHaveBeenCalledWith([27.84, 52.3], 17));
+    // single result → still an urban-scale view (never street level / zoom 17)
+    await waitFor(() => {
+      const last = leaflet.map.mock.results.at(-1).value;
+      expect(last.fitBounds).toHaveBeenCalled();
+      const [box, opts] = last.fitBounds.mock.calls.at(-1);
+      expect(opts.maxZoom).toBeLessThanOrEqual(15);
+      // at least ~4.5 km across so the neighbourhood stays visible
+      expect(box[1][0] - box[0][0]).toBeGreaterThanOrEqual(0.039);
+      expect(box[1][1] - box[0][1]).toBeGreaterThanOrEqual(0.049);
+      expect(last.setView).not.toHaveBeenCalled();
+    });
+  });
+
+  it('frames the urban area (not the countryside) and caps the zoom when there is no boundary', async () => {
+    const leaflet = require('leaflet');
+    render(<CityMap data={{ ...data, businesses: [] }} />);
+    await waitFor(() => expect(leaflet.map).toHaveBeenCalledTimes(1));
+    const [box, opts] = leaflet.map.mock.results[0].value.fitBounds.mock.calls[0];
+    expect(opts.maxZoom).toBeLessThanOrEqual(14);
+    expect(box[1][0] - box[0][0]).toBeLessThan(0.2); // town-sized, not a 27 km countryside frame
+    expect(box[0][0]).toBeLessThan(27.83);
+    expect(box[1][0]).toBeGreaterThan(27.83);
+  });
+
+  it('ignores a stored centre that is far from every business (bad data) and frames the pins', async () => {
+    const leaflet = require('leaflet');
+    const badCentre = { ...data, city: { ...data.city, latitude: 27.89, longitude: 52.49 } }; // ~17 km from the pins
+    render(<CityMap data={badCentre} />);
+    await waitFor(() => expect(leaflet.map).toHaveBeenCalledTimes(1));
+    const [box] = leaflet.map.mock.results[0].value.fitBounds.mock.calls[0];
+    expect(box[1][1]).toBeLessThan(52.4); // the empty countryside around the bad centre is not framed
+  });
+
+  it('pads a tiny city outline up to a readable urban extent', async () => {
+    const leaflet = require('leaflet');
+    const tiny = { type: 'Polygon', coordinates: [[[52.3, 27.83], [52.301, 27.83], [52.301, 27.831], [52.3, 27.831], [52.3, 27.83]]] };
+    render(<CityMap data={{ ...data, city: { ...data.city, boundary: tiny }, businesses: [] }} />);
+    await waitFor(() => expect(leaflet.map).toHaveBeenCalledTimes(1));
+    const [box] = leaflet.map.mock.results[0].value.fitBounds.mock.calls[0];
+    expect(box[1][0] - box[0][0]).toBeGreaterThanOrEqual(0.039);
   });
 
   it('«همه کسب‌وکارها» restores every pin', async () => {
