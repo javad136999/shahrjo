@@ -280,6 +280,25 @@ describe('WallService.edit (Phase 10)', () => {
   });
 });
 
+describe('WallService.list — own messages', () => {
+  it('flags own posts with isMine so the room can paint them as bubbles', async () => {
+    const { service, prisma } = makeService(null);
+    prisma.wallPost.findFirst.mockResolvedValue(null);
+    prisma.wallPost.findMany.mockResolvedValue([
+      { ...basePost, id: 10, user: { id: 4, fullName: 'علی', avatarUrl: null } },
+      { ...basePost, id: 11, user: { id: 77, fullName: 'سارا', avatarUrl: null } },
+    ]);
+    prisma.wallPostLike.findMany.mockResolvedValue([]);
+
+    const feed = await service.list(user, 'jam');
+
+    expect(feed.posts.map((p) => [p.id, p.isMine])).toEqual([
+      [10, true],
+      [11, false],
+    ]);
+  });
+});
+
 describe('WallService.toggleLike', () => {
   it('404s missing posts', async () => {
     const { service, prisma } = makeService(null);

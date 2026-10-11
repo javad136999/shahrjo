@@ -76,12 +76,14 @@ export function WallView({ city }: WallViewProps) {
   const [text, setText] = useState('');
   const [replyTo, setReplyTo] = useState<WallPost | null>(null);
   const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ id: number; text: string } | null>(null);
   const [sending, setSending] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   // Category shortcuts in the room header: املاک، خودرو + ۴ دسته مهم (server order).
   const [cats, setCats] = useState<AdCategoryOption[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const pagingRef = useRef(false);
   const restoreRef = useRef<number | null>(null);
 
@@ -140,6 +142,25 @@ export function WallView({ city }: WallViewProps) {
       restoreRef.current = null;
     }
   }, [feed]);
+
+  // object URL for the picked photo — revoked as soon as it changes/unmounts
+  useEffect(() => {
+    if (!image) {
+      setImagePreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(image);
+    setImagePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [image]);
+
+  // the composer grows with the message (up to ~5 lines) instead of scrolling
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.max(46, Math.min(el.scrollHeight, 150))}px`;
+  }, [text]);
 
   // polling — cheap live delivery for the chat room (no WebSocket needed)
   useEffect(() => {
@@ -415,7 +436,7 @@ export function WallView({ city }: WallViewProps) {
     return (
       <article
         key={post.id}
-        className={`wall-post${post.isPinned ? ' wall-post--pinned' : ''}${post.ad ? ' wall-post--ad' : ''}`}
+        className={`wall-post${post.isMine ? ' wall-post--own' : ''}${post.isPinned ? ' wall-post--pinned' : ''}${post.ad ? ' wall-post--ad' : ''}`}
         data-testid={`wall-post-${post.id}`}
       >
         <span
@@ -661,6 +682,9 @@ export function WallView({ city }: WallViewProps) {
 
       {feed.pinned && (
         <section className="wall-pinned" data-testid="wall-pinned" aria-label="پیام سنجاق‌شده">
+          <span className="wall-pinned__tag" aria-hidden>
+            📌 سنجاق‌شده
+          </span>
           {renderPost(feed.pinned, true)}
         </section>
       )}
@@ -678,13 +702,33 @@ export function WallView({ city }: WallViewProps) {
 
       <div className="wall-feed" ref={feedRef} role="log" aria-live="polite" onScroll={onFeedScroll}>
         {ordered.length === 0 ? (
-          <p className="empty-state">هنوز پیامی در دیوار شهر نیست — اولین نفر باشید.</p>
+          <div className="wall-empty" data-testid="wall-empty">
+            <span aria-hidden>💬</span>
+            <p>هنوز پیامی در دیوار شهر نیست — اولین نفر باشید.</p>
+          </div>
         ) : (
           ordered.map((post) => renderPost(post))
         )}
       </div>
 
-      <div className="wall-composer">
+      <div className="wall-composer" data-testid="wall-composer">
+        {/* quick actions: ad submission + the city home (site nav is hidden here) */}
+        <div className="wall-quick">
+          <Link href="/ads/new" className="wall-quick__item" data-testid="wall-ad-btn" title="ثبت آگهی در دیوار شهر">
+            <span aria-hidden>📝</span>
+            ثبت آگهی
+          </Link>
+          <Link
+            href={`/city/${city.slug}`}
+            className="wall-quick__item wall-quick__item--home"
+            data-testid="wall-home-bottom"
+            title={`صفحه اصلی شهر ${city.name}`}
+          >
+            <span aria-hidden>🏠</span>
+            خانهٔ شهر
+          </Link>
+        </div>
+
         {replyTo && (
           <div className="wall-composer__reply">
             <span>
@@ -697,12 +741,20 @@ export function WallView({ city }: WallViewProps) {
         )}
 
         {image && (
-          <div className="wall-composer__chip" data-testid="wall-image-chip">
-            <span>📷 {image.name}</span>
+          <div className="wall-composer__chip wall-composer__chip--photo" data-testid="wall-image-chip">
+            {imagePreview && (
+              // eslint-disable-next-line @next/next/no-img-element -- local blob preview
+              <img className="wall-composer__preview" src={imagePreview} alt="" />
+            )}
+            <span className="wall-composer__chipcopy">
+              <b>عکس آمادهٔ ارسال</b>
+              <small>{image.name}</small>
+            </span>
             <button
               type="button"
               className="wall-iconbtn"
               aria-label="حذف تصویر"
+              data-testid="wall-image-remove"
               onClick={() => {
                 setImage(null);
                 if (fileRef.current) fileRef.current.value = '';
@@ -723,6 +775,7 @@ export function WallView({ city }: WallViewProps) {
         )}
 
         <textarea
+          ref={inputRef}
           className="wall-composer__input"
           rows={1}
           maxLength={1000}
@@ -739,6 +792,7 @@ export function WallView({ city }: WallViewProps) {
           }}
         />
 
+        {/* tools dock: attachments on one side, the send button on the other */}
         {recording ? (
           <div className="wall-rec" data-testid="wall-recording">
             <span className="wall-rec__pulse" aria-hidden />
@@ -756,7 +810,7 @@ export function WallView({ city }: WallViewProps) {
             </button>
           </div>
         ) : (
-          <div className="wall-composer__bar">
+          <div className="wall-composer__bridge">
             <input
               ref={fileRef}
               type="file"
@@ -766,43 +820,44 @@ export function WallView({ city }: WallViewProps) {
               data-testid="wall-image"
               onChange={(e) => setImage(e.target.files?.[0] ?? null)}
             />
-            {/* RIGHT side of the composer: the ad-post entry (moved out of the header + bottom nav) */}
-            <Link
-              href="/ads/new"
-              className="wall-adbtn"
-              data-testid="wall-ad-btn"
-              title="ثبت آگهی در دیوار شهر"
+            <button
+              type="button"
+              className={`wall-tool${image ? ' wall-tool--on' : ''}`}
+              data-testid="wall-photo-btn"
+              aria-label={image ? 'تغییر عکس پیام' : 'افزودن عکس به پیام'}
+              title="افزودن عکس"
+              onClick={() => fileRef.current?.click()}
             >
-              <span aria-hidden>📝</span>
-              <span className="wall-adbtn__label">ثبت آگهی</span>
-            </Link>
-            <div className="wall-composer__tools">
-              <Link
-                href={`/city/${city.slug}`}
-                className="pill wall-homepill"
-                data-testid="wall-home-bottom"
-                title={`صفحه اصلی شهر ${city.name}`}
-              >
-                🏠 خانه
-              </Link>
-              <button type="button" className="pill" data-testid="wall-photo-btn" onClick={() => fileRef.current?.click()}>
-                📷 {image ? 'عکس انتخاب شد' : 'عکس'}
-              </button>
-              <button type="button" className="pill" data-testid="wall-voice-btn" onClick={() => void startRecording()}>
-                🎤 ویس
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                data-testid="wall-send"
-                disabled={sending || (!text.trim() && !image && !voice)}
-                onClick={() => void send()}
-              >
-                {sending ? 'در حال ارسال…' : 'ارسال'}
-              </button>
-            </div>
+              <span aria-hidden>🖼</span>
+            </button>
+            <button
+              type="button"
+              className="wall-tool"
+              data-testid="wall-voice-btn"
+              aria-label="ضبط پیام صوتی"
+              title="ضبط ویس"
+              onClick={() => void startRecording()}
+            >
+              <span aria-hidden>🎤</span>
+            </button>
+            <button
+              type="button"
+              className={`wall-sendbtn${!text.trim() && !image && !voice ? '' : ' wall-sendbtn--ready'}`}
+              data-testid="wall-send"
+              aria-label="ارسال پیام"
+              disabled={sending || (!text.trim() && !image && !voice)}
+              onClick={() => void send()}
+            >
+              <span aria-hidden>{sending ? '⏳' : '➤'}</span>
+              <span className="wall-sendbtn__label">{sending ? 'در حال ارسال…' : 'ارسال'}</span>
+            </button>
           </div>
         )}
+
+        {/* Attachment policy, in plain words: the post text always stays. */}
+        <p className="wall-composer__hint" data-testid="wall-media-hint">
+          عکس‌ها ۴ روز روی سایت می‌مانند و بعد پاک می‌شوند؛ متن پیام و آگهی باقی می‌ماند.
+        </p>
       </div>
 
       {profileUserId !== null && (

@@ -61,6 +61,7 @@ function makePost(overrides: Partial<WallPost> = {}): WallPost {
     canDelete: true,
     canEdit: true,
     canPin: false,
+    isMine: true,
     createdAt: new Date().toISOString(),
     user: { id: 4, name: 'علی', avatarUrl: null },
     replyTo: null,
@@ -76,6 +77,7 @@ const feed: WallFeed = {
       content: 'خوش اومدی!',
       canDelete: false,
       canEdit: false,
+      isMine: false,
       likeCount: 0,
       likedByMe: true,
       replyTo: { id: 1, content: 'سلام شهر', userName: 'علی' },
@@ -212,6 +214,44 @@ describe('WallView', () => {
     const adBtn = screen.getByTestId('wall-ad-btn');
     expect(adBtn).toHaveAttribute('href', '/ads/new');
     expect(adBtn).toHaveTextContent('ثبت آگهی');
+    // the city home sits next to it (the site nav is hidden in the room)
+    expect(screen.getByTestId('wall-home-bottom')).toHaveAttribute('href', '/city/sample-city');
+  });
+
+  it('paints own messages as bubbles and leaves other people\'s as room posts', async () => {
+    render(<WallView city={city} />);
+    const mine = await screen.findByTestId('wall-post-1');
+    const theirs = screen.getByTestId('wall-post-2');
+    expect(mine.className).toContain('wall-post--own');
+    expect(theirs.className).not.toContain('wall-post--own');
+  });
+
+  it('gives the composer labelled attachment tools and the 4-day photo policy', async () => {
+    render(<WallView city={city} />);
+    await screen.findByTestId('wall-input');
+    expect(screen.getByTestId('wall-photo-btn')).toHaveAttribute('aria-label', 'افزودن عکس به پیام');
+    expect(screen.getByTestId('wall-voice-btn')).toHaveAttribute('aria-label', 'ضبط پیام صوتی');
+    expect(screen.getByTestId('wall-send')).toHaveAttribute('aria-label', 'ارسال پیام');
+    expect(screen.getByTestId('wall-media-hint')).toHaveTextContent('۴ روز');
+  });
+
+  it('previews the picked photo in the composer before sending', async () => {
+    // jsdom has no object-URL implementation — the preview only needs a src
+    const create = jest.fn(() => 'blob:preview');
+    const revoke = jest.fn();
+    Object.assign(URL, { createObjectURL: create, revokeObjectURL: revoke });
+    render(<WallView city={city} />);
+    const picker = await screen.findByTestId('wall-image');
+    const file = new File(['x'], 'photo.png', { type: 'image/png' });
+    fireEvent.change(picker, { target: { files: [file] } });
+
+    const chip = await screen.findByTestId('wall-image-chip');
+    expect(chip.querySelector('img')).toHaveAttribute('src', 'blob:preview');
+    expect(chip).toHaveTextContent('photo.png');
+    // sending is possible with just the photo
+    expect(screen.getByTestId('wall-send')).toBeEnabled();
+    fireEvent.click(screen.getByTestId('wall-image-remove'));
+    await waitFor(() => expect(screen.queryByTestId('wall-image-chip')).toBeNull());
   });
 
   it('shows the error with a retry button when the feed fails (no endless loading)', async () => {

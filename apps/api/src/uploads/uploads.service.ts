@@ -20,6 +20,12 @@ const UNCLAIMED_MAX_AGE_MS = 48 * 3_600_000;
 const TRASH_MAX_AGE_MS = 7 * 86_400_000;
 /** Files younger than this are never touched by the orphan walk. */
 const FILE_MIN_AGE_MS = 48 * 3_600_000;
+/**
+ * Public post photos (ads + wall posts) live this long, then the sweep deletes
+ * them: the ad/post keeps its text, only the picture goes. Keeps a city wall
+ * that runs for months from filling the disk with stale photos.
+ */
+export const POST_IMAGE_MAX_AGE_MS = 4 * 86_400_000;
 /** How often the automatic sweep runs. */
 export const SWEEP_INTERVAL_MS = 6 * 3_600_000;
 /** Max thumbnails (re)generated per sweep — keeps CPU bounded on legacy data. */
@@ -44,6 +50,8 @@ export interface SweepResult {
   removedFiles: number;
   freedBytes: number;
   thumbsCreated: number;
+  /** Public ad/wall photos that aged out — their posts kept their text. */
+  expiredImages: number;
 }
 
 export interface StorageOverview {
@@ -329,10 +337,10 @@ export class UploadsService implements OnModuleInit {
   private async sweepSafely(): Promise<void> {
     try {
       const result = await this.sweep();
-      if (result.removedFiles > 0 || result.thumbsCreated > 0) {
+      if (result.removedFiles > 0 || result.thumbsCreated > 0 || result.expiredImages > 0) {
         this.logger.log(
           `storage sweep: removed ${result.removedFiles} file(s), freed ${result.freedBytes} bytes, ` +
-            `created ${result.thumbsCreated} thumbnail(s)`,
+            `created ${result.thumbsCreated} thumbnail(s), expired ${result.expiredImages} post photo(s)`,
         );
       }
     } catch (err) {
@@ -342,15 +350,17 @@ export class UploadsService implements OnModuleInit {
 
   /**
    * Disk-protection sweep: (1) hard-delete soft-deleted media past retention,
-   * (2) drop uploads never claimed by an entity, (3) drop media whose entity
-   * is gone, (4) unlink orphan files that no Media row references (thumbnails
-   * are considered too), (5) backfill missing thumbnails for legacy images.
+   * (2) expire public post photos (ads + wall) older than 4 days — text stays,
+   * (3) drop uploads never claimed by an entity, (4) drop media whose entity
+   * is gone, (5) unlink orphan files that no Media row references (thumbnails
+   * are considered too), (6) backfill missing thumbnails for legacy images.
    * Idempotent — safe to run on an interval and on demand from the admin panel.
    */
   async sweep(): Promise<SweepResult> {
     let removedFiles = 0;
     let freedBytes = 0;
     let thumbsCreated = 0;
+    let expiredImages = 0;
 
     const remove = async (row: { storageKey: string; sizeBytes?: number }): Promise<void> => {
       for (const key of [row.storageKey, thumbKeyFor(row.storageKey)]) {
@@ -371,7 +381,39 @@ export class UploadsService implements OnModuleInit {
       await this.prisma.media.delete({ where: { id: row.id } });
     }
 
-    // (2) uploads that were never attached to an entity (abandoned submissions)
+    // (2) public post photos age out after 4 days: the reference is cleared
+    // first (so nothing ever points at a deleted file), then the files and the
+    // Media row go. The ad / wall post keeps its text and stays reachable.
+    const expiring = await this.prisma.media.findMany({
+      where: {
+        entityType: { in: ['AD', 'WALL'] },
+        entityId: { not: null },
+        mimeType: { startsWith: 'image/' },
+        deletedAt: null,
+        createdAt: { lt: new Date(Date.now() - POST_IMAGE_MAX_AGE_MS) },
+      },
+      select: { id: true, storageKey: true, sizeBytes: true, url: true, entityType: true },
+    });
+    for (const row of expiring) {
+      try {
+        if (row.entityType === 'AD') {
+          // AdImage rows mirror the media url — dropping them clears the
+          // gallery (and the promoted wall card) without touching the ad text.
+          await this.prisma.adImage.deleteMany({ where: { url: row.url } });
+        } else {
+          await this.prisma.wallPost.updateMany({ where: { imageUrl: row.url }, data: { imageUrl: null } });
+        }
+      } catch (err) {
+        // never delete a file whose reference could not be cleared first
+        this.logger.warn(`expired image ${row.id} kept — could not detach it: ${String(err)}`);
+        continue;
+      }
+      await remove(row);
+      await this.prisma.media.delete({ where: { id: row.id } });
+      expiredImages += 1;
+    }
+
+    // (3) uploads that were never attached to an entity (abandoned submissions)
     const unclaimed = await this.prisma.media.findMany({
       where: {
         entityId: null,
@@ -387,7 +429,7 @@ export class UploadsService implements OnModuleInit {
       await this.prisma.media.delete({ where: { id: row.id } });
     }
 
-    // (3) media whose ad/wall post was deleted (joins cascade, media does not)
+    // (4) media whose ad/wall post was deleted (joins cascade, media does not)
     const attached = await this.prisma.media.findMany({
       where: { entityType: { in: ['AD', 'WALL'] }, entityId: { not: null }, deletedAt: null },
       select: { id: true, storageKey: true, sizeBytes: true, entityType: true, entityId: true },
@@ -433,7 +475,7 @@ export class UploadsService implements OnModuleInit {
       }
     }
 
-    // (4) files on disk no Media row references (crashes, manual copies, …).
+    // (5) files on disk no Media row references (crashes, manual copies, …).
     // Thumbnails belong to their main file and are referenced implicitly.
     const mediaRows = await this.prisma.media.findMany({ select: { storageKey: true, mimeType: true } });
     const referenced = new Set<string>();
@@ -450,7 +492,7 @@ export class UploadsService implements OnModuleInit {
       freedBytes += obj.size;
     }
 
-    // (5) legacy images uploaded before the pipeline: create their thumbnail
+    // (6) legacy images uploaded before the pipeline: create their thumbnail
     // (voice notes and other audio never get one — sharp cannot decode them)
     const imageRows = mediaRows.filter((row) => row.mimeType?.startsWith('image/'));
     for (const row of imageRows.slice(0, THUMBS_PER_SWEEP)) {
@@ -468,7 +510,7 @@ export class UploadsService implements OnModuleInit {
       }
     }
 
-    return { removedFiles, freedBytes, thumbsCreated };
+    return { removedFiles, freedBytes, thumbsCreated, expiredImages };
   }
 
   /** Usage numbers for the admin storage panel. */

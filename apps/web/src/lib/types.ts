@@ -330,6 +330,8 @@ export interface WallPost {
   canDelete: boolean;
   canEdit: boolean;
   canPin: boolean;
+  /** Own message (the room aligns it like a chat bubble). */
+  isMine: boolean;
   createdAt: string;
   user: WallAuthor;
   replyTo: { id: number; content: string; userName: string } | null;

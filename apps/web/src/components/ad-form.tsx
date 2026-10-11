@@ -335,6 +335,10 @@ export function AdForm() {
         <label htmlFor="images">
           تصاویر (حداکثر {MAX_IMAGES.toLocaleString('fa-IR')} — هر کدام تا ۵ مگابایت)
         </label>
+        <p className="muted field-hint" data-testid="ad-image-policy">
+          عکس‌ها ۴ روز روی سایت می‌مانند و بعد پاک می‌شوند؛ متن آگهی همیشه باقی می‌ماند. عکس را
+          دوباره می‌توانید بارگذاری کنید.
+        </p>
         <input
           id="images"
           name="images"

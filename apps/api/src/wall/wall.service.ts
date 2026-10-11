@@ -44,6 +44,8 @@ export interface WallPostView {
   likedByMe: boolean;
   canDelete: boolean;
   canEdit: boolean;
+  /** Author is the caller — the room paints own messages as a bubble. */
+  isMine: boolean;
   canPin: boolean;
   createdAt: Date;
   user: WallAuthor;
@@ -140,6 +142,7 @@ export class WallService {
       likedByMe: liked,
       canDelete: post.user.id === viewerId || isOperator,
       canEdit: post.user.id === viewerId,
+      isMine: post.user.id === viewerId,
       canPin: isOperator,
       createdAt: post.createdAt,
       user: {

@@ -36,7 +36,8 @@ interface PrismaMock {
     deleteMany: jest.Mock;
   };
   ad: { findMany: jest.Mock };
-  wallPost: { findMany: jest.Mock };
+  adImage: { deleteMany: jest.Mock };
+  wallPost: { findMany: jest.Mock; updateMany: jest.Mock };
 }
 
 function makeService(
@@ -49,6 +50,7 @@ function makeService(
     mediaRows?: { storageKey: string; mimeType?: string }[];
     aliveAds?: { id: number }[];
     alivePosts?: { id: number }[];
+    expiring?: unknown[];
   } = {},
 ): { service: UploadsService; prisma: PrismaMock; storage: LocalStorageDriver; root: string } {
   const root = mkdtempSync(join(tmpdir(), 'shahrjo-up-'));
@@ -67,13 +69,15 @@ function makeService(
       // dispatch on the WHERE shape instead of call order — robust against
       // future reordering of the sweep steps
       findMany: jest.fn(({ where }: { where?: Record<string, unknown> }) => {
-        if (!where) return Promise.resolve(opts.mediaRows ?? []); // step 4: referenced keys
+        if (!where) return Promise.resolve(opts.mediaRows ?? []); // step 5: referenced keys
         if ((where.deletedAt as { lt?: Date } | undefined)?.lt) {
           return Promise.resolve(opts.trash ?? []); // step 1
         }
-        if (where.entityId === null) return Promise.resolve(opts.unclaimed ?? []); // step 2
+        // step 2: the 4-day retention walk (only it filters on mimeType)
+        if (where.mimeType) return Promise.resolve(opts.expiring ?? []);
+        if (where.entityId === null) return Promise.resolve(opts.unclaimed ?? []); // step 3
         if (where.entityId && typeof where.entityId === 'object') {
-          return Promise.resolve(opts.attached ?? []); // step 3
+          return Promise.resolve(opts.attached ?? []); // step 4
         }
         return Promise.resolve([]);
       }),
@@ -81,7 +85,11 @@ function makeService(
       deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
     },
     ad: { findMany: jest.fn().mockResolvedValue(opts.aliveAds ?? []) },
-    wallPost: { findMany: jest.fn().mockResolvedValue(opts.alivePosts ?? []) },
+    adImage: { deleteMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    wallPost: {
+      findMany: jest.fn().mockResolvedValue(opts.alivePosts ?? []),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
   };
 
   const service = new UploadsService(
@@ -360,7 +368,8 @@ describe('UploadsService.save — processing pipeline', () => {
         deleteMany: jest.fn(),
       },
       ad: { findMany: jest.fn() },
-      wallPost: { findMany: jest.fn() },
+      adImage: { deleteMany: jest.fn() },
+      wallPost: { findMany: jest.fn(), updateMany: jest.fn() },
     };
     const service = new UploadsService(
       prisma as unknown as PrismaService,
@@ -412,7 +421,7 @@ describe('UploadsService.sweep — disk-fill protection', () => {
 
     const result = await service.sweep();
 
-    expect(result).toEqual({ removedFiles: 2, freedBytes: 2048, thumbsCreated: 0 });
+    expect(result).toEqual({ removedFiles: 2, freedBytes: 2048, thumbsCreated: 0, expiredImages: 0 });
     expect(prisma.media.delete).toHaveBeenCalledWith({ where: { id: 1 } });
     expect(await storage.list()).toHaveLength(0);
   });
@@ -470,6 +479,60 @@ describe('UploadsService.sweep — disk-fill protection', () => {
     const second = await alive.service.sweep();
     expect(second.removedFiles).toBe(0);
     expect(await alive.storage.exists(aliveKey)).toBe(true);
+  });
+
+  it('expires an ad photo after 4 days: gallery row + files go, the ad text stays', async () => {
+    const key = 'media/2026/10/oldadphotooldadphotooldad.webp';
+    const url = `/api/v1/files/${key}`;
+    const { service, prisma, storage } = makeService({
+      expiring: [{ id: 9, storageKey: key, sizeBytes: 4096, url, entityType: 'AD', entityId: '5' }],
+    });
+    await storage.put(key, Buffer.alloc(4096, 4));
+    await storage.put(thumbKeyFor(key), Buffer.alloc(120, 5));
+
+    const result = await service.sweep();
+
+    expect(result.expiredImages).toBe(1);
+    expect(result.removedFiles).toBe(2); // photo + thumbnail
+    expect(result.freedBytes).toBe(4096);
+    // only the picture is dropped — nothing else on the ad is touched
+    expect(prisma.adImage.deleteMany).toHaveBeenCalledWith({ where: { url } });
+    expect(prisma.wallPost.updateMany).not.toHaveBeenCalled(); // ads and posts are separate paths
+    expect(prisma.media.delete).toHaveBeenCalledWith({ where: { id: 9 } });
+    expect(await storage.exists(key)).toBe(false);
+    expect(await storage.exists(thumbKeyFor(key))).toBe(false);
+  });
+
+  it('expires a wall photo after 4 days by clearing the post image, not the post', async () => {
+    const key = 'media/2026/10/oldwallphotooldwallphoto.webp';
+    const url = `/api/v1/files/${key}`;
+    const { service, prisma, storage } = makeService({
+      expiring: [{ id: 11, storageKey: key, sizeBytes: 2048, url, entityType: 'WALL', entityId: '77' }],
+    });
+    await storage.put(key, Buffer.alloc(2048, 6));
+
+    const result = await service.sweep();
+
+    expect(result.expiredImages).toBe(1);
+    expect(prisma.wallPost.updateMany).toHaveBeenCalledWith({ where: { imageUrl: url }, data: { imageUrl: null } });
+    expect(prisma.adImage.deleteMany).not.toHaveBeenCalled();
+    expect(await storage.exists(key)).toBe(false);
+  });
+
+  it('keeps a photo when its reference cannot be cleared (never a broken image)', async () => {
+    const key = 'media/2026/10/stuckphoto.stuckphoto.webp';
+    const url = `/api/v1/files/${key}`;
+    const { service, prisma, storage } = makeService({
+      expiring: [{ id: 12, storageKey: key, sizeBytes: 512, url, entityType: 'AD', entityId: '5' }],
+    });
+    prisma.adImage.deleteMany.mockRejectedValueOnce(new Error('db down'));
+    await storage.put(key, Buffer.from('photo'));
+
+    const result = await service.sweep();
+
+    expect(result.expiredImages).toBe(0);
+    expect(result.removedFiles).toBe(0);
+    expect(await storage.exists(key)).toBe(true);
   });
 
   it('backfills missing thumbnails for legacy images', async () => {

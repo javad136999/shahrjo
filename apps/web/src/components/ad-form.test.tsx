@@ -88,6 +88,12 @@ describe('AdForm', () => {
     expect(mockCreateAd).not.toHaveBeenCalled();
   });
 
+  it('tells the owner that photos expire after 4 days while the text stays', async () => {
+    render(<AdForm />);
+    expect(await screen.findByTestId('ad-image-policy')).toHaveTextContent('۴ روز');
+    expect(screen.getByTestId('ad-image-policy')).toHaveTextContent('متن آگهی');
+  });
+
   it('requires a category before submitting', async () => {
     render(<AdForm />);
     fireEvent.click(screen.getByRole('button', { name: 'ارسال' }));
