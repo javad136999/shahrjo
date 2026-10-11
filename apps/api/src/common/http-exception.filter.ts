@@ -2,6 +2,20 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpException, Logger } from '@n
 import type { Request, Response } from 'express';
 
 /**
+ * Prisma error codes that mean «the running code needs a migration that has
+ * not been applied to this database yet» (missing table / missing column).
+ * These used to surface as a bare 500 «خطای داخلی سرور», which told nobody
+ * that the real fix is `prisma migrate deploy` (the wall broke exactly this way).
+ */
+const SCHEMA_DRIFT_CODES = new Set(['P2021', 'P2022']);
+
+function schemaDriftCode(exception: unknown): string | null {
+  if (!exception || typeof exception !== 'object') return null;
+  const code = (exception as { code?: unknown }).code;
+  return typeof code === 'string' && SCHEMA_DRIFT_CODES.has(code) ? code : null;
+}
+
+/**
  * Maps every error to the documented envelope:
  * `{ data: null, error: { code, message, details } }`.
  * Internal error details are never leaked to clients.
@@ -39,8 +53,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
         }
       }
       if (status >= 500) this.logger.error(`${request.method} ${request.url} ${status} ${exception.message}`);
-    } else if (exception instanceof Error) {
-      this.logger.error(`${request.method} ${request.url} 500 ${exception.stack ?? exception.message}`);
+    } else {
+      const drift = schemaDriftCode(exception);
+      if (drift) {
+        // Actionable, but still no table/column names leave the server.
+        status = 503;
+        code = 'SCHEMA_OUT_OF_DATE';
+        message = 'سرویس در حال به‌روزرسانی است؛ کمی بعد دوباره تلاش کنید.';
+        this.logger.error(
+          `${request.method} ${request.url} ${status} ${drift} — database schema is behind the code; ` +
+            'apply pending migrations (docker compose -f docker-compose.prod.yml exec -w /repo api npx prisma migrate deploy)',
+        );
+      } else if (exception instanceof Error) {
+        this.logger.error(`${request.method} ${request.url} 500 ${exception.stack ?? exception.message}`);
+      }
     }
 
     response.status(status).json({

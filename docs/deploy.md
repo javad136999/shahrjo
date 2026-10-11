@@ -40,12 +40,17 @@ nano .env
 pnpm check:env 2>/dev/null || node scripts/check-env.mjs
 
 docker compose -f docker-compose.prod.yml up -d --build
-docker compose -f docker-compose.prod.yml exec api npx prisma migrate deploy
-docker compose -f docker-compose.prod.yml exec api npx prisma db seed   # فقط بار اول
+docker compose -f docker-compose.prod.yml exec -w /repo api npx prisma migrate deploy
+docker compose -f docker-compose.prod.yml exec -w /repo api npx prisma db seed   # فقط بار اول
 
 docker compose -f docker-compose.prod.yml ps    # همه باید healthy باشند
 curl -s http://127.0.0.1/api/v1/health
 ```
+
+> نکتهٔ مهم: دستورهای Prisma را همیشه با `-w /repo` اجرا کنید. WORKDIR ایمیج
+> API برابر `/repo/apps/api` است؛ از آن مسیر نه `prisma/schema.prisma` پیدا
+> می‌شود و نه کانفیگ seed در package.json ریشه، پس migrate با خطای
+> «Could not find Prisma Schema» شکست می‌خورد و **بی‌صدا اعمال نمی‌شد**.
 
 ## ۳) SSL (Let's Encrypt) — بعد از ست شدن DNS
 
@@ -65,7 +70,9 @@ docker run --rm \
 cd /home/deploy/shahrjo
 git pull
 docker compose -f docker-compose.prod.yml up -d --build
-docker compose -f docker-compose.prod.yml exec api npx prisma migrate deploy
+docker compose -f docker-compose.prod.yml exec -w /repo api npx prisma migrate deploy
+docker compose -f docker-compose.prod.yml exec -w /repo api npx prisma db seed
+docker compose -f docker-compose.prod.yml exec -w /repo api npx prisma migrate status   # باید «No pending migrations» بدهد
 ```
 
 ## ۵) بکاپ

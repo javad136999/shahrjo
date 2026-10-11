@@ -63,13 +63,18 @@ jobs:
         run: |
           set -euo pipefail
           cd "$DEPLOY_PATH"
-          docker compose -f docker-compose.prod.yml exec -T api npx prisma migrate deploy
+          # -w /repo: the api image's WORKDIR is /repo/apps/api, where Prisma
+          # finds neither prisma/schema.prisma nor the root package.json seed
+          # config — running from there always failed ("Could not find Prisma
+          # Schema"), so migrations silently never applied.
+          docker compose -f docker-compose.prod.yml exec -T -w /repo api npx prisma migrate deploy
+          docker compose -f docker-compose.prod.yml exec -T -w /repo api npx prisma migrate status
 
       - name: seed (idempotent upsert)
         run: |
           set -euo pipefail
           cd "$DEPLOY_PATH"
-          docker compose -f docker-compose.prod.yml exec -T api npx prisma db seed
+          docker compose -f docker-compose.prod.yml exec -T -w /repo api npx prisma db seed
 
       - name: health check
         run: |
