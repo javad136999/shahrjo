@@ -4141,3 +4141,215 @@ body.wall-screen .wall-feed {
     padding: 9px 15px;
   }
 }
+
+/* ============ City picker (header 🏙) — in-place city switch ============
+   Opens over the page instead of sending the user to the first-run screen:
+   search on top, suggested cities, then the rest of the list. */
+
+/* the pill is a button now — keep the exact look of the link pill */
+button.pill {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.city-picker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 68px 12px 24px;
+  background: rgb(8 26 20 / 38%);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: city-picker-in 0.14s ease-out;
+}
+
+@keyframes city-picker-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.city-picker {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 460px);
+  max-height: min(78vh, 620px);
+  border: 1px solid rgb(14 122 95 / 18%);
+  border-radius: 22px;
+  background: linear-gradient(180deg, #fffdfa, #f7fcf9);
+  box-shadow: 0 30px 60px -30px rgb(8 26 20 / 55%);
+  overflow: hidden;
+}
+
+.city-picker__head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 15px 11px;
+  border-bottom: 1px solid var(--line);
+}
+.city-picker__head h2 {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 900;
+}
+.city-picker__mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  font-size: 16px;
+}
+.city-picker__close {
+  margin-inline-start: auto;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.city-picker__close:hover {
+  background: var(--rose-soft);
+  border-color: var(--rose-line);
+  color: var(--rose);
+}
+
+.city-picker__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 15px;
+  border-bottom: 1px solid var(--line);
+  background: rgb(255 255 255 / 70%);
+}
+.city-picker__search .search-input {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 14px;
+}
+.city-picker__search .search-input:focus {
+  outline: none;
+}
+
+.city-picker__body {
+  flex: 1;
+  min-height: 90px;
+  overflow-y: auto;
+  padding: 12px 15px;
+  overscroll-behavior: contain;
+}
+
+.city-picker__section + .city-picker__section {
+  margin-top: 14px;
+}
+.city-picker__title {
+  margin: 0 2px 7px;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.city-picker__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.city-picker__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+}
+.city-picker__item:hover {
+  background: var(--brand-soft);
+  border-color: rgb(14 122 95 / 35%);
+  transform: translateY(-1px);
+}
+.city-picker__itemmain {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.35;
+}
+.city-picker__itemmain b {
+  font-size: 14px;
+  font-weight: 900;
+}
+.city-picker__itemmain small {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.city-picker__tag,
+.city-picker__now {
+  margin-inline-start: auto;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.city-picker__tag {
+  background: var(--gold-soft);
+  border: 1px solid var(--gold-line);
+  color: var(--gold-dark);
+}
+.city-picker__now {
+  background: var(--brand-soft);
+  border: 1px solid rgb(14 122 95 / 30%);
+  color: var(--brand-dark);
+}
+
+.city-picker__foot {
+  margin: 0;
+  padding: 10px 15px;
+  border-top: 1px solid var(--line);
+  background: rgb(255 255 255 / 70%);
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+@media (max-width: 640px) {
+  .city-picker-overlay {
+    padding: 58px 10px 18px;
+  }
+  .city-picker {
+    max-height: 82vh;
+    border-radius: 18px;
+  }
+}
+
+/* ============ City home: bare map ============
+   The map card carries no «نقشه شهر» title/icon row above it any more —
+   the canvas (with its own legend + category bar) speaks for itself. */
+.dash-map {
+  margin-bottom: 16px;
+  scroll-margin-top: 60px;
+}

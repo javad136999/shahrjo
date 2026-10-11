@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { CITY_CHANGED_EVENT, getLocalCity } from '@/lib/api';
+import { CityPicker } from '@/components/city-picker';
 import type { LocalCity } from '@/lib/types';
 
 /**
  * Header quick actions (JamCity-style pills): the city's news page and the
- * remembered city's name — clicking the city name opens the city picker so
- * the user can switch cities. The «ثبت آگهی» entry no longer lives here: it
+ * remembered city's name — clicking the city name opens the in-place city
+ * picker (search + suggestions) instead of navigating to another page. The «ثبت آگهی» entry no longer lives here: it
  * moved to the composer of the city wall (Phase 10). The city is re-read
  * after mount, on navigation and whenever another part of the page stores a
  * new city, so SSR output stays deterministic (no hydration mismatch) and
@@ -17,6 +18,7 @@ import type { LocalCity } from '@/lib/types';
  */
 export function HeaderPills() {
   const [city, setCity] = useState<LocalCity | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -41,18 +43,20 @@ export function HeaderPills() {
         <span aria-hidden>📰</span>
         <span className="pill__label">اخبار</span>
       </Link>
-      {city ? (
-        // the city's name opens the picker: click → choose another city
-        <Link href="/" className="pill" title="انتخاب شهر" data-testid="header-city-pill">
-          <span aria-hidden>🏙</span>
-          <span className="pill__label">{city.name}</span>
-        </Link>
-      ) : (
-        <Link href="/" className="pill" data-testid="header-city-pill">
-          <span aria-hidden>🏙</span>
-          <span className="pill__label">انتخاب شهر</span>
-        </Link>
-      )}
+      {/* the city pill opens the picker in place — no page jump */}
+      <button
+        type="button"
+        className="pill header-citybtn"
+        title="انتخاب شهر"
+        data-testid="header-city-pill"
+        aria-haspopup="dialog"
+        aria-expanded={pickerOpen}
+        onClick={() => setPickerOpen((open) => !open)}
+      >
+        <span aria-hidden>🏙</span>
+        <span className="pill__label">{city ? city.name : 'انتخاب شهر'}</span>
+      </button>
+      <CityPicker open={pickerOpen} onClose={() => setPickerOpen(false)} />
     </div>
   );
 }

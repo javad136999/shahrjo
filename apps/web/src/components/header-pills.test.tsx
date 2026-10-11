@@ -1,10 +1,19 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const mockGetLocalCity = jest.fn();
+const mockGetCities = jest.fn();
+
+jest.mock('next/navigation', () => ({
+  usePathname: () => '/',
+  useRouter: () => ({ push: jest.fn() }),
+}));
 
 jest.mock('@/lib/api', () => ({
   CITY_CHANGED_EVENT: 'shahrjo:city-changed',
   getLocalCity: () => mockGetLocalCity(),
+  getTokens: () => null,
+  setLocalCity: jest.fn(),
+  api: { get: () => mockGetCities(), patch: jest.fn() },
 }));
 
 import { HeaderPills } from '@/components/header-pills';
@@ -13,20 +22,31 @@ describe('HeaderPills', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetLocalCity.mockReturnValue({ id: 5, slug: 'sample-city', name: 'شهر نمونه' });
+    mockGetCities.mockResolvedValue([]);
   });
 
-  it('shows the remembered city name; clicking it opens the city picker', async () => {
+  it('shows the remembered city name and opens the picker in place (no page jump)', async () => {
     render(<HeaderPills />);
     const pill = await screen.findByTestId('header-city-pill');
-    expect(pill).toHaveAttribute('href', '/');
     expect(pill).toHaveTextContent('شهر نمونه');
+    // it is a toggle button now, not a link to the first-run screen
+    expect(pill.tagName).toBe('BUTTON');
+    expect(pill).not.toHaveAttribute('href');
+    expect(pill).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(pill);
+    expect(await screen.findByTestId('city-picker')).toBeInTheDocument();
+    expect(pill).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.click(screen.getByTestId('city-picker-close'));
+    await waitFor(() => expect(screen.queryByTestId('city-picker')).toBeNull());
   });
 
   it('asks for a city selection when none is remembered', async () => {
     mockGetLocalCity.mockReturnValue(null);
     render(<HeaderPills />);
     const pill = await screen.findByTestId('header-city-pill');
-    expect(pill).toHaveAttribute('href', '/');
+    expect(pill.tagName).toBe('BUTTON');
     expect(pill).toHaveTextContent('انتخاب شهر');
   });
 

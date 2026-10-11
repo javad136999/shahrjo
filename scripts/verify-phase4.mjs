@@ -68,7 +68,11 @@ for (const marker of ['اخبار شهر', '`/news/${item.slug}`', 'card-grid'])
 }
 
 const dashboard = read('apps/web/src/components/dashboard.tsx');
-for (const marker of ['dash-welcome', 'data-testid="wall-cta"', 'خوش آمدید', 'dash-section__head', 'id="map"', 'icon-tile']) {
+// The city home keeps its welcome card, the wall entry and the map anchor;
+// the map card itself renders bare — its «نقشه شهر» title/icon row was removed
+// on purpose, so dash-section__head / icon-tile no longer appear here (both
+// classes are still exercised by plans-view and covered by the CSS checks).
+for (const marker of ['dash-welcome', 'data-testid="wall-cta"', 'خوش آمدید', 'id="map"', '<CityMap']) {
   if (!dashboard.includes(marker)) { console.error(`WEB: dashboard missing ${marker}`); fail++; }
 }
 
