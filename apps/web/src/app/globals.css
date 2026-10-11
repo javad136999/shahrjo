@@ -4155,7 +4155,10 @@ button.pill {
 .city-picker-overlay {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  /* above the map's own stacking layers (catbar 1200 / menu 1300) — those
+     escape .city-map because it creates no stacking context, so the card
+     used to disappear under the map. */
+  z-index: 9000;
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -4178,8 +4181,9 @@ button.pill {
 .city-picker {
   display: flex;
   flex-direction: column;
-  width: min(100%, 460px);
-  max-height: min(78vh, 620px);
+  /* deliberately narrow: just a search box with a short list under it */
+  width: min(100%, 360px);
+  max-height: min(66vh, 470px);
   border: 1px solid rgb(14 122 95 / 18%);
   border-radius: 22px;
   background: linear-gradient(180deg, #fffdfa, #f7fcf9);
@@ -4191,7 +4195,7 @@ button.pill {
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 13px 15px 11px;
+  padding: 11px 13px 10px;
   border-bottom: 1px solid var(--line);
 }
 .city-picker__head h2 {
@@ -4231,7 +4235,7 @@ button.pill {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 11px 15px;
+  padding: 10px 13px;
   border-bottom: 1px solid var(--line);
   background: rgb(255 255 255 / 70%);
 }
@@ -4247,9 +4251,9 @@ button.pill {
 
 .city-picker__body {
   flex: 1;
-  min-height: 90px;
+  min-height: 80px;
   overflow-y: auto;
-  padding: 12px 15px;
+  padding: 10px 12px;
   overscroll-behavior: contain;
 }
 
@@ -4278,7 +4282,7 @@ button.pill {
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 9px 12px;
+  padding: 8px 11px;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: #fff;
@@ -4329,7 +4333,7 @@ button.pill {
 
 .city-picker__foot {
   margin: 0;
-  padding: 10px 15px;
+  padding: 9px 13px;
   border-top: 1px solid var(--line);
   background: rgb(255 255 255 / 70%);
   color: var(--muted);
@@ -4341,7 +4345,8 @@ button.pill {
     padding: 58px 10px 18px;
   }
   .city-picker {
-    max-height: 82vh;
+    width: min(100%, 340px);
+    max-height: 74vh;
     border-radius: 18px;
   }
 }
@@ -4352,4 +4357,11 @@ button.pill {
 .dash-map {
   margin-bottom: 16px;
   scroll-margin-top: 60px;
+}
+
+/* Keep the map's internal layers (catbar 1200, category menu 1300, leaflet
+   panes) inside the map: without this they compete in the root stacking
+   context and overlay anything below them. */
+.city-map {
+  isolation: isolate;
 }
