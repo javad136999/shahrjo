@@ -21,6 +21,57 @@ export interface CreatedBusiness {
   subscriptionTier: string;
 }
 
+type CityGeo = { latitude: number | null; longitude: number | null; boundary: unknown };
+
+/** Bounding box of a stored boundary (GeoJSON object or the seed's raw rings). */
+function boundaryBox(raw: unknown): { minLat: number; minLng: number; maxLat: number; maxLng: number } | null {
+  const points: number[][] = [];
+  const visit = (node: unknown): void => {
+    if (!Array.isArray(node)) return;
+    if (node.length >= 2 && typeof node[0] === 'number' && typeof node[1] === 'number') {
+      points.push([node[1], node[0]]); // stored as [lng, lat]
+      return;
+    }
+    for (const child of node) visit(child);
+  };
+  if (Array.isArray(raw)) visit(raw);
+  else if (raw && typeof raw === 'object') visit((raw as { coordinates?: unknown }).coordinates);
+  if (points.length === 0) return null;
+  const lats = points.map((pt) => pt[0]);
+  const lngs = points.map((pt) => pt[1]);
+  return {
+    minLat: Math.min(...lats),
+    maxLat: Math.max(...lats),
+    minLng: Math.min(...lngs),
+    maxLng: Math.max(...lngs),
+  };
+}
+
+/**
+ * Rough containment for owner-picked pins: inside the admin boundary
+ * (bbox + ~5 km margin) or within ~0.35° of the city centre. Cities with no
+ * geo data accept any pin — there is nothing to compare against.
+ */
+function assertInCity(city: CityGeo, lat: number, lng: number): void {
+  const bbox = boundaryBox(city.boundary);
+  if (bbox) {
+    const margin = 0.05;
+    if (
+      lat >= bbox.minLat - margin &&
+      lat <= bbox.maxLat + margin &&
+      lng >= bbox.minLng - margin &&
+      lng <= bbox.maxLng + margin
+    ) {
+      return;
+    }
+  }
+  if (city.latitude !== null && city.longitude !== null) {
+    if (Math.abs(lat - city.latitude) <= 0.35 && Math.abs(lng - city.longitude) <= 0.35) return;
+  }
+  if (!bbox && city.latitude === null) return;
+  throw new BadRequestException('موقعیت انتخاب‌شده خارج از محدوده این شهر است؛ دوباره روی نقشه انتخاب کنید');
+}
+
 /** URL-safe slug; Persian names keep their letters/numbers, plus a random suffix for uniqueness. */
 function businessSlug(name: string): string {
   const base = name
@@ -55,9 +106,15 @@ export class BusinessesService {
 
     const city = await this.prisma.city.findFirst({
       where: { id: user.cityId, isActive: true, province: { isActive: true } },
-      select: { id: true },
+      select: { id: true, latitude: true, longitude: true, boundary: true },
     });
     if (!city) throw new NotFoundException('شهر انتخاب‌شده یافت نشد');
+
+    // The pin must actually belong to this city — a map framed on another
+    // city used to save coordinates 100+ km away (cross-city data corruption).
+    if (dto.latitude !== undefined && dto.longitude !== undefined) {
+      assertInCity(city, dto.latitude, dto.longitude);
+    }
 
     const category = await this.prisma.businessCategory.findFirst({
       where: { id: dto.categoryId, isActive: true },

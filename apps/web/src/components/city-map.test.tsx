@@ -97,6 +97,21 @@ describe('CityMap', () => {
     await waitFor(() => expect(leaflet.map.mock.results[0].value.fitBounds).toHaveBeenCalled());
   });
 
+  it('renders boundaries stored as raw coordinate rings (the seed format)', async () => {
+    const leaflet = require('leaflet');
+    const seeded: CityMapData = {
+      ...data,
+      city: {
+        ...data.city,
+        // exactly what prisma/seed writes — no { type, coordinates } wrapper
+        boundary: [[[50.8, 28.85], [50.8, 29.0], [50.9, 29.0], [50.9, 28.85], [50.8, 28.85]]],
+      },
+    };
+    render(<CityMap data={seeded} />);
+    await waitFor(() => expect(leaflet.geoJSON).toHaveBeenCalledTimes(1));
+    expect(leaflet.circle).not.toHaveBeenCalled();
+  });
+
   it('supports MultiPolygon boundaries such as coastal or island-shaped cities', async () => {
     const leaflet = require('leaflet');
     const multipart: CityMapData = {

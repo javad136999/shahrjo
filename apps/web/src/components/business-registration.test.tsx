@@ -30,6 +30,8 @@ jest.mock('@/lib/api', () => ({
   getPlans: jest.fn(),
   getCityMap: jest.fn(),
   getLocalCity: jest.fn(),
+  getProfile: jest.fn(),
+  api: { get: jest.fn() },
   createBusiness: jest.fn(),
   checkoutPlan: jest.fn(),
   ApiError: class ApiError extends Error {},
@@ -52,6 +54,20 @@ describe('BusinessRegistration', () => {
     m.getPlans.mockResolvedValue(plans);
     m.getCityMap.mockResolvedValue({ city: { id: 1, name: 'شهر نمونه', slug: 'sample-city', latitude: 27.8, longitude: 52.3, boundary: null }, businesses: [] });
     m.getLocalCity.mockReturnValue({ id: 1, slug: 'sample-city', name: 'شهر نمونه' });
+    // no profile city by default → the map falls back to the local city
+    m.getProfile.mockResolvedValue({ cityId: null });
+  });
+
+  it('frames the map on the PROFILE city (the city the backend files under)', async () => {
+    const apiExport = api as unknown as { api: { get: jest.Mock } };
+    m.getProfile.mockResolvedValue({ cityId: 5 });
+    apiExport.api.get.mockResolvedValue([
+      { id: 5, slug: 'profile-city', name: 'شهر پروفایل' },
+      { id: 1, slug: 'sample-city', name: 'شهر نمونه' },
+    ]);
+    render(<BusinessRegistration />);
+    await waitFor(() => expect(m.getCityMap).toHaveBeenCalledWith('profile-city'));
+    expect(m.getCityMap).not.toHaveBeenCalledWith('sample-city');
   });
 
   it('redirects logged-out visitors to login', async () => {

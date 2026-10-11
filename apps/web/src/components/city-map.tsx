@@ -14,6 +14,22 @@ type CityBoundary =
   | { type: 'MultiPolygon'; coordinates: number[][][][] };
 
 function asBoundary(value: unknown): CityBoundary | null {
+  // Raw coordinate rings (exactly what prisma/seed stores): [[[…lng,lat…]]]
+  // is a Polygon, one level deeper is a MultiPolygon — wrap into GeoJSON.
+  // Without this every seeded boundary was silently dropped and the view
+  // fell back to pin-based framing — foreign pins could win and drag the
+  // camera to a completely different city.
+  if (Array.isArray(value)) {
+    const ring = Array.isArray(value[0]) ? value[0] : null;
+    const cell = ring && Array.isArray(ring[0]) ? ring[0] : null;
+    if (cell && cell.length > 0) {
+      if (typeof cell[0] === 'number') return { type: 'Polygon', coordinates: value as number[][][] };
+      if (Array.isArray(cell[0]) && typeof (cell[0] as unknown[])[0] === 'number') {
+        return { type: 'MultiPolygon', coordinates: value as number[][][][] };
+      }
+    }
+    return null;
+  }
   if (!value || typeof value !== 'object') return null;
   const raw = value as { type?: unknown; coordinates?: unknown; geometry?: unknown };
   const candidate = raw.type === 'Feature' ? raw.geometry : raw;

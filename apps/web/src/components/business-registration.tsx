@@ -8,12 +8,14 @@ import {
   checkoutPlan,
   createBusiness,
   getBusinessCategories,
+  api,
   getCityMap,
   getLocalCity,
   getPlans,
+  getProfile,
   getTokens,
 } from '@/lib/api';
-import type { BusinessCategoryOption, CityMapData, PlanItem } from '@/lib/types';
+import type { BusinessCategoryOption, City, CityMapData, PlanItem } from '@/lib/types';
 
 const formatRial = (rial: number) => `${new Intl.NumberFormat('fa-IR').format(rial)} ریال`;
 const TIER_ICON: Record<string, string> = { GOLD: '👑', SILVER: '🥈', FREE: '⭐' };
@@ -64,10 +66,24 @@ export function BusinessRegistration() {
         if (!alive) return;
         setCategories(cats);
         setPlans(pls);
-        const city = getLocalCity();
-        if (city) {
+        // The backend files the business under the PROFILE city — frame the
+        // map there. localStorage can differ from the profile and used to let
+        // a pin be dropped in a completely different city (cross-city coords).
+        let slug = getLocalCity()?.slug ?? null;
+        if (getTokens()) {
           try {
-            setMapData(await getCityMap(city.slug));
+            const me = await getProfile();
+            if (me.cityId) {
+              const cities = await api.get<City[]>('/cities');
+              slug = cities.find((c) => c.id === me.cityId)?.slug ?? slug;
+            }
+          } catch {
+            // profile unavailable → keep the local fallback
+          }
+        }
+        if (slug) {
+          try {
+            setMapData(await getCityMap(slug));
           } catch {
             // picker still works, framed on a broad default
           }
