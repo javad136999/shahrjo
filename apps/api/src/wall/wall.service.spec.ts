@@ -18,6 +18,7 @@ function makePrisma() {
       count: jest.fn().mockResolvedValue(34),
     },
     wallPostLike: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn(), delete: jest.fn() },
+    wallRead: { findUnique: jest.fn(), upsert: jest.fn() },
     media: { updateMany: jest.fn(), findUnique: jest.fn() },
     ad: { findMany: jest.fn() },
     $transaction: jest.fn(),

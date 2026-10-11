@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 
 const mockPathname = jest.fn();
 
@@ -7,10 +7,17 @@ jest.mock('next/navigation', () => ({
 }));
 
 const mockGetLocalCity = jest.fn();
+const mockGetTokens = jest.fn();
+const mockGetDmUnread = jest.fn();
+const mockGetWallUnread = jest.fn();
 
 jest.mock('@/lib/api', () => ({
   CITY_CHANGED_EVENT: 'shahrjo:city-changed',
+  DM_CHANGED_EVENT: 'shahrjo:dm-changed',
   getLocalCity: () => mockGetLocalCity(),
+  getTokens: () => mockGetTokens(),
+  getDmUnread: () => mockGetDmUnread(),
+  getWallUnread: (slug: string) => mockGetWallUnread(slug),
 }));
 
 import { BottomNav } from '@/components/bottom-nav';
@@ -20,6 +27,9 @@ describe('BottomNav', () => {
     jest.clearAllMocks();
     mockPathname.mockReturnValue('/');
     mockGetLocalCity.mockReturnValue({ id: 5, slug: 'sample-city', name: 'شهر نمونه' });
+    mockGetTokens.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
+    mockGetDmUnread.mockResolvedValue({ total: 0 });
+    mockGetWallUnread.mockResolvedValue({ unseenCount: 0 });
     window.location.hash = '';
   });
 
@@ -27,14 +37,18 @@ describe('BottomNav', () => {
     window.location.hash = '';
   });
 
-  it('renders the four quick actions with emoji icons (no submit entry)', () => {
+  it('renders the six quick actions with emoji icons (no submit entry)', () => {
     render(<BottomNav />);
     expect(screen.getByRole('navigation', { name: 'ناوبری سریع' })).toBeInTheDocument();
     expect(screen.getByTestId('bottom-nav-home')).toHaveTextContent('خانه');
     expect(screen.getByTestId('bottom-nav-news')).toHaveTextContent('اخبار');
+    expect(screen.getByTestId('bottom-nav-wall')).toHaveTextContent('دیوار');
+    expect(screen.getByTestId('bottom-nav-messages')).toHaveTextContent('پیام‌ها');
     expect(screen.getByTestId('bottom-nav-register-business')).toHaveTextContent('ثبت کسب‌وکار');
     expect(screen.getByTestId('bottom-nav-profile')).toHaveTextContent('پروفایل');
     expect(screen.getByTestId('bottom-nav-profile')).toHaveAttribute('href', '/profile');
+    expect(screen.getByTestId('bottom-nav-wall')).toHaveAttribute('href', '/wall');
+    expect(screen.getByTestId('bottom-nav-messages')).toHaveAttribute('href', '/messages');
     // «ثبت آگهی» moved into the city-wall composer (Phase 10)
     expect(screen.queryByTestId('bottom-nav-submit')).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /ثبت آگهی/ })).not.toBeInTheDocument();
@@ -80,5 +94,40 @@ describe('BottomNav', () => {
     render(<BottomNav />);
     expect(screen.getByTestId('bottom-nav-profile')).toHaveClass('is-active');
     expect(screen.getByTestId('bottom-nav-home')).not.toHaveClass('is-active');
+  });
+
+  it('marks wall active on /wall (and not home)', () => {
+    mockPathname.mockReturnValue('/wall');
+    render(<BottomNav />);
+    expect(screen.getByTestId('bottom-nav-wall')).toHaveClass('is-active');
+    expect(screen.getByTestId('bottom-nav-home')).not.toHaveClass('is-active');
+  });
+
+  it('marks messages active on /messages (and not home)', () => {
+    mockPathname.mockReturnValue('/messages');
+    render(<BottomNav />);
+    expect(screen.getByTestId('bottom-nav-messages')).toHaveClass('is-active');
+    expect(screen.getByTestId('bottom-nav-home')).not.toHaveClass('is-active');
+  });
+
+  it('shows red unread badges for private messages and the wall', async () => {
+    mockGetDmUnread.mockResolvedValue({ total: 3 });
+    mockGetWallUnread.mockResolvedValue({ unseenCount: 7 });
+    render(<BottomNav />);
+    expect(await screen.findByTestId('bottom-nav-messages-badge')).toHaveTextContent('3');
+    expect(await screen.findByTestId('bottom-nav-wall-badge')).toHaveTextContent('7');
+    expect(mockGetWallUnread).toHaveBeenCalledWith('sample-city');
+  });
+
+  it('fetches no unread counts for signed-out visitors', async () => {
+    mockGetTokens.mockReturnValue(null);
+    mockGetDmUnread.mockResolvedValue({ total: 4 });
+    mockGetWallUnread.mockResolvedValue({ unseenCount: 9 });
+    render(<BottomNav />);
+    await waitFor(() => expect(mockGetTokens).toHaveBeenCalled());
+    expect(mockGetDmUnread).not.toHaveBeenCalled();
+    expect(mockGetWallUnread).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('bottom-nav-messages-badge')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('bottom-nav-wall-badge')).not.toBeInTheDocument();
   });
 });

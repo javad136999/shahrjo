@@ -255,6 +255,44 @@ export interface CityMapData {
   businesses: CityMapBusiness[];
 }
 
+/** Private chat (پیام‌های خصوصی — 1:1, started from the city wall). */
+export interface DmPeer {
+  id: number;
+  fullName: string | null;
+  avatarUrl: string | null;
+}
+
+export interface DmMessage {
+  id: number;
+  senderId: number;
+  body: string | null;
+  imageUrl: string | null;
+  createdAt: string;
+}
+
+export interface DmConversation {
+  id: number;
+  peer: DmPeer;
+  unreadCount: number;
+  lastMessageAt: string | null;
+  lastMessage: DmMessage | null;
+}
+
+export interface DmMessagesPage {
+  messages: DmMessage[];
+  nextBefore: string | null;
+}
+
+/** Public profile card (tap a wall username/avatar → start a private chat). */
+export interface PublicProfile {
+  id: number;
+  fullName: string | null;
+  avatarUrl: string | null;
+  cityName: string | null;
+  memberSince: string;
+  isSelf: boolean;
+}
+
 /** City wall (دیوار شهر — Phase 8b, chat room — Phase 10). */
 export interface WallAuthor {
   id: number;

@@ -73,6 +73,9 @@ jobs:
       - name: Phase 10 checks (wall, private messages + daily ad republication)
         run: pnpm verify:phase10
 
+      - name: Phase 11 checks (private chat, profile cards, unread badges)
+        run: pnpm verify:phase11
+
       - name: Typecheck all workspaces
         run: pnpm typecheck:all
 

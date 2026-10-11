@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { UpdateProfileDto } from '../auth/dto/auth.dto';
 import { CurrentUser } from '../common/decorators';
@@ -11,6 +11,12 @@ export class UsersController {
   @Get('me')
   getMe(@CurrentUser() user: User) {
     return this.users.getMe(user);
+  }
+
+  /** Public profile card (tap on a wall username → private chat). */
+  @Get(':id/profile')
+  getPublicProfile(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number) {
+    return this.users.getPublicProfile(user, id);
   }
 
   @Patch('me')

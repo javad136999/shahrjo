@@ -142,6 +142,7 @@ model City {
   mapLocations MapLocation[]
   adminUsers   AdminUser[]
   wallPosts    WallPost[]
+  wallReads    WallRead[]
 
   @@index([provinceId])
   @@map("cities")
@@ -177,6 +178,10 @@ model User {
   subscriptions Subscription[]
   wallPosts     WallPost[]
   wallLikes     WallPostLike[]
+  dmConvosA     PrivateConversation[] @relation("DmConvUserA")
+  dmConvosB     PrivateConversation[] @relation("DmConvUserB")
+  dmMessages    PrivateMessage[]
+  wallReads     WallRead[]
 
   @@index([cityId])
   @@map("users")
@@ -824,6 +829,7 @@ model Media {
   deletedAt   DateTime? @map("deleted_at") // soft-delete marker for orphan cleanup job
 
   owner User? @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
+  privateMessages PrivateMessage[]
 
   @@index([entityType, entityId])
   @@index([deletedAt])
@@ -840,4 +846,57 @@ model SiteVisit {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("site_visits")
+}
+
+// ================= Private chat (پیام‌های خصوصی) =================
+
+// One row per unordered user pair (userAId < userBId enforced in the service).
+// Per-user read pointers double as the unread badge source.
+model PrivateConversation {
+  id            Int        @id @default(autoincrement())
+  userAId       Int        @map("user_a_id")
+  userBId       Int        @map("user_b_id")
+  lastMessageAt DateTime?  @map("last_message_at")
+  aLastReadAt   DateTime   @default(now()) @map("a_last_read_at")
+  bLastReadAt   DateTime   @default(now()) @map("b_last_read_at")
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  userA    User             @relation("DmConvUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB    User             @relation("DmConvUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  messages PrivateMessage[]
+
+  @@unique([userAId, userBId])
+  @@index([lastMessageAt])
+  @@map("private_conversations")
+}
+
+model PrivateMessage {
+  id             Int      @id @default(autoincrement())
+  conversationId Int      @map("conversation_id")
+  senderId       Int      @map("sender_id")
+  body           String?  @db.VarChar(2000)
+  imageId        Int?     @map("image_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation PrivateConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User                @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  image        Media?              @relation(fields: [imageId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, createdAt])
+  @@map("private_messages")
+}
+
+// Wall unread tracking: one row per (user, city) — the red badge on the
+// bottom-nav wall icon counts posts newer than lastSeenAt.
+model WallRead {
+  userId     Int      @map("user_id")
+  cityId     Int      @map("city_id")
+  lastSeenAt DateTime @default(now()) @map("last_seen_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city City @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@id([userId, cityId])
+  @@map("wall_reads")
 }

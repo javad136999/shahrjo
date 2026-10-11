@@ -11,6 +11,9 @@ import type {
   BusinessItem,
   CheckoutSession,
   CityMapData,
+  DmConversation,
+  DmMessage,
+  DmMessagesPage,
   CreatedAd,
   LocalCity,
   MeResponse,
@@ -20,6 +23,7 @@ import type {
   NewsItem,
   PaymentHistoryItem,
   PlanItem,
+  PublicProfile,
   QueueAd,
   QueueBusiness,
   QueueSubscription,
@@ -469,4 +473,52 @@ export async function createBusiness(body: {
   longitude?: number;
 }): Promise<CreatedBusiness> {
   return api.post<CreatedBusiness>('/businesses', body);
+}
+
+// ---------- private chat (پیام‌های خصوصی) ----------
+
+/** Custom event: unread private messages changed (send/open) — refreshes the nav badge. */
+export const DM_CHANGED_EVENT = 'shahrjo:dm-changed';
+
+/** Inbox: my conversations (peer, last message, unread counts), newest first. */
+export async function listDmConversations(): Promise<DmConversation[]> {
+  return api.get<DmConversation[]>('/dm/conversations');
+}
+
+/** Start (or resume) the conversation with a user — from a wall username tap. */
+export async function startDm(userId: number): Promise<DmConversation> {
+  return api.post<DmConversation>('/dm/conversations', { userId });
+}
+
+/** One page of a conversation (newest page first). Opening marks it read. */
+export async function getDmMessages(id: number, before?: string): Promise<DmMessagesPage> {
+  const cursor = before ? `&before=${encodeURIComponent(before)}` : '';
+  return api.get<DmMessagesPage>(`/dm/conversations/${id}/messages?limit=30${cursor}`);
+}
+
+/** Send a text body and/or one uploaded image into a conversation. */
+export async function sendDmMessage(id: number, body: { body?: string; imageId?: number }): Promise<DmMessage> {
+  return api.post<DmMessage>(`/dm/conversations/${id}/messages`, body);
+}
+
+/** Unread private messages — the bottom-nav red badge. */
+export async function getDmUnread(): Promise<{ total: number }> {
+  return api.get<{ total: number }>('/dm/unread');
+}
+
+// ---------- public profile + wall unread badge ----------
+
+/** Public profile card shown when tapping a username/avatar. */
+export async function getPublicProfile(userId: number): Promise<PublicProfile> {
+  return api.get<PublicProfile>(`/users/${userId}/profile`);
+}
+
+/** Wall posts since the caller's last visit — the bottom-nav badge. */
+export async function getWallUnread(citySlug: string): Promise<{ unseenCount: number }> {
+  return api.get<{ unseenCount: number }>(`/wall/unread?city=${encodeURIComponent(citySlug)}`);
+}
+
+/** Explicit wall read marker (the feed also touches it server-side). */
+export async function markWallRead(cityId: number): Promise<{ lastSeenAt: string }> {
+  return api.post<{ lastSeenAt: string }>('/wall/read', { cityId });
 }

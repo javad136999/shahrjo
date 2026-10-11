@@ -15,6 +15,16 @@ export interface MeResponse {
   createdAt: Date;
 }
 
+/** Public card shown when tapping a username/avatar on the wall. */
+export interface PublicProfile {
+  id: number;
+  fullName: string | null;
+  avatarUrl: string | null;
+  cityName: string | null;
+  memberSince: Date;
+  isSelf: boolean;
+}
+
 export interface UpdateProfileDto {
   fullName?: string;
   avatarUrl?: string;
@@ -41,6 +51,29 @@ export class UsersService {
       status: user.status,
       roles,
       createdAt: user.createdAt,
+    };
+  }
+
+  /** Public profile card — wall username tap → start a private chat. */
+  async getPublicProfile(viewer: User, id: number): Promise<PublicProfile> {
+    const found = await this.prisma.user.findFirst({
+      where: { id, status: 'ACTIVE' },
+      select: {
+        id: true,
+        fullName: true,
+        avatarUrl: true,
+        createdAt: true,
+        city: { select: { name: true } },
+      },
+    });
+    if (!found) throw new NotFoundException('کاربر یافت نشد');
+    return {
+      id: found.id,
+      fullName: found.fullName,
+      avatarUrl: found.avatarUrl,
+      cityName: found.city?.name ?? null,
+      memberSince: found.createdAt,
+      isSelf: found.id === viewer.id,
     };
   }
 

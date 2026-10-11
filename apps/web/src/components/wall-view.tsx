@@ -14,6 +14,7 @@ import {
   uploadImage,
   uploadVoice,
 } from '@/lib/api';
+import { UserProfileModal } from '@/components/user-profile-modal';
 import { formatPrice, thumbFallback, thumbUrlFor, timeAgo } from '@/lib/format';
 import type { AdCategoryOption, WallAdRef, WallFeed, WallPost } from '@/lib/types';
 
@@ -68,6 +69,8 @@ function clock(seconds: number): string {
  */
 export function WallView({ city }: WallViewProps) {
   const [feed, setFeed] = useState<WallFeed | null>(null);
+  // tapped username/avatar → public profile card → private chat entry
+  const [profileUserId, setProfileUserId] = useState<number | null>(null);
   const [gate, setGate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [text, setText] = useState('');
@@ -386,7 +389,19 @@ export function WallView({ city }: WallViewProps) {
         className={`wall-post${post.isPinned ? ' wall-post--pinned' : ''}${post.ad ? ' wall-post--ad' : ''}`}
         data-testid={`wall-post-${post.id}`}
       >
-        <span className="wall-post__avatar" aria-hidden>
+        <span
+          className="wall-post__avatar wall-post__tappable"
+          role="button"
+          tabIndex={0}
+          aria-label={`پروفایل ${post.user.name}`}
+          onClick={() => setProfileUserId(post.user.id)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setProfileUserId(post.user.id);
+            }
+          }}
+        >
           {post.user.avatarUrl && !post.user.avatarUrl.startsWith('emoji:') ? (
             // eslint-disable-next-line @next/next/no-img-element -- remote media
             <img src={post.user.avatarUrl} alt="" />
@@ -396,7 +411,20 @@ export function WallView({ city }: WallViewProps) {
         </span>
         <div className="wall-post__body">
           <div className="wall-post__head">
-            <strong className="wall-post__name">{post.user.name}</strong>
+            <strong
+              className="wall-post__name wall-post__tappable"
+              role="button"
+              tabIndex={0}
+              onClick={() => setProfileUserId(post.user.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setProfileUserId(post.user.id);
+                }
+              }}
+            >
+              {post.user.name}
+            </strong>
             <time className="wall-post__time">{timeAgo(post.createdAt)}</time>
             {post.editedAt && (
               <span className="wall-post__edited" data-testid={`wall-edited-${post.id}`}>
@@ -729,6 +757,10 @@ export function WallView({ city }: WallViewProps) {
           </div>
         )}
       </div>
+
+      {profileUserId !== null && (
+        <UserProfileModal userId={profileUserId} onClose={() => setProfileUserId(null)} />
+      )}
     </div>
   );
 }

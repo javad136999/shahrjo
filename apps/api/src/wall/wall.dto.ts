@@ -21,6 +21,22 @@ export class WallListQueryDto {
   before?: string;
 }
 
+/** GET /wall/unread — bottom-nav red badge for one city. */
+export class WallUnreadQueryDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
+  city!: string;
+}
+
+/** POST /wall/read — remember the caller has seen the wall up to now. */
+export class WallReadDto {
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  cityId!: number;
+}
+
 /** POST /wall — publish a post (optionally replying + one image + one voice note). */
 export class CreateWallPostDto {
   @Type(() => Number)

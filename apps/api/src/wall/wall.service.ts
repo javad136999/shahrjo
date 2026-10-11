@@ -179,6 +179,51 @@ export class WallService {
   } as const;
 
   /** Newest-first feed + the single pinned post of the city + room meta. */
+  /** Posts whose attached ad (if any) is still visible in moderation. */
+  private get visiblePosts(): Prisma.WallPostWhereInput {
+    const visibleAdStatuses: ('PENDING' | 'APPROVED')[] = ['PENDING', 'APPROVED'];
+    return {
+      OR: [
+        { adId: null },
+        { ad: { is: { status: { in: visibleAdStatuses } } } },
+      ],
+    };
+  }
+
+  /** Remember the caller has seen this city's wall up to now. */
+  private async touchRead(userId: number, cityId: number, at: Date = new Date()): Promise<void> {
+    await this.prisma.wallRead.upsert({
+      where: { userId_cityId: { userId, cityId } },
+      create: { userId, cityId, lastSeenAt: at },
+      update: { lastSeenAt: at },
+    });
+  }
+
+  /** Bottom-nav badge: posts created after the caller's last visit. */
+  async unread(user: User, citySlug: string): Promise<{ unseenCount: number }> {
+    const city = await this.resolveCity(citySlug);
+    const read = await this.prisma.wallRead.findUnique({
+      where: { userId_cityId: { userId: user.id, cityId: city.id } },
+    });
+    const since = read?.lastSeenAt ?? new Date(0);
+    const unseenCount = await this.prisma.wallPost.count({
+      where: {
+        cityId: city.id,
+        userId: { not: user.id },
+        createdAt: { gt: since },
+        ...this.visiblePosts,
+      },
+    });
+    return { unseenCount };
+  }
+
+  /** POST /wall/read — explicit read marker (the feed also touches it). */
+  async markRead(user: User, cityId: number): Promise<{ lastSeenAt: Date }> {
+    const lastSeenAt = new Date();
+    await this.touchRead(user.id, cityId, lastSeenAt);
+    return { lastSeenAt };
+  }
+
   async list(
     user: User,
     citySlug: string,
@@ -188,13 +233,10 @@ export class WallService {
     const city = await this.resolveCity(citySlug);
     const cityId = city.id;
     const scope = await this.scopeOf(user.id);
-    const visibleAdStatuses: ('PENDING' | 'APPROVED')[] = ['PENDING', 'APPROVED'];
-    const visibleWallPosts: Prisma.WallPostWhereInput = {
-      OR: [
-        { adId: null },
-        { ad: { is: { status: { in: visibleAdStatuses } } } },
-      ],
-    };
+    const visibleWallPosts = this.visiblePosts;
+    // Every feed load means the caller is looking at the wall — bump the
+    // read pointer so the bottom-nav badge resets (pagination included).
+    await this.touchRead(user.id, cityId);
 
     const [pinnedRow, rows, memberCount, messageCount] = await Promise.all([
       this.prisma.wallPost.findFirst({
