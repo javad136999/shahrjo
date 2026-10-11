@@ -59,7 +59,7 @@ const showcase: ShowcaseItem[] = [
 const mapData: CityMapData = {
   city: { id: 1, name: 'شهر نمونه', slug: 'sample-city', latitude: 27.83, longitude: 52.32, boundary: null },
   businesses: [
-    { id: 40, name: 'رستوران ویترین', slug: 'showcase-rest', latitude: 27.831, longitude: 52.321, subscriptionTier: 'GOLD', category: { name: 'رستوران', slug: 'restaurants', icon: '🍽', color: '#0e7a5f' } },
+    { id: 40, name: 'رستوران ویترین', slug: 'showcase-rest', latitude: 27.831, longitude: 52.321, subscriptionTier: 'GOLD', logoUrl: null, category: { name: 'رستوران', slug: 'restaurants', icon: '🍽', color: '#0e7a5f' } },
   ],
 };
 
@@ -138,12 +138,13 @@ describe('CityDashboard', () => {
     expect(screen.getByTestId('showcase-empty')).toHaveTextContent('هنوز کسب‌وکار طلایی‌ای در این شهر ثبت نشده');
   });
 
-  it('renders the golden showcase directly above the city map', () => {
+  it('puts the city map above the golden showcase', () => {
     renderDashboard({ mapData, showcase });
     expect(screen.getByTestId('city-map')).toHaveAttribute('data-pins', '1');
-    const showcaseEl = screen.getByTestId('showcase');
     const map = document.querySelector('.dash-map') as HTMLElement;
+    const showcaseEl = screen.getByTestId('showcase');
     expect(map).not.toBeNull();
-    expect(showcaseEl.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Phase 11b: the map comes first, the showcase right under it
+    expect(map.compareDocumentPosition(showcaseEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

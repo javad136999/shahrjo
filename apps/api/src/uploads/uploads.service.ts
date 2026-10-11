@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import type { User } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { MAX_INPUT_BYTES, processImage } from './image.processor';
+import { BUSINESS_PROFILE, DISPLAY_PROFILE, MAX_INPUT_BYTES, processImage, type ImageProfile } from './image.processor';
 import { STORAGE_DRIVER, type StorageDriver } from './storage/storage.types';
 
 /** Hard cap per incoming image (multer rejects earlier; this is defense in depth). */
@@ -148,6 +148,25 @@ export class UploadsService implements OnModuleInit {
   }
 
   async save(user: User, file: { buffer?: Buffer; size?: number } | undefined): Promise<StoredImage> {
+    return this.storeImage(user, file, DISPLAY_PROFILE, 'AD');
+  }
+
+  /**
+   * Business photos (logo/cover, menu products) go through the hard-compressed
+   * profile: owners upload much more than ad posters do and their pictures are
+   * only ever shown at card size, so `BUSINESS_PROFILE` keeps months of menu
+   * photos inside the same per-user quota.
+   */
+  async saveBusinessImage(user: User, file: { buffer?: Buffer; size?: number } | undefined): Promise<StoredImage> {
+    return this.storeImage(user, file, BUSINESS_PROFILE, 'BUSINESS');
+  }
+
+  private async storeImage(
+    user: User,
+    file: { buffer?: Buffer; size?: number } | undefined,
+    profile: ImageProfile,
+    entityType: string,
+  ): Promise<StoredImage> {
     const buffer = file?.buffer;
     if (!buffer || buffer.length === 0) throw new BadRequestException('فایل تصویر الزامی است');
     if ((file?.size ?? buffer.length) > MAX_UPLOAD_BYTES || buffer.length > MAX_UPLOAD_BYTES) {
@@ -182,7 +201,7 @@ export class UploadsService implements OnModuleInit {
     }
 
     // --- process: WebP display copy + list thumbnail (original is discarded) ---
-    const processed = await processImage(buffer);
+    const processed = await processImage(buffer, profile);
     if (usedBytes + processed.bytes > MAX_BYTES_PER_USER) {
       throw new PayloadTooLargeException(
         'سقف ذخیره‌سازی تصویر شما تکمیل است (۱۰۰ مگابایت)؛ ابتدا تصاویر آگهی‌های قدیمی را حذف کنید',
@@ -219,8 +238,8 @@ export class UploadsService implements OnModuleInit {
           width: processed.full.width,
           height: processed.full.height,
           ownerUserId: user.id,
-          entityType: 'AD',
-          entityId: null, // attached to an ad (and claimed) on POST /ads
+          entityType,
+          entityId: null, // claimed by the ad / business it is attached to
         },
         select: { id: true, url: true },
       });

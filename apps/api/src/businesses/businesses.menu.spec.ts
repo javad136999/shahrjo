@@ -5,9 +5,24 @@ import { BusinessesService } from './businesses.service';
 
 function makePrisma() {
   return {
-    business: { findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn() },
+    business: {
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      update: jest.fn(),
+      create: jest.fn(),
+      count: jest.fn(),
+    },
     businessCategory: { findFirst: jest.fn() },
-    businessProduct: { create: jest.fn(), findFirst: jest.fn(), update: jest.fn(), delete: jest.fn() },
+    businessProduct: {
+      create: jest.fn(),
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+    },
+    media: { findFirst: jest.fn(), updateMany: jest.fn() },
+    city: { findFirst: jest.fn() },
   };
 }
 
@@ -31,6 +46,9 @@ describe('BusinessesService — «کسب‌وکارهای من» + menu/products
     prisma = makePrisma();
     service = new BusinessesService(prisma as unknown as PrismaService);
     prisma.business.findFirst.mockResolvedValue({ id: 4 });
+    prisma.businessProduct.count.mockResolvedValue(0);
+    prisma.business.count.mockResolvedValue(0);
+    prisma.media.updateMany.mockResolvedValue({ count: 1 });
   });
 
   describe('mine()', () => {
@@ -101,26 +119,26 @@ describe('BusinessesService — «کسب‌وکارهای من» + menu/products
     });
 
     it('stores an emptied field as NULL (clear), keeping unchanged fields', async () => {
-      prisma.business.findFirst
-        .mockResolvedValueOnce({ id: 4 }) // ownership gate — must be first
-        .mockResolvedValueOnce({
-          id: 4,
-          name: 'کافه',
-          slug: 'x-1',
-          status: 'APPROVED',
-          subscriptionTier: 'FREE',
-          logoUrl: null,
-          rating: 0,
-          ratingCount: 0,
-          latitude: null,
-          longitude: null,
-          description: null,
-          phone: '0912',
-          address: null,
-          categoryId: 3,
-          category: { id: 3, name: 'کافه', icon: '☕' },
-          products: [],
-        });
+      // every findFirst (ownership gate, current logo, then the manage
+      // payload) sees the same owned row
+      prisma.business.findFirst.mockResolvedValue({
+        id: 4,
+        name: 'کافه',
+        slug: 'x-1',
+        status: 'APPROVED',
+        subscriptionTier: 'FREE',
+        logoUrl: null,
+        rating: 0,
+        ratingCount: 0,
+        latitude: null,
+        longitude: null,
+        description: null,
+        phone: '0912',
+        address: null,
+        categoryId: 3,
+        category: { id: 3, name: 'کافه', icon: '☕' },
+        products: [],
+      });
       await service.update(owner, 4, { address: '   ' });
       expect(prisma.business.update).toHaveBeenCalledWith({
         where: { id: 4 },
@@ -204,5 +222,82 @@ describe('BusinessesService — «کسب‌وکارهای من» + menu/products
       prisma.businessProduct.delete.mockResolvedValue({ id: 11 });
       await expect(service.removeProduct(owner, 4, 11)).resolves.toEqual({ id: 11, removed: true });
     });
+  });
+});
+
+describe('BusinessesService — business/product photos (own uploads only)', () => {
+  let prisma: ReturnType<typeof makePrisma>;
+  let service: BusinessesService;
+  const OWN_URL = '/api/v1/files/media/2026/10/pic.webp';
+
+  beforeEach(() => {
+    prisma = makePrisma();
+    service = new BusinessesService(prisma as unknown as PrismaService);
+    prisma.business.findFirst.mockResolvedValue({ id: 4 });
+    prisma.media.findFirst.mockResolvedValue({ id: 77 });
+    prisma.media.updateMany.mockResolvedValue({ count: 1 });
+    prisma.businessProduct.count.mockResolvedValue(0);
+    prisma.business.count.mockResolvedValue(0);
+  });
+
+  it('refuses a foreign/hot-linked image URL', async () => {
+    await expect(service.addProduct(owner, 4, { name: 'قهوه', imageUrl: 'https://evil.example/x.jpg' }))
+      .rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.businessProduct.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses an internal path that is not the caller\'s own upload', async () => {
+    prisma.media.findFirst.mockResolvedValue(null);
+    await expect(service.addProduct(owner, 4, { name: 'قهوه', imageUrl: OWN_URL }))
+      .rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.businessProduct.create).not.toHaveBeenCalled();
+  });
+
+  it('claims the media row for the business (so the orphan sweep keeps it)', async () => {
+    prisma.businessProduct.create.mockResolvedValue(productRow);
+    await service.addProduct(owner, 4, { name: 'لاته', imageUrl: OWN_URL });
+
+    expect(prisma.media.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { url: OWN_URL, ownerUserId: 7 } }),
+    );
+    expect(prisma.media.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { url: OWN_URL, ownerUserId: 7 },
+        data: { entityType: 'BUSINESS', entityId: '4' },
+      }),
+    );
+  });
+
+  it('frees the bytes when a product photo is cleared (soft delete for the sweep)', async () => {
+    prisma.businessProduct.findFirst.mockResolvedValue({ imageUrl: OWN_URL });
+    prisma.businessProduct.update.mockResolvedValue({ ...productRow, imageUrl: null });
+
+    await service.updateProduct(owner, 4, 11, { imageUrl: '' });
+
+    expect(prisma.media.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { url: OWN_URL, ownerUserId: 7, deletedAt: null },
+        data: expect.objectContaining({ entityId: null }),
+      }),
+    );
+  });
+
+  it('keeps the file while another product of the owner still uses it', async () => {
+    prisma.businessProduct.findFirst.mockResolvedValue({ imageUrl: OWN_URL });
+    prisma.businessProduct.update.mockResolvedValue({ ...productRow, imageUrl: null });
+    prisma.businessProduct.count.mockResolvedValue(1); // still referenced
+
+    await service.updateProduct(owner, 4, 11, { imageUrl: '' });
+
+    expect(prisma.media.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('refuses a logo that is not the owner\'s upload when registering', async () => {
+    prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: null, longitude: null, boundary: null });
+    (prisma as unknown as { businessCategory: { findFirst: jest.Mock } }).businessCategory.findFirst.mockResolvedValue({ id: 3 });
+    await expect(
+      service.create(owner, { name: 'کافه', categoryId: 3, logoUrl: 'https://evil.example/logo.png' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.business.create).not.toHaveBeenCalled();
   });
 });

@@ -42,10 +42,10 @@ export function CityDashboard({ city, showcase, mapData, loading, feedError }: C
         </div>
       )}
 
-      {/* Golden showcase marquee — sits directly above the city map (Phase 9) */}
-      <ShowcaseMarquee items={showcase} loading={loading} />
-
-      {/* the map stands on its own: the «نقشه شهر» title/icon row above it is gone */}
+      {/* The map comes first now (Phase 11b): the city is the point of the
+          page, the golden showcase sits right under it. The «نقشه شهر»
+          title row and the category bar above the canvas are gone, so the
+          canvas itself starts at the top of this card. */}
       {(loading || mapData) && (
         <section className="dash-map" id="map" aria-label="نقشه شهر">
           {mapData ? (
@@ -57,6 +57,9 @@ export function CityDashboard({ city, showcase, mapData, loading, feedError }: C
           )}
         </section>
       )}
+
+      {/* Golden showcase marquee — directly under the city map */}
+      <ShowcaseMarquee items={showcase} loading={loading} />
     </div>
   );
 }

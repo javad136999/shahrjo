@@ -27,6 +27,23 @@ export class UploadsController {
   }
 
   /**
+   * Business photo upload (Phase 11b): same checks, but encoded with the
+   * hard-compressed business profile (≤1000px WebP q72 + ≤320px thumbnail) and
+   * filed as `entityType: BUSINESS`, so owner logos and menu photos do not eat
+   * the disk. `POST /uploads` stays the full-size route (ads/avatars/covers).
+   */
+  @Post('uploads/business')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: MAX_UPLOAD_BYTES, files: 1 },
+    }),
+  )
+  uploadBusiness(@CurrentUser() user: User, @UploadedFile() file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException('فایل تصویر الزامی است');
+    return this.uploads.saveBusinessImage(user, file);
+  }
+
+  /**
    * Store one voice note for the city wall chat (Phase 10): 5 MB cap,
    * magic-byte sniffing (WebM/OGG/M4A/MP3/WAV), random storage key, no
    * re-encoding — the bytes are already compressed and must stay playable.

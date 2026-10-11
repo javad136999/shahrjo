@@ -230,6 +230,17 @@ export async function uploadImage(file: File): Promise<UploadedImage> {
   return requestForm<UploadedImage>('/uploads', form);
 }
 
+/**
+ * Business photo upload (logo, cover, menu products). The server encodes it
+ * with the hard-compressed business profile (≤1000px WebP q72 + ≤320px
+ * thumbnail), so owner uploads do not fill the disk.
+ */
+export async function uploadBusinessImage(file: File): Promise<UploadedImage> {
+  const form = new FormData();
+  form.append('file', file, file.name);
+  return requestForm<UploadedImage>('/uploads/business', form);
+}
+
 export async function getProfile(): Promise<MeResponse> {
   return api.get<MeResponse>('/users/me');
 }
@@ -472,6 +483,8 @@ export async function createBusiness(body: {
   description?: string;
   phone?: string;
   address?: string;
+  /** URL of the owner's own business photo (see uploadBusinessImage). */
+  logoUrl?: string;
   latitude?: number;
   longitude?: number;
 }): Promise<CreatedBusiness> {
@@ -493,7 +506,15 @@ export async function getMyBusiness(id: number): Promise<ManagedBusiness> {
 /** Edit the public profile fields of an owned business (empty string clears). */
 export async function updateMyBusiness(
   id: number,
-  patch: { name?: string; categoryId?: number; description?: string; phone?: string; address?: string },
+  patch: {
+    name?: string;
+    categoryId?: number;
+    description?: string;
+    phone?: string;
+    address?: string;
+    /** Business photo (own upload); empty string clears it. */
+    logoUrl?: string;
+  },
 ): Promise<ManagedBusiness> {
   return api.patch<ManagedBusiness>(`/my-businesses/${id}`, patch);
 }

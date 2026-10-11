@@ -14,7 +14,9 @@ import {
   getPlans,
   getProfile,
   getTokens,
+  uploadBusinessImage,
 } from '@/lib/api';
+import { thumbFallback, thumbUrlFor } from '@/lib/format';
 import type { BusinessCategoryOption, City, CityMapData, PlanItem } from '@/lib/types';
 
 const formatRial = (rial: number) => `${new Intl.NumberFormat('fa-IR').format(rial)} ریال`;
@@ -38,6 +40,8 @@ export function BusinessRegistration() {
 
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [logoBusy, setLogoBusy] = useState(false);
   const [description, setDescription] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -48,6 +52,7 @@ export function BusinessRegistration() {
   const [busy, setBusy] = useState(false);
 
   // Leaflet refs kept out of React state so clicks don't re-init the map.
+  const logoInput = useRef<HTMLInputElement | null>(null);
   const mapEl = useRef<HTMLDivElement | null>(null);
   const mapObj = useRef<import('leaflet').Map | null>(null);
   const markerObj = useRef<import('leaflet').Marker | null>(null);
@@ -153,6 +158,26 @@ export function BusinessRegistration() {
 
   const detailsValid = name.trim().length >= 2 && categoryId !== '';
 
+  /**
+   * The business photo goes through `/uploads/business`, which encodes it with
+   * the hard-compressed business profile server-side — the owner's camera-size
+   * JPEG becomes a small WebP, so the disk keeps up with months of signups.
+   */
+  const pickLogo = async (file: File | null) => {
+    if (!file) return;
+    setLogoBusy(true);
+    setError(null);
+    try {
+      const uploaded = await uploadBusinessImage(file);
+      setLogoUrl(uploaded.url);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'بارگذاری عکس کسب‌وکار ناموفق بود');
+    } finally {
+      setLogoBusy(false);
+      if (logoInput.current) logoInput.current.value = '';
+    }
+  };
+
   const confirmAndPay = async () => {
     if (!selectedPlanId) return;
     setBusy(true);
@@ -164,6 +189,7 @@ export function BusinessRegistration() {
         description: description.trim() || undefined,
         phone: phone.trim() || undefined,
         address: address.trim() || undefined,
+        logoUrl: logoUrl || undefined,
         latitude: location?.lat,
         longitude: location?.lng,
       });
@@ -230,6 +256,43 @@ export function BusinessRegistration() {
               </option>
             ))}
           </select>
+
+          <label htmlFor="biz-logo">عکس کسب‌وکار — اختیاری</label>
+          <div className="biz-image">
+            {logoUrl ? (
+              <span className="biz-image__picked" data-testid="biz-logo-preview">
+                {/* eslint-disable-next-line @next/next/no-img-element -- owner-uploaded media */}
+                <img src={thumbUrlFor(logoUrl) ?? logoUrl} onError={thumbFallback(logoUrl)} alt="" />
+              </span>
+            ) : (
+              <span className="biz-image__picked biz-image__picked--empty" aria-hidden>
+                🏪
+              </span>
+            )}
+            <input
+              id="biz-logo"
+              ref={logoInput}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              data-testid="biz-logo-input"
+              onChange={(e) => void pickLogo(e.target.files?.[0] ?? null)}
+            />
+            {logoUrl && (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                data-testid="biz-logo-remove"
+                onClick={() => setLogoUrl('')}
+              >
+                حذف عکس
+              </button>
+            )}
+          </div>
+          <p className="muted small">
+            {logoBusy
+              ? 'در حال بارگذاری و فشرده‌سازی عکس…'
+              : 'همین عکس در ویترین طلایی شهر و روی پین نقشه جای آیکون نمایش داده می‌شود.'}
+          </p>
 
           <label htmlFor="biz-desc">توضیحات — اختیاری</label>
           <textarea

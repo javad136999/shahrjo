@@ -68,6 +68,13 @@ export interface ManagedBusiness extends MyBusiness {
   products: ManagedProduct[];
 }
 
+/**
+ * Public path prefix of our own uploads. A business photo must live here —
+ * a foreign/hot-linked URL is rejected (it would let an owner point the site
+ * at somebody else's server, and it would never be scanned by the sweep).
+ */
+const INTERNAL_FILE_PREFIX = '/api/v1/files/';
+
 /** Trimmed string; empty string means «پاک کن» (stored as NULL). */
 function clean(value: string | undefined): string | null | undefined {
   if (value === undefined) return undefined;
@@ -163,6 +170,11 @@ export class BusinessesService {
   async create(user: User, dto: CreateBusinessDto): Promise<CreatedBusiness> {
     if (!user.cityId) throw new BadRequestException('ابتدا شهر خودت را انتخاب کن');
 
+    // The photo must be the caller's own upload — validated first, so a
+    // rejected image cannot leave a half-configured business behind.
+    const logoUrl = clean(dto.logoUrl) ?? null;
+    if (logoUrl) await this.assertOwnedImage(user, logoUrl);
+
     const city = await this.prisma.city.findFirst({
       where: { id: user.cityId, isActive: true, province: { isActive: true } },
       select: { id: true, latitude: true, longitude: true, boundary: true },
@@ -212,6 +224,7 @@ export class BusinessesService {
         categoryId: category.id,
         name: dto.name,
         slug,
+        logoUrl,
         description: dto.description ?? null,
         phone: dto.phone ?? user.phone ?? null,
         address: dto.address ?? null,
@@ -223,6 +236,8 @@ export class BusinessesService {
       },
       select: { id: true, name: true, slug: true, status: true, subscriptionTier: true },
     });
+
+    if (logoUrl) await this.claimImage(user, logoUrl, created.id);
 
     return { ...created, status: String(created.status), subscriptionTier: String(created.subscriptionTier) };
   }
@@ -324,6 +339,12 @@ export class BusinessesService {
       if (!category) throw new NotFoundException('دسته‌بندی یافت نشد');
     }
 
+    const current = await this.prisma.business.findFirst({
+      where: { id, ownerId: user.id },
+      select: { logoUrl: true },
+    });
+    if (!current) throw new NotFoundException('کسب‌وکار یافت نشد');
+
     const data: Record<string, string | number | null> = {};
     const name = clean(dto.name);
     if (name !== undefined) {
@@ -336,7 +357,21 @@ export class BusinessesService {
       if (value !== undefined) data[field] = value;
     }
 
+    const logo = clean(dto.logoUrl);
+    if (logo !== undefined) {
+      if (logo) await this.assertOwnedImage(user, logo);
+      data.logoUrl = logo;
+    }
+
     await this.prisma.business.update({ where: { id }, data });
+
+    // The replaced/cleared picture is released: soft-deleted, so the storage
+    // sweep frees its bytes instead of keeping a photo nobody points at.
+    if (logo !== undefined && current.logoUrl && current.logoUrl !== logo) {
+      await this.releaseImageIfUnused(user, current.logoUrl);
+    }
+    if (logo) await this.claimImage(user, logo, id);
+
     return this.manage(user, id);
   }
 
@@ -344,13 +379,16 @@ export class BusinessesService {
   async addProduct(user: User, id: number, dto: CreateProductDto): Promise<ManagedProduct> {
     await this.assertOwned(user, id);
 
+    const imageUrl = clean(dto.imageUrl) ?? null;
+    if (imageUrl) await this.assertOwnedImage(user, imageUrl);
+
     const created = await this.prisma.businessProduct.create({
       data: {
         businessId: id,
         name: dto.name.trim(),
         description: clean(dto.description) ?? null,
         price: dto.price === undefined ? null : BigInt(dto.price),
-        imageUrl: clean(dto.imageUrl) ?? null,
+        imageUrl,
         section: clean(dto.section) ?? null,
         sortOrder: dto.sortOrder ?? 0,
         isAvailable: dto.isAvailable ?? true,
@@ -366,6 +404,7 @@ export class BusinessesService {
         isAvailable: true,
       },
     });
+    if (imageUrl) await this.claimImage(user, imageUrl, id);
     return { ...created, price: rial(created.price) };
   }
 
@@ -379,19 +418,36 @@ export class BusinessesService {
     await this.assertOwned(user, id);
     await this.assertOwnedProduct(id, productId);
 
+    const before = await this.prisma.businessProduct.findFirst({
+      where: { id: productId, businessId: id },
+      select: { imageUrl: true },
+    });
+
     const data: Record<string, string | number | bigint | boolean | null> = {};
     const name = clean(dto.name);
     if (name !== undefined) {
       if (name === null) throw new BadRequestException('نام محصول الزامی است');
       data.name = name;
     }
-    for (const field of ['description', 'imageUrl', 'section'] as const) {
+    for (const field of ['description', 'section'] as const) {
       const value = clean(dto[field]);
       if (value !== undefined) data[field] = value;
     }
+
+    const imageUrl = clean(dto.imageUrl);
+    if (imageUrl !== undefined) {
+      if (imageUrl) await this.assertOwnedImage(user, imageUrl);
+      data.imageUrl = imageUrl;
+    }
+
     if (dto.price !== undefined) data.price = BigInt(dto.price);
     if (dto.sortOrder !== undefined) data.sortOrder = dto.sortOrder;
     if (dto.isAvailable !== undefined) data.isAvailable = dto.isAvailable;
+
+    if (imageUrl) await this.claimImage(user, imageUrl, id);
+    if (imageUrl !== undefined && before?.imageUrl && before.imageUrl !== imageUrl) {
+      await this.releaseImageIfUnused(user, before.imageUrl, productId);
+    }
 
     const updated = await this.prisma.businessProduct.update({
       where: { id: productId },
@@ -414,7 +470,16 @@ export class BusinessesService {
   async removeProduct(user: User, id: number, productId: number): Promise<{ id: number; removed: true }> {
     await this.assertOwned(user, id);
     await this.assertOwnedProduct(id, productId);
+
+    const product = await this.prisma.businessProduct.findFirst({
+      where: { id: productId, businessId: id },
+      select: { imageUrl: true },
+    });
     await this.prisma.businessProduct.delete({ where: { id: productId } });
+
+    // The row is gone — its picture must not keep occupying the disk (unless
+    // another one of the owner's rows/logo still points at the same file).
+    if (product?.imageUrl) await this.releaseImageIfUnused(user, product.imageUrl);
     return { id: productId, removed: true };
   }
 
@@ -425,6 +490,58 @@ export class BusinessesService {
       select: { id: true },
     });
     if (!owned) throw new NotFoundException('کسب‌وکار یافت نشد');
+  }
+
+  /**
+   * A business photo must be a stored upload of the caller: same-origin
+   * `/api/v1/files/...` path that belongs to one of their own Media rows.
+   * Foreign URLs are refused (no hot-linking, no unaccounted bytes).
+   */
+  private async assertOwnedImage(user: User, url: string): Promise<void> {
+    if (!url.startsWith(INTERNAL_FILE_PREFIX)) {
+      throw new BadRequestException('فقط عکس‌های آپلودشده در سایت قابل انتخاب هستند');
+    }
+    const media = await this.prisma.media.findFirst({
+      where: { url, ownerUserId: user.id },
+      select: { id: true },
+    });
+    if (!media) throw new BadRequestException('این عکس پیدا نشد؛ دوباره آپلود کنید');
+  }
+
+  /**
+   * Marks the Media row as attached to this business (`entityType: BUSINESS`,
+   * `entityId: <id>`) — the orphan sweep only deletes *unclaimed* uploads, so
+   * claiming is what keeps an owner's real photos alive.
+   */
+  private async claimImage(user: User, url: string, businessId: number): Promise<void> {
+    await this.prisma.media.updateMany({
+      where: { url, ownerUserId: user.id },
+      data: { entityType: 'BUSINESS', entityId: String(businessId) },
+    });
+  }
+
+  /**
+   * Frees the bytes of a picture no row points at any more: soft-deleted, so
+   * the storage sweep hard-deletes the file after its retention window.
+   * Skipped while another product/logo of the same owner still uses the URL.
+   */
+  private async releaseImageIfUnused(user: User, url: string, exceptProductId?: number): Promise<void> {
+    const [usedByProducts, usedAsLogo] = await Promise.all([
+      this.prisma.businessProduct.count({
+        where: {
+          imageUrl: url,
+          business: { ownerId: user.id },
+          ...(exceptProductId ? { id: { not: exceptProductId } } : {}),
+        },
+      }),
+      this.prisma.business.count({ where: { ownerId: user.id, logoUrl: url } }),
+    ]);
+    if (usedByProducts > 0 || usedAsLogo > 0) return;
+
+    await this.prisma.media.updateMany({
+      where: { url, ownerUserId: user.id, deletedAt: null },
+      data: { deletedAt: new Date(), entityId: null },
+    });
   }
 
   /** The product must belong to that business (no cross-business edits). */

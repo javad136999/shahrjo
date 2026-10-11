@@ -34,6 +34,7 @@ jest.mock('@/lib/api', () => ({
   api: { get: jest.fn() },
   createBusiness: jest.fn(),
   checkoutPlan: jest.fn(),
+  uploadBusinessImage: jest.fn(),
   ApiError: class ApiError extends Error {},
 }));
 
@@ -110,6 +111,38 @@ describe('BusinessRegistration', () => {
     );
     await waitFor(() =>
       expect(m.checkoutPlan).toHaveBeenCalledWith({ planId: 11, businessId: 77 }),
+    );
+  });
+
+  it('uploads the business photo (compressed route) and sends it with the registration', async () => {
+    m.uploadBusinessImage.mockResolvedValue({
+      id: 55,
+      url: '/api/v1/files/media/2026/10/logo.webp',
+    });
+    m.createBusiness.mockResolvedValue({ id: 77, name: 'قهوه‌خانه', slug: 'biz-77', status: 'PENDING', subscriptionTier: 'FREE' });
+    m.checkoutPlan.mockResolvedValue({ paymentId: 1, payUrl: 'https://gateway.pay/x', authority: 'A1', amount: 500_000 });
+
+    render(<BusinessRegistration />);
+    fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
+    fireEvent.change(screen.getByLabelText(/دسته‌بندی/), { target: { value: '3' } });
+
+    const file = new File(['x'], 'logo.jpg', { type: 'image/jpeg' });
+    fireEvent.change(screen.getByTestId('biz-logo-input'), { target: { files: [file] } });
+
+    expect(await screen.findByTestId('biz-logo-preview')).toBeInTheDocument();
+    expect(m.uploadBusinessImage).toHaveBeenCalledWith(file);
+
+    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: موقعیت/ }));
+    await screen.findByTestId('biz-map');
+    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: اشتراک/ }));
+    await screen.findByTestId('biz-plans');
+    fireEvent.click(screen.getByTestId('biz-plan-11'));
+    fireEvent.click(screen.getByRole('button', { name: /تأیید و پرداخت/ }));
+
+    await waitFor(() =>
+      expect(m.createBusiness).toHaveBeenCalledWith(
+        expect.objectContaining({ logoUrl: '/api/v1/files/media/2026/10/logo.webp' }),
+      ),
     );
   });
 });

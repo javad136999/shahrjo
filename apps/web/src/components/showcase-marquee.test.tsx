@@ -36,6 +36,20 @@ describe('ShowcaseMarquee', () => {
     expect(screen.getByTestId('showcase-41')).toHaveTextContent('فروشگاه نقره‌ای');
   });
 
+  it('shows the real business photo instead of the business icon', () => {
+    const { container } = render(<ShowcaseMarquee items={items} loading={false} />);
+
+    const withPhoto = screen.getByTestId('showcase-41');
+    const img = withPhoto.querySelector('img');
+    expect(img).toHaveAttribute('src', '/api/v1/files/ads/2026/10/x.thumb.webp');
+
+    // no photo yet → the category emoji tile stays
+    const withoutPhoto = screen.getByTestId('showcase-40');
+    expect(withoutPhoto.querySelector('img')).toBeNull();
+    expect(withoutPhoto).toHaveTextContent('🏪');
+    expect(container.querySelector('.showcase-card__emoji')).not.toBeNull();
+  });
+
   it('marks GOLD cards with the crown class and silver ones differently', () => {
     const { container } = render(<ShowcaseMarquee items={items} loading={false} />);
     expect(container.querySelector('.showcase-card--gold')).not.toBeNull();

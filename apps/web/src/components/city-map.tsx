@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { thumbUrlFor } from '@/lib/format';
 import type { CityMapData } from '@/lib/types';
 import 'leaflet/dist/leaflet.css';
 
@@ -233,12 +234,16 @@ export function CityMap({ data }: CityMapProps) {
 
       for (const b of shown) {
         const gold = b.subscriptionTier === 'GOLD';
-        // category emoji instead of a plain dot — the pin says what it is
+        // The owner's real photo wins over the category emoji; the emoji stays
+        // as the fallback (and the pin still says what the business is).
+        const photo = thumbUrlFor(b.logoUrl);
         const icon = L.divIcon({
           className: 'map-pin-wrap',
           html:
-            `<span class="map-pin map-pin--cat${gold ? ' map-pin--gold' : ''}">` +
-            `<span class="map-pin__icon">${esc(b.category.icon ?? '◆')}</span>` +
+            `<span class="map-pin map-pin--cat${gold ? ' map-pin--gold' : ''}${photo ? ' map-pin--photo' : ''}">` +
+            (photo
+              ? `<img class="map-pin__photo" src="${esc(photo)}" alt="" loading="lazy" />`
+              : `<span class="map-pin__icon">${esc(b.category.icon ?? '◆')}</span>`) +
             `<span class="map-pin__name">${esc(b.name)}</span>` +
             `</span>`,
           iconSize: [34, 34],
@@ -318,7 +323,10 @@ export function CityMap({ data }: CityMapProps) {
   return (
     <div className="city-map" data-testid="city-map">
       {/* JamCity-style category bar — top-right of the map frame */}
-      <div className="map-catbar" dir="rtl">
+      <div className="city-map__frame">
+        {/* Floating on the map's top corner — the old full-width bar above the
+            canvas is gone, so the map itself sits higher on the page. */}
+        <div className="map-catbar" dir="rtl">
         <div className="map-catwrap" ref={catWrapRef}>
           <button
             type="button"
@@ -371,7 +379,8 @@ export function CityMap({ data }: CityMapProps) {
         </div>
       </div>
 
-      <div className="city-map__canvas" ref={holder} role="application" aria-label="نقشه شهر" />
+        <div className="city-map__canvas" ref={holder} role="application" aria-label="نقشه شهر" />
+      </div>
       <div className="city-map__legend">
         <span className="city-map__legend-item">
           <span className="map-pin map-pin--cat map-pin--gold map-pin--legend" aria-hidden>

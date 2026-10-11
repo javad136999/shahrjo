@@ -239,6 +239,8 @@ export interface CityMapBusiness {
   latitude: number;
   longitude: number;
   subscriptionTier: string;
+  /** Real business photo — shown on the pin when the owner uploaded one. */
+  logoUrl: string | null;
   category: { name: string; slug: string; icon: string | null; color: string | null };
 }
 

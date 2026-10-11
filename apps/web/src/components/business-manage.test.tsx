@@ -25,6 +25,7 @@ jest.mock('@/lib/api', () => ({
   updateBusinessProduct: (...args: unknown[]) => mockUpdateProduct(...args),
   deleteBusinessProduct: (...args: unknown[]) => mockDeleteProduct(...args),
   uploadImage: (file: File) => mockUpload(file),
+  uploadBusinessImage: (file: File) => mockUpload(file),
   getTokens: () => mockTokens(),
 }));
 
@@ -153,5 +154,42 @@ describe('BusinessManage (ویرایش + منو و محصولات)', () => {
 
     expect(screen.getByTestId('product-name')).toHaveValue('لاته');
     expect(screen.getByTestId('product-price')).toHaveValue('250000');
+  });
+
+  it('uploads the profile photo through the compressed route and saves its URL', async () => {
+    mockUpload.mockResolvedValue({ id: 55, url: '/api/v1/files/media/2026/10/logo.webp' });
+    mockUpdateBiz.mockResolvedValue({ ...BUSINESS, logoUrl: '/api/v1/files/media/2026/10/logo.webp' });
+
+    render(<BusinessManage id={4} />);
+    await screen.findByTestId('biz-name');
+
+    const file = new File(['x'], 'logo.jpg', { type: 'image/jpeg' });
+    fireEvent.change(screen.getByTestId('biz-logo-input'), { target: { files: [file] } });
+
+    expect(await screen.findByTestId('biz-logo-preview')).toBeInTheDocument();
+    expect(mockUpload).toHaveBeenCalledWith(file);
+
+    fireEvent.click(screen.getByTestId('biz-save'));
+    await waitFor(() =>
+      expect(mockUpdateBiz).toHaveBeenCalledWith(
+        4,
+        expect.objectContaining({ logoUrl: '/api/v1/files/media/2026/10/logo.webp' }),
+      ),
+    );
+  });
+
+  it('clears the photo by sending an empty logoUrl', async () => {
+    mockGet.mockResolvedValue({ ...BUSINESS, logoUrl: '/api/v1/files/media/2026/10/old.webp' });
+    mockUpdateBiz.mockResolvedValue({ ...BUSINESS, logoUrl: null });
+
+    render(<BusinessManage id={4} />);
+    await screen.findByTestId('biz-logo-preview');
+    fireEvent.click(screen.getByTestId('biz-logo-remove'));
+    expect(screen.queryByTestId('biz-logo-preview')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('biz-save'));
+    await waitFor(() =>
+      expect(mockUpdateBiz).toHaveBeenCalledWith(4, expect.objectContaining({ logoUrl: '' })),
+    );
   });
 });

@@ -48,6 +48,16 @@ export class CreateBusinessDto {
   @MaxLength(300)
   address?: string;
 
+  /**
+   * Photo of the business, as returned by `POST /uploads/business`. Must be
+   * the caller's own upload — the API refuses foreign URLs.
+   */
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  logoUrl?: string;
+
   @IsOptional()
   @IsNumber()
   @Min(-90)
@@ -96,6 +106,13 @@ export class UpdateBusinessDto {
   @IsString()
   @MaxLength(300)
   address?: string;
+
+  /** Business photo (own upload) — empty string clears it. */
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  logoUrl?: string;
 }
 
 /**

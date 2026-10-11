@@ -12,7 +12,7 @@ import {
   getTokens,
   updateBusinessProduct,
   updateMyBusiness,
-  uploadImage,
+  uploadBusinessImage,
 } from '@/lib/api';
 import { formatPrice, thumbFallback, thumbUrlFor } from '@/lib/format';
 import type { BusinessCategoryOption, BusinessProductItem, ManagedBusiness } from '@/lib/types';
@@ -78,6 +78,7 @@ export function BusinessManage({ id }: { id: number }) {
 
   // profile form
   const [name, setName] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
   const [phone, setPhone] = useState('');
@@ -86,11 +87,14 @@ export function BusinessManage({ id }: { id: number }) {
   // product form
   const [draft, setDraft] = useState<ProductDraft | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [logoBusy, setLogoBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const logoRef = useRef<HTMLInputElement>(null);
 
   const apply = (business: ManagedBusiness) => {
     setData(business);
     setName(business.name);
+    setLogoUrl(business.logoUrl ?? '');
     setCategoryId(String(business.categoryId));
     setDescription(business.description ?? '');
     setPhone(business.phone ?? '');
@@ -151,6 +155,8 @@ export function BusinessManage({ id }: { id: number }) {
           description,
           phone,
           address,
+          // '' clears the photo (the server then frees its bytes in the sweep)
+          logoUrl: logoUrl === (data?.logoUrl ?? '') ? undefined : logoUrl,
         }),
       );
       setNotice('مشخصات ذخیره شد.');
@@ -161,18 +167,38 @@ export function BusinessManage({ id }: { id: number }) {
     }
   };
 
+  /**
+   * Both uploads (business photo and product photo) go through the
+   * hard-compressed business profile server-side, so an owner can register
+   * dozens of menu rows without eating the disk.
+   */
   const pickImage = async (file: File | null) => {
     if (!file || !draft) return;
     setUploading(true);
     setError(null);
     try {
-      const uploaded = await uploadImage(file);
+      const uploaded = await uploadBusinessImage(file);
       setDraft({ ...draft, imageUrl: uploaded.url });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'بارگذاری تصویر ناموفق بود');
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  const pickLogo = async (file: File | null) => {
+    if (!file) return;
+    setLogoBusy(true);
+    setError(null);
+    try {
+      const uploaded = await uploadBusinessImage(file);
+      setLogoUrl(uploaded.url);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'بارگذاری عکس کسب‌وکار ناموفق بود');
+    } finally {
+      setLogoBusy(false);
+      if (logoRef.current) logoRef.current.value = '';
     }
   };
 
@@ -445,6 +471,43 @@ export function BusinessManage({ id }: { id: number }) {
               </option>
             ))}
           </select>
+
+          <label htmlFor="b-logo">عکس کسب‌وکار — اختیاری</label>
+          <div className="biz-image">
+            {logoUrl ? (
+              <span className="biz-image__picked" data-testid="biz-logo-preview">
+                {/* eslint-disable-next-line @next/next/no-img-element -- owner-uploaded media */}
+                <img src={thumbUrlFor(logoUrl) ?? logoUrl} onError={thumbFallback(logoUrl)} alt="" />
+              </span>
+            ) : (
+              <span className="biz-image__picked biz-image__picked--empty" aria-hidden>
+                🏪
+              </span>
+            )}
+            <input
+              id="b-logo"
+              ref={logoRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              data-testid="biz-logo-input"
+              onChange={(e) => void pickLogo(e.target.files?.[0] ?? null)}
+            />
+            {logoUrl && (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                data-testid="biz-logo-remove"
+                onClick={() => setLogoUrl('')}
+              >
+                حذف عکس
+              </button>
+            )}
+          </div>
+          <p className="muted small">
+            {logoBusy
+              ? 'در حال بارگذاری و فشرده‌سازی عکس…'
+              : 'عکس‌ها فشرده ذخیره می‌شوند (WebP ≤۱۰۰۰px) تا فضای سایت پر نشود.'}
+          </p>
 
           <label htmlFor="b-desc">توضیحات — اختیاری</label>
           <textarea

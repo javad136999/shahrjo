@@ -1,6 +1,13 @@
 import { PayloadTooLargeException } from '@nestjs/common';
 import sharp from 'sharp';
-import { MAX_EDGE, THUMB_EDGE, WEBP_QUALITY, processImage } from './image.processor';
+import {
+  BUSINESS_PROFILE,
+  DISPLAY_PROFILE,
+  MAX_EDGE,
+  THUMB_EDGE,
+  WEBP_QUALITY,
+  processImage,
+} from './image.processor';
 
 // encoding 2400×1800 fixtures is CPU-bound — generous ceiling so a loaded CI
 // machine (parallel suites) never flakes a deterministic assertion
@@ -68,6 +75,29 @@ describe('processImage — WebP pipeline', () => {
 
     const thumbMeta = await sharp(out.thumb.data).metadata();
     expect(thumbMeta.format).toBe('webp');
+  });
+
+  it('compresses business photos much harder (menu/logo uploads must not fill the disk)', async () => {
+    const jpeg = await bigJpegCached();
+    const display = await processImage(jpeg, DISPLAY_PROFILE);
+    const business = await processImage(jpeg, BUSINESS_PROFILE);
+
+    // 2400px input → 1000px display copy + 320px thumbnail
+    expect(business.full.width).toBe(BUSINESS_PROFILE.fullEdge);
+    expect(business.thumb.width).toBe(320);
+    expect(business.thumb.height).toBe(240);
+    expect(business.full.height).toBe(BUSINESS_PROFILE.fullEdge * (1800 / 2400));
+
+    // same picture, a fraction of the bytes
+    expect(business.bytes).toBeLessThan(display.bytes);
+    expect(business.bytes).toBeLessThan(display.bytes * 0.7);
+
+    // small logos are never enlarged, just re-encoded small
+    const logo = await sharp(noiseRaw(120, 120), { raw: { width: 120, height: 120, channels: 3 } })
+      .jpeg({ quality: 95 })
+      .toBuffer();
+    const small = await processImage(logo, BUSINESS_PROFILE);
+    expect(small.full.width).toBe(120);
   });
 
   it('keeps quality close to the original while encoding (visibly lossless enough)', async () => {

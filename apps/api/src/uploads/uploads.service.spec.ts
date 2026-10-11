@@ -277,6 +277,25 @@ describe('UploadsService.save — processing pipeline', () => {
     expect(result.id).toBe(55);
   });
 
+  it('stores business photos with the hard-compressed profile (BUSINESS entity)', async () => {
+    const { service, prisma, storage } = makeService();
+    const input = await jpeg(); // 2000px wide fixture
+
+    const result = await service.saveBusinessImage(user, { buffer: input, size: input.length });
+
+    const files = await storage.list();
+    expect(files).toHaveLength(2);
+    const data = prisma.media.create.mock.calls[0][0].data;
+    // ≤1000px display copy + ≤320px thumbnail: months of menu photos stay small
+    expect(data).toMatchObject({ entityType: 'BUSINESS', entityId: null, width: 1000 });
+    expect(data.height).toBe(750);
+
+    const thumb = await storage.get(files.find((f) => f.key.endsWith('.thumb.webp'))!.key);
+    const thumbMeta = await sharp(thumb!).metadata();
+    expect(thumbMeta.width).toBe(320);
+    expect(result.thumbUrl).toContain('.thumb.webp');
+  });
+
   it('400s without a file, 415s on non-image content and on GIF', async () => {
     const { service } = makeService();
     await expect(service.save(user, undefined)).rejects.toMatchObject({ status: 400 });
@@ -424,6 +443,24 @@ describe('UploadsService.sweep — disk-fill protection', () => {
     expect(result).toEqual({ removedFiles: 2, freedBytes: 2048, thumbsCreated: 0, expiredImages: 0 });
     expect(prisma.media.delete).toHaveBeenCalledWith({ where: { id: 1 } });
     expect(await storage.list()).toHaveLength(0);
+  });
+
+  it('never ages out business photos — only public ad/wall pictures expire', async () => {
+    const { service, prisma } = makeService();
+    await service.sweep();
+
+    const expiryCall = prisma.media.findMany.mock.calls
+      .map((c) => c[0].where)
+      .find((w) => w.mimeType);
+    // the 4-day policy targets AD/WALL only: owner business/menu photos stay
+    // (they are compressed instead, see BUSINESS_PROFILE)
+    expect(expiryCall.entityType).toEqual({ in: ['AD', 'WALL'] });
+
+    const unclaimedCall = prisma.media.findMany.mock.calls
+      .map((c) => c[0].where)
+      .find((w) => w.entityId === null);
+    // abandoned BUSINESS uploads (registration never finished) are still swept
+    expect(unclaimedCall.entityType.in).toContain('BUSINESS');
   });
 
   it('unlinks orphan files no Media row references but keeps referenced ones (incl. thumbs)', async () => {

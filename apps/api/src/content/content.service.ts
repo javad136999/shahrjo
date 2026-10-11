@@ -67,6 +67,8 @@ export interface CityMapData {
     latitude: number;
     longitude: number;
     subscriptionTier: string;
+    /** Real business photo — the pin shows it instead of the category icon. */
+    logoUrl: string | null;
     category: { name: string; slug: string; icon: string | null; color: string | null };
   }>;
 }
@@ -270,6 +272,7 @@ export class ContentService {
         latitude: true,
         longitude: true,
         subscriptionTier: true,
+        logoUrl: true, // owner photo first, category icon as the fallback
         category: { select: { name: true, slug: true, icon: true, color: true } },
       },
     });

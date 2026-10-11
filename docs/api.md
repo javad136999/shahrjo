@@ -31,6 +31,7 @@
 | Endpoint | Auth | Body / توضیح |
 |---|---|---|
 | GET `/ad-categories` | @Public | دسته‌بندی‌های فعال برای فرم ثبت آگهی (ترتیب `sortOrder`) |
+| POST `/uploads/business` | Bearer | همان قواعد `/uploads` اما با **پروفایل فشرده‌سازی کسب‌وکار**: WebP کیفیت **۷۲** و ضلع بزرگ **≤۱۰۰۰px** + thumbnail **≤۳۲۰px** (`BUSINESS_PROFILE`) و `entityType = BUSINESS` — عکس لوگو/منو/محصول مالک‌ها؛ همین که به کسب‌وکار وصل شود claim می‌شود، و اگر ثبت نیمه‌کاره بماند sweep آن را پاک می‌کند |
 | POST `/uploads` | Bearer | multipart با فیلد `file` (JPG/PNG/WebP، حداکثر ۱۰MB، magic-byte sniff) → پردازش با **sharp**: WebP کیفیت ۸۲ (ضلع بزرگ ≤۱۶۰۰px، بدون Upscale، حذف EXIF/metadata) + Thumbnail ≤۴۰۰px → `{ id, url, thumbUrl, width, height }`؛ سقف ۳۰ آپلود در ساعت و سهمیهٔ ۱۰۰MB برای هر کاربر  **سیاست نگه‌داشت:** عکس آگهی/پیام دیوار ۴ روز روی سایت می‌ماند (`POST_IMAGE_MAX_AGE_MS`)؛ سپس در sweep بعدی (هر ۶ ساعت) فایل + ردیف Media حذف و ارجاعش خالی می‌شود (AdImage مربوطه پاک، `wallPost.imageUrl` تهی) و **متن آگهی/پیام دست‌نخورده می‌ماند** |
 | POST `/ads` | Bearer | `{ categoryId, title(4..160), description(10..4000), price?, phone?, address?, imageIds?(≤5) }` → ایجاد آگهی با وضعیت `PENDING`، انقضا +۳۰ روز، سقف ۲۰ آگهی در ساعت؛ تصاویر متعلق به کاربر claim می‌شوند |
 | GET `/ads/mine` | Bearer | آگهی‌های خودِ کاربر با وضعیت نظارت (شامل `rejectedReason`) |
@@ -179,20 +180,29 @@ Guard: `PermissionsGuard` (کد permission از `role_permissions`) + Scope
 
 ## کسب‌وکارهای من + منو و محصولات (فاز ۱۱b)
 
-> ✅ **پیاده‌شده در Phase 11b**: مالک کسب‌وکار می‌تواند مشخصات عمومی‌اش را ویرایش کند و برای کسب‌وکار **منو** بسازد — هر ردیف با عکس، مشخصات و قیمت. همه‌چیز در `GET /businesses/:id` (صفحهٔ عمومی و ورودی از پین نقشه/ویترین) دیده می‌شود.
+> ✅ **پیاده‌شده در Phase 11b**: مالک کسب‌وکار می‌تواند **عکس کسب‌وکار** را هم انتخاب کند (در سه‌مرحلهٔ ثبت و در پنل مدیریت)، مشخصات عمومی‌اش را ویرایش کند و برای کسب‌وکار **منو** بسازد — هر ردیف با عکس، مشخصات و قیمت. همه‌چیز در `GET /businesses/:id` (صفحهٔ عمومی و ورودی از پین نقشه/ویترین) دیده می‌شود؛ عکس واقعی، در **ویترین طلایی** و **پین نقشه** جای آیکون دسته‌بندی را می‌گیرد. عکس‌ها با `POST /uploads/business` فشرده ذخیره می‌شوند (WebP q۷۲، ≤۱۰۰۰px + thumb ≤۳۲۰px) و ۴ روزه expire **نمی‌شوند** (سیاست ۴ روزه فقط برای عکس آگهی/دیوار است) — فقط با پاک‌کردن یا حذف محصول آزاد می‌شوند.
+
+عکس کسب‌وکار و محصولات فقط از **آپلودهای خودِ کاربر** پذیرفته می‌شود: مسیر باید `/api/v1/files/...` باشد و ردیف Media متعلق به همان کاربر وجود داشته باشد (هیچ URL خارجی/hot-link قبول نمی‌شود)؛ سپس همان ردیف Media به کسب‌وکار **claim** می‌شود (`entityType: BUSINESS`) تا sweep یتیم آن را پاک نکند. با پاک‌کردن عکس (ارسال رشتهٔ خالی)، اگر هیچ محصول/لوگوی دیگری از همان فایل استفاده نکند، ردیف Media نرم‌حذف می‌شود تا sweep بایت‌هایش را آزاد کند.
 
 مسیرهای مالک زیر `/my-businesses` هستند (نه `/businesses/mine`) تا با `GET /businesses/:id` عمومی قاطی نشوند و `ParseIntPipe` آن‌ها را ۴۰۰ نکند — همان تلهٔ مسیریابی `GET /ads/favorites` در فاز ۶. هر کوئری با `ownerId` خودِ توکن محدود می‌شود؛ کسب‌وکار دیگری **۴۰۴** می‌دهد، نه ۴۰۳ (بدون لو دادن وجود رکورد).
 
 | Endpoint | Auth | توضیح |
 |---|---|---|
+| GET `/business-categories` | @Public | دسته‌بندی‌های فعال برای فرم ثبت کسب‌وکار (ترتیب `sortOrder`) |
+| POST `/businesses` | Bearer | ثبت کسب‌وکار جدید — `{ name, categoryId, description?, phone?, address?, logoUrl?, latitude?, longitude? }` → وضعیت `PENDING` + `FREE`؛ شهر از پروفایل کاربر و پین باید داخل محدودهٔ همان شهر باشد (سقف ۵ ثبت در روز) |
 | GET `/my-businesses` | Bearer | کسب‌وکارهای خودِ کاربر در هر وضعیت نظارتی: `status`, `subscriptionTier`, `productCount`, `pinned` (آیا روی نقشه هست) |
 | GET `/my-businesses/:id` | Bearer | همان ردیف + `description`/`phone`/`address`/`latitude`/`longitude`/`categoryId` + `products[]` کامل منو |
-| PATCH `/my-businesses/:id` | Bearer | ویرایش `name`, `categoryId`, `description`, `phone`, `address` — رشتهٔ خالی = پاک‌کردن مقدار (NULL)؛ وضعیت/اشتراک/شهر در اختیار پلتفرم می‌ماند (ویرایش، تأیید را باطل نمی‌کند) |
-| POST `/my-businesses/:id/products` | Bearer | `{ name, section?, description?, price?, imageUrl?, sortOrder?, isAvailable? }` — `section` = دستهٔ منو («نوشیدنی»، «غذاهای اصلی»)، `price` ریال و خالی = «توافقی» (NULL)، `imageUrl` از `POST /uploads` |
+| PATCH `/my-businesses/:id` | Bearer | ویرایش `name`, `categoryId`, `description`, `phone`, `address`, **`logoUrl`** — رشتهٔ خالی = پاک‌کردن مقدار (NULL)؛ وضعیت/اشتراک/شهر در اختیار پلتفرم می‌ماند (ویرایش، تأیید را باطل نمی‌کند) |
+| POST `/my-businesses/:id/products` | Bearer | `{ name, section?, description?, price?, imageUrl?, sortOrder?, isAvailable? }` — `section` = دستهٔ منو («نوشیدنی»، «غذاهای اصلی»)، `price` ریال و خالی = «توافقی» (NULL)، `imageUrl` از `POST /uploads/business` (باید آپلود خودِ کاربر باشد) |
 | PATCH `/my-businesses/:id/products/:productId` | Bearer | ویرایش جزئی همان ردیف (فقط محصولی که متعلق به همین کسب‌وکار است) |
 | DELETE `/my-businesses/:id/products/:productId` | Bearer | حذف ردیف محصول |
 
-پیاده‌سازی UI: `/businesses` (**کسب‌وکارهای من** — آیکون 🏬 در ناوبری پایین، جای آیکون اخبار که به پیل هدر منتقل شد) و `/business/:id/manage` (تبِ «مشخصات» + تبِ «منو و محصولات» با افزودن/ویرایش/حذف و آپلود عکس محصول). صفحهٔ جزئیات کسب‌وکار، منو را **گروه‌بندی‌شده بر اساس `section`** با عکس thumbnail، توضیح، قیمت و برچسب «ناموجود» نشان می‌دهد.
+پیاده‌سازی UI: `/businesses` (**کسب‌وکارهای من** — آیکون 🏬 در ناوبری پایین، جای آیکون اخبار که به پیل هدر منتقل شد) و `/business/:id/manage` (تبِ «مشخصات» با انتخاب عکس کسب‌وکار + تبِ «منو و محصولات» با افزودن/ویرایش/حذف و آپلود عکس محصول). صفحهٔ جزئیات کسب‌وکار، منو را **گروه‌بندی‌شده بر اساس `section`** با عکس thumbnail، توضیح، قیمت و برچسب «ناموجود» نشان می‌دهد.
+
+### نقشه و ویترین (فاز ۱۱b)
+
+- فیلتر دسته‌بندی بین‌کسب‌وکارها از یک **نوار تمام‌عرض بالای نقشه** به یک دکمهٔ شیشه‌ای **چسبیده به گوشهٔ بالای خود نقشه** تبدیل شد (`.map-catbar` داخل `.city-map__frame` با `position: absolute`)؛ روی موبایل فقط آیکونش دیده می‌شود تا نقشه پوشیده نشود. بنابراین فضای بالای نقشه آزاد و نقشه در صفحهٔ شهر **بالاتر از ویترین طلایی** آمده است.
+- `GET /map?city=<slug>` حالا `logoUrl` هر کسب‌وکار را هم می‌فرستد؛ اگر مالک عکس واقعی گذاشته باشد، **پین نقشه همان عکس** را نشان می‌دهد و در غیر این صورت آیکون دسته‌بندی.
 
 ### نقشه: فیلتر دسته‌بندی + ورود به شهر
 

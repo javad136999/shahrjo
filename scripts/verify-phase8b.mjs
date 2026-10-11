@@ -120,13 +120,14 @@ for (const marker of [
 const wallPage = read('apps/web/src/app/wall/page.tsx');
 if (!wallPage.includes('WallView')) { console.error('WALL PAGE: does not render WallView'); fail++; }
 
-// --- Web: dashboard order — welcome + wall CTA, then gold showcase, then map ---
+// --- Web: dashboard order — welcome + wall CTA, then map, then gold showcase ---
+// (Phase 11b lifted the map above the showcase: the city is the point of the page.)
 const dashboard = read('apps/web/src/components/dashboard.tsx');
 const wallIdx = dashboard.indexOf('data-testid="wall-cta"');
 const marqueeIdx = dashboard.indexOf('<ShowcaseMarquee');
 const mapIdx = dashboard.indexOf('<CityMap');
-if (wallIdx === -1 || wallIdx > marqueeIdx || marqueeIdx > mapIdx) {
-  console.error('WEB: dashboard must render wall CTA → showcase marquee → map'); fail++;
+if (wallIdx === -1 || wallIdx > mapIdx || mapIdx > marqueeIdx) {
+  console.error('WEB: dashboard must render wall CTA → map → showcase marquee'); fail++;
 }
 if (!dashboard.includes('خوش آمدید')) { console.error('WEB: welcome greeting missing'); fail++; }
 

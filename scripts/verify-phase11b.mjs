@@ -6,6 +6,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 
 const mustExist = [
   'apps/api/src/businesses/businesses.menu.spec.ts',
+  'apps/api/src/uploads/image.processor.ts',
   'apps/web/src/components/my-businesses.tsx',
   'apps/web/src/components/my-businesses.test.tsx',
   'apps/web/src/components/business-manage.tsx',
@@ -39,6 +40,37 @@ for (const marker of [
   'REFERENCES "businesses"("id") ON DELETE CASCADE',
 ]) {
   if (!migration.includes(marker)) { console.error(`MIGRATION: missing ${marker}`); fail++; }
+}
+
+// --- Uploads: business photos are compressed hard (disk must not fill) ---
+const processor = read('apps/api/src/uploads/image.processor.ts');
+for (const marker of [
+  'BUSINESS_PROFILE',
+  'DISPLAY_PROFILE',
+  'fullEdge: 1000',
+  'thumbEdge: 320',
+  'quality: 72',
+  'profile: ImageProfile = DISPLAY_PROFILE',
+]) {
+  if (!processor.includes(marker)) { console.error(`COMPRESS: missing ${marker}`); fail++; }
+}
+const uploadsService = read('apps/api/src/uploads/uploads.service.ts');
+for (const marker of ['saveBusinessImage', 'storeImage', 'processImage(buffer, profile)', "return this.storeImage(user, file, BUSINESS_PROFILE, 'BUSINESS')"]) {
+  if (!uploadsService.includes(marker)) { console.error(`UPLOADS: missing ${marker}`); fail++; }
+}
+const uploadsController = read('apps/api/src/uploads/uploads.controller.ts');
+if (!uploadsController.includes("@Post('uploads/business')")) {
+  console.error('UPLOADS: POST /uploads/business route missing');
+  fail++;
+}
+const apiClientFile = read('apps/web/src/lib/api.ts');
+if (!apiClientFile.includes("requestForm<UploadedImage>('/uploads/business', form)")) {
+  console.error('WEB: uploadBusinessImage must use the compressed business route');
+  fail++;
+}
+if (!apiClientFile.includes('uploadBusinessImage')) {
+  console.error('WEB: api client missing uploadBusinessImage');
+  fail++;
 }
 
 // --- API: owner-scoped routes (no public route collision) ---
@@ -84,6 +116,24 @@ if (!/businessProduct\.findFirst\(\{[\s\S]{0,120}where: \{ id: productId, busine
   fail++;
 }
 
+// Owner photos must be the caller's own uploads (no hot-linking) and must be
+// claimed so the orphan sweep does not delete them; clearing frees the bytes.
+for (const marker of [
+  'INTERNAL_FILE_PREFIX',
+  'assertOwnedImage',
+  'claimImage',
+  'releaseImageIfUnused',
+  "throw new BadRequestException('فقط عکس‌های آپلودشده در سایت قابل انتخاب هستند')",
+  'deletedAt: new Date()',
+  'logoUrl',
+]) {
+  if (!service.includes(marker)) { console.error(`PHOTOS: missing ${marker}`); fail++; }
+}
+if (!service.includes('imageUrl: url') || !service.includes('usedByProducts > 0 || usedAsLogo > 0')) {
+  console.error('PHOTOS: a released image must first be checked for other references');
+  fail++;
+}
+
 // --- Public detail carries the menu (map → business entry) ---
 const contentService = read('apps/api/src/content/content.service.ts');
 for (const marker of ['BusinessProductItem', 'products: {', 'price: product.price === null ? null : Number(product.price)']) {
@@ -98,7 +148,7 @@ for (const marker of [
   'createBusinessProduct',
   'updateBusinessProduct',
   'deleteBusinessProduct',
-  'uploadImage', // product photo
+  'uploadBusinessImage', // product photo (compressed route)
   'data-testid="product-price"',
   'data-testid="product-section"',
   'biz-menu__group', // menu grouped by section
@@ -114,6 +164,31 @@ for (const marker of ['getMyBusinesses', 'login?next=/businesses', '/manage']) {
 const detail = read('apps/web/src/components/business-detail.tsx');
 for (const marker of ['data-testid="business-menu"', 'menuSections', 'formatPrice', 'thumbUrlFor', 'ناموجود']) {
   if (!detail.includes(marker)) { console.error(`WEB detail: missing ${marker}`); fail++; }
+}
+
+// Map: real business photos on the pins + the filter docked on the canvas
+// corner (no full-width bar above the map any more).
+const content = read('apps/api/src/content/content.service.ts');
+if (!/logoUrl: true, \/\/ owner photo first/.test(content)) {
+  console.error('MAP: the map payload must carry the owner photo');
+  fail++;
+}
+const cityMap = read('apps/web/src/components/city-map.tsx');
+for (const marker of ['city-map__frame', 'map-pin__photo', 'thumbUrlFor(b.logoUrl)']) {
+  if (!cityMap.includes(marker)) { console.error(`MAP: missing ${marker}`); fail++; }
+}
+// The city home starts with the map, the golden showcase follows it.
+const dashboardOrder = read('apps/web/src/components/dashboard.tsx');
+const mapOrder = dashboardOrder.indexOf('<CityMap');
+const showcaseOrder = dashboardOrder.indexOf('<ShowcaseMarquee');
+if (mapOrder === -1 || showcaseOrder === -1 || mapOrder > showcaseOrder) {
+  console.error('WEB: the city map must come above the golden showcase');
+  fail++;
+}
+const cssDock = read('apps/web/src/app/globals.css').includes('.map-catbar {\n  position: absolute;');
+if (!cssDock) {
+  console.error('CSS: the category dock must float on the map corner');
+  fail++;
 }
 
 // Bottom bar: always visible on the city home, businesses instead of news.

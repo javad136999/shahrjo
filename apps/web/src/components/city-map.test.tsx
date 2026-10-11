@@ -41,6 +41,7 @@ const data: CityMapData = {
       latitude: 27.831,
       longitude: 52.321,
       subscriptionTier: 'GOLD',
+      logoUrl: null,
       category: { name: 'رستوران', slug: 'restaurants', icon: '🍽', color: '#0e7a5f' },
     },
     {
@@ -50,6 +51,7 @@ const data: CityMapData = {
       latitude: 27.84,
       longitude: 52.3,
       subscriptionTier: 'SILVER',
+      logoUrl: null,
       category: { name: 'کافه', slug: 'cafes', icon: '☕', color: null },
     },
   ],
@@ -196,7 +198,18 @@ describe('CityMap', () => {
     expect(canvas.classList.contains('is-zoomed')).toBe(false);
   });
 
-  it('shows the category bar above the map (JamCity-style, top-right)', async () => {
+  it('docks the category filter on the map corner instead of a bar above it', () => {
+    const { container } = render(<CityMap data={data} />);
+    const frame = container.querySelector('.city-map__frame');
+    expect(frame).not.toBeNull();
+    // both the canvas and the dock live inside the frame → the dock floats on
+    // the map and no full-width row sits above it any more
+    expect(frame!.querySelector('.city-map__canvas')).not.toBeNull();
+    expect(frame!.querySelector('.map-catbar')).not.toBeNull();
+    expect(frame!.querySelector('.map-catbtn')).not.toBeNull();
+  });
+
+  it('shows the category filter with its menu (JamCity-style)', async () => {
     render(<CityMap data={data} />);
     const btn = screen.getByTestId('map-catbtn');
     expect(btn).toHaveAttribute('aria-label', 'دسته‌بندی کسب‌وکارها');
