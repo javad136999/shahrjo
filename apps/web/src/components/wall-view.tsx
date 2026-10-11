@@ -369,6 +369,13 @@ export function WallView({ city }: WallViewProps) {
         <Link href="/login?next=/wall" className="btn btn-primary">
           ورود با موبایل
         </Link>
+        <Link
+          href={`/city/${city.slug}`}
+          className="btn btn-ghost"
+          data-testid="wall-home-gate"
+        >
+          🏠 صفحه اصلی شهر
+        </Link>
       </div>
     );
   }
@@ -386,6 +393,13 @@ export function WallView({ city }: WallViewProps) {
           <button type="button" className="btn btn-primary" onClick={() => void load()}>
             تلاش دوباره
           </button>
+          <Link
+            href={`/city/${city.slug}`}
+            className="btn btn-ghost"
+            data-testid="wall-home-error"
+          >
+            🏠 صفحه اصلی شهر
+          </Link>
         </div>
       );
     }
@@ -600,6 +614,16 @@ export function WallView({ city }: WallViewProps) {
   return (
     <div className="wall" data-testid="wall">
       <header className="wall-room" data-testid="wall-room">
+        {/* The site header/nav are hidden in the room — the city home lives here. */}
+        <Link
+          href={`/city/${city.slug}`}
+          className="wall-homebtn"
+          data-testid="wall-home-top"
+          aria-label={`صفحه اصلی شهر ${city.name}`}
+          title={`صفحه اصلی شهر ${city.name}`}
+        >
+          🏠
+        </Link>
         <span className="wall-room__avatar" aria-hidden>
           💬
         </span>
@@ -753,6 +777,14 @@ export function WallView({ city }: WallViewProps) {
               <span className="wall-adbtn__label">ثبت آگهی</span>
             </Link>
             <div className="wall-composer__tools">
+              <Link
+                href={`/city/${city.slug}`}
+                className="pill wall-homepill"
+                data-testid="wall-home-bottom"
+                title={`صفحه اصلی شهر ${city.name}`}
+              >
+                🏠 خانه
+              </Link>
               <button type="button" className="pill" data-testid="wall-photo-btn" onClick={() => fileRef.current?.click()}>
                 📷 {image ? 'عکس انتخاب شد' : 'عکس'}
               </button>

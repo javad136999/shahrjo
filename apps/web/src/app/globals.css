@@ -3858,3 +3858,54 @@ a.my-ads__item:hover {
   font-weight: 700;
   line-height: 1.9;
 }
+
+/* ============ City wall = full-screen chat room ============
+   Inside /wall the site header, footer and bottom nav step aside
+   (components/site-chrome.tsx). The room therefore owns the viewport:
+   `body.wall-screen` reclaims the padding and the scroll height those bars
+   used to occupy, and the home entry (🏠) leads back to the city page. */
+
+body.wall-screen .page {
+  padding-top: 10px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+}
+
+/* the room bar is the top bar now — it sticks to the top of the viewport */
+body.wall-screen .wall-room {
+  top: 6px;
+}
+
+/* tall enough that the composer rests at the bottom even with a short feed,
+   capped so a long chat scrolls inside the room instead of moving the page */
+body.wall-screen .wall {
+  min-height: calc(100dvh - 40px);
+}
+
+body.wall-screen .wall-feed {
+  flex: 1;
+  height: auto;
+  min-height: 240px;
+  max-height: calc(100dvh - 300px);
+}
+
+/* Home entry in the room bar (icon-only; the bottom composer carries the pill). */
+.wall-homebtn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 1px solid rgb(14 122 95 / 25%);
+  border-radius: 50%;
+  background: #fff;
+  font-size: 17px;
+  line-height: 1;
+  box-shadow: 0 4px 12px -6px rgb(21 59 45 / 45%);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.wall-homebtn:hover {
+  text-decoration: none;
+  background: var(--brand-soft);
+  transform: translateY(-1px);
+}

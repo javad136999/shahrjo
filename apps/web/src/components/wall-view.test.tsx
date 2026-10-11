@@ -108,6 +108,11 @@ describe('WallView', () => {
     expect(screen.queryByTestId('wall-cat-market')).toBeNull(); // only the first six are shown
     expect(screen.queryByTestId('wall-change-city')).toBeNull();
     expect(screen.queryByTestId('wall-back-city')).toBeNull();
+    // the site header/nav are gone in the room → the home entry leads back to
+    // that city's own home page, both in the room bar and in the composer
+    expect(screen.getByTestId('wall-home-top')).toHaveAttribute('href', '/city/sample-city');
+    expect(screen.getByTestId('wall-home-bottom')).toHaveAttribute('href', '/city/sample-city');
+    expect(screen.getByTestId('wall-home-bottom')).toHaveTextContent('خانه');
   });
 
   it('renders post images from the thumbnail variant (lists never fetch the full file)', async () => {
@@ -234,6 +239,20 @@ describe('WallView', () => {
       '/login?next=/wall',
     );
     expect(screen.queryByTestId('wall-input')).not.toBeInTheDocument();
+  });
+
+  it('keeps a way back to the city from the login gate and the error state', async () => {
+    const { ApiError } = require('@/lib/api');
+    mockGetWall.mockRejectedValueOnce(new ApiError(401, 'وارد شوید'));
+    const { unmount } = render(<WallView city={city} />);
+    expect(await screen.findByTestId('wall-gate')).toBeInTheDocument();
+    expect(screen.getByTestId('wall-home-gate')).toHaveAttribute('href', '/city/sample-city');
+    unmount();
+
+    mockGetWall.mockRejectedValueOnce(new ApiError(500, 'خطای داخلی سرور'));
+    render(<WallView city={city} />);
+    expect(await screen.findByTestId('wall-error')).toBeInTheDocument();
+    expect(screen.getByTestId('wall-home-error')).toHaveAttribute('href', '/city/sample-city');
   });
 
   it('toggles a like optimistically and syncs the server count', async () => {

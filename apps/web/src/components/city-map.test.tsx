@@ -55,6 +55,13 @@ const data: CityMapData = {
   ],
 };
 
+/**
+ * Bounds are re-centred to a minimum urban span, so the numbers come back with
+ * float noise (50.89999999999999) — compare them at ~0.1 m precision.
+ */
+const roundBox = (box: number[][]): number[][] =>
+  box.map((point) => point.map((value) => Number(value.toFixed(6))));
+
 describe('CityMap', () => {
   beforeEach(() => {
     // the leaflet mock is module-level — reset call history per test
@@ -81,7 +88,7 @@ describe('CityMap', () => {
     expect(leaflet.map.mock.results[0].value.remove).toHaveBeenCalled();
   });
 
-  it('uses the admin boundary when present', async () => {
+  it('uses the admin boundary for framing but never draws it on the canvas', async () => {
     const leaflet = require('leaflet');
     const bounded: CityMapData = {
       ...data,
@@ -91,10 +98,13 @@ describe('CityMap', () => {
       },
     };
     render(<CityMap data={bounded} />);
-    await waitFor(() => expect(leaflet.geoJSON).toHaveBeenCalledTimes(1));
+    // no dashed square around the city (the seeded boxes made the map look boxed)
+    expect(leaflet.geoJSON).not.toHaveBeenCalled();
     expect(leaflet.circle).not.toHaveBeenCalled();
-    // whole boundary in frame
+    // …but the whole boundary is still in frame
     await waitFor(() => expect(leaflet.map.mock.results[0].value.fitBounds).toHaveBeenCalled());
+    const [box] = leaflet.map.mock.results[0].value.fitBounds.mock.calls[0];
+    expect(roundBox(box)).toEqual([[27.7, 52.2], [27.95, 52.5]]);
   });
 
   it('renders boundaries stored as raw coordinate rings (the seed format)', async () => {
@@ -108,7 +118,11 @@ describe('CityMap', () => {
       },
     };
     render(<CityMap data={seeded} />);
-    await waitFor(() => expect(leaflet.geoJSON).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(leaflet.map.mock.results[0].value.fitBounds).toHaveBeenCalled());
+    // the seeded box frames the view without being painted as an outline
+    const [box] = leaflet.map.mock.results[0].value.fitBounds.mock.calls[0];
+    expect(roundBox(box)).toEqual([[28.85, 50.8], [29.0, 50.9]]);
+    expect(leaflet.geoJSON).not.toHaveBeenCalled();
     expect(leaflet.circle).not.toHaveBeenCalled();
   });
 
@@ -128,8 +142,10 @@ describe('CityMap', () => {
       },
     };
     render(<CityMap data={multipart} />);
-    await waitFor(() => expect(leaflet.geoJSON).toHaveBeenCalledTimes(1));
-    expect(leaflet.map.mock.results[0].value.fitBounds).toHaveBeenCalled();
+    await waitFor(() => expect(leaflet.map.mock.results[0].value.fitBounds).toHaveBeenCalled());
+    const [box] = leaflet.map.mock.results[0].value.fitBounds.mock.calls[0];
+    expect(roundBox(box)).toEqual([[27.7, 52.2], [27.95, 52.7]]); // every part of the city stays in frame
+    expect(leaflet.geoJSON).not.toHaveBeenCalled();
   });
 
   it('frames the whole city when its boundary and businesses are not available', async () => {

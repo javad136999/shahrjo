@@ -123,7 +123,8 @@ function boxOfPoints(points: [number, number][]): LatLngBox | null {
 /**
  * City map (Phase 9 + JamCity restyle): Leaflet + OSM tiles (no API key).
  * The view frames the urban area (Polygon/MultiPolygon boundary when present,
- * otherwise a town-sized window around the city center stretched to any pins);
+ * otherwise a town-sized window around the city center stretched to any pins)
+ * without drawing that boundary on the canvas;
  * it never zooms past street-overview level, even for a single business.
  * Every pin carries its category emoji; zooming in past level 15 reveals the
  * business name above the pin. Above the canvas sits the JamCity category bar
@@ -226,18 +227,9 @@ export function CityMap({ data }: CityMapProps) {
         attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map);
 
-      const style = {
-        color: '#c9971f',
-        weight: 2.5,
-        fillColor: '#f2c94c',
-        fillOpacity: 0.12,
-        dashArray: '6 5',
-      } as const;
-
-      if (boundary) {
-        L.geoJSON(boundary as unknown as GeoJSON.Polygon | GeoJSON.MultiPolygon, { style }).addTo(map);
-      }
-      // no boundary → no outline; fit logic below uses a broad city-level frame
+      // The boundary is framing data only (view + pan limit). It used to be
+      // drawn as a dashed gold outline; for the seeded bounding boxes that made
+      // a square frame around the city, so the canvas now stays clean.
 
       for (const b of shown) {
         const gold = b.subscriptionTier === 'GOLD';
