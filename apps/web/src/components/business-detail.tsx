@@ -3,8 +3,20 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ApiError, getBusinessDetail } from '@/lib/api';
-import { formatDate, formatRating } from '@/lib/format';
-import type { BusinessDetail as BusinessDetailData } from '@/lib/types';
+import { formatDate, formatPrice, formatRating, thumbFallback, thumbUrlFor } from '@/lib/format';
+import type { BusinessDetail as BusinessDetailData, BusinessProductItem } from '@/lib/types';
+
+/** Menu rows grouped into their sections («نوشیدنی»، «غذاهای اصلی»…) in order. */
+function menuSections(products: BusinessProductItem[]): { title: string; items: BusinessProductItem[] }[] {
+  const groups: { title: string; items: BusinessProductItem[] }[] = [];
+  for (const product of products) {
+    const title = product.section?.trim() || 'بدون دسته';
+    const group = groups.find((g) => g.title === title);
+    if (group) group.items.push(product);
+    else groups.push({ title, items: [product] });
+  }
+  return groups;
+}
 
 interface WorkingHour {
   day?: unknown;
@@ -168,6 +180,51 @@ export function BusinessDetail({ id }: { id: number }) {
             </li>
           )}
         </ul>
+
+        {/* «منو و محصولات» — shown when the owner has registered any, including
+            for visitors arriving from the business pin on the city map. */}
+        {detail.products.length > 0 && (
+          <section className="biz-menu-public" aria-label="منو و محصولات" data-testid="business-menu">
+            <h2 className="biz-menu-public__title">
+              🧾 منو و محصولات
+              <span className="muted small"> ({detail.products.length.toLocaleString('fa-IR')} مورد)</span>
+            </h2>
+            {menuSections(detail.products).map((group) => (
+              <div key={group.title} className="biz-menu-public__group" data-testid={`menu-group-${group.title}`}>
+                <h3 className="biz-menu-public__section">{group.title}</h3>
+                <ul className="biz-menu-public__list">
+                  {group.items.map((product) => (
+                    <li
+                      key={product.id}
+                      className={`biz-menu-public__item${product.isAvailable ? '' : ' is-soldout'}`}
+                      data-testid={`menu-product-${product.id}`}
+                    >
+                      {product.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- remote media
+                        <img
+                          className="biz-menu-public__thumb"
+                          src={thumbUrlFor(product.imageUrl) ?? product.imageUrl}
+                          onError={thumbFallback(product.imageUrl)}
+                          alt=""
+                        />
+                      ) : (
+                        <span className="biz-menu-public__thumb biz-menu-public__thumb--empty" aria-hidden>
+                          🍽
+                        </span>
+                      )}
+                      <div className="biz-menu-public__info">
+                        <b>{product.name}</b>
+                        {product.description && <small>{product.description}</small>}
+                        {!product.isAvailable && <span className="badge badge--rose">ناموجود</span>}
+                      </div>
+                      <span className="biz-menu-public__price">{formatPrice(product.price)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </section>
+        )}
 
         {socials.length > 0 && (
           <div className="social-links">

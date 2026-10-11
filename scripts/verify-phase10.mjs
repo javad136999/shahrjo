@@ -98,7 +98,8 @@ for (const marker of [
   'data-testid="wall-room"', // room header
   'data-testid="wall-room-members"',
   'feed.room.name', // wall name from the API
-  'data-testid="wall-ad-btn"', // ad-post entry, right side of the composer
+  'data-testid="wall-ad-btn"', // ad-post icon beside the WhatsApp-style bar
+  'className="wall-bar"', // the composer bar itself
   'MediaRecorder', // voice notes
   'voiceMediaId', // composer → API claim
   'editWallPost', // inline editing

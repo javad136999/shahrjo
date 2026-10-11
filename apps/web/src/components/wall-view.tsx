@@ -712,23 +712,6 @@ export function WallView({ city }: WallViewProps) {
       </div>
 
       <div className="wall-composer" data-testid="wall-composer">
-        {/* quick actions: ad submission + the city home (site nav is hidden here) */}
-        <div className="wall-quick">
-          <Link href="/ads/new" className="wall-quick__item" data-testid="wall-ad-btn" title="ثبت آگهی در دیوار شهر">
-            <span aria-hidden>📝</span>
-            ثبت آگهی
-          </Link>
-          <Link
-            href={`/city/${city.slug}`}
-            className="wall-quick__item wall-quick__item--home"
-            data-testid="wall-home-bottom"
-            title={`صفحه اصلی شهر ${city.name}`}
-          >
-            <span aria-hidden>🏠</span>
-            خانهٔ شهر
-          </Link>
-        </div>
-
         {replyTo && (
           <div className="wall-composer__reply">
             <span>
@@ -774,25 +757,6 @@ export function WallView({ city }: WallViewProps) {
           </div>
         )}
 
-        <textarea
-          ref={inputRef}
-          className="wall-composer__input"
-          rows={1}
-          maxLength={1000}
-          placeholder={`چیزی بنویسید برای شهر ${city.name}…`}
-          aria-label="متن پیام"
-          data-testid="wall-input"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              void send();
-            }
-          }}
-        />
-
-        {/* tools dock: attachments on one side, the send button on the other */}
         {recording ? (
           <div className="wall-rec" data-testid="wall-recording">
             <span className="wall-rec__pulse" aria-hidden />
@@ -810,7 +774,9 @@ export function WallView({ city }: WallViewProps) {
             </button>
           </div>
         ) : (
-          <div className="wall-composer__bridge">
+          /* WhatsApp-style bar: attach · input · mic · round send, then the one
+             extra action of this room — posting an ad (📝), divider-separated. */
+          <div className="wall-bar">
             <input
               ref={fileRef}
               type="file"
@@ -822,7 +788,7 @@ export function WallView({ city }: WallViewProps) {
             />
             <button
               type="button"
-              className={`wall-tool${image ? ' wall-tool--on' : ''}`}
+              className={`wall-tool wall-tool--inline${image ? ' wall-tool--on' : ''}`}
               data-testid="wall-photo-btn"
               aria-label={image ? 'تغییر عکس پیام' : 'افزودن عکس به پیام'}
               title="افزودن عکس"
@@ -830,9 +796,28 @@ export function WallView({ city }: WallViewProps) {
             >
               <span aria-hidden>🖼</span>
             </button>
+
+            <textarea
+              ref={inputRef}
+              className="wall-bar__input"
+              rows={1}
+              maxLength={1000}
+              placeholder={`پیام به شهر ${city.name}…`}
+              aria-label="متن پیام"
+              data-testid="wall-input"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  void send();
+                }
+              }}
+            />
+
             <button
               type="button"
-              className="wall-tool"
+              className="wall-tool wall-tool--inline"
               data-testid="wall-voice-btn"
               aria-label="ضبط پیام صوتی"
               title="ضبط ویس"
@@ -840,17 +825,30 @@ export function WallView({ city }: WallViewProps) {
             >
               <span aria-hidden>🎤</span>
             </button>
+
             <button
               type="button"
               className={`wall-sendbtn${!text.trim() && !image && !voice ? '' : ' wall-sendbtn--ready'}`}
               data-testid="wall-send"
               aria-label="ارسال پیام"
+              title="ارسال پیام"
               disabled={sending || (!text.trim() && !image && !voice)}
               onClick={() => void send()}
             >
               <span aria-hidden>{sending ? '⏳' : '➤'}</span>
-              <span className="wall-sendbtn__label">{sending ? 'در حال ارسال…' : 'ارسال'}</span>
             </button>
+
+            <span className="wall-bar__sep" aria-hidden />
+
+            <Link
+              href="/ads/new"
+              className="wall-tool wall-tool--ad"
+              data-testid="wall-ad-btn"
+              title="ثبت آگهی در دیوار شهر"
+              aria-label="ثبت آگهی"
+            >
+              <span aria-hidden>📝</span>
+            </Link>
           </div>
         )}
 

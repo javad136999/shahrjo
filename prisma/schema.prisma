@@ -429,15 +429,16 @@ model Business {
   createdAt             DateTime                   @default(now()) @map("created_at")
   updatedAt             DateTime                   @updatedAt @map("updated_at")
 
-  city          City             @relation(fields: [cityId], references: [id])
-  category      BusinessCategory @relation(fields: [categoryId], references: [id])
-  owner         User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  city          City              @relation(fields: [cityId], references: [id])
+  category      BusinessCategory  @relation(fields: [categoryId], references: [id])
+  owner         User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   reviews       Review[]
   favorites     Favorite[]
   comments      Comment[]
   mapLocations  MapLocation[]
   payments      Payment[]
   subscriptions Subscription[]
+  products      BusinessProduct[]
 
   @@index([cityId, categoryId, status])
   @@index([subscriptionTier, subscriptionStatus])
@@ -445,6 +446,28 @@ model Business {
   @@index([latitude, longitude])
   @@index([ownerId])
   @@map("businesses")
+}
+
+// One menu/product row of a business (منو و محصولات). `section` is the free
+// text menu group the owner writes («نوشیدنی»، «غذاهای اصلی»…): it keeps the
+// public menu grouped without a second table to manage.
+model BusinessProduct {
+  id          Int      @id @default(autoincrement())
+  businessId  Int      @map("business_id")
+  name        String   @db.VarChar(160)
+  description String?
+  price       BigInt? // Rial; null = «توافقی»
+  imageUrl    String?  @map("image_url")
+  section     String?  @db.VarChar(80) // menu group («نوشیدنی»، «دسر»…)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isAvailable Boolean  @default(true) @map("is_available")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, sortOrder])
+  @@map("business_products")
 }
 
 model Review {

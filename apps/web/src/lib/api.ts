@@ -9,6 +9,7 @@ import type {
   AdminOverview,
   BusinessDetail,
   BusinessItem,
+  BusinessProductItem,
   CheckoutSession,
   CityMapData,
   DmConversation,
@@ -16,8 +17,10 @@ import type {
   DmMessagesPage,
   CreatedAd,
   LocalCity,
+  ManagedBusiness,
   MeResponse,
   MyAdItem,
+  MyBusiness,
   MySubscription,
   NewsDetail,
   NewsItem,
@@ -473,6 +476,60 @@ export async function createBusiness(body: {
   longitude?: number;
 }): Promise<CreatedBusiness> {
   return api.post<CreatedBusiness>('/businesses', body);
+}
+
+// ---------- my businesses + menu/products ----------
+
+/** The caller's own businesses, any moderation status. */
+export async function getMyBusinesses(): Promise<MyBusiness[]> {
+  return api.get<MyBusiness[]>('/my-businesses');
+}
+
+/** One owned business with its menu rows (owner only — others get 404). */
+export async function getMyBusiness(id: number): Promise<ManagedBusiness> {
+  return api.get<ManagedBusiness>(`/my-businesses/${id}`);
+}
+
+/** Edit the public profile fields of an owned business (empty string clears). */
+export async function updateMyBusiness(
+  id: number,
+  patch: { name?: string; categoryId?: number; description?: string; phone?: string; address?: string },
+): Promise<ManagedBusiness> {
+  return api.patch<ManagedBusiness>(`/my-businesses/${id}`, patch);
+}
+
+export interface ProductInput {
+  name: string;
+  /** Menu group («نوشیدنی»، «غذاهای اصلی»…) — empty = بدون دسته. */
+  section?: string;
+  description?: string;
+  /** Rial — omitted = «توافقی». */
+  price?: number;
+  /** URL returned by uploadImage(). */
+  imageUrl?: string;
+  isAvailable?: boolean;
+}
+
+/** Add one menu/product row. */
+export async function createBusinessProduct(id: number, body: ProductInput): Promise<BusinessProductItem> {
+  return api.post<BusinessProductItem>(`/my-businesses/${id}/products`, body);
+}
+
+/** Edit one menu/product row (empty string clears optional fields). */
+export async function updateBusinessProduct(
+  id: number,
+  productId: number,
+  patch: Partial<ProductInput>,
+): Promise<BusinessProductItem> {
+  return api.patch<BusinessProductItem>(`/my-businesses/${id}/products/${productId}`, patch);
+}
+
+/** Remove one menu/product row. */
+export async function deleteBusinessProduct(
+  id: number,
+  productId: number,
+): Promise<{ id: number; removed: boolean }> {
+  return api.delete<{ id: number; removed: boolean }>(`/my-businesses/${id}/products/${productId}`);
 }
 
 // ---------- private chat (پیام‌های خصوصی) ----------

@@ -76,6 +76,9 @@ jobs:
       - name: Phase 11 checks (private chat, profile cards, unread badges)
         run: pnpm verify:phase11
 
+      - name: Phase 11b checks (owner business menu/products + city-home bar + composer)
+        run: pnpm verify:phase11b
+
       - name: Typecheck all workspaces
         run: pnpm typecheck:all
 

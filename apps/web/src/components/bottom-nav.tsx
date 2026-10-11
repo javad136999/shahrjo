@@ -14,7 +14,7 @@ import {
 import type { LocalCity } from '@/lib/types';
 
 interface NavItem {
-  id: 'home' | 'news' | 'wall' | 'messages' | 'register-business' | 'profile';
+  id: 'home' | 'wall' | 'messages' | 'businesses' | 'register-business' | 'profile';
   href: string;
   icon: string;
   label: string;
@@ -24,11 +24,17 @@ interface NavItem {
 const BADGE_POLL_MS = 30_000;
 
 /**
- * Mobile bottom navigation (JamCity-style): home, city news, the public
- * city wall, private messages, the business signup and the profile. The
- * wall and messages icons carry a red unread badge (فقط برای کاربر وارد
- * شده): wall counts posts newer than the last visit, messages counts
- * unread private messages.
+ * Bottom navigation (JamCity-style): home, the public city wall, private
+ * messages, «کسب‌وکارهای من» (the owner's businesses, their profile editor and
+ * their menus/products), the business signup and the profile. The wall and
+ * messages icons carry a red unread badge (فقط برای کاربر وارد شده): wall
+ * counts posts newer than the last visit, messages counts unread private
+ * messages.
+ *
+ * The news icon that used to sit here is gone — the news feed keeps its own
+ * header pill, and the slot now opens the owner's businesses. On the *city home
+ * page* the bar is always on screen, at every width (`bottom-nav--always` +
+ * `body.nav-pinned`): the city dashboard must never lose its navigation.
  */
 export function BottomNav() {
   const pathname = usePathname();
@@ -86,12 +92,13 @@ export function BottomNav() {
     };
   }, [city?.slug]);
 
-  const cityBase = city ? `/city/${city.slug}` : '';
+  /** /city/<slug> exactly — the city home page keeps the bar on screen. */
+  const isCityHome = /^\/city\/[^/]+\/?$/.test(pathname);
   const isNewsPage = pathname.startsWith('/city/') && pathname.endsWith('/news');
   const items: NavItem[] = [
     { id: 'home', href: '/', icon: '🏠', label: 'خانه' },
-    { id: 'news', href: cityBase ? `${cityBase}/news` : '/', icon: '📰', label: 'اخبار' },
     { id: 'wall', href: '/wall', icon: '🧱', label: 'دیوار' },
+    { id: 'businesses', href: '/businesses', icon: '🏬', label: 'کسب‌وکارها' },
     { id: 'messages', href: '/messages', icon: '💬', label: 'پیام‌ها' },
     { id: 'register-business', href: '/business/new', icon: '🏪', label: 'ثبت کسب‌وکار' },
     { id: 'profile', href: '/profile', icon: '👤', label: 'پروفایل' },
@@ -99,19 +106,29 @@ export function BottomNav() {
 
   const isActive = (item: NavItem): boolean => {
     if (item.id === 'profile') return pathname.startsWith('/profile');
-    if (item.id === 'news') return isNewsPage;
     if (item.id === 'register-business') return pathname.startsWith('/business/new');
+    if (item.id === 'businesses') return pathname.startsWith('/businesses') || /^\/business\/\d+\/manage/.test(pathname);
     if (item.id === 'messages') return pathname.startsWith('/messages');
     if (item.id === 'wall') return pathname.startsWith('/wall');
     if (item.id === 'home') return (pathname === '/' || pathname.startsWith('/city/')) && !isNewsPage && !hash;
     return false;
   };
 
+  // the pinned bar needs its own space at the bottom of the page on desktop
+  useEffect(() => {
+    document.body.classList.toggle('nav-pinned', isCityHome);
+    return () => document.body.classList.remove('nav-pinned');
+  }, [isCityHome]);
+
   const badgeFor = (id: NavItem['id']): number =>
     id === 'messages' ? unread.dm : id === 'wall' ? unread.wall : 0;
 
   return (
-    <nav className="bottom-nav" aria-label="ناوبری سریع">
+    <nav
+      className={`bottom-nav${isCityHome ? ' bottom-nav--always' : ''}`}
+      aria-label="ناوبری سریع"
+      data-pinned={isCityHome ? 'true' : undefined}
+    >
       {items.map((item) => {
         const badge = badgeFor(item.id);
         return (

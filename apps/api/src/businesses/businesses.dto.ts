@@ -1,5 +1,15 @@
 import { Transform } from 'class-transformer';
-import { IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator';
 
 const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
@@ -49,4 +59,131 @@ export class CreateBusinessDto {
   @Min(-180)
   @Max(180)
   longitude?: number;
+}
+
+/**
+ * Owner edit of an already-registered business. Only the public profile
+ * fields are editable here; status, tier and city stay under platform control
+ * (moderation + payments own them). An empty string clears the field.
+ */
+export class UpdateBusinessDto {
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(160)
+  name?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  categoryId?: number;
+
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  description?: string;
+
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MaxLength(15)
+  phone?: string;
+
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  address?: string;
+}
+
+/**
+ * One menu/product row. `section` is the free-text menu group the owner writes
+ * («نوشیدنی»، «غذاهای اصلی»…) so the public menu renders grouped without a
+ * second table; an empty section means «بدون دسته».
+ */
+export class CreateProductDto {
+  @Transform(trim)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(160)
+  name!: string;
+
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  section?: string;
+
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  description?: string;
+
+  /** Rial. Omitted/null = «توافقی». */
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  price?: number;
+
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  imageUrl?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(9999)
+  sortOrder?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isAvailable?: boolean;
+}
+
+/** Partial edit of one product — every field optional. */
+export class UpdateProductDto {
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(160)
+  name?: string;
+
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  section?: string;
+
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  description?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  price?: number;
+
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  imageUrl?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(9999)
+  sortOrder?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isAvailable?: boolean;
 }

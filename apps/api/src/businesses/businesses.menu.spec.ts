@@ -1,0 +1,208 @@
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import type { User } from '@prisma/client';
+import type { PrismaService } from '../prisma/prisma.service';
+import { BusinessesService } from './businesses.service';
+
+function makePrisma() {
+  return {
+    business: { findFirst: jest.fn(), findMany: jest.fn(), update: jest.fn() },
+    businessCategory: { findFirst: jest.fn() },
+    businessProduct: { create: jest.fn(), findFirst: jest.fn(), update: jest.fn(), delete: jest.fn() },
+  };
+}
+
+const owner = { id: 7, phone: '09120000000', cityId: 5 } as User;
+const productRow = {
+  id: 11,
+  name: 'لاته',
+  description: null,
+  price: 250_000n,
+  imageUrl: '/media/x.webp',
+  section: 'نوشیدنی',
+  sortOrder: 0,
+  isAvailable: true,
+};
+
+describe('BusinessesService — «کسب‌وکارهای من» + menu/products', () => {
+  let prisma: ReturnType<typeof makePrisma>;
+  let service: BusinessesService;
+
+  beforeEach(() => {
+    prisma = makePrisma();
+    service = new BusinessesService(prisma as unknown as PrismaService);
+    prisma.business.findFirst.mockResolvedValue({ id: 4 });
+  });
+
+  describe('mine()', () => {
+    it('scopes the list by ownerId and never exposes BigInt', async () => {
+      prisma.business.findMany.mockResolvedValue([
+        {
+          id: 4,
+          name: 'کافه آزمون',
+          slug: 'x-1',
+          status: 'PENDING',
+          subscriptionTier: 'FREE',
+          logoUrl: null,
+          rating: 0,
+          ratingCount: 0,
+          latitude: 28.97,
+          category: { id: 3, name: 'کافه', icon: '☕' },
+          _count: { products: 2 },
+        },
+      ]);
+      const list = await service.mine(owner);
+      expect(prisma.business.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { ownerId: 7 } }),
+      );
+      expect(list[0]).toMatchObject({ productCount: 2, pinned: true, status: 'PENDING' });
+    });
+  });
+
+  describe('manage()', () => {
+    it('404s a business that is not the caller’s (no existence leak)', async () => {
+      prisma.business.findFirst.mockResolvedValue(null);
+      await expect(service.manage(owner, 99)).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.business.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 99, ownerId: 7 } }),
+      );
+    });
+
+    it('returns the menu rows with Rial prices as plain numbers', async () => {
+      prisma.business.findFirst.mockResolvedValue({
+        id: 4,
+        name: 'کافه',
+        slug: 'x-1',
+        status: 'APPROVED',
+        subscriptionTier: 'FREE',
+        logoUrl: null,
+        rating: 4.5,
+        ratingCount: 3,
+        latitude: null,
+        longitude: null,
+        description: 'د',
+        phone: '0912',
+        address: 'آ',
+        categoryId: 3,
+        category: { id: 3, name: 'کافه', icon: '☕' },
+        products: [productRow],
+      });
+      const data = await service.manage(owner, 4);
+      expect(data.products[0].price).toBe(250_000);
+      expect(data.pinned).toBe(false);
+      expect(data.categoryId).toBe(3);
+    });
+  });
+
+  describe('update()', () => {
+    it('never lets a stranger edit (ownership gate runs first)', async () => {
+      prisma.business.findFirst.mockResolvedValue(null);
+      await expect(service.update(owner, 99, { name: 'ت' })).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.business.update).not.toHaveBeenCalled();
+    });
+
+    it('stores an emptied field as NULL (clear), keeping unchanged fields', async () => {
+      prisma.business.findFirst
+        .mockResolvedValueOnce({ id: 4 }) // ownership gate — must be first
+        .mockResolvedValueOnce({
+          id: 4,
+          name: 'کافه',
+          slug: 'x-1',
+          status: 'APPROVED',
+          subscriptionTier: 'FREE',
+          logoUrl: null,
+          rating: 0,
+          ratingCount: 0,
+          latitude: null,
+          longitude: null,
+          description: null,
+          phone: '0912',
+          address: null,
+          categoryId: 3,
+          category: { id: 3, name: 'کافه', icon: '☕' },
+          products: [],
+        });
+      await service.update(owner, 4, { address: '   ' });
+      expect(prisma.business.update).toHaveBeenCalledWith({
+        where: { id: 4 },
+        data: { address: null },
+      });
+    });
+
+    it('rejects an unknown category', async () => {
+      prisma.businessCategory.findFirst.mockResolvedValue(null);
+      await expect(service.update(owner, 4, { categoryId: 999 })).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(prisma.business.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects blanking the business name', async () => {
+      await expect(service.update(owner, 4, { name: '   ' })).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+  });
+
+  describe('addProduct()', () => {
+    it('creates the row on the owned business and returns a numeric price', async () => {
+      prisma.businessProduct.create.mockResolvedValue(productRow);
+      const created = await service.addProduct(owner, 4, {
+        name: '  لاته ',
+        price: 250_000,
+        section: 'نوشیدنی',
+      });
+      expect(prisma.businessProduct.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ businessId: 4, name: 'لاته', price: 250_000n }),
+        }),
+      );
+      expect(created.price).toBe(250_000);
+    });
+
+    it('stores «توافقی» as NULL when no price is given', async () => {
+      prisma.businessProduct.create.mockResolvedValue({ ...productRow, price: null });
+      await service.addProduct(owner, 4, { name: 'قهوه' });
+      expect(prisma.businessProduct.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ price: null }) }),
+      );
+    });
+
+    it('refuses to add products to a business the caller does not own', async () => {
+      prisma.business.findFirst.mockResolvedValue(null);
+      await expect(service.addProduct(owner, 99, { name: 'قهوه' })).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(prisma.businessProduct.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateProduct() / removeProduct()', () => {
+    it('404s a product that belongs to another business', async () => {
+      prisma.businessProduct.findFirst.mockResolvedValue(null);
+      await expect(service.updateProduct(owner, 4, 77, { name: 'x' })).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(prisma.businessProduct.update).not.toHaveBeenCalled();
+    });
+
+    it('checks the product against its business id, not just the product id', async () => {
+      prisma.businessProduct.findFirst.mockResolvedValue({ id: 11 });
+      prisma.businessProduct.update.mockResolvedValue({ ...productRow, isAvailable: false });
+      const updated = await service.updateProduct(owner, 4, 11, { isAvailable: false });
+      expect(prisma.businessProduct.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 11, businessId: 4 } }),
+      );
+      expect(updated.isAvailable).toBe(false);
+    });
+
+    it('deletes only after the ownership gates pass', async () => {
+      prisma.businessProduct.findFirst.mockResolvedValue(null);
+      await expect(service.removeProduct(owner, 4, 77)).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.businessProduct.delete).not.toHaveBeenCalled();
+
+      prisma.businessProduct.findFirst.mockResolvedValue({ id: 11 });
+      prisma.businessProduct.delete.mockResolvedValue({ id: 11 });
+      await expect(service.removeProduct(owner, 4, 11)).resolves.toEqual({ id: 11, removed: true });
+    });
+  });
+});

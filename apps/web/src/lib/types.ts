@@ -398,6 +398,8 @@ export interface BusinessDetail {
   createdAt: string;
   city: { name: string; slug: string };
   category: { name: string; slug: string; icon: string | null; color: string | null };
+  /** «منو و محصولات» — empty array when the owner registered none. */
+  products: BusinessProductItem[];
 }
 
 export interface BusinessCategoryOption {
@@ -405,6 +407,46 @@ export interface BusinessCategoryOption {
   name: string;
   slug: string;
   icon: string | null;
+}
+
+/** One menu/product row of a business — the public profile view. */
+export interface BusinessProductItem {
+  id: number;
+  name: string;
+  description: string | null;
+  /** Rial — null = «توافقی». */
+  price: number | null;
+  imageUrl: string | null;
+  /** Free-text menu group («نوشیدنی»، «غذاهای اصلی»…) — null = بدون دسته. */
+  section: string | null;
+  isAvailable: boolean;
+}
+
+/** One row of «کسب‌وکارهای من» (any moderation status). */
+export interface MyBusiness {
+  id: number;
+  name: string;
+  slug: string;
+  status: string;
+  subscriptionTier: string;
+  logoUrl: string | null;
+  rating: number;
+  ratingCount: number;
+  productCount: number;
+  /** true when coordinates are set — the business shows on the city map. */
+  pinned: boolean;
+  category: { id: number; name: string; icon: string | null };
+}
+
+/** Owner view of one business: editable profile + menu rows. */
+export interface ManagedBusiness extends MyBusiness {
+  description: string | null;
+  phone: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  categoryId: number;
+  products: BusinessProductItem[];
 }
 
 export interface CreatedBusiness {

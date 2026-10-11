@@ -77,6 +77,19 @@ export interface NewsDetail extends NewsItem {
   city: { name: string; slug: string };
 }
 
+/** One menu/product row of a business, as the public profile shows it. */
+export interface BusinessProductItem {
+  id: number;
+  name: string;
+  description: string | null;
+  /** Rial — null = «توافقی». */
+  price: number | null;
+  imageUrl: string | null;
+  /** Free-text menu group («نوشیدنی»، «غذاهای اصلی»…) — null = بدون دسته. */
+  section: string | null;
+  isAvailable: boolean;
+}
+
 export interface BusinessDetail {
   id: number;
   name: string;
@@ -97,6 +110,8 @@ export interface BusinessDetail {
   createdAt: Date;
   city: { name: string; slug: string };
   category: { name: string; slug: string; icon: string | null; color: string | null };
+  /** Menu & products («منو و محصولات») — empty array when none registered. */
+  products: BusinessProductItem[];
 }
 
 /**
@@ -320,6 +335,20 @@ export class ContentService {
         createdAt: true,
         city: { select: { name: true, slug: true } },
         category: { select: { name: true, slug: true, icon: true, color: true } },
+        // The owner's menu rows travel with the profile so the map → business
+        // entry shows the products without a second request.
+        products: {
+          orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            price: true,
+            imageUrl: true,
+            section: true,
+            isAvailable: true,
+          },
+        },
       },
     });
     if (!business) throw new NotFoundException('کسب‌وکار یافت نشد');
@@ -329,6 +358,14 @@ export class ContentService {
       data: { viewCount: { increment: 1 } },
       select: { viewCount: true },
     });
-    return { ...business, viewCount: updated.viewCount };
+    const { products, ...rest } = business;
+    return {
+      ...rest,
+      viewCount: updated.viewCount,
+      products: products.map((product) => ({
+        ...product,
+        price: product.price === null ? null : Number(product.price),
+      })),
+    };
   }
 }

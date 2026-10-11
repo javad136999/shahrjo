@@ -110,11 +110,11 @@ describe('WallView', () => {
     expect(screen.queryByTestId('wall-cat-market')).toBeNull(); // only the first six are shown
     expect(screen.queryByTestId('wall-change-city')).toBeNull();
     expect(screen.queryByTestId('wall-back-city')).toBeNull();
-    // the site header/nav are gone in the room → the home entry leads back to
-    // that city's own home page, both in the room bar and in the composer
+    // the site header/nav are gone in the room → the room's own top bar carries
+    // the single 🏠 entry back to that city's home page (the composer dock has
+    // none any more: it is a WhatsApp-style bar now)
     expect(screen.getByTestId('wall-home-top')).toHaveAttribute('href', '/city/sample-city');
-    expect(screen.getByTestId('wall-home-bottom')).toHaveAttribute('href', '/city/sample-city');
-    expect(screen.getByTestId('wall-home-bottom')).toHaveTextContent('خانه');
+    expect(screen.queryByTestId('wall-home-bottom')).toBeNull();
   });
 
   it('renders post images from the thumbnail variant (lists never fetch the full file)', async () => {
@@ -208,14 +208,26 @@ describe('WallView', () => {
     expect(card).not.toHaveAttribute('href');
   });
 
-  it('offers the ad-post entry on the right of the composer', async () => {
+  it('lays the composer out like WhatsApp with the ad-post icon beside it', async () => {
     render(<WallView city={city} />);
     await screen.findByTestId('wall-input');
+
+    // one bar: attach · input · mic · round send
+    const bar = document.querySelector('.wall-bar');
+    expect(bar).toBeTruthy();
+    for (const id of ['wall-photo-btn', 'wall-input', 'wall-voice-btn', 'wall-send']) {
+      expect(bar).toContainElement(screen.getByTestId(id));
+    }
+    // the single extra action of the room — posting an ad — sits next to it
     const adBtn = screen.getByTestId('wall-ad-btn');
     expect(adBtn).toHaveAttribute('href', '/ads/new');
-    expect(adBtn).toHaveTextContent('ثبت آگهی');
-    // the city home sits next to it (the site nav is hidden in the room)
-    expect(screen.getByTestId('wall-home-bottom')).toHaveAttribute('href', '/city/sample-city');
+    expect(adBtn).toHaveAttribute('aria-label', 'ثبت آگهی');
+    expect(adBtn.className).toContain('wall-tool--ad');
+    expect(bar).toContainElement(adBtn);
+    // the old two-row dock and its city-home button are gone
+    expect(document.querySelector('.wall-composer__bridge')).toBeNull();
+    expect(document.querySelector('.wall-quick')).toBeNull();
+    expect(screen.queryByTestId('wall-home-bottom')).toBeNull();
   });
 
   it('paints own messages as bubbles and leaves other people\'s as room posts', async () => {

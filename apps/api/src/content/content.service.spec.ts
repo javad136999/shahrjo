@@ -73,6 +73,18 @@ describe('ContentService.businessDetail', () => {
       createdAt: new Date('2026-01-01'),
       city: { name: 'شهر نمونه', slug: 'sample-city' },
       category: { name: 'رستوران', slug: 'restaurants', icon: '🍽️', color: '#0e7a5f' },
+      // menu rows travel with the profile (map → business shows the products)
+      products: [
+        {
+          id: 5,
+          name: 'لاته',
+          description: 'با شیر',
+          price: 250_000n,
+          imageUrl: '/media/latte.webp',
+          section: 'نوشیدنی',
+          isAvailable: true,
+        },
+      ],
     });
     prisma.business.update.mockResolvedValue({ viewCount: 10 });
 
@@ -86,6 +98,40 @@ describe('ContentService.businessDetail', () => {
     expect(detail.viewCount).toBe(10);
     expect(detail.subscriptionTier).toBe('GOLD');
     expect(detail.category.icon).toBe('🍽️');
+    // BigInt Rial must leave the API as a plain number
+    expect(detail.products).toHaveLength(1);
+    expect(detail.products[0]).toMatchObject({ name: 'لاته', section: 'نوشیدنی', price: 250_000 });
+  });
+
+  it('ships an empty menu array when the owner registered no products', async () => {
+    const { service, prisma } = makeService();
+    prisma.business.findFirst.mockResolvedValue({
+      id: 31,
+      name: 'بدون منو',
+      slug: 'no-menu',
+      description: null,
+      logoUrl: null,
+      coverUrl: null,
+      phone: null,
+      address: null,
+      latitude: null,
+      longitude: null,
+      workingHours: null,
+      socialLinks: null,
+      rating: 0,
+      ratingCount: 0,
+      viewCount: 1,
+      subscriptionTier: 'FREE',
+      createdAt: new Date('2026-01-01'),
+      city: { name: 'شهر نمونه', slug: 'sample-city' },
+      category: { name: 'فروشگاه', slug: 'shop', icon: '🛍️', color: null },
+      products: [],
+    });
+    prisma.business.update.mockResolvedValue({ viewCount: 2 });
+
+    const detail = await service.businessDetail(31);
+
+    expect(detail.products).toEqual([]);
   });
 
   it('404s for unknown or unapproved businesses', async () => {

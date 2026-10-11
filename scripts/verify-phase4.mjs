@@ -81,9 +81,15 @@ const layout = read('apps/web/src/app/layout.tsx');
 for (const comp of ['HeaderPills', 'BottomNav']) {
   if (!layout.includes(comp)) { console.error(`WEB: layout must render ${comp}`); fail++; }
 }
+// The bar's second slot is «کسب‌وکارهای من» now (the owner's businesses); the
+// news feed keeps its header pill. On the city home the bar is always visible.
 const bottomNav = read('apps/web/src/components/bottom-nav.tsx');
-for (const marker of ['bottom-nav', 'getLocalCity', '/news', '/business/new']) {
+for (const marker of ['bottom-nav', 'getLocalCity', '/businesses', '/business/new', 'bottom-nav--always']) {
   if (!bottomNav.includes(marker)) { console.error(`WEB: bottom nav missing ${marker}`); fail++; }
+}
+if (bottomNav.includes("label: 'اخبار'") || bottomNav.includes("id: 'news'")) {
+  console.error('WEB: the news icon must not be back in the bottom nav (header pill owns it)');
+  fail++;
 }
 // «ثبت آگهی» moved out of the shell into the city-wall composer (Phase 10).
 if (bottomNav.includes('/ads/new')) { console.error('WEB: bottom nav must not link /ads/new (wall composer owns it)'); fail++; }

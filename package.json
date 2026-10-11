@@ -23,6 +23,7 @@
     "verify:phase9": "node scripts/verify-phase9.mjs",
     "verify:phase10": "node scripts/verify-phase10.mjs",
     "verify:phase11": "node scripts/verify-phase11.mjs",
+    "verify:phase11b": "node scripts/verify-phase11b.mjs",
     "smoke": "node scripts/smoke.mjs",
     "test": "pnpm -r run test",
     "typecheck:all": "pnpm -r run typecheck",

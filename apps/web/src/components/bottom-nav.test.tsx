@@ -41,7 +41,10 @@ describe('BottomNav', () => {
     render(<BottomNav />);
     expect(screen.getByRole('navigation', { name: 'ناوبری سریع' })).toBeInTheDocument();
     expect(screen.getByTestId('bottom-nav-home')).toHaveTextContent('خانه');
-    expect(screen.getByTestId('bottom-nav-news')).toHaveTextContent('اخبار');
+    // the news icon left the bar: its slot opens the owner's businesses now
+    expect(screen.queryByTestId('bottom-nav-news')).toBeNull();
+    expect(screen.getByTestId('bottom-nav-businesses')).toHaveTextContent('کسب‌وکارها');
+    expect(screen.getByTestId('bottom-nav-businesses')).toHaveAttribute('href', '/businesses');
     expect(screen.getByTestId('bottom-nav-wall')).toHaveTextContent('دیوار');
     expect(screen.getByTestId('bottom-nav-messages')).toHaveTextContent('پیام‌ها');
     expect(screen.getByTestId('bottom-nav-register-business')).toHaveTextContent('ثبت کسب‌وکار');
@@ -54,17 +57,17 @@ describe('BottomNav', () => {
     expect(screen.queryByRole('link', { name: /ثبت آگهی/ })).not.toBeInTheDocument();
   });
 
-  it('deep-links news to the city news page and register-business to /business/new', async () => {
+  it('deep-links businesses and register-business', async () => {
     render(<BottomNav />);
     // the city is read client-side after mount
-    expect(await screen.findByTestId('bottom-nav-news')).toHaveAttribute('href', '/city/sample-city/news');
+    expect(await screen.findByTestId('bottom-nav-businesses')).toHaveAttribute('href', '/businesses');
     expect(screen.getByTestId('bottom-nav-register-business')).toHaveAttribute('href', '/business/new');
   });
 
-  it('falls back to the city picker when no city is remembered', async () => {
+  it('keeps the businesses entry working with no city remembered', async () => {
     mockGetLocalCity.mockReturnValue(null);
     render(<BottomNav />);
-    expect(await screen.findByTestId('bottom-nav-news')).toHaveAttribute('href', '/');
+    expect(await screen.findByTestId('bottom-nav-businesses')).toHaveAttribute('href', '/businesses');
     expect(screen.getByTestId('bottom-nav-register-business')).toHaveAttribute('href', '/business/new');
   });
 
@@ -72,14 +75,37 @@ describe('BottomNav', () => {
     mockPathname.mockReturnValue('/');
     render(<BottomNav />);
     expect(screen.getByTestId('bottom-nav-home')).toHaveClass('is-active');
-    expect(screen.getByTestId('bottom-nav-news')).not.toHaveClass('is-active');
+    expect(screen.getByTestId('bottom-nav-businesses')).not.toHaveClass('is-active');
   });
 
-  it('marks news active on the city news page (and not home)', () => {
-    mockPathname.mockReturnValue('/city/sample-city/news');
-    render(<BottomNav />);
-    expect(screen.getByTestId('bottom-nav-news')).toHaveClass('is-active');
+  it('marks businesses active on the owner list and on a manage page', () => {
+    mockPathname.mockReturnValue('/businesses');
+    const { unmount } = render(<BottomNav />);
+    expect(screen.getByTestId('bottom-nav-businesses')).toHaveClass('is-active');
     expect(screen.getByTestId('bottom-nav-home')).not.toHaveClass('is-active');
+    unmount();
+
+    mockPathname.mockReturnValue('/business/30/manage');
+    render(<BottomNav />);
+    expect(screen.getByTestId('bottom-nav-businesses')).toHaveClass('is-active');
+  });
+
+  it('keeps the bar on screen on the city home page (pinned at every width)', () => {
+    mockPathname.mockReturnValue('/city/sample-city');
+    render(<BottomNav />);
+    const nav = screen.getByRole('navigation', { name: 'ناوبری سریع' });
+    expect(nav).toHaveClass('bottom-nav--always');
+    expect(nav).toHaveAttribute('data-pinned', 'true');
+    // the page gets the room the pinned bar occupies
+    expect(document.body).toHaveClass('nav-pinned');
+  });
+
+  it('never pins the bar outside the city home', () => {
+    mockPathname.mockReturnValue('/city/sample-city/news');
+    const { unmount } = render(<BottomNav />);
+    expect(screen.getByRole('navigation', { name: 'ناوبری سریع' })).not.toHaveClass('bottom-nav--always');
+    expect(document.body).not.toHaveClass('nav-pinned');
+    unmount();
   });
 
   it('marks register-business active on /business/new', () => {
