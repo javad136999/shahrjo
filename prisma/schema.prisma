@@ -129,6 +129,9 @@ model City {
   boundary   Json?
   isFeatured Boolean  @default(false) @map("is_featured")
   isActive   Boolean  @default(true) @map("is_active")
+  // Wall group member floor: fixed random 1..1000, assigned once (seed/first
+  // view) and never rerolled — the header shows this + real site members.
+  wallMemberBase Int?  @map("wall_member_base")
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 

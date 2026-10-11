@@ -5,7 +5,7 @@ import { WallService } from './wall.service';
 
 function makePrisma() {
   const prisma = {
-    city: { findFirst: jest.fn() },
+    city: { findFirst: jest.fn(), update: jest.fn() },
     user: { count: jest.fn().mockResolvedValue(12) },
     wallPost: {
       findFirst: jest.fn(),
@@ -36,7 +36,7 @@ function makeService(scope: { role: string; provinceId: number | null; cityId: n
     rbac as unknown as RbacService,
     uploads as unknown as never,
   );
-  prisma.city.findFirst.mockResolvedValue({ id: 1, name: 'شهر نمونه' });
+  prisma.city.findFirst.mockResolvedValue({ id: 1, name: 'شهر نمونه', wallMemberBase: 400 });
   return { service, prisma, uploads };
 }
 
@@ -81,12 +81,34 @@ describe('WallService.list', () => {
     expect(feed.posts[0].canDelete).toBe(true); // own post
     expect(feed.posts[0].canPin).toBe(false); // not an operator
     expect(feed.nextBefore).toBeNull(); // fewer rows than limit
+    // 400 = the city's fixed random floor, 12 = real site members
     expect(feed.room).toEqual({
       name: 'دیوار شهر شهر نمونه',
-      memberCount: 12,
+      memberCount: 412,
       messageCount: 34,
     });
     expect(() => JSON.stringify(feed)).not.toThrow();
+  });
+
+  it('assigns the permanent member floor on first view when the seed has not run', async () => {
+    const { service, prisma } = makeService(null);
+    prisma.city.findFirst.mockResolvedValue({ id: 1, name: 'شهر نمونه', wallMemberBase: null });
+    prisma.wallPost.findFirst.mockResolvedValue(null);
+    prisma.wallPost.findMany.mockResolvedValue([]);
+    prisma.wallPostLike.findMany.mockResolvedValue([]);
+    prisma.user.count.mockResolvedValue(3);
+    prisma.wallPost.count.mockResolvedValue(0);
+    const rand = jest.spyOn(Math, 'random').mockReturnValue(0.5);
+    try {
+      const feed = await service.list(user, 'jam');
+      expect(prisma.city.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { wallMemberBase: 501 }, // floor(0.5 * 1000) + 1
+      });
+      expect(feed.room.memberCount).toBe(501 + 3);
+    } finally {
+      rand.mockRestore();
+    }
   });
 
   it('returns pending ad previews with moderation status and filters rejected ad posts', async () => {

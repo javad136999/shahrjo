@@ -309,6 +309,17 @@ async function main(): Promise<void> {
     });
   }
 
+  // Wall group member floor: one fixed random 1..1000 per city — assigned
+  // once and never rerolled. The wall header shows this floor + the real
+  // site members of that city (each new user adds up automatically).
+  const baseless = await prisma.city.findMany({ where: { wallMemberBase: null }, select: { id: true } });
+  for (const city of baseless) {
+    await prisma.city.update({
+      where: { id: city.id },
+      data: { wallMemberBase: Math.floor(Math.random() * 1000) + 1 },
+    });
+  }
+
   // Roles
   for (const r of roles) {
     await prisma.role.upsert({ where: { code: r.code }, update: { title: r.title }, create: r });

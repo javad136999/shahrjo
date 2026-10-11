@@ -94,13 +94,17 @@ export class WallService {
     private readonly uploads: UploadsService,
   ) {}
 
-  private async resolveCity(slug: string): Promise<{ id: number; name: string }> {
+  private async resolveCity(slug: string): Promise<{ id: number; name: string; wallMemberBase: number }> {
     const city = await this.prisma.city.findFirst({
       where: { slug, isActive: true, province: { isActive: true } },
-      select: { id: true, name: true },
+      select: { id: true, name: true, wallMemberBase: true },
     });
     if (!city) throw new NotFoundException('شهر یافت نشد');
-    return city;
+    if (city.wallMemberBase !== null) return { ...city, wallMemberBase: city.wallMemberBase };
+    // First view before the seed ran: assign the permanent random floor now.
+    const wallMemberBase = Math.floor(Math.random() * 1000) + 1;
+    await this.prisma.city.update({ where: { id: city.id }, data: { wallMemberBase } });
+    return { ...city, wallMemberBase };
   }
 
   private async scopeOf(userId: number): Promise<AdminScope | null> {
@@ -238,7 +242,7 @@ export class WallService {
     // read pointer so the bottom-nav badge resets (pagination included).
     await this.touchRead(user.id, cityId);
 
-    const [pinnedRow, rows, memberCount, messageCount] = await Promise.all([
+    const [pinnedRow, rows, realMembers, messageCount] = await Promise.all([
       this.prisma.wallPost.findFirst({
         where: { cityId, isPinned: true, ...visibleWallPosts },
         select: this.select,
@@ -257,6 +261,10 @@ export class WallService {
       this.prisma.user.count({ where: { cityId, status: 'ACTIVE' } }),
       this.prisma.wallPost.count({ where: { cityId, ...visibleWallPosts } }),
     ]);
+
+    // گروه دیوار: کف تصادفی ثابت شهر (۱ تا ۱۰۰۰) + کاربران واقعی همان شهر؛
+    // هر کاربر جدیدِ سایت که شهر را انتخاب کند، شمارنده را بالا می‌برد.
+    const memberCount = city.wallMemberBase + realMembers;
 
     const likedRows = rows.length
       ? await this.prisma.wallPostLike.findMany({
