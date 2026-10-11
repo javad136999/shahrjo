@@ -3837,3 +3837,24 @@ a.my-ads__item:hover {
   outline-offset: 2px;
   border-radius: 8px;
 }
+
+/* ---- wall load failure (was: endless loading) ---- */
+
+.wall-error {
+  max-width: 420px;
+  margin: 48px auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.wall-error__icon {
+  font-size: 34px;
+}
+.wall-error p[role='alert'] {
+  margin: 0;
+  color: #c62828;
+  font-weight: 700;
+  line-height: 1.9;
+}

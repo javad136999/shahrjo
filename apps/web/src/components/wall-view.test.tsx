@@ -209,6 +209,20 @@ describe('WallView', () => {
     expect(adBtn).toHaveTextContent('ثبت آگهی');
   });
 
+  it('shows the error with a retry button when the feed fails (no endless loading)', async () => {
+    mockGetWall.mockRejectedValue(new Error('خطای داخلی سرور'));
+    render(<WallView city={city} />);
+
+    const box = await screen.findByTestId('wall-error');
+    expect(box).toHaveTextContent('خطای داخلی سرور');
+    expect(screen.queryByText(/در حال بارگذاری دیوار/)).not.toBeInTheDocument();
+
+    // a healthy retry renders the wall
+    mockGetWall.mockResolvedValue(feed);
+    fireEvent.click(screen.getByRole('button', { name: 'تلاش دوباره' }));
+    expect(await screen.findByTestId('wall')).toBeInTheDocument();
+  });
+
   it('shows the login gate on 401 instead of the feed', async () => {
     const { ApiError } = jest.requireMock('@/lib/api');
     mockGetWall.mockRejectedValue(new ApiError(401, 'unauthorized'));

@@ -374,6 +374,21 @@ export function WallView({ city }: WallViewProps) {
   }
 
   if (!feed) {
+    // A failed load must surface the error + a retry — not an endless
+    // «در حال بارگذاری» (that hid real server errors, e.g. a missing migration).
+    if (error) {
+      return (
+        <div className="wall-error" data-testid="wall-error">
+          <span className="wall-error__icon" aria-hidden>
+            ⚠️
+          </span>
+          <p role="alert">{error}</p>
+          <button type="button" className="btn btn-primary" onClick={() => void load()}>
+            تلاش دوباره
+          </button>
+        </div>
+      );
+    }
     return (
       <p className="muted loading" aria-busy>
         در حال بارگذاری دیوار…
