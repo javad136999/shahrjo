@@ -1,6 +1,6 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import type { User } from '@prisma/client';
-import type { RbacService } from '../rbac/rbac.service';
+import { RbacService } from '../rbac/rbac.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAdDto } from './ads.dto';
