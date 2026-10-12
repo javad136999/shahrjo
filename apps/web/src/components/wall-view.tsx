@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {
   ApiError,
   createWallPost,
+  deleteAd,
   deleteWallPost,
   editWallPost,
   getAdCategories,
@@ -317,6 +318,22 @@ export function WallView({ city }: WallViewProps) {
     }
   };
 
+  /**
+   * Removes the AD itself (owner or moderator), not just this repost: the ad
+   * leaves the feeds and every wall card at once, its pictures are freed and
+   * the daily republication stops mentioning it.
+   */
+  const removeAd = async (ad: NonNullable<WallPost['ad']>) => {
+    if (!window.confirm('این آگهی کاملاً پاک شود؟ از دیوار و همهٔ صفحات سایت حذف می‌شود و قابل بازگشت نیست.'))
+      return;
+    try {
+      await deleteAd(ad.id);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'پاک کردن آگهی ناموفق بود');
+    }
+  };
+
   const remove = async (post: WallPost) => {
     if (!window.confirm('این پیام پاک شود؟')) return;
     try {
@@ -565,6 +582,40 @@ export function WallView({ city }: WallViewProps) {
                 />
               )}
 
+              {post.business && (
+                <Link
+                  href={`/business/${post.business.id}`}
+                  className="wall-promocard"
+                  data-testid={`wall-promocard-${post.id}`}
+                >
+                  <span className="wall-promocard__thumb" aria-hidden>
+                    {post.business.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- owner photo
+                      <img
+                        src={thumbUrlFor(post.business.logoUrl) ?? post.business.logoUrl}
+                        alt=""
+                        loading="lazy"
+                        onError={(e) => {
+                          // photo removed later → the emoji tile takes over
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      (post.business.category.icon ?? '🏪')
+                    )}
+                  </span>
+                  <span className="wall-promocard__body">
+                    <b>{post.business.name}</b>
+                    <small>
+                      {post.business.category.icon ?? '◆'} {post.business.category.name}
+                      {post.business.address ? ` · 📍 ${post.business.address}` : ''}
+                    </small>
+                    <span className="wall-promocard__cta">مشاهدهٔ صفحه و منوی کسب‌وکار ↗</span>
+                  </span>
+                  <span className="wall-promocard__badge">👑 طلایی</span>
+                </Link>
+              )}
+
               {post.ad && (
                 post.ad.status === 'PENDING' ? (
                   <div
@@ -619,6 +670,17 @@ export function WallView({ city }: WallViewProps) {
                   onClick={() => setEditing({ id: post.id, text: post.content })}
                 >
                   ✏️
+                </button>
+              )}
+              {post.ad?.canRemove && (
+                <button
+                  type="button"
+                  className="wall-iconbtn wall-iconbtn--danger"
+                  aria-label="حذف کامل آگهی"
+                  data-testid={`wall-addelete-${post.id}`}
+                  onClick={() => void removeAd(post.ad!)}
+                >
+                  🗑 آگهی
                 </button>
               )}
               {pinnedBanner && <span className="wall-post__pinbadge">📌 سنجاق‌شده</span>}

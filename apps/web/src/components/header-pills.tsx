@@ -38,10 +38,11 @@ export function HeaderPills() {
         href={city ? `/city/${city.slug}/news` : '/'}
         className="pill"
         title="اخبار شهر"
+        aria-label="اخبار شهر"
         data-testid="header-news-pill"
       >
         <span aria-hidden>📰</span>
-        <span className="pill__label">اخبار</span>
+        <span className="pill__label">اخبار شهر</span>
       </Link>
       {/* the city pill opens the picker in place — no page jump */}
       <button

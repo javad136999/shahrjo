@@ -310,6 +310,18 @@ export interface WallAdRef {
   price: number | null;
   image: string | null;
   status: string;
+  /** The viewer owns the ad or is a moderator → may delete it entirely. */
+  canRemove: boolean;
+}
+
+/** The promoted GOLD business behind a daily wall promo post. */
+export interface WallBusinessRef {
+  id: number;
+  name: string;
+  address: string | null;
+  /** Read live from the business row — never a stale stored copy. */
+  logoUrl: string | null;
+  category: { name: string; icon: string | null; color: string | null };
 }
 
 /** Chat-room header meta: wall name + member/message counts. */
@@ -326,6 +338,8 @@ export interface WallPost {
   voiceUrl: string | null;
   editedAt: string | null;
   ad: WallAdRef | null;
+  /** Daily GOLD-business promo card — null for ordinary posts. */
+  business: WallBusinessRef | null;
   isPinned: boolean;
   likeCount: number;
   likedByMe: boolean;

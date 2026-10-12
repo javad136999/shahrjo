@@ -24,7 +24,7 @@ export function CityNewsView({ city, news, loading, error }: CityNewsViewProps) 
         <h1>
           اخبار شهر {city.name}
         </h1>
-        <p className="muted">آخرین اخبار و اتفاقات مهم شهر</p>
+        <p className="muted">خبرهای یک هفتهٔ اخیر این شهر — فقط اخبار همین شهر</p>
       </header>
 
       {error && (

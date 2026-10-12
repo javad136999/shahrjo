@@ -332,3 +332,33 @@ describe('ContentService.map (Phase 9)', () => {
     expect(prisma.business.findMany).not.toHaveBeenCalled();
   });
 });
+
+describe('City news — only the last week is published', () => {
+  it('caps the feed at 7 days (published date, creation as the fallback)', async () => {
+    const { service, prisma } = makeService();
+    prisma.city.findFirst.mockResolvedValue({ id: 7 });
+    prisma.news.findMany.mockResolvedValue([]);
+
+    await service.news('sample-city');
+
+    const { where } = prisma.news.findMany.mock.calls[0][0];
+    expect(where).toMatchObject({ cityId: 7, status: 'PUBLISHED' });
+    const or = where.OR as { publishedAt?: { gte: Date }; createdAt?: { gte: Date } }[];
+    expect(or).toHaveLength(2);
+    expect(or[0].publishedAt?.gte.getTime()).toBeCloseTo(Date.now() - 7 * 86_400_000, -6);
+    expect(or[1]).toMatchObject({ publishedAt: null });
+  });
+
+  it('applies the same window to a single story', async () => {
+    const { service, prisma } = makeService();
+    prisma.news.findFirst.mockResolvedValue(null);
+
+    await expect(service.newsDetail('old-story')).rejects.toThrow('خبر یافت نشد');
+
+    const { where } = prisma.news.findFirst.mock.calls[0][0];
+    expect(where).toMatchObject({ slug: 'old-story', status: 'PUBLISHED' });
+    expect(Array.isArray((where as { OR?: unknown[] }).OR)).toBe(true);
+    // an old story never reaches the view counter
+    expect(prisma.news.update).not.toHaveBeenCalled();
+  });
+});

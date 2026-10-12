@@ -1,5 +1,7 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import type { User } from '@prisma/client';
+import type { RbacService } from '../rbac/rbac.service';
+import { UploadsService } from '../uploads/uploads.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAdDto } from './ads.dto';
 
@@ -66,7 +68,11 @@ export interface AdDetail {
  */
 @Injectable()
 export class AdsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly rbac: RbacService,
+    private readonly uploads: UploadsService,
+  ) {}
 
   /** Active ad categories for the submission form (public). */
   async categories(): Promise<AdCategoryItem[]> {
@@ -248,6 +254,32 @@ export class AdsService {
       isOwner,
       favorited,
     };
+  }
+
+  /**
+   * Remove an ad — from the city wall *and* the ads feeds at once.
+   *
+   * The wall stores daily republications with `adId` and only renders posts
+   * whose ad is still PENDING/APPROVED (`visiblePosts`), so marking the ad
+   * DELETED takes its cards off every wall immediately. The gallery files are
+   * purged here as well: the row keeps its `imageUrls`-equivalent references
+   * but nothing can reach them any more, so the bytes must go.
+   * Allowed for the ad's owner and for any moderator (RBAC scope).
+   */
+  async remove(user: User, id: number): Promise<{ id: number; status: string; removedFiles: number }> {
+    const ad = await this.prisma.ad.findUnique({
+      where: { id },
+      select: { id: true, userId: true, status: true },
+    });
+    if (!ad || String(ad.status) === 'DELETED') throw new NotFoundException('آگهی یافت نشد');
+
+    const scope = await this.rbac.getScope(user.id);
+    const isOwner = ad.userId === user.id;
+    if (!isOwner && !scope) throw new ForbiddenException('فقط مالک آگهی یا ناظر می‌تواند آن را پاک کند');
+
+    await this.prisma.ad.update({ where: { id }, data: { status: 'DELETED' } });
+    const purged = await this.uploads.purgeEntity('AD', id).catch(() => ({ removed: 0 }));
+    return { id, status: 'DELETED', removedFiles: purged.removed };
   }
 
   /** Toggle the caller's favorite on an ad (Phase 6). */

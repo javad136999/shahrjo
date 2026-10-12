@@ -1,5 +1,7 @@
 import type { User } from '@prisma/client';
 import type { PrismaService } from '../prisma/prisma.service';
+import type { RbacService } from '../rbac/rbac.service';
+import type { UploadsService } from '../uploads/uploads.service';
 import { AdsService } from './ads.service';
 import { CreateAdDto } from './ads.dto';
 
@@ -31,8 +33,14 @@ function makeService() {
   };
   prisma.$transaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma));
   prisma.adImage.createMany.mockResolvedValue({ count: 0 });
-  const service = new AdsService(prisma as unknown as PrismaService);
-  return { service, prisma, adImage: prisma.adImage };
+  const rbac = { getScope: jest.fn().mockResolvedValue(null) };
+  const uploads = { purgeEntity: jest.fn().mockResolvedValue({ removed: 0 }) };
+  const service = new AdsService(
+    prisma as unknown as PrismaService,
+    rbac as unknown as RbacService,
+    uploads as unknown as UploadsService,
+  );
+  return { service, prisma, rbac, uploads, adImage: prisma.adImage };
 }
 
 const validDto = (over: Partial<CreateAdDto> = {}): CreateAdDto => ({
@@ -347,5 +355,48 @@ describe('AdsService.categories', () => {
     await service.categories();
     expect(prisma.adCategory.findMany.mock.calls[0][0].where).toEqual({ isActive: true });
     expect(prisma.adCategory.findMany.mock.calls[0][0].orderBy).toEqual([{ sortOrder: 'asc' }, { name: 'asc' }]);
+  });
+});
+
+describe('AdsService.remove — the ad leaves the feeds and the wall', () => {
+  it('lets the owner delete their own ad and frees its gallery files', async () => {
+    const { service, prisma, uploads } = makeService();
+    prisma.ad.findUnique.mockResolvedValue({ id: 9, userId: user.id, status: 'APPROVED' });
+    prisma.ad.update.mockResolvedValue({ id: 9 });
+
+    const result = await service.remove(user, 9);
+
+    expect(prisma.ad.update).toHaveBeenCalledWith({ where: { id: 9 }, data: { status: 'DELETED' } });
+    expect(uploads.purgeEntity).toHaveBeenCalledWith('AD', 9);
+    expect(result).toMatchObject({ id: 9, status: 'DELETED' });
+  });
+
+  it('refuses a stranger (owner-only without an RBAC scope)', async () => {
+    const { service, prisma } = makeService();
+    prisma.ad.findUnique.mockResolvedValue({ id: 9, userId: 777, status: 'APPROVED' });
+
+    await expect(service.remove(user, 9)).rejects.toMatchObject({ status: 403 });
+    expect(prisma.ad.update).not.toHaveBeenCalled();
+  });
+
+  it('lets a moderator delete any ad in their scope', async () => {
+    const { service, prisma, uploads, rbac } = makeService();
+    rbac.getScope.mockResolvedValue({ role: 'CITY_ADMIN', cityId: 7, provinceId: null });
+    prisma.ad.findUnique.mockResolvedValue({ id: 9, userId: 777, status: 'APPROVED' });
+    prisma.ad.update.mockResolvedValue({ id: 9 });
+
+    await service.remove(user, 9);
+
+    expect(prisma.ad.update).toHaveBeenCalledWith({ where: { id: 9 }, data: { status: 'DELETED' } });
+    expect(uploads.purgeEntity).toHaveBeenCalledWith('AD', 9);
+  });
+
+  it('404s unknown or already-deleted ads', async () => {
+    const { service, prisma } = makeService();
+    prisma.ad.findUnique.mockResolvedValue(null);
+    await expect(service.remove(user, 404)).rejects.toMatchObject({ status: 404 });
+
+    prisma.ad.findUnique.mockResolvedValue({ id: 9, userId: user.id, status: 'DELETED' });
+    await expect(service.remove(user, 9)).rejects.toMatchObject({ status: 404 });
   });
 });

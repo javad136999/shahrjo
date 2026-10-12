@@ -223,6 +223,16 @@ export async function getMyAds(): Promise<MyAdItem[]> {
   return api.get<MyAdItem[]>('/ads/mine');
 }
 
+/**
+ * Delete an ad (owner or moderator): it leaves the ads feeds and every
+ * city-wall card in one call and its pictures are freed from disk.
+ */
+export async function deleteAd(
+  id: number,
+): Promise<{ id: number; status: string; removedFiles: number }> {
+  return api.delete<{ id: number; status: string; removedFiles: number }>(`/ads/${id}`);
+}
+
 /** Multipart image upload (≤5MB) — returns the media id + url for createAd. */
 export async function uploadImage(file: File): Promise<UploadedImage> {
   const form = new FormData();
@@ -336,6 +346,26 @@ export async function approveAdminBusiness(
 
 export async function rejectAdminBusiness(id: number, reason: string): Promise<{ id: number; status: string }> {
   return api.post<{ id: number; status: string }>(`/admin/businesses/${id}/reject`, { reason });
+}
+
+/**
+ * Suspension (تعلیق): the business leaves the list/map/showcase/detail at
+ * once but the owner's data stays — reversible by approving it again.
+ */
+export async function suspendAdminBusiness(
+  id: number,
+  reason: string,
+): Promise<{ id: number; status: string }> {
+  return api.post<{ id: number; status: string }>(`/admin/businesses/${id}/suspend`, { reason });
+}
+
+/** Removal (حذف): status → DELETED and its photos are freed from disk. */
+export async function deleteAdminBusiness(
+  id: number,
+): Promise<{ id: number; status: string; removedFiles: number }> {
+  return api.post<{ id: number; status: string; removedFiles: number }>(
+    `/admin/businesses/${id}/delete`,
+  );
 }
 
 export async function getAdminSubscriptions(status: string): Promise<QueueSubscription[]> {

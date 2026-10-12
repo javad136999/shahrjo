@@ -439,6 +439,7 @@ model Business {
   payments      Payment[]
   subscriptions Subscription[]
   products      BusinessProduct[]
+  wallPosts     WallPost[] // daily promo posts (2 GOLD businesses per day)
 
   @@index([cityId, categoryId, status])
   @@index([subscriptionTier, subscriptionStatus])
@@ -809,6 +810,7 @@ model WallPost {
   imageUrl  String?  @map("image_url")
   voiceUrl  String?  @map("voice_url") // voice note (Phase 10 chat room)
   adId      Int?     @map("ad_id") // daily promoted-ad republication
+  businessId Int?    @map("business_id") // daily GOLD-business promo (2/day)
   replyToId Int?     @map("reply_to_id")
   editedAt  DateTime? @map("edited_at") // set when the author edits their message
   isPinned  Boolean  @default(false) @map("is_pinned")
@@ -819,12 +821,14 @@ model WallPost {
   city    City           @relation(fields: [cityId], references: [id], onDelete: Cascade)
   user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   ad      Ad?            @relation(fields: [adId], references: [id], onDelete: Cascade)
+  business Business?     @relation(fields: [businessId], references: [id], onDelete: SetNull)
   replyTo WallPost?      @relation("WallReplies", fields: [replyToId], references: [id], onDelete: SetNull)
   replies WallPost[]     @relation("WallReplies")
   likes   WallPostLike[]
 
   @@index([cityId, createdAt])
   @@index([adId, createdAt])
+  @@index([businessId, createdAt])
   @@map("wall_posts")
 }
 

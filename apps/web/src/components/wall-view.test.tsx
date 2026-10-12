@@ -6,6 +6,7 @@ const mockGetWall = jest.fn();
 const mockCreate = jest.fn();
 const mockLike = jest.fn();
 const mockDelete = jest.fn();
+const mockDeleteAd = jest.fn();
 const mockPin = jest.fn();
 const mockUpload = jest.fn();
 const mockUploadVoice = jest.fn();
@@ -27,6 +28,7 @@ jest.mock('@/lib/api', () => {
     createWallPost: (...args: unknown[]) => mockCreate(...args),
     likeWallPost: (...args: unknown[]) => mockLike(...args),
     deleteWallPost: (...args: unknown[]) => mockDelete(...args),
+    deleteAd: (...args: unknown[]) => mockDeleteAd(...args),
     pinWallPost: (...args: unknown[]) => mockPin(...args),
     uploadImage: (...args: unknown[]) => mockUpload(...args),
     uploadVoice: (...args: unknown[]) => mockUploadVoice(...args),
@@ -55,6 +57,7 @@ function makePost(overrides: Partial<WallPost> = {}): WallPost {
     voiceUrl: null,
     editedAt: null,
     ad: null,
+    business: null,
     isPinned: false,
     likeCount: 2,
     likedByMe: false,
@@ -166,6 +169,7 @@ describe('WallView', () => {
             price: 900_000_000,
             image: '/api/v1/files/media/2026/10/ad.webp',
             status: 'APPROVED',
+            canRemove: true,
           },
         }),
       ],
@@ -196,6 +200,7 @@ describe('WallView', () => {
           price: 12_000_000,
           image: null,
           status: 'PENDING',
+          canRemove: true,
         },
       })],
       pinned: null,
@@ -388,5 +393,98 @@ describe('WallView', () => {
     await screen.findByTestId('wall-post-2');
     expect(screen.getByTestId('wall-edit-1')).toBeInTheDocument();
     expect(screen.queryByTestId('wall-edit-2')).not.toBeInTheDocument();
+  });
+
+  it('renders the daily GOLD-business promo card with a link to its page', async () => {
+    mockGetWall.mockResolvedValue({
+      ...feed,
+      posts: [
+        makePost({
+          id: 30,
+          content: '🌅 صبح بخیر شهر! کافه ساحلی روزتان را شروع می‌کند',
+          business: {
+            id: 40,
+            name: 'کافه ساحلی',
+            address: 'بلوار ساحلی',
+            logoUrl: '/api/v1/files/media/2026/10/logo.webp',
+            category: { name: 'کافه', icon: '☕', color: '#c9971f' },
+          },
+        }),
+      ],
+      pinned: null,
+    });
+    render(<WallView city={city} />);
+
+    const card = await screen.findByTestId('wall-promocard-30');
+    expect(card).toHaveAttribute('href', '/business/40');
+    expect(card).toHaveTextContent('کافه ساحلی');
+    expect(card).toHaveTextContent('کافه');
+    expect(card).toHaveTextContent('بلوار ساحلی');
+    expect(card).toHaveTextContent('طلایی');
+    expect(card.querySelector('img')).toHaveAttribute(
+      'src',
+      '/api/v1/files/media/2026/10/logo.thumb.webp',
+    );
+    // the promo copy itself sits above the card
+    expect(screen.getByTestId('wall-post-30')).toHaveTextContent('صبح بخیر');
+  });
+
+  it('offers «حذف آگهی» on an ad card for its owner or a moderator', async () => {
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
+    mockDeleteAd.mockResolvedValue({ id: 42, status: 'DELETED', removedFiles: 2 });
+    mockGetWall.mockResolvedValue({
+      ...feed,
+      posts: [
+        makePost({
+          id: 45,
+          canDelete: true,
+          ad: {
+            id: 42,
+            title: 'ویلای شمال',
+            description: 'نزدیک ساحل',
+            price: 900_000_000,
+            image: '/api/v1/files/media/2026/10/ad.webp',
+            status: 'APPROVED',
+            canRemove: true,
+          },
+        }),
+      ],
+      pinned: null,
+    });
+    render(<WallView city={city} />);
+
+    const btn = await screen.findByTestId('wall-addelete-45');
+    expect(btn).toHaveAttribute('aria-label', 'حذف کامل آگهی');
+    // the card itself keeps working as a link
+    expect(screen.getByTestId('wall-adcard-45')).toHaveAttribute('href', '/ad/42');
+
+    fireEvent.click(btn);
+    expect(mockDeleteAd).toHaveBeenCalledWith(42);
+    await waitFor(() => expect(mockDeleteAd).toHaveBeenCalled());
+  });
+
+  it('does not offer ad deletion to a stranger', async () => {
+    mockGetWall.mockResolvedValue({
+      ...feed,
+      posts: [
+        makePost({
+          id: 46,
+          canDelete: false,
+          ad: {
+            id: 42,
+            title: 'ویلای شمال',
+            description: 'نزدیک ساحل',
+            price: null,
+            image: null,
+            status: 'APPROVED',
+            canRemove: false,
+          },
+        }),
+      ],
+      pinned: null,
+    });
+    render(<WallView city={city} />);
+    await screen.findByTestId('wall-adcard-46');
+    expect(screen.queryByTestId('wall-addelete-46')).not.toBeInTheDocument();
   });
 });

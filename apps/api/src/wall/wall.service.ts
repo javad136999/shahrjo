@@ -23,6 +23,12 @@ export interface WallAdRef {
   price: number | null;
   image: string | null;
   status: string;
+  /**
+   * The viewer may remove the ad itself (not just this repost): they own it or
+   * they are a moderator. Drives «حذف آگهی» on the card — deleting the ad
+   * takes it off every wall at once.
+   */
+  canRemove: boolean;
 }
 
 /** Chat-room header: wall name + membership figures (Phase 10). */
@@ -32,6 +38,16 @@ export interface WallRoomMeta {
   messageCount: number;
 }
 
+/** The promoted GOLD business of a promo post (live fields, never stored). */
+export interface WallBusinessRef {
+  id: number;
+  name: string;
+  address: string | null;
+  /** Owner photo — read live so freeing it never leaves a broken card. */
+  logoUrl: string | null;
+  category: { name: string; icon: string | null; color: string | null };
+}
+
 export interface WallPostView {
   id: number;
   content: string;
@@ -39,6 +55,8 @@ export interface WallPostView {
   voiceUrl: string | null;
   editedAt: Date | null;
   ad: WallAdRef | null;
+  /** Daily GOLD-business promo — null for ordinary posts. */
+  business: WallBusinessRef | null;
   isPinned: boolean;
   likeCount: number;
   likedByMe: boolean;
@@ -73,12 +91,20 @@ type PostWithRel = {
   user: { id: number; fullName: string | null; avatarUrl: string | null };
   replyTo: { id: number; content: string; user: { fullName: string | null } } | null;
   ad: {
+    userId: number;
     id: number;
     title: string;
     description: string;
     price: bigint | null;
     status: string;
     images: { url: string }[];
+  } | null;
+  business: {
+    id: number;
+    name: string;
+    address: string | null;
+    logoUrl: string | null;
+    category: { name: string; icon: string | null; color: string | null };
   } | null;
 };
 
@@ -129,12 +155,22 @@ export class WallService {
       editedAt: post.editedAt ?? null,
       ad: post.ad
         ? {
-          id: post.ad.id,
-          title: post.ad.title,
-          description: post.ad.description,
-          price: post.ad.price === null || post.ad.price === undefined ? null : Number(post.ad.price),
-          image: adImage,
-          status: post.ad.status,
+            id: post.ad.id,
+            title: post.ad.title,
+            description: post.ad.description,
+            price: post.ad.price === null || post.ad.price === undefined ? null : Number(post.ad.price),
+            image: adImage,
+            status: post.ad.status,
+            canRemove: post.ad.userId === viewerId || isOperator,
+          }
+        : null,
+      business: post.business
+        ? {
+            id: post.business.id,
+            name: post.business.name,
+            address: post.business.address,
+            logoUrl: post.business.logoUrl,
+            category: post.business.category,
           }
         : null,
       isPinned: post.isPinned,
@@ -175,12 +211,22 @@ export class WallService {
     },
     ad: {
       select: {
+        userId: true,
         id: true,
         title: true,
         description: true,
         price: true,
         status: true,
         images: { orderBy: { sortOrder: 'asc' as const }, take: 1, select: { url: true } },
+      },
+    },
+    business: {
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        logoUrl: true,
+        category: { select: { name: true, icon: true, color: true } },
       },
     },
   } as const;

@@ -1,9 +1,10 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { Prisma, type User } from '@prisma/client';
 import { Type } from 'class-transformer';
 import { IsNumber, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService, type AdminScope } from '../rbac/rbac.service';
+import { UploadsService } from '../uploads/uploads.service';
 
 /**
  * Body DTOs are decorated CLASSES, not interfaces: Nest's ValidationPipe can
@@ -147,9 +148,12 @@ export interface QueueSubscription {
  */
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly rbac: RbacService,
+    private readonly uploads: UploadsService,
   ) {}
 
   // ---------- scope helpers ----------
@@ -366,6 +370,68 @@ export class AdminService {
     });
     await this.audit(adminId, 'business.reject', 'business', String(id), { status: 'REJECTED', reason });
     return updated;
+  }
+
+  /**
+   * Suspension (تعلیق): the business leaves every public surface at once —
+   * every public query in ContentService filters `status: 'APPROVED'`, so a
+   * CLOSED row disappears from the list, map, showcase and detail page
+   * without touching the owner's data. Reversible via «تأیید».
+   */
+  async suspendBusiness(user: User, id: number, dto: DecisionDto): Promise<{ id: number; status: string }> {
+    const reason = (dto.reason ?? '').trim();
+    if (reason.length < 3) throw new BadRequestException('علت تعلیق را وارد کن');
+    const scope = await this.scopeOf(user.id);
+    const adminId = await this.adminRowId(user.id);
+    const business = await this.prisma.business.findFirst({
+      where: { id, ...this.cityFilter(scope) },
+      select: { id: true, status: true },
+    });
+    if (!business) throw new NotFoundException('کسب‌وکار یافت نشد');
+
+    const updated = await this.prisma.business.update({
+      where: { id },
+      data: { status: 'CLOSED' },
+      select: { id: true, status: true },
+    });
+    await this.audit(adminId, 'business.suspend', 'business', String(id), {
+      status: 'CLOSED',
+      reason,
+      from: String(business.status),
+    });
+    return { ...updated, status: String(updated.status) };
+  }
+
+  /**
+   * Removal (حذف): the row is marked DELETED (audit trail + FKs stay intact)
+   * and its claimed photos — logo and every menu/product picture share
+   * `entityType BUSINESS` / `entityId <id>` — are purged from storage so the
+   * disk is reclaimed immediately. Products cascade away with a real row
+   * delete; here they stay but are unreachable from any public surface.
+   */
+  async deleteBusiness(user: User, id: number): Promise<{ id: number; status: string; removedFiles: number }> {
+    const scope = await this.scopeOf(user.id);
+    const adminId = await this.adminRowId(user.id);
+    const business = await this.prisma.business.findFirst({
+      where: { id, ...this.cityFilter(scope) },
+      select: { id: true, status: true, logoUrl: true, coverUrl: true },
+    });
+    if (!business) throw new NotFoundException('کسب‌وکار یافت نشد');
+
+    const purged = await this.uploads.purgeEntity('BUSINESS', id).catch(() => ({ removed: 0 }));
+
+    const updated = await this.prisma.business.update({
+      where: { id },
+      data: { status: 'DELETED', logoUrl: null, coverUrl: null },
+      select: { id: true, status: true },
+    });
+    await this.audit(adminId, 'business.delete', 'business', String(id), {
+      status: 'DELETED',
+      from: String(business.status),
+      removedFiles: purged.removed,
+    });
+    this.logger.log(`business #${id} deleted (${purged.removed} file(s) freed)`);
+    return { ...updated, status: String(updated.status), removedFiles: purged.removed };
   }
 
   // ---------- subscriptions (the ZarinPal approval step) ----------

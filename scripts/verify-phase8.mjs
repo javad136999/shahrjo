@@ -26,6 +26,8 @@ const endpoints = [
   "@Get('businesses')",
   "@Post('businesses/:id/approve')",
   "@Post('businesses/:id/reject')",
+  "@Post('businesses/:id/suspend')",
+  "@Post('businesses/:id/delete')",
   "@Get('subscriptions')",
   "@Post('subscriptions/:id/approve')",
   "@Post('subscriptions/:id/reject')",

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { CurrentUser, Public } from '../common/decorators';
 import { CreateAdDto } from './ads.dto';
@@ -40,6 +40,16 @@ export class AdsController {
     @Param('id', ParseIntPipe) id: number,
   ): ReturnType<AdsService['toggleFavorite']> {
     return this.ads.toggleFavorite(user, id);
+  }
+
+  /**
+   * Remove an ad (owner or moderator): it leaves the ads feeds and every
+   * city-wall card in one call, and its pictures are freed from disk.
+   * Authenticated — the service allows only the owner or a moderator.
+   */
+  @Delete('ads/:id')
+  removeAd(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number) {
+    return this.ads.remove(user, id);
   }
 
   /**

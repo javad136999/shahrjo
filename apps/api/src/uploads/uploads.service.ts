@@ -2,6 +2,7 @@ import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, Log
 import { ConfigService } from '@nestjs/config';
 import type { User } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
+import { newsCutoff } from '../content/content.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { BUSINESS_PROFILE, DISPLAY_PROFILE, MAX_INPUT_BYTES, processImage, type ImageProfile } from './image.processor';
 import { STORAGE_DRIVER, type StorageDriver } from './storage/storage.types';
@@ -370,6 +371,7 @@ export class UploadsService implements OnModuleInit {
   /**
    * Disk-protection sweep: (1) hard-delete soft-deleted media past retention,
    * (2) expire public post photos (ads + wall) older than 4 days — text stays,
+   * (2b) free the covers of news older than the one-week publishing window,
    * (3) drop uploads never claimed by an entity, (4) drop media whose entity
    * is gone, (5) unlink orphan files that no Media row references (thumbnails
    * are considered too), (6) backfill missing thumbnails for legacy images.
@@ -430,6 +432,42 @@ export class UploadsService implements OnModuleInit {
       await remove(row);
       await this.prisma.media.delete({ where: { id: row.id } });
       expiredImages += 1;
+    }
+
+    // (2b) news covers of stories that fell out of the one-week publishing
+    // window: the story is never served again (feed filter + detail 404), so
+    // its cover is dead weight. Reference cleared first, then the bytes go;
+    // seed/external URLs with no Media row are left alone.
+    const newsCutoffDate = newsCutoff();
+    const expiredNews = await this.prisma.news.findMany({
+      where: {
+        coverUrl: { not: null },
+        OR: [
+          { publishedAt: { lt: newsCutoffDate } },
+          { publishedAt: null, createdAt: { lt: newsCutoffDate } },
+        ],
+      },
+      select: { id: true, coverUrl: true },
+    });
+    for (const story of expiredNews) {
+      if (!story.coverUrl) continue; // filter says otherwise; keep types honest
+      const coverUrl: string = story.coverUrl;
+      const media = await this.prisma.media.findMany({
+        where: { url: coverUrl, deletedAt: null },
+        select: { id: true, storageKey: true, sizeBytes: true },
+      });
+      if (media.length === 0) continue;
+      try {
+        await this.prisma.news.update({ where: { id: story.id }, data: { coverUrl: null } });
+      } catch (err) {
+        this.logger.warn(`news ${story.id} cover kept — could not detach it: ${String(err)}`);
+        continue;
+      }
+      for (const row of media) {
+        await remove(row);
+        await this.prisma.media.delete({ where: { id: row.id } });
+        expiredImages += 1;
+      }
     }
 
     // (3) uploads that were never attached to an entity (abandoned submissions)

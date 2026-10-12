@@ -14,6 +14,7 @@ function makePrisma() {
       create: jest.fn().mockResolvedValue({ id: 1 }),
     },
     ad: { findMany: jest.fn().mockResolvedValue([]) },
+    business: { findMany: jest.fn().mockResolvedValue([]) },
   };
 }
 
@@ -121,6 +122,7 @@ describe('WallRepostScheduler.runSlot', () => {
       minute: 0,
       gold: 0,
       old: 3,
+      promo: 0,
       label: 'ظهر',
     });
 
@@ -146,7 +148,8 @@ describe('WallRepostScheduler.runSlot', () => {
     const { scheduler, prisma } = makeScheduler();
     prisma.ad.findMany.mockResolvedValueOnce([ad(9)]);
 
-    await scheduler.runSlot(DAY, { hour: 8, minute: 0, gold: 1, old: 0, label: 'صبح' });
+    await scheduler.runSlot(DAY, { hour: 8, minute: 0, gold: 1, old: 0, promo: 0,
+      label: 'صبح' });
 
     const where = prisma.ad.findMany.mock.calls[0][0].where;
     expect(where.status).toBe('APPROVED');
@@ -172,6 +175,7 @@ describe('WallRepostScheduler.runSlot', () => {
       minute: 0,
       gold: 1,
       old: 0,
+      promo: 0,
       label: 'عصر',
     });
 
@@ -194,11 +198,106 @@ describe('WallRepostScheduler.runSlot', () => {
       minute: 0,
       gold: 1,
       old: 3,
+      promo: 0,
       label: 'صبح',
     });
 
     expect(posted).toBe(4);
     const used = prisma.wallPost.create.mock.calls.map((c) => c[0].data.adId);
     expect(new Set(used).size).toBe(4); // gold pick ∉ old picks
+  });
+});
+
+describe('GOLD business promos — 2 attractive messages a day', () => {
+  it('sits in the morning and the evening slots only', () => {
+    const promos = WALL_REPOST_SLOTS.filter((s) => s.promo > 0);
+    expect(promos.map((s) => s.hour)).toEqual([8, 18]);
+    expect(WALL_REPOST_SLOTS.reduce((sum, s) => sum + s.promo, 0)).toBe(2);
+    expect(promos.every((s) => s.promo === 1)).toBe(true);
+  });
+
+  const business = (id: number, cityId = 5) => ({
+    id,
+    cityId,
+    ownerId: 9,
+    name: `کسب‌وکار ${id}`,
+    address: 'بلوار اصلی',
+    description: 'توضیح جذاب کسب‌وکار برای پیام تبلیغاتی',
+    category: { name: 'کافه', icon: '☕' },
+  });
+
+  it('publishes one random GOLD business message onto its own city wall', async () => {
+    const { scheduler, prisma } = makeScheduler();
+    prisma.business.findMany.mockResolvedValue([business(30), business(31)]);
+
+    const posted = await scheduler.publishPromo(DAY, WALL_REPOST_SLOTS[0]);
+
+    expect(posted).toBe(1);
+    expect(prisma.business.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ status: 'APPROVED', subscriptionTier: 'GOLD' }),
+      }),
+    );
+    const data = prisma.wallPost.create.mock.calls[0][0].data;
+    expect(data).toMatchObject({ cityId: 5, userId: 9, businessId: expect.any(Number) });
+    expect(data.content).toContain('صبح');
+    expect(data.content).toContain('کافه');
+    expect(data.content).toContain('بلوار اصلی');
+  });
+
+  it('never repeats a business inside the same day (morning vs evening)', async () => {
+    const { scheduler, prisma } = makeScheduler();
+    // the morning post is already on the wall
+    prisma.wallPost.findMany
+      .mockResolvedValueOnce([{ businessId: 30 }]) // used today
+      .mockResolvedValueOnce([{ businessId: 30 }]); // used this week
+    prisma.business.findMany.mockResolvedValue([business(30), business(31)]);
+
+    await scheduler.publishPromo(DAY, WALL_REPOST_SLOTS[2]);
+
+    expect(prisma.wallPost.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ businessId: 31 }) }),
+    );
+  });
+
+  it('prefers a business not promoted in the last 7 days when possible', async () => {
+    const { scheduler, prisma } = makeScheduler();
+    prisma.wallPost.findMany
+      .mockResolvedValueOnce([]) // today: nobody
+      .mockResolvedValueOnce([{ businessId: 30 }]); // this week: 30
+    prisma.business.findMany.mockResolvedValue([business(30), business(31)]);
+
+    await scheduler.publishPromo(DAY, WALL_REPOST_SLOTS[2]);
+
+    expect(prisma.wallPost.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ businessId: 31 }) }),
+    );
+  });
+
+  it('falls back to a recently-promoted business when everyone is recent', async () => {
+    const { scheduler, prisma } = makeScheduler();
+    prisma.wallPost.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ businessId: 30 }]);
+    prisma.business.findMany.mockResolvedValue([business(30)]);
+
+    const posted = await scheduler.publishPromo(DAY, WALL_REPOST_SLOTS[2]);
+
+    expect(posted).toBe(1);
+    expect(prisma.wallPost.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ businessId: 30 }) }),
+    );
+  });
+
+  it('publishes nothing without an eligible GOLD business or a promo slot', async () => {
+    const { scheduler, prisma } = makeScheduler();
+    prisma.business.findMany.mockResolvedValue([]);
+    expect(await scheduler.publishPromo(DAY, WALL_REPOST_SLOTS[0])).toBe(0);
+    expect(prisma.wallPost.create).not.toHaveBeenCalled();
+
+    // ظهر/شب slots carry no promo — it must not even query the businesses
+    const calls = prisma.business.findMany.mock.calls.length;
+    expect(await scheduler.publishPromo(DAY, WALL_REPOST_SLOTS[1])).toBe(0);
+    expect(prisma.business.findMany).toHaveBeenCalledTimes(calls);
   });
 });

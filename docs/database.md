@@ -12,6 +12,7 @@ Schema کامل: `prisma/schema.prisma` — Migration: `prisma/migrations/` — 
 | آگهی‌ها | `ads`, `ad_categories`, `ad_images` |
 | کسب‌وکار | `businesses`, `business_categories`, `reviews` |
 | اخبار | `news`, `news_categories` |
+| دیوار شهر | `wall_posts` (+ `wall_posts.business_id` — پست تبلیغاتی روزانهٔ کسب‌وکار طلایی، FK `SET NULL` با ایندکس `(business_id, created_at)`) |
 | چت | `chat_rooms`, `chat_messages`, `chat_reports` |
 | نقشه | `map_locations` |
 | تعامل | `favorites`, `comments`, `notifications`, `banners` |
@@ -26,6 +27,7 @@ Schema کامل: `prisma/schema.prisma` — Migration: `prisma/migrations/` — 
 - **`audit_logs`**: فقط append — عملیات حساس ادمین با actor, action, before/after, ip.
 - **`comments`**: دقیقاً یکی از `ad_id` / `business_id` / `news_id` باید مقدار داشته باشد (کنترل در Service Layer).
 - **`favorites`**: یکتای `user + ad` و `user + business`.
+- **اخبار**: فقط ۷ روز اخیر هر شهر سرو می‌شود (`newsCutoff()` در ContentService)؛ sweep کاور خبرهای خارج از این پنجره را از دیسک آزاد می‌کند.
 
 ## Seed (idempotent — `pnpm db:seed`)
 

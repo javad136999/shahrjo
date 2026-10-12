@@ -81,6 +81,24 @@ export class AdminController {
     return this.admin.rejectBusiness(user, id, dto);
   }
 
+  /** Suspension: the business vanishes from list/map/showcase/detail (reversible). */
+  @Post('businesses/:id/suspend')
+  @RequirePermissions('businesses.moderate')
+  suspendBusiness(
+    @CurrentUser() user: User,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: DecisionDto,
+  ) {
+    return this.admin.suspendBusiness(user, id, dto);
+  }
+
+  /** Removal: row marked DELETED + its logo/product photos freed from disk. */
+  @Post('businesses/:id/delete')
+  @RequirePermissions('businesses.moderate')
+  deleteBusiness(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number) {
+    return this.admin.deleteBusiness(user, id);
+  }
+
   /** Paid subscriptions waiting for approval (ZarinPal PENDING_REVIEW). */
   @Get('subscriptions')
   @RequirePermissions('subscriptions.manage')

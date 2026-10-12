@@ -1,6 +1,7 @@
 import type { User } from '@prisma/client';
 import type { PrismaService } from '../prisma/prisma.service';
 import type { RbacService } from '../rbac/rbac.service';
+import type { UploadsService } from '../uploads/uploads.service';
 import { AdminService } from './admin.service';
 
 function makePrisma() {
@@ -20,10 +21,15 @@ function makePrisma() {
 function makeService(scope: { role: string; provinceId: number | null; cityId: number | null } | null) {
   const prisma = makePrisma();
   const rbac = { getScope: jest.fn().mockResolvedValue(scope) };
-  const service = new AdminService(prisma as unknown as PrismaService, rbac as unknown as RbacService);
+  const uploads = { purgeEntity: jest.fn().mockResolvedValue({ removed: 0 }) };
+  const service = new AdminService(
+    prisma as unknown as PrismaService,
+    rbac as unknown as RbacService,
+    uploads as unknown as UploadsService,
+  );
   prisma.adminUser.findUnique.mockResolvedValue({ id: 77, isActive: true });
   prisma.auditLog.create.mockResolvedValue({});
-  return { service, prisma };
+  return { service, prisma, uploads };
 }
 
 const admin = { id: 1, phone: '09174057031', cityId: null } as User;

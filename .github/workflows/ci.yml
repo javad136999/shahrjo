@@ -79,6 +79,9 @@ jobs:
       - name: Phase 11b checks (owner business menu/products + city-home bar + composer)
         run: pnpm verify:phase11b
 
+      - name: Phase 11c checks (admin suspend/delete, wall ad removal, daily GOLD promos, 7-day news)
+        run: pnpm verify:phase11c
+
       - name: Typecheck all workspaces
         run: pnpm typecheck:all
 

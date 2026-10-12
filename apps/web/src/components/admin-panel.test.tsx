@@ -20,6 +20,8 @@ const mockApproveAdminBusiness = jest.fn();
 const mockRejectAdminBusiness = jest.fn();
 const mockApproveAdminSubscription = jest.fn();
 const mockRejectAdminSubscription = jest.fn();
+const mockSuspendAdminBusiness = jest.fn();
+const mockDeleteAdminBusiness = jest.fn();
 
 jest.mock('@/lib/api', () => ({
   ApiError: class ApiError extends Error {
@@ -42,6 +44,8 @@ jest.mock('@/lib/api', () => ({
   rejectAdminBusiness: (id: number, reason: string) => mockRejectAdminBusiness(id, reason),
   approveAdminSubscription: (id: number) => mockApproveAdminSubscription(id),
   rejectAdminSubscription: (id: number, reason: string) => mockRejectAdminSubscription(id, reason),
+  suspendAdminBusiness: (id: number, reason: string) => mockSuspendAdminBusiness(id, reason),
+  deleteAdminBusiness: (id: number) => mockDeleteAdminBusiness(id),
 }));
 
 import { AdminPanel } from '@/components/admin-panel';
@@ -83,6 +87,22 @@ const pendingSub = {
   payer: { id: 9, phone: '09120000000', fullName: null },
 };
 
+const approvedBusiness = {
+  id: 21,
+  name: 'کافهٔ نمونه',
+  slug: 'sample-cafe',
+  status: 'APPROVED',
+  phone: '09170000000',
+  address: 'خیابان اصلی',
+  latitude: null,
+  longitude: null,
+  subscriptionTier: 'GOLD',
+  createdAt: '2026-10-01T08:00:00.000Z',
+  city: { id: 1, name: 'شهر نمونه' },
+  owner: { id: 5, phone: '09123456789', fullName: null },
+  category: { name: 'رستوران', icon: '🍽' },
+};
+
 const overview = {
   pendingAds: 1,
   pendingBusinesses: 0,
@@ -113,6 +133,8 @@ describe('AdminPanel', () => {
     mockRejectAdminAd.mockResolvedValue({ id: 7, status: 'REJECTED' });
     mockApproveAdminSubscription.mockResolvedValue({ id: 44, status: 'ACTIVE' });
     mockRejectAdminSubscription.mockResolvedValue({ id: 44, status: 'REJECTED' });
+    mockSuspendAdminBusiness.mockResolvedValue({ id: 21, status: 'CLOSED' });
+    mockDeleteAdminBusiness.mockResolvedValue({ id: 21, status: 'DELETED', removedFiles: 2 });
   });
 
   it('redirects to login when there is no session', () => {
@@ -216,6 +238,65 @@ describe('AdminPanel', () => {
     expect(screen.getByTestId('visit-period-yearly')).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByTestId('visit-bar-2026')).toBeInTheDocument();
     expect(screen.getByTestId('admin-visits-summary')).toHaveTextContent('بازه');
+  });
+
+  it('suspends an approved business with a reason (takes it off every public page)', async () => {
+    mockGetAdminBusinesses.mockImplementation((status: string) =>
+      Promise.resolve(status === 'APPROVED' ? [approvedBusiness] : []),
+    );
+    jest.spyOn(window, 'prompt').mockReturnValue('تأخیر در ارسال سفارش‌ها');
+
+    render(<AdminPanel />);
+    await screen.findByTestId('tab-businesses');
+    fireEvent.click(screen.getByTestId('tab-businesses'));
+    fireEvent.change(screen.getByTestId('status-filter'), { target: { value: 'APPROVED' } });
+
+    expect(await screen.findByTestId('suspend-21')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('suspend-21'));
+
+    await waitFor(() =>
+      expect(mockSuspendAdminBusiness).toHaveBeenCalledWith(21, 'تأخیر در ارسال سفارش‌ها'),
+    );
+    expect(await screen.findByRole('status')).toHaveTextContent('معلق شد');
+    (window.prompt as jest.Mock).mockRestore?.();
+  });
+
+  it('deletes a business only after the second confirmation', async () => {
+    mockGetAdminBusinesses.mockResolvedValue([approvedBusiness]);
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValue(true);
+
+    render(<AdminPanel />);
+    await screen.findByTestId('tab-businesses');
+    fireEvent.click(screen.getByTestId('tab-businesses'));
+
+    const deleteBtn = await screen.findByTestId('delete-21');
+    // first click: cancelled → nothing sent
+    fireEvent.click(deleteBtn);
+    expect(mockDeleteAdminBusiness).not.toHaveBeenCalled();
+
+    fireEvent.click(deleteBtn);
+    await waitFor(() => expect(mockDeleteAdminBusiness).toHaveBeenCalledWith(21));
+    expect(await screen.findByRole('status')).toHaveTextContent('حذف شد');
+    confirmSpy.mockRestore();
+  });
+
+  it('offers restoring a suspended business in the CLOSED queue', async () => {
+    mockGetAdminBusinesses.mockImplementation((status: string) =>
+      Promise.resolve(status === 'CLOSED' ? [{ ...approvedBusiness, status: 'CLOSED' }] : []),
+    );
+    mockApproveAdminBusiness.mockResolvedValue({ id: 21, status: 'APPROVED' });
+
+    render(<AdminPanel />);
+    await screen.findByTestId('tab-businesses');
+    fireEvent.click(screen.getByTestId('tab-businesses'));
+    fireEvent.change(screen.getByTestId('status-filter'), { target: { value: 'CLOSED' } });
+
+    const restore = await screen.findByTestId('restore-21');
+    fireEvent.click(restore);
+    await waitFor(() => expect(mockApproveAdminBusiness).toHaveBeenCalledWith(21, undefined));
+    expect(await screen.findByRole('status')).toHaveTextContent('تعلیق برداشته شد');
+    // a suspended row must NOT offer suspending again
+    expect(screen.queryByTestId('suspend-21')).not.toBeInTheDocument();
   });
 
   it('surfaces API errors from a failed action', async () => {

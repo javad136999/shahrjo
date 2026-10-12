@@ -19,6 +19,8 @@ import {
   rejectAdminAd,
   rejectAdminBusiness,
   rejectAdminSubscription,
+  suspendAdminBusiness,
+  deleteAdminBusiness,
 } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import type { AdminOverview, QueueAd, QueueBusiness, QueueSubscription, VisitStats } from '@/lib/types';
@@ -41,7 +43,7 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
 
 const STATUS_OPTIONS: Record<Tab, string[]> = {
   ads: ['PENDING', 'APPROVED', 'REJECTED'],
-  businesses: ['PENDING', 'APPROVED', 'REJECTED'],
+  businesses: ['PENDING', 'APPROVED', 'REJECTED', 'CLOSED'],
   subscriptions: ['PENDING_REVIEW', 'ACTIVE', 'REJECTED'],
 };
 
@@ -49,6 +51,8 @@ const STATUS_LABEL: Record<string, string> = {
   PENDING: 'در انتظار',
   APPROVED: 'تأیید شده',
   REJECTED: 'رد شده',
+  CLOSED: 'معلق',
+  DELETED: 'حذف‌شده',
   PENDING_REVIEW: 'در انتظار بررسی',
   ACTIVE: 'فعال',
 };
@@ -435,6 +439,63 @@ export function AdminPanel() {
                       رد
                     </button>
                   </>
+                )}
+                {/* تعلیق + حذف برای همهٔ وضعیت‌ها — تعلیق برگشت‌پذیر، حذف با تأیید دوم */}
+                {'slug' in row && row.status !== 'CLOSED' && row.status !== 'DELETED' && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost admin-action admin-action--err"
+                    disabled={busyId === row.id}
+                    onClick={async () => {
+                      const reason = await window.prompt('علت تعلیق چیست؟ (حداقل ۳ حرف)');
+                      if (reason && reason.trim().length >= 3) {
+                        await run(
+                          () => suspendAdminBusiness(row.id, reason),
+                          'کسب‌وکار معلق شد و از همهٔ صفحات خارج شد',
+                          row.id,
+                        );
+                      }
+                    }}
+                    data-testid={`suspend-${row.id}`}
+                  >
+                    تعلیق
+                  </button>
+                )}
+                {'slug' in row && row.status === 'CLOSED' && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost admin-action admin-action--ok"
+                    disabled={busyId === row.id}
+                    onClick={() =>
+                      run(() => approveAdminBusiness(row.id), 'تعلیق برداشته شد — کسب‌وکار دوباره نمایان است', row.id)
+                    }
+                    data-testid={`restore-${row.id}`}
+                  >
+                    برداشتن تعلیق
+                  </button>
+                )}
+                {'slug' in row && row.status !== 'DELETED' && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost admin-action admin-action--err"
+                    disabled={busyId === row.id}
+                    onClick={async () => {
+                      if (
+                        !window.confirm(
+                          'کسب‌وکار برای همه پاک شود؟ عکس‌ها هم از دیسک حذف می‌شوند و قابل بازگشت نیست.',
+                        )
+                      )
+                        return;
+                      await run(
+                        () => deleteAdminBusiness(row.id),
+                        'کسب‌وکار حذف شد و عکس‌هایش آزاد شد',
+                        row.id,
+                      );
+                    }}
+                    data-testid={`delete-${row.id}`}
+                  >
+                    🗑 حذف
+                  </button>
                 )}
                 {'plan' in row && row.status === 'PENDING_REVIEW' && (
                   <>

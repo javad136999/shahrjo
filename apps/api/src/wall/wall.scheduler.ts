@@ -6,12 +6,14 @@ import { PrismaService } from '../prisma/prisma.service';
  * Phase 10 — daily ad republication on every city wall («بازنشر روزانه»).
  *
  * Schedule (Asia/Tehran — Iran has no DST since 2022, fixed UTC+3:30):
- *   • 08:00 → 1 GOLD ad + 3 old ads
+ *   • 08:00 → 1 GOLD ad + 3 old ads + **1 GOLD business promo**
  *   • 12:00 → 2 old ads
- *   • 18:00 → 1 GOLD ad + 3 old ads
+ *   • 18:00 → 1 GOLD ad + 3 old ads + **1 GOLD business promo**
  *   • 22:00 → 2 old ads
- * ⇒ 2 promoted GOLD ads per day (one morning, one evening) and 10 old ads
- * spread over the four day-parts. Each ad is republished at most once per
+ * ⇒ 2 promoted GOLD ads per day (one morning, one evening), 10 old ads spread
+ * over the four day-parts, and **2 attractive GOLD-business messages** (morning
+ * + evening): picked at random, never the same business twice in a day and
+ * avoided again for 7 days while the pool allows it. Each ad is republished at most once per
  * day (its id is excluded as soon as it has been used) and the selection is
  * random over the eligible pool.
  *
@@ -28,15 +30,17 @@ export interface WallRepostSlot {
   gold: number;
   /** Reposts of old (≥7 days) ads. */
   old: number;
+  /** Promoted GOLD-business messages (morning + evening only). */
+  promo: number;
   /** Persian day-part label used in the post copy. */
   label: string;
 }
 
 export const WALL_REPOST_SLOTS: WallRepostSlot[] = [
-  { hour: 8, minute: 0, gold: 1, old: 3, label: 'صبح' },
-  { hour: 12, minute: 0, gold: 0, old: 2, label: 'ظهر' },
-  { hour: 18, minute: 0, gold: 1, old: 3, label: 'عصر' },
-  { hour: 22, minute: 0, gold: 0, old: 2, label: 'شب' },
+  { hour: 8, minute: 0, gold: 1, old: 3, promo: 1, label: 'صبح' },
+  { hour: 12, minute: 0, gold: 0, old: 2, promo: 0, label: 'ظهر' },
+  { hour: 18, minute: 0, gold: 1, old: 3, promo: 1, label: 'عصر' },
+  { hour: 22, minute: 0, gold: 0, old: 2, promo: 0, label: 'شب' },
 ];
 
 /** How often the scheduler checks whether a slot is due. */
@@ -60,6 +64,38 @@ export function tehranClock(date: Date = new Date()): { day: string; minutes: nu
 /** UTC instant of Tehran midnight ending the given `YYYY-MM-DD` day. */
 export function tehranDayStart(day: string): Date {
   return new Date(Date.parse(`${day}T00:00:00.000Z`) - TEHRAN_OFFSET_MS);
+}
+
+/** Fields the promo copy needs from a GOLD business. */
+interface PromoCandidate {
+  id: number;
+  cityId: number;
+  ownerId: number;
+  name: string;
+  address: string | null;
+  description: string | null;
+  category: { name: string; icon: string | null };
+}
+
+/**
+ * «پیام تبلیغاتی جذاب» — a short, friendly post written from the owner's own
+ * data (never invented claims): opener by day-part, category + address, then
+ * the business's own description trimmed to one line.
+ */
+function promoCopy(business: PromoCandidate, slot: WallRepostSlot): string {
+  const hook = (business.description ?? '').replace(/\s+/g, ' ').trim();
+  const opener =
+    slot.label === 'صبح'
+      ? `🌅 صبح بخیر شهر! ${business.name} روزتان را شروع می‌کند`
+      : `🌇 عصرتان خوش، شهریان! سری به ${business.name} بزنید`;
+  const meta = [
+    `${business.category.icon ?? '◆'} ${business.category.name}`,
+    business.address ? `📍 ${business.address}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const body = hook.length > 160 ? `${hook.slice(0, 160)}…` : hook;
+  return [opener, meta, body].filter((line) => line && line.length > 0).join('\n');
 }
 
 /** Fisher–Yates — uniform random pick without repeats inside the sample. */
@@ -154,7 +190,72 @@ export class WallRepostScheduler implements OnModuleInit {
         posted += 1;
       }
     }
+    posted += await this.publishPromo(day, slot);
     return posted;
+  }
+
+  /**
+   * One GOLD business message per morning/evening slot: random, never twice
+   * in the same Tehran day, and preferring businesses that have not been
+   * promoted in the last 7 days (falls back when the pool is that small).
+   * Posts land on the business's own city wall, authored by its owner.
+   */
+  async publishPromo(day: string, slot: WallRepostSlot): Promise<number> {
+    if (slot.promo <= 0) return 0;
+
+    const since = tehranDayStart(day);
+    const weekAgo = new Date(Date.now() - 7 * 86_400_000);
+    const [todayRows, recentRows] = await Promise.all([
+      this.prisma.wallPost.findMany({
+        where: { businessId: { not: null }, createdAt: { gte: since } },
+        select: { businessId: true },
+      }),
+      this.prisma.wallPost.findMany({
+        where: { businessId: { not: null }, createdAt: { gte: weekAgo } },
+        select: { businessId: true },
+      }),
+    ]);
+    const idsOf = (rows: { businessId: number | null }[]): Set<number> =>
+      new Set(rows.map((row) => row.businessId).filter((id): id is number => id !== null));
+    const usedToday = idsOf(todayRows);
+    const usedRecently = idsOf(recentRows);
+
+    const now = new Date();
+    const rows = await this.prisma.business.findMany({
+      where: {
+        status: 'APPROVED',
+        subscriptionTier: 'GOLD',
+        showcaseEnabled: true,
+        OR: [{ subscriptionExpiresAt: null }, { subscriptionExpiresAt: { gt: now } }],
+      },
+      take: CANDIDATE_LIMIT,
+      select: {
+        id: true,
+        cityId: true,
+        ownerId: true,
+        name: true,
+        address: true,
+        description: true,
+        category: { select: { name: true, icon: true } },
+      },
+    });
+
+    // strict: never twice in one day (morning + evening pick different ones)
+    const pool = rows.filter((business) => !usedToday.has(business.id));
+    if (pool.length === 0) return 0;
+    const fresh = pool.filter((business) => !usedRecently.has(business.id));
+    const pick = shuffle(fresh.length > 0 ? fresh : pool)[0];
+
+    await this.prisma.wallPost.create({
+      data: {
+        cityId: pick.cityId,
+        userId: pick.ownerId,
+        content: promoCopy(pick, slot),
+        businessId: pick.id,
+      },
+    });
+    this.logger.log(`wall promo ${slot.label}: business #${pick.id} → city #${pick.cityId}`);
+    return 1;
   }
 
   /** Random eligible ads, never reusing anything already used today. */

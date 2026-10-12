@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -38,6 +38,7 @@ interface PrismaMock {
   ad: { findMany: jest.Mock };
   adImage: { deleteMany: jest.Mock };
   wallPost: { findMany: jest.Mock; updateMany: jest.Mock };
+  news: { findMany: jest.Mock; update: jest.Mock };
 }
 
 function makeService(
@@ -51,6 +52,8 @@ function makeService(
     aliveAds?: { id: number }[];
     alivePosts?: { id: number }[];
     expiring?: unknown[];
+    expiredNews?: { id: number; coverUrl: string }[];
+    newsCoverMedia?: { id: number; storageKey: string; sizeBytes?: number }[];
   } = {},
 ): { service: UploadsService; prisma: PrismaMock; storage: LocalStorageDriver; root: string } {
   const root = mkdtempSync(join(tmpdir(), 'shahrjo-up-'));
@@ -73,6 +76,8 @@ function makeService(
         if ((where.deletedAt as { lt?: Date } | undefined)?.lt) {
           return Promise.resolve(opts.trash ?? []); // step 1
         }
+        // step 2b: news covers matched by their public url
+        if (typeof where.url === 'string') return Promise.resolve(opts.newsCoverMedia ?? []);
         // step 2: the 4-day retention walk (only it filters on mimeType)
         if (where.mimeType) return Promise.resolve(opts.expiring ?? []);
         if (where.entityId === null) return Promise.resolve(opts.unclaimed ?? []); // step 3
@@ -89,6 +94,10 @@ function makeService(
     wallPost: {
       findMany: jest.fn().mockResolvedValue(opts.alivePosts ?? []),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
+    news: {
+      findMany: jest.fn().mockResolvedValue(opts.expiredNews ?? []),
+      update: jest.fn().mockResolvedValue({ id: 1 }),
     },
   };
 
@@ -389,6 +398,7 @@ describe('UploadsService.save — processing pipeline', () => {
       ad: { findMany: jest.fn() },
       adImage: { deleteMany: jest.fn() },
       wallPost: { findMany: jest.fn(), updateMany: jest.fn() },
+      news: { findMany: jest.fn().mockResolvedValue([]), update: jest.fn() },
     };
     const service = new UploadsService(
       prisma as unknown as PrismaService,
@@ -402,6 +412,39 @@ describe('UploadsService.save — processing pipeline', () => {
     });
     expect(await base.list()).toHaveLength(0);
     expect(prisma.media.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('UploadsService.sweep — expired news covers are freed', () => {
+  it('clears the cover of a story past the one-week window, then deletes its bytes', async () => {
+    const key = 'news/old-cover.webp';
+    const { service, prisma, root } = makeService({
+      expiredNews: [{ id: 31, coverUrl: '/api/v1/files/news/old-cover.webp' }],
+      newsCoverMedia: [{ id: 900, storageKey: key, sizeBytes: 1234 }],
+    });
+    mkdirSync(join(root, 'news'), { recursive: true });
+    writeFileSync(join(root, key), Buffer.alloc(10, 1));
+
+    await service.sweep();
+
+    // reference cleared BEFORE the file goes
+    expect(prisma.news.update).toHaveBeenCalledWith({
+      where: { id: 31 },
+      data: { coverUrl: null },
+    });
+    expect(prisma.media.delete).toHaveBeenCalledWith({ where: { id: 900 } });
+    expect(existsSync(join(root, key))).toBe(false);
+  });
+
+  it('leaves a story inside the window and seed-only covers untouched', async () => {
+    const { service, prisma } = makeService({
+      expiredNews: [],
+      newsCoverMedia: [], // no Media row = external/seed url
+    });
+
+    await service.sweep();
+
+    expect(prisma.news.update).not.toHaveBeenCalled();
   });
 });
 

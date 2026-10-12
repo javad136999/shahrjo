@@ -1,7 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 export const DEFAULT_CONTENT_LIMIT = 12;
+
+/**
+ * Only the last week of a city's news is published to the site (فاز ۱۱b):
+ * older stories leave the feed AND their detail page 404s, so the 📰 icon
+ * always shows fresh news. Rows stay in the database for the audit trail —
+ * they are simply never served again.
+ */
+export const NEWS_MAX_AGE_MS = 7 * 86_400_000;
+
+/** Where the one-week window starts (published date, falling back to creation). */
+export function newsCutoff(now: Date = new Date()): Date {
+  return new Date(now.getTime() - NEWS_MAX_AGE_MS);
+}
 
 export interface NewsItem {
   id: number;
@@ -125,6 +139,18 @@ export interface BusinessDetail {
 export class ContentService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * The one-week window filter. `publishedAt` is the timestamp that counts;
+   * a row published without one falls back to its creation time so it is
+   * never silently hidden while fresh.
+   */
+  private newsWindow(): Prisma.NewsWhereInput {
+    const cutoff = newsCutoff();
+    return {
+      OR: [{ publishedAt: { gte: cutoff } }, { publishedAt: null, createdAt: { gte: cutoff } }],
+    };
+  }
+
   /** slug -> id, only for active cities of active provinces (404 otherwise). */
   private async resolveCity(slug: string): Promise<number> {
     const city = await this.prisma.city.findFirst({
@@ -138,7 +164,8 @@ export class ContentService {
   async news(citySlug: string, limit: number = DEFAULT_CONTENT_LIMIT): Promise<NewsItem[]> {
     const cityId = await this.resolveCity(citySlug);
     return this.prisma.news.findMany({
-      where: { cityId, status: 'PUBLISHED' },
+      // one week of this city's news — nothing older is published
+      where: { cityId, status: 'PUBLISHED', ...this.newsWindow() },
       orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
       take: limit,
       select: {
@@ -290,7 +317,8 @@ export class ContentService {
   /** A single published news article + view counting (Phase 6). */
   async newsDetail(slug: string): Promise<NewsDetail> {
     const item = await this.prisma.news.findFirst({
-      where: { slug, status: 'PUBLISHED' },
+      // older than the week? it is out of the site — same 404 as unknown slugs
+      where: { slug, status: 'PUBLISHED', ...this.newsWindow() },
       select: {
         id: true,
         title: true,
