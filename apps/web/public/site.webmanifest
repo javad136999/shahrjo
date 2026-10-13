@@ -1,0 +1,59 @@
+{
+  "name": "شهرجو | همه‌چیز شهر شما",
+  "short_name": "شهرجو",
+  "description": "شهرجو؛ اخبار، آگهی‌ها و کسب‌وکارهای شهر شما — پلتفرم چندشهری ایرانی",
+  "lang": "fa",
+  "dir": "rtl",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#014934",
+  "theme_color": "#014934",
+  "categories": ["business", "shopping", "news"],
+  "icons": [
+    {
+      "src": "/favicon-16x16.png?v=2",
+      "sizes": "16x16",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-32x32.png?v=2",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192x192.png?v=2",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-192x192.png?v=2",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-maskable-512x512.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    { "name": "دیوار شهر", "short_name": "دیوار", "url": "/wall", "description": "گفت‌وگوی زندهٔ شهر" },
+    { "name": "ثبت آگهی", "short_name": "آگهی", "url": "/ads/new", "description": "ثبت آگهی رایگان" },
+    { "name": "کسب‌وکارها", "short_name": "کسب‌وکار", "url": "/businesses", "description": "معرفی کسب‌وکارهای شهر" }
+  ]
+}

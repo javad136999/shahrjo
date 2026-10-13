@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import { BottomNav } from '@/components/bottom-nav';
 import { HeaderActions } from '@/components/header-actions';
@@ -14,6 +14,55 @@ export const metadata: Metadata = {
     template: '%s | شهرجو',
   },
   description: 'شهرجو؛ اخبار، آگهی‌ها و کسب‌وکارهای شهر شما — پلتفرم چندشهری ایرانی',
+  applicationName: 'شهرجو',
+  manifest: '/site.webmanifest',
+  // The `?v=2` suffix busts whatever the previous icon set cached under the
+  // same filename — without it browsers keep serving the old favicon for the
+  // length of its max-age even though the bytes changed on disk.
+  icons: {
+    icon: [
+      { url: '/favicon-16x16.png?v=2', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png?v=2', sizes: '32x32', type: 'image/png' },
+    ],
+    shortcut: '/favicon-32x32.png?v=2',
+    apple: '/apple-touch-icon.png?v=2',
+    // The maskable variants are deliberately NOT listed here: `purpose` is a
+    // manifest-only concept, and Next's IconDescriptor has no such field. A
+    // full-bleed maskable bitmap also looks wrong as a plain tab icon. Chrome
+    // and Android read them from site.webmanifest, where they are declared.
+    other: [
+      { url: '/icon-192x192.png?v=2', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512x512.png?v=2', sizes: '512x512', type: 'image/png' },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'شهرجو',
+  },
+  formatDetection: { telephone: false },
+  openGraph: {
+    type: 'website',
+    locale: 'fa_IR',
+    siteName: 'شهرجو',
+    title: 'شهرجو | همه‌چیز شهر شما',
+    description: 'شهرجو؛ اخبار، آگهی‌ها و کسب‌وکارهای شهر شما',
+    images: [{ url: '/icon-512x512.png?v=2', width: 512, height: 512, alt: 'لوگوی شهرجو' }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'شهرجو | همه‌چیز شهر شما',
+    description: 'شهرجو؛ اخبار، آگهی‌ها و کسب‌وکارهای شهر شما',
+    images: ['/icon-512x512.png?v=2'],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#014934',
+  colorScheme: 'light',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

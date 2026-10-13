@@ -32,6 +32,27 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
         ],
       },
+      {
+        // Icons are referenced with a `?v=2` suffix (see app/layout.tsx), so the
+        // URL changes whenever the artwork does. That lets us cache them hard
+        // without ever leaving users stuck on the previous icon set.
+        // Listed explicitly rather than as one regex so the intent is greppable
+        // and a new icon cannot silently miss the rule.
+        source: '/:file(favicon\\.ico|favicon-16x16\\.png|favicon-32x32\\.png|apple-touch-icon\\.png|icon-192x192\\.png|icon-512x512\\.png|icon-maskable-192x192\\.png|icon-maskable-512x512\\.png)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+        ],
+      },
+      {
+        // The manifest is what decides which icon the launcher installs — keep
+        // it fresh so a new icon set propagates within the hour, not the day.
+        source: '/site.webmanifest',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=3600, must-revalidate' },
+          { key: 'Content-Type', value: 'application/manifest+json; charset=utf-8' },
+        ],
+      },
     ];
   },
 };
