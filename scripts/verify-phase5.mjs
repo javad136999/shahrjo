@@ -21,7 +21,7 @@ for (const p of mustExist) if (!existsSync(p)) { console.error('MISSING', p); fa
 
 const read = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : '');
 
-// --- Backend: submission is authed, city comes from the profile, always PENDING ---
+// --- Backend: submission is authed, city comes from the profile, published live ---
 const controller = read('apps/api/src/ads/ads.controller.ts');
 for (const endpoint of ["@Post('ads')", "@Get('ads/mine')", "@Get('ad-categories')"]) {
   if (!controller.includes(endpoint)) { console.error('MISSING endpoint:', endpoint); fail++; }
@@ -46,11 +46,22 @@ for (const rule of ['@MinLength(4)', '@MinLength(10)', '@ArrayMaxSize(5)', '/^09
 }
 
 const service = read('apps/api/src/ads/ads.service.ts');
-for (const marker of ["status: 'PENDING'", 'user.cityId', 'ownerUserId: user.id', 'entityType: \'AD\'', 'MAX_ADS_PER_HOUR', 'Number(price)']) {
+for (const marker of ["status: 'APPROVED'", 'publishedAt', 'user.cityId', 'ownerUserId: user.id', 'entityType: \'AD\'', 'MAX_ADS_PER_HOUR', 'Number(price)']) {
   if (!service.includes(marker)) { console.error(`SECURITY: ads service must contain ${marker}`); fail++; }
 }
-if (service.includes("status: 'APPROVED'") || service.includes("status: 'PUBLISHED'")) {
-  console.error('SECURITY: a user-created ad can never be auto-approved/published');
+// Self-serve publishing is a product decision — but the client must never
+// supply the state itself: no DTO field and no body-sourced status/city.
+if (dto.includes('status') || dto.includes('cityId')) {
+  console.error('SECURITY: CreateAdDto/UpdateAdDto must not accept status or cityId');
+  fail++;
+}
+// An ad edit stays owner-only (403 for anyone else) and never re-enters review.
+if (!service.includes('فقط مالک آگهی می‌تواند آن را ویرایش کند')) {
+  console.error('SECURITY: PATCH /ads/:id must be owner-only');
+  fail++;
+}
+if (!controller.includes("@Patch('ads/:id')")) {
+  console.error('MISSING endpoint: PATCH /ads/:id (owner edit)');
   fail++;
 }
 if (!service.includes("entityId: null")) {
@@ -163,4 +174,4 @@ for (const endpoint of ['POST `/ads`', 'POST `/uploads`', 'GET `/ads/mine`', 'GE
 }
 
 if (fail) { console.error(`\nPhase 5 FAILED (${fail} problem${fail > 1 ? 's' : ''})`); process.exit(1); }
-console.log('Phase 5 OK: authed ad submission (PENDING), owned uploads with magic-byte checks, form + /ads/new, docs/CI in sync');
+console.log('Phase 5 OK: authed ad submission (live on submit), owner-only PATCH, owned uploads with magic-byte checks, form + /ads/new, docs/CI in sync');

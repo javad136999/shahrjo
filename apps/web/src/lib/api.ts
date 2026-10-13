@@ -213,9 +213,25 @@ export interface CreateAdInput {
   imageIds?: number[];
 }
 
-/** Submit an ad — always lands as PENDING (moderation queue). */
+/** Submit an ad — published right away (self-serve, no moderation queue). */
 export async function createAd(body: CreateAdInput): Promise<CreatedAd> {
   return api.post<CreatedAd>('/ads', body);
+}
+
+/** Partial update of the caller's own ad — every field is optional. */
+export interface UpdateAdInput {
+  title?: string;
+  description?: string;
+  /** Rial. `null` clears the price back to «توافقی». */
+  price?: number | null;
+  phone?: string;
+  address?: string;
+  /** Replaces the whole gallery; ids returned by uploadImage(). */
+  imageIds?: number[];
+}
+
+export async function updateAd(id: number, body: UpdateAdInput): Promise<CreatedAd> {
+  return api.patch<CreatedAd>(`/ads/${id}`, body);
 }
 
 /** The caller's own ads incl. moderation status. */

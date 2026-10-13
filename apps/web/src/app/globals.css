@@ -782,6 +782,93 @@ a:hover {
   margin: 0 auto;
 }
 
+/* header row of the ad panel: title on the right, ✕ close on the left */
+.ad-form__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ad-form__head h1 {
+  margin: 0 0 6px;
+}
+.ad-form__close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.ad-form__close:hover {
+  background: #fdecef;
+  border-color: rgb(198 38 76 / 35%);
+  color: #c6264c;
+}
+
+/* compact two-column body: price · phone share a row, the rest run wide */
+.ad-form__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 14px;
+  margin-top: 14px;
+}
+.ad-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.ad-form__field--wide {
+  grid-column: 1 / -1;
+}
+.ad-form__field label {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--muted);
+}
+.ad-form__field input,
+.ad-form__field select,
+.ad-form__field textarea {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+}
+.ad-form__field textarea {
+  resize: vertical;
+}
+.ad-form__field .field-hint,
+.ad-form__field .error {
+  margin: 0;
+}
+.ad-form__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.ad-form__actions .btn {
+  flex: 1;
+}
+@media (max-width: 560px) {
+  .ad-form__grid {
+    grid-template-columns: 1fr;
+  }
+  .form-card {
+    padding: 20px 16px;
+  }
+}
+
 .form-card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -3877,7 +3964,8 @@ a.my-ads__item:hover {
 
 body.wall-screen .page {
   padding-top: 10px;
-  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  /* the composer is glued to the bottom — no leftover gap under it */
+  padding-bottom: 0;
 }
 
 /* the room bar is the top bar now — it sticks to the top of the viewport */
@@ -3888,14 +3976,28 @@ body.wall-screen .wall-room {
 /* tall enough that the composer rests at the bottom even with a short feed,
    capped so a long chat scrolls inside the room instead of moving the page */
 body.wall-screen .wall {
-  min-height: calc(100dvh - 40px);
+  min-height: calc(100dvh - 24px);
 }
 
+/* The chat takes every leftover pixel: the room bar, the optional pin strip
+   and the composer are the only fixed rows. */
 body.wall-screen .wall-feed {
-  flex: 1;
+  flex: 1 1 auto;
   height: auto;
-  min-height: 240px;
-  max-height: calc(100dvh - 300px);
+  min-height: 320px;
+  max-height: calc(100dvh - 250px);
+}
+
+/* Composer docked to the bottom of the viewport (and of the page). */
+body.wall-screen .wall-composer {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin-top: auto;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom: 0;
 }
 
 /* Home entry in the room bar (icon-only; the bottom composer carries the pill). */
@@ -3970,6 +4072,65 @@ body.wall-screen .wall-feed {
   font-weight: 900;
 }
 
+/* ---- pinned strip: one short red row under the room bar (ad posts) ---- */
+.wall-pinnedbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: sticky;
+  top: 62px;
+  z-index: 5;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #c6264c, #ef476f);
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 8px 18px rgb(198 38 76 / 26%);
+}
+.wall-pinnedbar:hover {
+  text-decoration: none;
+}
+.wall-pinnedbar__icon {
+  font-size: 13px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.wall-pinnedbar__copy {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+.wall-pinnedbar__copy b {
+  font-size: 11.5px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.wall-pinnedbar__copy small {
+  font-size: 12px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wall-pinnedbar__cta {
+  font-size: 13px;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .wall-pinnedbar {
+    top: 56px;
+  }
+  .wall-pinnedbar__copy {
+    flex-direction: column;
+    gap: 0;
+    line-height: 1.35;
+  }
+}
+
 /* ---- empty room ---- */
 .wall-empty {
   display: flex;
@@ -3991,7 +4152,7 @@ body.wall-screen .wall-feed {
 /* ---- composer dock ---- */
 .wall-composer {
   border-radius: 22px;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid rgb(14 122 95 / 16%);
   background: linear-gradient(180deg, rgb(255 255 255 / 96%), rgb(246 252 249 / 96%));
   backdrop-filter: blur(10px);
@@ -4093,6 +4254,68 @@ body.wall-screen .wall-feed {
   box-shadow: none;
 }
 
+/* the round send arrow points the way the message goes (RTL → left) */
+.wall-sendbtn__arrow {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+.wall-sendbtn:disabled .wall-sendbtn__arrow {
+  transform: none;
+}
+
+/* ---- hold-to-edit editor for your own ad card ---- */
+.wall-adedit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid rgb(14 122 95 / 22%);
+  border-radius: 14px;
+  background: #fbfdfc;
+}
+.wall-adedit label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+}
+.wall-adedit input,
+.wall-adedit textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 13.5px;
+}
+.wall-adedit textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+.wall-adedit input:focus,
+.wall-adedit textarea:focus {
+  outline: 2px solid rgb(14 122 95 / 35%);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+.wall-adedit__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.wall-adedit__row span {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+@media (max-width: 560px) {
+  .wall-adedit__row {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* the photo waiting in the composer: a real preview, not just a filename */
 .wall-composer__chip--photo {
   align-items: center;
@@ -4123,13 +4346,6 @@ body.wall-screen .wall-feed {
   white-space: nowrap;
 }
 
-/* attachment policy (4 days for photos, text stays) */
-.wall-composer__hint {
-  margin: 9px 2px 0;
-  color: var(--muted);
-  font-size: 11.5px;
-  line-height: 1.7;
-}
 
 @media (max-width: 640px) {
   .wall-feed {

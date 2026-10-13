@@ -28,6 +28,10 @@ export interface AuthTokens {
  * - Rate limits: IP + phone via Redis (send) and phone+IP (verify).
  * - Sessions: opaque refresh token, stored peppered-hashed, rotating,
  *   with reuse detection (revoked token => revoke all user sessions).
+ *   A short grace window (REFRESH_REUSE_GRACE_SECONDS, default 60s) accepts a
+ *   just-rotated token so restored browser tabs racing on restart stay logged
+ *   in — reuse outside the window is still treated as theft. Logout marks the
+ *   session expired, so it is never grace-windowed back to life.
  */
 @Injectable()
 export class AuthService {
@@ -163,10 +167,21 @@ export class AuthService {
     if (!session || session.expiresAt.getTime() <= Date.now()) throw this.unauthorized();
 
     if (session.revokedAt) {
-      // Reuse of a rotated token => assume theft, revoke the whole family.
+      const graceMs = this.graceSeconds() * 1000;
+      if (graceMs > 0 && Date.now() - session.revokedAt.getTime() <= graceMs) {
+        // Benign concurrent refresh: e.g. a browser restart where several
+        // restored tabs race with the same token (the loser read localStorage
+        // before the winner stored the rotated one). The token was rotated
+        // moments ago — issue a fresh pair instead of treating it as theft.
+        const staleUser = await this.prisma.user.findUnique({ where: { id: session.userId } });
+        if (!staleUser || staleUser.status !== 'ACTIVE') throw this.unauthorized();
+        return this.issueTokens(staleUser, input.ip, input.userAgent);
+      }
+      // Reuse of a rotated token outside the grace window => assume theft,
+      // revoke the whole family (expiresAt too, so it cannot be revived).
       await this.prisma.userSession.updateMany({
         where: { userId: session.userId, revokedAt: null },
-        data: { revokedAt: new Date() },
+        data: { revokedAt: new Date(), expiresAt: new Date() },
       });
       throw this.unauthorized();
     }
@@ -185,7 +200,10 @@ export class AuthService {
     const tokenHash = hmacToken(secret, input.refreshToken);
     const session = await this.prisma.userSession.findUnique({ where: { refreshTokenHash: tokenHash } });
     if (session && !session.revokedAt) {
-      await this.prisma.userSession.update({ where: { id: session.id }, data: { revokedAt: new Date() } });
+      // expiresAt = now => explicitly logged out sessions are rejected outright
+      // and can never be revived by the rotation grace window.
+      const now = new Date();
+      await this.prisma.userSession.update({ where: { id: session.id }, data: { revokedAt: now, expiresAt: now } });
     }
     return { loggedOut: true };
   }
@@ -204,9 +222,10 @@ export class AuthService {
   }
 
   async logoutAll(user: User): Promise<{ revoked: number }> {
+    const now = new Date();
     const result = await this.prisma.userSession.updateMany({
       where: { userId: user.id, revokedAt: null },
-      data: { revokedAt: new Date() },
+      data: { revokedAt: now, expiresAt: now },
     });
     return { revoked: result.count };
   }
@@ -288,5 +307,11 @@ export class AuthService {
   private int(key: string, fallback: number): number {
     const value = Number(this.config.get<string>(key));
     return Number.isFinite(value) && value > 0 ? value : fallback;
+  }
+
+  /** Refresh-reuse grace window in seconds (0 disables; default 60). */
+  private graceSeconds(): number {
+    const raw = Number(this.config.get<string>('REFRESH_REUSE_GRACE_SECONDS') ?? 60);
+    return Number.isFinite(raw) && raw >= 0 ? raw : 60;
   }
 }

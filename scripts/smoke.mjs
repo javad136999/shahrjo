@@ -89,7 +89,9 @@ function check(name, cond, extra = '') {
   }
 }
 
-const main = startServer({ PORT: '4099' });
+// grace=0 so step 7 exercises real theft detection (reuse outside the
+// rotation grace window) instead of the concurrent-tab grace path.
+const main = startServer({ PORT: '4099', REFRESH_REUSE_GRACE_SECONDS: '0' });
 const limiter = startServer({ PORT: '4100', OTP_IP_LIMIT_PER_HOUR: '3', OTP_RESEND_COOLDOWN_SECONDS: '0' });
 
 try {

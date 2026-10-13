@@ -90,6 +90,43 @@ describe('WallService.list', () => {
     expect(() => JSON.stringify(feed)).not.toThrow();
   });
 
+  it('offers pinning an ad card to managers only (a moderator is not enough)', async () => {
+    const adPost = {
+      ...basePost,
+      ad: {
+        userId: 11,
+        id: 42,
+        title: 'ویلای شمال',
+        description: 'نزدیک ساحل',
+        price: 900n,
+        status: 'APPROVED',
+        images: [],
+      },
+    };
+    const feedFor = async (scope: { role: string; provinceId: number | null; cityId: number | null } | null) => {
+      const { service, prisma } = makeService(scope);
+      prisma.wallPost.findFirst.mockResolvedValue(null);
+      prisma.wallPost.findMany.mockResolvedValue([adPost]);
+      prisma.wallPostLike.findMany.mockResolvedValue([]);
+      return (await service.list(user, 'jam')).posts[0];
+    };
+
+    // ناظر: pin on plain messages, never on an ad card
+    const asModerator = await feedFor({ role: 'MODERATOR', provinceId: null, cityId: 1 });
+    expect(asModerator.canPin).toBe(false);
+
+    // manager: the ad card is pinnable
+    const asManager = await feedFor({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+    expect(asManager.canPin).toBe(true);
+
+    // plain message keeps the wider operator pin
+    const { service, prisma } = makeService({ role: 'MODERATOR', provinceId: null, cityId: 1 });
+    prisma.wallPost.findFirst.mockResolvedValue(null);
+    prisma.wallPost.findMany.mockResolvedValue([basePost]);
+    prisma.wallPostLike.findMany.mockResolvedValue([]);
+    expect((await service.list(user, 'jam')).posts[0].canPin).toBe(true);
+  });
+
   it('assigns the permanent member floor on first view when the seed has not run', async () => {
     const { service, prisma } = makeService(null);
     prisma.city.findFirst.mockResolvedValue({ id: 1, name: 'شهر نمونه', wallMemberBase: null });
@@ -370,7 +407,7 @@ describe('WallService.remove / setPinned (moderation)', () => {
 
   it('unpins the previous post of the city when pinning a new one', async () => {
     const { service, prisma } = makeService({ role: 'MODERATOR', provinceId: null, cityId: 1 });
-    prisma.wallPost.findFirst.mockResolvedValue({ id: 3, cityId: 1 });
+    prisma.wallPost.findFirst.mockResolvedValue({ id: 3, cityId: 1, adId: null });
 
     const result = await service.setPinned(user, 3, true);
 
@@ -380,5 +417,29 @@ describe('WallService.remove / setPinned (moderation)', () => {
     });
     expect(prisma.wallPost.update).toHaveBeenCalledWith({ where: { id: 3 }, data: { isPinned: true } });
     expect(result).toEqual({ id: 3, isPinned: true });
+  });
+
+  it('lets a moderator pin a plain message', async () => {
+    const { service, prisma } = makeService({ role: 'MODERATOR', provinceId: null, cityId: 1 });
+    prisma.wallPost.findFirst.mockResolvedValue({ id: 3, cityId: 1, adId: null });
+
+    await expect(service.setPinned(user, 3, true)).resolves.toEqual({ id: 3, isPinned: true });
+    expect(prisma.wallPost.update).toHaveBeenCalled();
+  });
+
+  it('blocks a moderator from pinning an ad (managers only)', async () => {
+    const { service, prisma } = makeService({ role: 'MODERATOR', provinceId: null, cityId: 1 });
+    prisma.wallPost.findFirst.mockResolvedValue({ id: 3, cityId: 1, adId: 42 });
+
+    await expect(service.setPinned(user, 3, true)).rejects.toMatchObject({ status: 403 });
+    expect(prisma.wallPost.update).not.toHaveBeenCalled();
+  });
+
+  it('lets a manager pin an ad', async () => {
+    const { service, prisma } = makeService({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+    prisma.wallPost.findFirst.mockResolvedValue({ id: 3, cityId: 1, adId: 42 });
+
+    await expect(service.setPinned(user, 3, true)).resolves.toEqual({ id: 3, isPinned: true });
+    expect(prisma.wallPost.update).toHaveBeenCalledWith({ where: { id: 3 }, data: { isPinned: true } });
   });
 });

@@ -1,9 +1,9 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import type { User } from '@prisma/client';
+import type { Prisma, User } from '@prisma/client';
 import { RbacService } from '../rbac/rbac.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateAdDto } from './ads.dto';
+import { CreateAdDto, UpdateAdDto } from './ads.dto';
 
 /** Ads auto-expire this many days after submission (checked again at approval). */
 const AD_TTL_DAYS = 30;
@@ -62,9 +62,10 @@ export interface AdDetail {
 }
 
 /**
- * User ad submission (Phase 5). Every new ad enters the moderation queue as
- * PENDING — there is no code path that lets a user publish their own ad, and
- * the city always comes from the caller's validated profile selection.
+ * User ad submission (Phase 5). A submitted ad is published right away
+ * (APPROVED + publishedAt) — the owner edits their own listing through
+ * PATCH /ads/:id, and admins can still take it down from the admin queue.
+ * The city always comes from the caller's validated profile selection.
  */
 @Injectable()
 export class AdsService {
@@ -130,7 +131,10 @@ export class AdsService {
           price: dto.price === undefined ? null : BigInt(dto.price),
           phone: dto.phone ?? user.phone,
           address: dto.address ?? null,
-          status: 'PENDING', // moderation queue — never APPROVED from user input
+          // Self-serve publishing: the owner's ad goes live immediately
+          // (moderation stays available through the admin queue afterwards).
+          status: 'APPROVED',
+          publishedAt: new Date(),
           expiresAt,
         },
       });
@@ -144,8 +148,7 @@ export class AdsService {
           data: { entityId: String(created.id) },
         });
       }
-      // Put the newly submitted ad straight into its city's wall. Its status
-      // stays PENDING: the wall shows a review badge until moderation approves it.
+      // Put the newly published ad straight into its city's wall.
       await tx.wallPost.create({
         data: {
           cityId: city.id,
@@ -253,6 +256,82 @@ export class AdsService {
       rejectedReason: isOwner ? ad.rejectedReason : null,
       isOwner,
       favorited,
+    };
+  }
+
+  /**
+   * Owner edit of their own ad (long-press ✏️ on the wall card).
+   *
+   * Only the fields the client sent are touched; `city`/`category` are never
+   * accepted here. Passing `imageIds` replaces the whole gallery (the ids
+   * must be this user's fresh AD uploads, exactly like on create), while
+   * omitting it keeps the current pictures. Editing does not re-enter the
+   * moderation queue — the ad stays live with its status intact.
+   */
+  async update(user: User, id: number, dto: UpdateAdDto): Promise<CreatedAd> {
+    const ad = await this.prisma.ad.findUnique({
+      where: { id },
+      select: { id: true, userId: true, status: true },
+    });
+    if (!ad || String(ad.status) === 'DELETED') throw new NotFoundException('آگهی یافت نشد');
+    if (ad.userId !== user.id) throw new ForbiddenException('فقط مالک آگهی می‌تواند آن را ویرایش کند');
+
+    const data: Prisma.AdUpdateInput = {};
+    if (dto.title !== undefined) data.title = dto.title;
+    if (dto.description !== undefined) data.description = dto.description;
+    if (dto.price !== undefined) data.price = dto.price === null ? null : BigInt(dto.price);
+    if (dto.phone !== undefined) data.phone = dto.phone;
+    if (dto.address !== undefined) data.address = dto.address;
+
+    let imageUrls: string[] | null = null;
+    if (dto.imageIds !== undefined) {
+      const imageIds = dto.imageIds;
+      if (imageIds.length > 0) {
+        const media = await this.prisma.media.findMany({
+          where: { id: { in: imageIds }, ownerUserId: user.id, entityType: 'AD', entityId: null, deletedAt: null },
+          select: { id: true, url: true },
+        });
+        if (media.length !== imageIds.length) throw new BadRequestException('یک یا چند تصویر ارسالی نامعتبر است');
+        const urlById = new Map(media.map((m) => [m.id, m.url]));
+        imageUrls = imageIds.map((id) => urlById.get(id)!); // preserve the user's ordering
+      } else {
+        imageUrls = [];
+      }
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const row = await tx.ad.update({ where: { id }, data });
+      if (imageUrls !== null) {
+        // drop the old gallery…
+        await tx.adImage.deleteMany({ where: { adId: id } });
+        if (imageUrls.length > 0) {
+          await tx.adImage.createMany({
+            data: imageUrls.map((url, index) => ({ adId: id, url, sortOrder: index })),
+          });
+        }
+        // …and hand the freshly uploaded rows over to this ad
+        await tx.media.updateMany({
+          where: { id: { in: dto.imageIds ?? [] } },
+          data: { entityId: String(id) },
+        });
+      }
+      return row;
+    });
+
+    const stored = imageUrls ?? (await this.prisma.adImage.findMany({
+      where: { adId: id },
+      orderBy: { sortOrder: 'asc' },
+      select: { url: true },
+    })).map((row) => row.url);
+
+    return {
+      id: updated.id,
+      title: updated.title,
+      status: String(updated.status),
+      price: updated.price === null ? null : Number(updated.price),
+      imageUrls: stored,
+      createdAt: updated.createdAt,
+      expiresAt: updated.expiresAt,
     };
   }
 

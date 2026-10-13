@@ -63,6 +63,12 @@ function releasePreview(url: string): void {
 export function AdForm() {
   const router = useRouter();
 
+  /** The form is a panel the user can leave at any moment (✕ / بستن). */
+  const closeForm = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) router.back();
+    else router.push('/wall');
+  };
+
   const [categories, setCategories] = useState<AdCategoryOption[]>([]);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
   const [me, setMe] = useState<MeResponse | null>(null);
@@ -210,10 +216,19 @@ export function AdForm() {
   if (submitted) {
     return (
       <div className="form-card ad-success" data-testid="ad-success">
-        <h1>آگهی شما ثبت شد</h1>
-        <p className="muted">
-          «{submitted.title}» برای بررسی ناظر ثبت شد و پیش‌نمایش آن همین حالا در دیوار شهر قرار گرفت.
-        </p>
+        <div className="ad-form__head">
+          <h1>آگهی شما منتشر شد</h1>
+          <button
+            type="button"
+            className="ad-form__close"
+            aria-label="بستن فرم"
+            data-testid="ad-close"
+            onClick={closeForm}
+          >
+            ✕
+          </button>
+        </div>
+        <p className="muted">«{submitted.title}» همین حالا در دیوار شهر و صفحهٔ آگهی‌ها دیده می‌شود.</p>
         <p>
           <span data-testid="ad-status">
             <StatusChip status={submitted.status} />
@@ -236,8 +251,19 @@ export function AdForm() {
   return (
     <div className="ad-page">
       <form className="form-card ad-form" onSubmit={submit} noValidate>
-        <h1>ثبت آگهی</h1>
-        <p className="muted">آگهی پس از ارسال برای بررسی ناظر می‌رود و پیش‌نمایش آن در دیوار شهر دیده می‌شود.</p>
+        <div className="ad-form__head">
+          <h1>ثبت آگهی</h1>
+          <button
+            type="button"
+            className="ad-form__close"
+            aria-label="بستن فرم"
+            data-testid="ad-close"
+            onClick={closeForm}
+          >
+            ✕
+          </button>
+        </div>
+        <p className="muted">آگهی بلافاصله منتشر می‌شود و در دیوار شهر دیده خواهد شد.</p>
 
         {noCity && (
           <div className="banner banner--warn" role="status">
@@ -248,126 +274,140 @@ export function AdForm() {
           </div>
         )}
 
-        <label htmlFor="category">دسته‌بندی</label>
-        <select
-          id="category"
-          name="category"
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          required
-        >
-          <option value="">— انتخاب دسته‌بندی —</option>
-          {categories.map((c) => (
-            <option key={c.id} value={String(c.id)}>
-              {c.icon ? `${c.icon} ` : ''}
-              {c.name}
-            </option>
-          ))}
-        </select>
-        {categories.length === 0 && !categoriesError && (
-          <p className="field-hint" aria-busy>
-            در حال بارگذاری دسته‌بندی‌ها…
-          </p>
-        )}
-        {categoriesError && (
-          <p className="error" role="alert">
-            {categoriesError}
-          </p>
-        )}
+        <div className="ad-form__grid">
+          <div className="ad-form__field ad-form__field--wide">
+            <label htmlFor="category">دسته‌بندی</label>
+            <select
+              id="category"
+              name="category"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              required
+            >
+              <option value="">— انتخاب دسته‌بندی —</option>
+              {categories.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.icon ? `${c.icon} ` : ''}
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            {categories.length === 0 && !categoriesError && (
+              <p className="field-hint" aria-busy>
+                در حال بارگذاری دسته‌بندی‌ها…
+              </p>
+            )}
+            {categoriesError && (
+              <p className="error" role="alert">
+                {categoriesError}
+              </p>
+            )}
+          </div>
 
-        <label htmlFor="title">عنوان آگهی</label>
-        <input
-          id="title"
-          name="title"
-          type="text"
-          maxLength={160}
-          placeholder="مثال: لوازم خانگی نو"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
+          <div className="ad-form__field ad-form__field--wide">
+            <label htmlFor="title">عنوان آگهی</label>
+            <input
+              id="title"
+              name="title"
+              type="text"
+              maxLength={160}
+              placeholder="مثال: لوازم خانگی نو"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
 
-        <label htmlFor="description">توضیحات</label>
-        <textarea
-          id="description"
-          name="description"
-          maxLength={4000}
-          placeholder="شرایط، قیمت پیشنهادی، زمان تماس…"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          required
-        />
+          <div className="ad-form__field ad-form__field--wide">
+            <label htmlFor="description">توضیحات</label>
+            <textarea
+              id="description"
+              name="description"
+              rows={4}
+              maxLength={4000}
+              placeholder="شرایط، قیمت پیشنهادی، زمان تماس…"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+            />
+          </div>
 
-        <label htmlFor="price">قیمت (ریال) — اختیاری</label>
-        <input
-          id="price"
-          name="price"
-          type="text"
-          inputMode="numeric"
-          placeholder="خالی = توافقی"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-        />
+          <div className="ad-form__field">
+            <label htmlFor="price">قیمت (ریال) — اختیاری</label>
+            <input
+              id="price"
+              name="price"
+              type="text"
+              inputMode="numeric"
+              placeholder="خالی = توافقی"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+          </div>
 
-        <label htmlFor="phone">شماره تماس</label>
-        <input
-          id="phone"
-          name="phone"
-          type="tel"
-          inputMode="numeric"
-          dir="ltr"
-          placeholder="09xxxxxxxxx"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
+          <div className="ad-form__field">
+            <label htmlFor="phone">شماره تماس</label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              inputMode="numeric"
+              dir="ltr"
+              placeholder="09xxxxxxxxx"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </div>
 
-        <label htmlFor="address">آدرس — اختیاری</label>
-        <input
-          id="address"
-          name="address"
-          type="text"
-          maxLength={300}
-          placeholder="خیابان، محله…"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-        />
+          <div className="ad-form__field ad-form__field--wide">
+            <label htmlFor="address">آدرس — اختیاری</label>
+            <input
+              id="address"
+              name="address"
+              type="text"
+              maxLength={300}
+              placeholder="خیابان، محله…"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
+          </div>
 
-        <label htmlFor="images">
-          تصاویر (حداکثر {MAX_IMAGES.toLocaleString('fa-IR')} — هر کدام تا ۵ مگابایت)
-        </label>
-        <p className="muted field-hint" data-testid="ad-image-policy">
-          عکس‌ها ۴ روز روی سایت می‌مانند و بعد پاک می‌شوند؛ متن آگهی همیشه باقی می‌ماند. عکس را
-          دوباره می‌توانید بارگذاری کنید.
-        </p>
-        <input
-          id="images"
-          name="images"
-          type="file"
-          accept={ACCEPTED_TYPES.join(',')}
-          multiple
-          onChange={(e) => {
-            addFiles(Array.from(e.target.files ?? []));
-            e.target.value = '';
-          }}
-        />
-        {previews.length > 0 && (
-          <ul className="image-grid">
-            {previews.map((url, i) => (
-              <li key={`${files[i]?.name}-${i}`} className="image-thumb">
-                {/* eslint-disable-next-line @next/next/no-img-element -- local object URLs */}
-                {url && <img src={url} alt={files[i]?.name ?? ''} />}
-                <button
-                  type="button"
-                  className="image-thumb__remove"
-                  aria-label={`حذف تصویر ${i + 1}`}
-                  onClick={() => removeFile(i)}
-                >
-                  ✕
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+          <div className="ad-form__field ad-form__field--wide">
+            <label htmlFor="images">تصاویر (حداکثر {MAX_IMAGES.toLocaleString('fa-IR')} — هر کدام تا ۵ مگابایت)</label>
+            <p className="muted field-hint" data-testid="ad-image-policy">
+              عکس‌ها ۴ روز روی سایت می‌مانند و بعد پاک می‌شوند؛ متن آگهی همیشه باقی می‌ماند.
+            </p>
+            <input
+              id="images"
+              name="images"
+              type="file"
+              accept={ACCEPTED_TYPES.join(',')}
+              multiple
+              onChange={(e) => {
+                addFiles(Array.from(e.target.files ?? []));
+                e.target.value = '';
+              }}
+            />
+            {previews.length > 0 && (
+              <ul className="image-grid">
+                {previews.map((url, i) => (
+                  <li key={`${files[i]?.name}-${i}`} className="image-thumb">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- local object URLs */}
+                    {url && <img src={url} alt={files[i]?.name ?? ''} />}
+                    <button
+                      type="button"
+                      className="image-thumb__remove"
+                      aria-label={`حذف تصویر ${i + 1}`}
+                      onClick={() => removeFile(i)}
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
 
         {error && (
           <p className="error" role="alert">
@@ -379,9 +419,14 @@ export function AdForm() {
             {progress}
           </p>
         )}
-        <button type="submit" className="btn btn-primary" disabled={busy}>
-          {busy ? 'در حال ارسال…' : 'ارسال'}
-        </button>
+        <div className="ad-form__actions">
+          <button type="button" className="btn btn-ghost" data-testid="ad-cancel" onClick={closeForm}>
+            بستن
+          </button>
+          <button type="submit" className="btn btn-primary" disabled={busy}>
+            {busy ? 'در حال ارسال…' : 'ارسال'}
+          </button>
+        </div>
       </form>
 
       <section className="form-card my-ads" aria-label="آگهی‌های من" id="mine">

@@ -2,9 +2,10 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 const mockReplace = jest.fn();
 const mockPush = jest.fn();
+const mockBack = jest.fn();
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: mockReplace, push: mockPush, refresh: jest.fn() }),
+  useRouter: () => ({ replace: mockReplace, push: mockPush, back: mockBack, refresh: jest.fn() }),
 }));
 
 const mockGetTokens = jest.fn();
@@ -72,7 +73,7 @@ describe('AdForm', () => {
     mockCreateAd.mockResolvedValue({
       id: 55,
       title: 'کولر گازی نو',
-      status: 'PENDING',
+      status: 'APPROVED',
       price: null,
       imageUrls: [],
       createdAt: '2026-10-03T10:00:00.000Z',
@@ -92,6 +93,19 @@ describe('AdForm', () => {
     render(<AdForm />);
     expect(await screen.findByTestId('ad-image-policy')).toHaveTextContent('۴ روز');
     expect(screen.getByTestId('ad-image-policy')).toHaveTextContent('متن آگهی');
+  });
+
+  it('offers a ✕ close that leaves the form (history back, or the wall as a fallback)', async () => {
+    render(<AdForm />);
+    await screen.findByRole('option', { name: 'لوازم' });
+
+    fireEvent.click(screen.getByTestId('ad-close'));
+    expect(mockBack.mock.calls.length + mockPush.mock.calls.length).toBe(1);
+    expect(mockCreateAd).not.toHaveBeenCalled();
+
+    // the footer keeps a second, labelled way out
+    fireEvent.click(screen.getByTestId('ad-cancel'));
+    expect(mockBack.mock.calls.length + mockPush.mock.calls.length).toBe(2);
   });
 
   it('requires a category before submitting', async () => {
@@ -151,9 +165,9 @@ describe('AdForm', () => {
       imageIds: [11, 22],
     });
 
-    // moderation result: never "published" — always pending
+    // self-serve publishing: the ad is live the moment it is submitted
     expect(await screen.findByTestId('ad-success')).toBeInTheDocument();
-    expect(screen.getByTestId('ad-status')).toHaveTextContent('در انتظار تأیید');
+    expect(screen.getByTestId('ad-status')).toHaveTextContent('تأیید شده');
     expect(screen.getByRole('link', { name: 'مشاهده دیوار شهر' })).toHaveAttribute('href', '/wall');
     expect(mockPush).toHaveBeenCalledWith('/wall');
   });

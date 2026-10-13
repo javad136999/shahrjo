@@ -72,7 +72,8 @@ for (const marker of [
   'likeCount: { decrement: 1 }',
   'isPinned: true', // pinned post surfaced first
   'rbac.getScope', // operator scope drives canDelete/canPin
-  'canPin: isOperator',
+  "canPin: post.ad ? isManager : isOperator", // ads are pinned by managers only
+  "scope.role === 'MODERATOR'", // ناظر blocked from pinning an ad
 ]) {
   if (!service.includes(marker)) { console.error(`WALL SERVICE: missing ${marker}`); fail++; }
 }

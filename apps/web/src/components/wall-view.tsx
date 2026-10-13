@@ -12,6 +12,7 @@ import {
   getWall,
   likeWallPost,
   pinWallPost,
+  updateAd,
   uploadImage,
   uploadVoice,
 } from '@/lib/api';
@@ -54,9 +55,30 @@ function WallAdCardContent({ ad }: { ad: WallAdRef }) {
 
 /** mm:ss for the recording timer / voice chips. */
 function clock(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
+  const m = Math.floor(Math.floor(seconds) / 60);
+  const s = Math.floor(seconds) % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+/** Persian/Arabic digits → Latin so «۱٬۲۰۰» parses as a number. */
+function toLatinDigits(raw: string): string {
+  return raw
+    .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+    .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+}
+
+/** Hold-to-edit cadence (ms) — the mobile gesture for editing your own post. */
+const LONG_PRESS_MS = 500;
+
+/** Inline editor state for the caller's own ad card. */
+interface AdEditState {
+  postId: number;
+  adId: number;
+  title: string;
+  description: string;
+  price: string;
+  phone: string;
+  address: string;
 }
 
 /**
@@ -79,6 +101,10 @@ export function WallView({ city }: WallViewProps) {
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ id: number; text: string } | null>(null);
+  // hold-to-edit on your own ad card → inline ad editor
+  const [adEdit, setAdEdit] = useState<AdEditState | null>(null);
+  const [adEditError, setAdEditError] = useState<string | null>(null);
+  const [adEditSaving, setAdEditSaving] = useState(false);
   const [sending, setSending] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   // Category shortcuts in the room header: املاک، خودرو + ۴ دسته مهم (server order).
@@ -87,6 +113,7 @@ export function WallView({ city }: WallViewProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pagingRef = useRef(false);
   const restoreRef = useRef<number | null>(null);
+  const pressTimerRef = useRef<number | null>(null);
 
   // voice recording (Phase 10)
   const [recording, setRecording] = useState(false);
@@ -366,6 +393,76 @@ export function WallView({ city }: WallViewProps) {
     }
   };
 
+  /** Hold-to-edit: press your own post to open its editor (the ✏️ button
+   *  stays for mouse users, but long-press is the natural mobile gesture). */
+  const startPress = (post: WallPost) => {
+    if (!post.isMine) return;
+    cancelPress();
+    pressTimerRef.current = window.setTimeout(() => {
+      pressTimerRef.current = null;
+      if (post.ad) openAdEdit(post);
+      else if (post.canEdit && !post.business) setEditing({ id: post.id, text: post.content });
+    }, LONG_PRESS_MS);
+  };
+
+  const cancelPress = () => {
+    if (pressTimerRef.current !== null) {
+      window.clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+  };
+
+  const openAdEdit = (post: WallPost) => {
+    if (!post.ad) return;
+    setEditing(null);
+    setAdEditError(null);
+    setAdEdit({
+      postId: post.id,
+      adId: post.ad.id,
+      title: post.ad.title,
+      description: post.ad.description,
+      price: post.ad.price === null ? '' : String(post.ad.price),
+      phone: '',
+      address: '',
+    });
+  };
+
+  const saveAdEdit = async () => {
+    if (!adEdit || adEditSaving) return;
+    const title = adEdit.title.trim();
+    const description = adEdit.description.trim();
+    if (title.length < 4) return setAdEditError('عنوان باید حداقل ۴ حرف باشد');
+    if (description.length < 10) return setAdEditError('توضیحات باید حداقل ۱۰ حرف باشد');
+    const raw = toLatinDigits(adEdit.price).replace(/[,\s٬]/g, '');
+    if (raw && !/^\d{1,16}$/.test(raw)) return setAdEditError('قیمت باید عدد صحیح باشد (ریال) یا خالی بماند');
+
+    setAdEditSaving(true);
+    setAdEditError(null);
+    try {
+      const updated = await updateAd(adEdit.adId, {
+        title,
+        description,
+        price: raw ? Number(raw) : null,
+        ...(adEdit.phone.trim() ? { phone: adEdit.phone.trim() } : {}),
+        ...(adEdit.address.trim() ? { address: adEdit.address.trim() } : {}),
+      });
+      // refresh the card's snapshot fields (price may have been cleared)
+      const current =
+        feed?.posts.find((p) => p.id === adEdit.postId)?.ad ??
+        (feed?.pinned?.id === adEdit.postId ? feed.pinned.ad : null);
+      if (current) {
+        patchPost(adEdit.postId, {
+          ad: { ...current, title: updated.title, description, price: updated.price },
+        });
+      }
+      setAdEdit(null);
+    } catch (err) {
+      setAdEditError(err instanceof Error ? err.message : 'ویرایش آگهی ناموفق بود');
+    } finally {
+      setAdEditSaving(false);
+    }
+  };
+
   const loadOlder = async () => {
     if (!feed?.nextBefore || pagingRef.current) return;
     pagingRef.current = true;
@@ -450,11 +547,20 @@ export function WallView({ city }: WallViewProps) {
 
   const renderPost = (post: WallPost, pinnedBanner = false) => {
     const isEditing = editing?.id === post.id;
+    const isAdEditing = adEdit?.postId === post.id;
     return (
       <article
         key={post.id}
         className={`wall-post${post.isMine ? ' wall-post--own' : ''}${post.isPinned ? ' wall-post--pinned' : ''}${post.ad ? ' wall-post--ad' : ''}`}
         data-testid={`wall-post-${post.id}`}
+        onPointerDown={() => startPress(post)}
+        onPointerUp={cancelPress}
+        onPointerLeave={cancelPress}
+        onPointerCancel={cancelPress}
+        onContextMenu={(e) => {
+          // the long-press menu would otherwise steal the hold-to-edit gesture
+          if (post.isMine) e.preventDefault();
+        }}
       >
         <span
           className="wall-post__avatar wall-post__tappable"
@@ -555,6 +661,83 @@ export function WallView({ city }: WallViewProps) {
                 </button>
               </div>
             </div>
+          ) : isAdEditing ? (
+            <div className="wall-adedit" data-testid={`wall-adeditbox-${post.id}`}>
+              <label htmlFor={`adedit-title-${post.id}`}>عنوان آگهی</label>
+              <input
+                id={`adedit-title-${post.id}`}
+                type="text"
+                maxLength={160}
+                data-testid="wall-adedit-title"
+                value={adEdit?.title ?? ''}
+                onChange={(e) => setAdEdit((s) => (s ? { ...s, title: e.target.value } : s))}
+              />
+              <label htmlFor={`adedit-desc-${post.id}`}>توضیحات</label>
+              <textarea
+                id={`adedit-desc-${post.id}`}
+                rows={3}
+                maxLength={4000}
+                data-testid="wall-adedit-desc"
+                value={adEdit?.description ?? ''}
+                onChange={(e) => setAdEdit((s) => (s ? { ...s, description: e.target.value } : s))}
+              />
+              <div className="wall-adedit__row">
+                <span>
+                  <label htmlFor={`adedit-price-${post.id}`}>قیمت (ریال)</label>
+                  <input
+                    id={`adedit-price-${post.id}`}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="خالی = توافقی"
+                    data-testid="wall-adedit-price"
+                    value={adEdit?.price ?? ''}
+                    onChange={(e) => setAdEdit((s) => (s ? { ...s, price: e.target.value } : s))}
+                  />
+                </span>
+                <span>
+                  <label htmlFor={`adedit-phone-${post.id}`}>شماره تماس</label>
+                  <input
+                    id={`adedit-phone-${post.id}`}
+                    type="tel"
+                    inputMode="numeric"
+                    dir="ltr"
+                    placeholder="اختیاری"
+                    data-testid="wall-adedit-phone"
+                    value={adEdit?.phone ?? ''}
+                    onChange={(e) => setAdEdit((s) => (s ? { ...s, phone: e.target.value } : s))}
+                  />
+                </span>
+              </div>
+              <label htmlFor={`adedit-address-${post.id}`}>آدرس</label>
+              <input
+                id={`adedit-address-${post.id}`}
+                type="text"
+                maxLength={300}
+                placeholder="اختیاری"
+                data-testid="wall-adedit-address"
+                value={adEdit?.address ?? ''}
+                onChange={(e) => setAdEdit((s) => (s ? { ...s, address: e.target.value } : s))}
+              />
+              {adEditError && (
+                <p className="error" role="alert" data-testid="wall-adedit-error">
+                  {adEditError}
+                </p>
+              )}
+              <div className="wall-edit__actions">
+                <button
+                  type="button"
+                  className="pill pill--accent"
+                  data-testid="wall-adedit-save"
+                  disabled={adEditSaving}
+                  onClick={() => void saveAdEdit()}
+                >
+                  {adEditSaving ? 'در حال ذخیره…' : 'ذخیره'}
+                </button>
+                <button type="button" className="pill" onClick={() => setAdEdit(null)}>
+                  انصراف
+                </button>
+              </div>
+            </div>
           ) : (
             <>
               {post.content && <p className="wall-post__text">{post.content}</p>}
@@ -638,7 +821,7 @@ export function WallView({ city }: WallViewProps) {
             </>
           )}
 
-          {!isEditing && (
+          {!isEditing && !isAdEditing && (
             <div className="wall-post__foot">
               <button
                 type="button"
@@ -668,6 +851,17 @@ export function WallView({ city }: WallViewProps) {
                   aria-label="ویرایش پیام"
                   data-testid={`wall-edit-${post.id}`}
                   onClick={() => setEditing({ id: post.id, text: post.content })}
+                >
+                  ✏️
+                </button>
+              )}
+              {post.canEdit && post.ad && (
+                <button
+                  type="button"
+                  className="wall-iconbtn"
+                  aria-label="ویرایش آگهی"
+                  data-testid={`wall-adedit-${post.id}`}
+                  onClick={() => openAdEdit(post)}
                 >
                   ✏️
                 </button>
@@ -736,13 +930,33 @@ export function WallView({ city }: WallViewProps) {
         </nav>
       </header>
 
+      {feed.pinned?.ad && (
+        <a
+          href={`/ad/${feed.pinned.ad.id}`}
+          className="wall-pinnedbar"
+          data-testid="wall-pinnedbar"
+          title={feed.pinned.ad.title}
+        >
+          <span className="wall-pinnedbar__icon" aria-hidden>
+            📌
+          </span>
+          <span className="wall-pinnedbar__copy">
+            <b>دیوار شهر</b>
+            <small>{feed.pinned.ad.title}</small>
+          </span>
+          <span className="wall-pinnedbar__cta" aria-hidden>
+            ↗
+          </span>
+        </a>
+      )}
+
       {error && (
         <div className="banner banner--error" role="alert">
           <span>{error}</span>
         </div>
       )}
 
-      {feed.pinned && (
+      {feed.pinned && !feed.pinned.ad && (
         <section className="wall-pinned" data-testid="wall-pinned" aria-label="پیام سنجاق‌شده">
           <span className="wall-pinned__tag" aria-hidden>
             📌 سنجاق‌شده
@@ -897,7 +1111,7 @@ export function WallView({ city }: WallViewProps) {
               disabled={sending || (!text.trim() && !image && !voice)}
               onClick={() => void send()}
             >
-              <span aria-hidden>{sending ? '⏳' : '➤'}</span>
+              <span aria-hidden className="wall-sendbtn__arrow">{sending ? '⏳' : '➤'}</span>
             </button>
 
             <span className="wall-bar__sep" aria-hidden />
@@ -913,11 +1127,6 @@ export function WallView({ city }: WallViewProps) {
             </Link>
           </div>
         )}
-
-        {/* Attachment policy, in plain words: the post text always stays. */}
-        <p className="wall-composer__hint" data-testid="wall-media-hint">
-          عکس‌ها ۴ روز روی سایت می‌مانند و بعد پاک می‌شوند؛ متن پیام و آگهی باقی می‌ماند.
-        </p>
       </div>
 
       {profileUserId !== null && (

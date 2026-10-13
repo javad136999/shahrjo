@@ -51,3 +51,50 @@ export class CreateAdDto {
   @Min(1, { each: true })
   imageIds?: number[];
 }
+
+/**
+ * Body for PATCH /ads/:id — the owner edits their own ad from the wall.
+ * Every field is optional (partial update); the same validation rules as
+ * creation apply, and `city`/`category` are never accepted from the client.
+ */
+export class UpdateAdDto {
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MinLength(4)
+  @MaxLength(160)
+  title?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MinLength(10)
+  @MaxLength(4000)
+  description?: string;
+
+  // Rial. `null` clears the price back to «توافقی».
+  @IsOptional()
+  @Transform(({ value }) => (value === null || value === undefined || typeof value === 'number' ? value : Number(value)))
+  @IsInt()
+  @Min(0)
+  @Max(9_000_000_000_000_000)
+  price?: number | null;
+
+  @IsOptional()
+  @Matches(/^09\d{9}$/, { message: 'شماره موبایل معتبر نیست' })
+  phone?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(300)
+  address?: string;
+
+  // Replaces the gallery wholesale; ownership of every id is re-checked.
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  imageIds?: number[];
+}

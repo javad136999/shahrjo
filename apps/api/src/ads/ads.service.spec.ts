@@ -19,7 +19,7 @@ function makeService() {
       findFirst: jest.fn(),
       update: jest.fn(),
     },
-    adImage: { createMany: jest.fn() },
+    adImage: { createMany: jest.fn(), deleteMany: jest.fn(), findMany: jest.fn() },
     wallPost: { create: jest.fn() },
     media: { findMany: jest.fn(), updateMany: jest.fn() },
     favorite: {
@@ -33,6 +33,8 @@ function makeService() {
   };
   prisma.$transaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma));
   prisma.adImage.createMany.mockResolvedValue({ count: 0 });
+  prisma.adImage.deleteMany.mockResolvedValue({ count: 0 });
+  prisma.adImage.findMany.mockResolvedValue([]);
   const rbac = { getScope: jest.fn().mockResolvedValue(null) };
   const uploads = { purgeEntity: jest.fn().mockResolvedValue({ removed: 0 }) };
   const service = new AdsService(
@@ -51,8 +53,8 @@ const validDto = (over: Partial<CreateAdDto> = {}): CreateAdDto => ({
   ...over,
 });
 
-describe('AdsService.create — moderation first', () => {
-  it('always stores the ad as PENDING with the profile city (never APPROVED, no client city)', async () => {
+describe('AdsService.create — self-serve publishing', () => {
+  it('publishes the ad right away with the profile city (APPROVED, no client city)', async () => {
     const { service, prisma, adImage } = makeService();
     prisma.city.findFirst.mockResolvedValue({ id: 7 });
     prisma.adCategory.findFirst.mockResolvedValue({ id: 3 });
@@ -60,7 +62,7 @@ describe('AdsService.create — moderation first', () => {
     prisma.ad.create.mockResolvedValue({
       id: 99,
       title: 'آگهی نمونه',
-      status: 'PENDING',
+      status: 'APPROVED',
       price: 125_000_000n,
       createdAt: new Date('2026-10-03'),
       expiresAt: new Date('2026-11-02'),
@@ -70,11 +72,12 @@ describe('AdsService.create — moderation first', () => {
     const result = await service.create(user, dto);
 
     const created = prisma.ad.create.mock.calls[0][0].data;
-    expect(created.status).toBe('PENDING');
+    expect(created.status).toBe('APPROVED'); // live immediately, no queue
+    expect(created.publishedAt).toBeInstanceOf(Date);
     expect(created.cityId).toBe(7); // from the profile, not from the body
     expect(created.price).toBe(125_000_000n); // stored as BigInt
     expect(created.expiresAt).toBeInstanceOf(Date);
-    expect(result.status).toBe('PENDING');
+    expect(result.status).toBe('APPROVED');
     expect(result.price).toBe(125_000_000); // JSON-safe number
     expect(prisma.wallPost.create).toHaveBeenCalledWith({
       data: {
@@ -398,5 +401,108 @@ describe('AdsService.remove — the ad leaves the feeds and the wall', () => {
 
     prisma.ad.findUnique.mockResolvedValue({ id: 9, userId: user.id, status: 'DELETED' });
     await expect(service.remove(user, 9)).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+describe('AdsService.update — owner edits their own ad', () => {
+  it('patches only the fields the client sent and keeps the ad live', async () => {
+    const { service, prisma } = makeService();
+    prisma.ad.findUnique.mockResolvedValue({ id: 9, userId: 11, status: 'APPROVED' });
+    prisma.ad.update.mockResolvedValue({
+      id: 9,
+      title: 'عنوان تازه',
+      status: 'APPROVED',
+      price: 900n,
+      createdAt: new Date('2026-10-01'),
+      expiresAt: new Date('2026-10-30'),
+    });
+
+    const result = await service.update(user, 9, { title: 'عنوان تازه', price: 900 });
+
+    expect(prisma.ad.update).toHaveBeenCalledWith({
+      where: { id: 9 },
+      data: { title: 'عنوان تازه', price: 900n }, // BigInt on the wire to Prisma
+    });
+    expect(result.status).toBe('APPROVED'); // editing never re-enters review
+    expect(result.price).toBe(900);
+    // no gallery payload → the existing pictures stay untouched
+    expect(prisma.adImage.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('clears the price back to «توافقی» when null is sent', async () => {
+    const { service, prisma } = makeService();
+    prisma.ad.findUnique.mockResolvedValue({ id: 9, userId: 11, status: 'APPROVED' });
+    prisma.ad.update.mockResolvedValue({
+      id: 9,
+      title: 't'.repeat(10),
+      status: 'APPROVED',
+      price: null,
+      createdAt: new Date(),
+      expiresAt: null,
+    });
+
+    await service.update(user, 9, { price: null });
+
+    expect(prisma.ad.update).toHaveBeenCalledWith({ where: { id: 9 }, data: { price: null } });
+  });
+
+  it('refuses to edit someone else\'s ad', async () => {
+    const { service, prisma } = makeService();
+    prisma.ad.findUnique.mockResolvedValue({ id: 9, userId: 777, status: 'APPROVED' });
+
+    await expect(service.update(user, 9, { title: 'عنوان نفوذی' })).rejects.toMatchObject({ status: 403 });
+    expect(prisma.ad.update).not.toHaveBeenCalled();
+  });
+
+  it('404s unknown or deleted ads', async () => {
+    const { service, prisma } = makeService();
+    prisma.ad.findUnique.mockResolvedValue(null);
+    await expect(service.update(user, 404, { title: 'x'.repeat(10) })).rejects.toMatchObject({ status: 404 });
+
+    prisma.ad.findUnique.mockResolvedValue({ id: 9, userId: 11, status: 'DELETED' });
+    await expect(service.update(user, 9, { title: 'x'.repeat(10) })).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('replaces the gallery wholesale and claims the fresh uploads', async () => {
+    const { service, prisma } = makeService();
+    prisma.ad.findUnique.mockResolvedValue({ id: 9, userId: 11, status: 'APPROVED' });
+    prisma.ad.update.mockResolvedValue({
+      id: 9,
+      title: 'عنوان تازه',
+      status: 'APPROVED',
+      price: null,
+      createdAt: new Date(),
+      expiresAt: null,
+    });
+    prisma.media.findMany.mockResolvedValue([
+      { id: 20, url: '/api/v1/files/ads/a.png' },
+      { id: 21, url: '/api/v1/files/ads/b.png' },
+    ]);
+
+    const result = await service.update(user, 9, { imageIds: [21, 20] });
+
+    const ownership = prisma.media.findMany.mock.calls[0][0].where;
+    expect(ownership).toMatchObject({ ownerUserId: 11, entityType: 'AD', entityId: null, deletedAt: null });
+    expect(prisma.adImage.deleteMany).toHaveBeenCalledWith({ where: { adId: 9 } });
+    expect(prisma.adImage.createMany).toHaveBeenCalledWith({
+      data: [
+        { adId: 9, url: '/api/v1/files/ads/b.png', sortOrder: 0 },
+        { adId: 9, url: '/api/v1/files/ads/a.png', sortOrder: 1 },
+      ],
+    });
+    expect(prisma.media.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: [21, 20] } },
+      data: { entityId: '9' },
+    });
+    expect(result.imageUrls).toEqual(['/api/v1/files/ads/b.png', '/api/v1/files/ads/a.png']);
+  });
+
+  it('rejects a picture the caller does not own', async () => {
+    const { service, prisma } = makeService();
+    prisma.ad.findUnique.mockResolvedValue({ id: 9, userId: 11, status: 'APPROVED' });
+    prisma.media.findMany.mockResolvedValue([{ id: 20, url: '/api/v1/files/ads/a.png' }]);
+
+    await expect(service.update(user, 9, { imageIds: [20, 999] })).rejects.toMatchObject({ status: 400 });
+    expect(prisma.ad.update).not.toHaveBeenCalled();
   });
 });

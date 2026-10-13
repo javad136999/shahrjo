@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { CurrentUser, Public } from '../common/decorators';
-import { CreateAdDto } from './ads.dto';
+import { CreateAdDto, UpdateAdDto } from './ads.dto';
 import { AdsService } from './ads.service';
 
 @Controller()
@@ -40,6 +40,20 @@ export class AdsController {
     @Param('id', ParseIntPipe) id: number,
   ): ReturnType<AdsService['toggleFavorite']> {
     return this.ads.toggleFavorite(user, id);
+  }
+
+  /**
+   * Owner edit of an ad (long-press ✏️ on the wall card): partial update of
+   * the text/price/contact fields and, when given, a whole new gallery.
+   * Authenticated — the service allows only the owner.
+   */
+  @Patch('ads/:id')
+  updateAd(
+    @CurrentUser() user: User,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateAdDto,
+  ): ReturnType<AdsService['update']> {
+    return this.ads.update(user, id, dto);
   }
 
   /**

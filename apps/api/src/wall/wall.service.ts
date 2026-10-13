@@ -146,6 +146,9 @@ export class WallService {
     scope: AdminScope | null,
   ): WallPostView {
     const isOperator = scope !== null;
+    // Ads are pinned by managers only (ناظر ordinary operators cannot);
+    // plain messages keep the wider operator pin.
+    const isManager = scope !== null && scope.role !== 'MODERATOR';
     const adImage = post.ad?.images?.[0]?.url ?? null;
     return {
       id: post.id,
@@ -179,7 +182,7 @@ export class WallService {
       canDelete: post.user.id === viewerId || isOperator,
       canEdit: post.user.id === viewerId,
       isMine: post.user.id === viewerId,
-      canPin: isOperator,
+      canPin: post.ad ? isManager : isOperator,
       createdAt: post.createdAt,
       user: {
         id: post.user.id,
@@ -561,9 +564,13 @@ export class WallService {
     if (!scope) throw new ForbiddenException('دسترسی کافی ندارید');
     const post = await this.prisma.wallPost.findFirst({
       where: { id },
-      select: { id: true, cityId: true },
+      select: { id: true, cityId: true, adId: true },
     });
     if (!post) throw new NotFoundException('پیام یافت نشد');
+    // An ad can only be pinned by a manager — ناظر may pin plain messages.
+    if (post.adId != null && scope.role === 'MODERATOR') {
+      throw new ForbiddenException('سنجاق کردن آگهی فقط برای مدیر مجاز است');
+    }
     if (pinned) {
       await this.prisma.wallPost.updateMany({
         where: { cityId: post.cityId, isPinned: true },

@@ -20,7 +20,10 @@ const mustExist = [
 let fail = 0;
 for (const p of mustExist) if (!existsSync(p)) { console.error('MISSING', p); fail++; }
 
-const read = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : '');
+// Normalise line endings: this working tree can check out CRLF (Windows
+// autocrlf) while the markers below are written with \n. CI runs on LF, but the
+// check must be portable to a dev box too.
+const read = (p) => (existsSync(p) ? readFileSync(p, 'utf8').replace(/\r\n/g, '\n') : '');
 
 // --- Prisma: the menu table + cascade ---
 const schema = read('prisma/schema.prisma');

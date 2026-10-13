@@ -20,7 +20,7 @@ function makePrisma() {
   };
 }
 
-function makeService() {
+function makeService(extraConfig: Record<string, string> = {}) {
   const prisma = makePrisma();
   const config = new ConfigService({
     OTP_HASH_SECRET: PEPPER,
@@ -32,6 +32,7 @@ function makeService() {
     OTP_REQUEST_LIMIT_PER_HOUR: '5',
     OTP_RESEND_COOLDOWN_SECONDS: '60',
     JWT_REFRESH_TTL: '30d',
+    ...extraConfig,
   });
   const jwt = new JwtService({ secret: ACCESS_SECRET, signOptions: { expiresIn: '15m' } });
   const rateLimiter = {
@@ -303,12 +304,13 @@ describe('AuthService.refresh', () => {
     expect(prisma.userSession.updateMany).not.toHaveBeenCalled();
   });
 
-  it('detects token reuse and revokes the whole family', async () => {
+  it('detects reuse outside the grace window and revokes the whole family', async () => {
     const { service, prisma } = makeService();
     prisma.userSession.findUnique.mockResolvedValue({
       id: 5,
       userId: 1,
-      revokedAt: new Date(),
+      // rotated well before the 60s grace window => genuine reuse/theft
+      revokedAt: new Date(Date.now() - 120_000),
       expiresAt: new Date(Date.now() + 86_400_000),
     });
     await expectHttp(
@@ -318,8 +320,62 @@ describe('AuthService.refresh', () => {
     );
     expect(prisma.userSession.updateMany).toHaveBeenCalledWith({
       where: { userId: 1, revokedAt: null },
-      data: { revokedAt: expect.any(Date) },
+      data: { revokedAt: expect.any(Date), expiresAt: expect.any(Date) },
     });
+  });
+
+  it('accepts a just-rotated token inside the grace window (restored tabs racing)', async () => {
+    const { service, prisma } = makeService();
+    prisma.userSession.findUnique.mockResolvedValue({
+      id: 5,
+      userId: 1,
+      revokedAt: new Date(Date.now() - 5_000), // rotated 5s ago by the winning tab
+      expiresAt: new Date(Date.now() + 86_400_000),
+    });
+    prisma.user.findUnique.mockResolvedValue(activeUser);
+    prisma.userSession.create.mockResolvedValue({});
+
+    const stale = 'b'.repeat(64);
+    const result = await service.refresh({ refreshToken: stale, ip: 'ip1' });
+
+    expect(result.refreshToken).not.toBe(stale); // fresh pair, session survives
+    expect(prisma.userSession.create).toHaveBeenCalledTimes(1);
+    expect(prisma.userSession.updateMany).not.toHaveBeenCalled(); // family untouched
+  });
+
+  it('grace can be disabled with REFRESH_REUSE_GRACE_SECONDS=0', async () => {
+    const { service, prisma } = makeService({ REFRESH_REUSE_GRACE_SECONDS: '0' });
+    prisma.userSession.findUnique.mockResolvedValue({
+      id: 5,
+      userId: 1,
+      revokedAt: new Date(Date.now() - 1_000),
+      expiresAt: new Date(Date.now() + 86_400_000),
+    });
+    await expectHttp(
+      service.refresh({ refreshToken: 'x'.repeat(64), ip: 'ip1' }),
+      401,
+      'INVALID_REFRESH_TOKEN',
+    );
+    expect(prisma.userSession.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: 1, revokedAt: null } }),
+    );
+  });
+
+  it('never revives an explicitly logged-out session (expiresAt already reached)', async () => {
+    const { service, prisma } = makeService();
+    prisma.userSession.findUnique.mockResolvedValue({
+      id: 5,
+      userId: 1,
+      revokedAt: new Date(Date.now() - 1_000), // logged out moments ago
+      expiresAt: new Date(Date.now() - 1_000), // logout marks expiry immediately
+    });
+    await expectHttp(
+      service.refresh({ refreshToken: 'x'.repeat(64), ip: 'ip1' }),
+      401,
+      'INVALID_REFRESH_TOKEN',
+    );
+    expect(prisma.userSession.create).not.toHaveBeenCalled();
+    expect(prisma.userSession.updateMany).not.toHaveBeenCalled();
   });
 
   it('rotates the session: revokes the old token and issues a new pair', async () => {
@@ -380,7 +436,8 @@ describe('AuthService.logout', () => {
     expect(result).toEqual({ loggedOut: true });
     expect(prisma.userSession.update).toHaveBeenCalledWith({
       where: { id: 5 },
-      data: { revokedAt: expect.any(Date) },
+      // expiry is forced so the rotation grace window cannot revive it
+      data: { revokedAt: expect.any(Date), expiresAt: expect.any(Date) },
     });
   });
 
@@ -421,7 +478,7 @@ describe('AuthService sessions (session security)', () => {
     expect(result).toEqual({ revoked: 3 });
     expect(prisma.userSession.updateMany).toHaveBeenCalledWith({
       where: { userId: 1, revokedAt: null },
-      data: { revokedAt: expect.any(Date) },
+      data: { revokedAt: expect.any(Date), expiresAt: expect.any(Date) },
     });
   });
 });
