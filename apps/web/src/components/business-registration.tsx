@@ -22,6 +22,25 @@ import type { BusinessCategoryOption, City, CityMapData, PlanItem } from '@/lib/
 const formatRial = (rial: number) => `${new Intl.NumberFormat('fa-IR').format(rial)} ریال`;
 const TIER_ICON: Record<string, string> = { GOLD: '👑', SILVER: '🥈', FREE: '⭐' };
 
+/**
+ * The signup list leads with the trades people actually look for in a city —
+ * café/restaurant, bakery, real-estate agency, car gallery and shops — in that
+ * order; every other trade follows in the order the API returned (Array#sort
+ * is stable). Matched by slug first, with the seeded name as a fallback.
+ */
+const POPULAR_CATEGORY_SLUGS = ['cafe', 'restaurant', 'bakery', 'real_estate', 'car_dealer', 'shop'];
+const POPULAR_CATEGORY_NAMES = ['کافه', 'رستوران', 'نانوایی', 'املاک', 'اتوگالری', 'فروشگاه'];
+
+const popularRank = (c: BusinessCategoryOption): number => {
+  const bySlug = POPULAR_CATEGORY_SLUGS.indexOf(c.slug ?? '');
+  if (bySlug >= 0) return bySlug;
+  const byName = POPULAR_CATEGORY_NAMES.findIndex((n) => (c.name ?? '').trim() === n);
+  return byName >= 0 ? byName : POPULAR_CATEGORY_SLUGS.length;
+};
+
+const popularFirst = (list: BusinessCategoryOption[]): BusinessCategoryOption[] =>
+  [...list].sort((a, b) => popularRank(a) - popularRank(b));
+
 type Step = 1 | 2 | 3;
 
 /**
@@ -69,7 +88,7 @@ export function BusinessRegistration() {
       try {
         const [cats, pls] = await Promise.all([getBusinessCategories(), getPlans()]);
         if (!alive) return;
-        setCategories(cats);
+        setCategories(popularFirst(cats));
         setPlans(pls);
         // The backend files the business under the PROFILE city — frame the
         // map there. localStorage can differ from the profile and used to let
@@ -344,8 +363,7 @@ export function BusinessRegistration() {
 
       {step === 3 && (
         <div>
-          <p className="muted">
-            اشتراک کسب‌وکارت را انتخاب کن. با «تأیید و پرداخت»، کسب‌وکارت ثبت و به درگاه زرین‌پال منتقل می‌شوی.
+          <p className="muted">             اشتراک کسب‌وکارت را انتخاب کن. با «تأیید و پرداخت»، کسب‌وکارت ثبت و به درگاه پرداخت سپال منتقل می‌شوی.
           </p>
           {!plans && !error && (
             <p className="loading muted" aria-busy>

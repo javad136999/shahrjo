@@ -77,6 +77,35 @@ describe('BusinessRegistration', () => {
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/login?next=/business/new'));
   });
 
+  it('opens the category list with the popular trades, then the rest', async () => {
+    m.getBusinessCategories.mockResolvedValue([
+      { id: 1, name: 'لوله‌کشی و تاسیسات', slug: 'plumbing', icon: '🚰' },
+      { id: 2, name: 'فروشگاه', slug: 'shop', icon: '🛍️' },
+      { id: 3, name: 'رستوران', slug: 'restaurant', icon: '🍽️' },
+      { id: 4, name: 'کافه', slug: 'cafe', icon: '☕' },
+      { id: 5, name: 'املاک', slug: 'real_estate', icon: '🏠' },
+      { id: 6, name: 'اتوگالری و خرید و فروش خودرو', slug: 'car_dealer', icon: '🚗' },
+      { id: 7, name: 'نانوایی و شیرینی', slug: 'bakery', icon: '🥖' },
+      { id: 8, name: 'خدمات فنی', slug: 'technical', icon: '🧰' },
+    ]);
+
+    render(<BusinessRegistration />);
+    const select = (await screen.findByLabelText(/دسته‌بندی/)) as HTMLSelectElement;
+    await waitFor(() => expect(select.options.length).toBe(9));
+
+    // کافه، رستوران، نانوایی، املاک، اتوگالری، فروشگاه — then the server order
+    expect([...select.options].map((o) => o.value).slice(1)).toEqual([
+      '4', // کافه
+      '3', // رستوران
+      '7', // نانوایی و شیرینی
+      '5', // املاک
+      '6', // اتوگالری و خرید و فروش خودرو
+      '2', // فروشگاه
+      '1', // لوله‌کشی و تاسیسات (server order)
+      '8', // خدمات فنی (server order)
+    ]);
+  });
+
   it('gates the details step until name and category are chosen', async () => {
     render(<BusinessRegistration />);
     const next = await screen.findByRole('button', { name: /مرحله بعد: موقعیت/ });

@@ -96,7 +96,9 @@ export function BottomNav() {
   const isCityHome = /^\/city\/[^/]+\/?$/.test(pathname);
   const isNewsPage = pathname.startsWith('/city/') && pathname.endsWith('/news');
   const items: NavItem[] = [
-    { id: 'home', href: '/', icon: '🏠', label: 'خانه' },
+    // 🏠 returns to the city the visitor already picked — only someone who has
+    // never chosen a city is sent to the city-selection page (`/`).
+    { id: 'home', href: city ? `/city/${city.slug}` : '/', icon: '🏠', label: 'خانه' },
     { id: 'wall', href: '/wall', icon: '🧱', label: 'دیوار' },
     { id: 'businesses', href: '/businesses', icon: '🏬', label: 'کسب‌وکارها' },
     { id: 'messages', href: '/messages', icon: '💬', label: 'پیام‌ها' },

@@ -3973,10 +3973,12 @@ body.wall-screen .wall-room {
   top: 6px;
 }
 
-/* tall enough that the composer rests at the bottom even with a short feed,
-   capped so a long chat scrolls inside the room instead of moving the page */
+/* The room owns a fixed slice of the viewport: the feed flexes into whatever
+   the bar, the optional pin strip and the composer leave over, so the bottom
+   edge of the message box always lands exactly on the composer — the two
+   panels are attached, with no gap floating above the typing box. */
 body.wall-screen .wall {
-  min-height: calc(100dvh - 24px);
+  height: calc(100dvh - 24px);
 }
 
 /* The chat takes every leftover pixel: the room bar, the optional pin strip
@@ -3984,8 +3986,13 @@ body.wall-screen .wall {
 body.wall-screen .wall-feed {
   flex: 1 1 auto;
   height: auto;
-  min-height: 320px;
-  max-height: calc(100dvh - 250px);
+  min-height: 160px;
+  /* no cap: the feed absorbs every leftover pixel up to the dock, and
+     overflows into its own scroll instead of pushing the room apart */
+  max-height: none;
+  /* the two panels read as one stack: the seam corners are squared off */
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 /* Composer docked to the bottom of the viewport (and of the page). */
@@ -3993,8 +4000,12 @@ body.wall-screen .wall-composer {
   position: sticky;
   bottom: 0;
   z-index: 5;
-  margin-top: auto;
+  /* flush against the message box above it (was `auto`, which parked a
+     free-space gap between the feed and the typing row) */
+  margin-top: 0;
   padding-bottom: max(12px, env(safe-area-inset-bottom));
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
   border-bottom: 0;

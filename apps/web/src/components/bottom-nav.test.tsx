@@ -52,6 +52,8 @@ describe('BottomNav', () => {
     expect(screen.getByTestId('bottom-nav-profile')).toHaveAttribute('href', '/profile');
     expect(screen.getByTestId('bottom-nav-wall')).toHaveAttribute('href', '/wall');
     expect(screen.getByTestId('bottom-nav-messages')).toHaveAttribute('href', '/messages');
+    // the home icon leads back to the remembered city, not to city selection
+    expect(screen.getByTestId('bottom-nav-home')).toHaveAttribute('href', '/city/sample-city');
     // «ثبت آگهی» moved into the city-wall composer (Phase 10)
     expect(screen.queryByTestId('bottom-nav-submit')).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /ثبت آگهی/ })).not.toBeInTheDocument();
@@ -69,6 +71,8 @@ describe('BottomNav', () => {
     render(<BottomNav />);
     expect(await screen.findByTestId('bottom-nav-businesses')).toHaveAttribute('href', '/businesses');
     expect(screen.getByTestId('bottom-nav-register-business')).toHaveAttribute('href', '/business/new');
+    // with no city chosen yet, home falls back to the city-selection page
+    expect(screen.getByTestId('bottom-nav-home')).toHaveAttribute('href', '/');
   });
 
   it('marks home active on the landing page (and never an ads route)', () => {

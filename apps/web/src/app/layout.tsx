@@ -77,7 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <span className="brand-mark" aria-hidden>
                   🏙
                 </span>
-                شهرجو
+                انتخاب شهر
               </Link>
               <HeaderPills />
               <HeaderActions />
