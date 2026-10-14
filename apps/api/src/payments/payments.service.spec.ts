@@ -1,6 +1,7 @@
 import type { User } from '@prisma/client';
 import type { PrismaService } from '../prisma/prisma.service';
 import type { ZarinpalService } from './zarinpal.service';
+import type { SepalService } from './sepal.service';
 import { PaymentsService } from './payments.service';
 import { CheckoutDto } from './payments.dto';
 
@@ -28,8 +29,19 @@ function makeService() {
     verifyPayment: jest.fn(),
     isConfigured: true,
   };
-  const service = new PaymentsService(prisma as unknown as PrismaService, zarinpal as unknown as ZarinpalService);
-  return { service, prisma, zarinpal };
+  // Sepal is the live gateway; default the mock to "not configured" so the
+  // existing cases keep exercising the ZarinPal fallback path.
+  const sepal = {
+    requestPayment: jest.fn(),
+    verifyPayment: jest.fn(),
+    isConfigured: false,
+  };
+  const service = new PaymentsService(
+    prisma as unknown as PrismaService,
+    zarinpal as unknown as ZarinpalService,
+    sepal as unknown as SepalService,
+  );
+  return { service, prisma, zarinpal, sepal };
 }
 
 const checkoutDto = (over: Partial<CheckoutDto> = {}): CheckoutDto => ({ planId: 3, ...over });
@@ -65,6 +77,40 @@ describe('PaymentsService.checkout', () => {
     expect(prisma.payment.update.mock.calls[0][0].data).toMatchObject({ status: 'STARTED', authority: 'A123' });
     expect(result.payUrl).toContain('A123');
     expect(result.amount).toBe(4_000_000);
+  });
+
+  it('uses Sepal when SEPAL_API_KEY is set and freezes provider=SEPAL on the row', async () => {
+    const { service, prisma, zarinpal, sepal } = makeService();
+    sepal.isConfigured = true;
+    prisma.subscriptionPlan.findFirst.mockResolvedValue({ id: 3, code: 'GOLD_1M', tier: 'GOLD', label: '۱ ماهه', price: 4_000_000n });
+    prisma.payment.count.mockResolvedValue(0);
+    prisma.payment.create.mockResolvedValue({ id: 71, amount: 4_000_000n });
+    sepal.requestPayment.mockResolvedValue({ authority: '987654', payUrl: 'https://payment.sepal.ir/api/v1/payment/987654/', code: 100, message: '' });
+    prisma.payment.update.mockResolvedValue({ id: 71, amount: 4_000_000n, authority: '987654' });
+
+    const result = await service.checkout(user, checkoutDto());
+
+    expect(prisma.payment.create.mock.calls[0][0].data.provider).toBe('SEPAL');
+    // invoice number is our own payment id — the callback row can be found from it
+    expect(sepal.requestPayment).toHaveBeenCalledWith(4_000_000n, '71', expect.stringContaining('اشتراک'));
+    expect(zarinpal.requestPayment).not.toHaveBeenCalled();
+    expect(prisma.payment.update.mock.calls[0][0].data).toMatchObject({ status: 'STARTED', authority: '987654' });
+    expect(result.payUrl).toContain('987654');
+  });
+
+  it('falls back to ZarinPal when Sepal has no key and records provider=ZARINPAL', async () => {
+    const { service, prisma, zarinpal, sepal } = makeService();
+    prisma.subscriptionPlan.findFirst.mockResolvedValue({ id: 3, code: 'GOLD_1M', tier: 'GOLD', label: '۱ ماهه', price: 4_000_000n });
+    prisma.payment.count.mockResolvedValue(0);
+    prisma.payment.create.mockResolvedValue({ id: 72, amount: 4_000_000n });
+    zarinpal.requestPayment.mockResolvedValue({ authority: 'A1', payUrl: 'x', code: 100, message: '' });
+    prisma.payment.update.mockResolvedValue({ id: 72, amount: 4_000_000n, authority: 'A1' });
+
+    await service.checkout(user, checkoutDto());
+
+    expect(sepal.requestPayment).not.toHaveBeenCalled();
+    expect(prisma.payment.create.mock.calls[0][0].data.provider).toBe('ZARINPAL');
+    expect(zarinpal.requestPayment).toHaveBeenCalled();
   });
 
   it('binds the payment to an owned business when businessId is given', async () => {
@@ -160,6 +206,35 @@ describe('PaymentsService.handleCallback', () => {
     expect(await service.handleCallback('A123', 'OK')).toBe('ALREADY_PAID');
     expect(zarinpal.verifyPayment).not.toHaveBeenCalled();
     expect(prisma.subscription.create).not.toHaveBeenCalled(); // a replayed callback must not activate twice
+  });
+
+  it('verifies with Sepal (invoice = our payment id) when the row provider is SEPAL', async () => {
+    const { service, prisma, zarinpal, sepal } = makeService();
+    prisma.payment.findUnique.mockResolvedValue(storedPayment({ provider: 'SEPAL' }));
+    prisma.payment.updateMany.mockResolvedValue({ count: 1 });
+    sepal.verifyPayment.mockResolvedValue({ code: 100, refId: '1234567890', message: '' });
+    prisma.subscriptionPlan.findUniqueOrThrow.mockResolvedValue({ tier: 'GOLD', durationDays: 30 });
+    prisma.subscription.create.mockResolvedValue({ id: 1 });
+
+    expect(await service.handleCallback('987654', 'OK')).toBe('SUCCESS');
+    expect(sepal.verifyPayment).toHaveBeenCalledWith(4_000_000n, '987654', '55');
+    expect(zarinpal.verifyPayment).not.toHaveBeenCalled();
+
+    const claim = prisma.payment.updateMany.mock.calls[0][0];
+    expect(claim.data).toMatchObject({ status: 'SUCCESS', resultCode: 100, refId: '1234567890' });
+  });
+
+  it('marks FAILED when Sepal verify is rejected', async () => {
+    const { service, prisma, sepal } = makeService();
+    prisma.payment.findUnique.mockResolvedValue(storedPayment({ provider: 'SEPAL' }));
+    prisma.payment.updateMany.mockResolvedValue({ count: 1 });
+    sepal.verifyPayment.mockResolvedValue({ code: -1, refId: null, message: 'verify_failed' });
+
+    expect(await service.handleCallback('987654', 'OK')).toBe('FAILED');
+    expect(prisma.payment.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'FAILED' }) }),
+    );
+    expect(prisma.subscription.create).not.toHaveBeenCalled();
   });
 
   it('marks FAILED when verify returns an error code', async () => {

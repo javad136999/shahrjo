@@ -53,20 +53,21 @@
 | GET `/businesses/:id` | @Public | پروفایل کامل کسب‌وکار (توضیحات، ساعات کاری، شبکه‌های اجتماعی) + **`products[]` = منو و محصولات** (اسم، توضیح، عکس، `section`، قیمت ریالی یا `null` = توافقی، `isAvailable`) + شمارش بازدید؛ فقط `APPROVED`. ورود از پین نقشه/ویترین هم همین را نشان می‌دهد |
 | GET/PATCH `/users/me` | Bearer | اطلاعات پروفایل (نام نمایشی قابل ویرایش) — پیش‌تر پیاده‌شده |
 
-## Subscriptions / ZarinPal (فاز ۷ — اشتراک و پرداخت)
+## Subscriptions / Sepal (فاز ۷ — اشتراک و پرداخت)
 
-> ✅ **پیاده‌شده در Phase 7**: انتخاب پلن → درگاه زرین‌پال → بازگشت callback → verify سمت سرور → ایجاد اشتراک.
+> ✅ **پیاده‌شده در Phase 7**: انتخاب پلن → **درگاه سپال (Sepal)** → بازگشت callback → verify سمت سرور → ایجاد اشتراک.
+> زرین‌پال به‌عنوان fallback می‌ماند: اگر `SEPAL_API_KEY` خالی باشد، checkout از ZarinPal استفاده می‌کند و درجِ `provider` روی ردیف پرداخت (SEPAL/ZARINPAL) تعیین می‌کند callback با کدام گیت‌وی verify شود.
 > مبلغ verify همیشه از ردیف پرداختِ ذخیره‌شده خوانده می‌شود (هرگز از query/کلاینت)؛ callback با `@Public` است و با 302 به `/plans/result` در وب برمی‌گردد.
 
 | Endpoint | Auth | Body / توضیح |
 |---|---|---|
 | GET `/subscription-plans` | @Public | پلن‌های فعال (`GOLD`/`SILVER`، قیمت BigInt → عدد) برای صفحه /plans |
-| POST `/payments/checkout` | Bearer | `{ planId, businessId? }` → ایجاد پرداخت `CREATED`، دریافت authority از زرین‌پال، وضعیت `STARTED` → `{ paymentId, payUrl, authority, amount }`؛ سقف ۱۰ checkout در ساعت؛ `businessId` فقط اگر متعلق به خود کاربر باشد |
-| GET `/payments/callback?Authority=&Status=` | @Public | بازگشت درگاه: اگر `Status=OK` → verify سمت سرور (کد 100/101 = موفق)؛ تراکنش موفق در یک تراکنش DB به `SUCCESS` + ایجاد `Subscription` می‌شود (تکرارِ callback → `ALREADY_PAID` بدون اشتراک دوم)؛ وگرنه `CANCELED`/`FAILED`؛ سپس 302 به `WEB_URL/plans/result?status=...` |
+| POST `/payments/checkout` | Bearer | `{ planId, businessId? }` → ایجاد پرداخت `CREATED` (+ `provider`)، دریافت pay URL از سپال (`invoiceNumber` = شناسه پرداخت)، وضعیت `STARTED` → `{ paymentId, payUrl, authority, amount }`؛ سقف ۱۰ checkout در ساعت؛ `businessId` فقط اگر متعلق به خود کاربر باشد |
+| GET `/payments/callback?Authority=&Status=` یا `?paymentNumber=&status=` | @Public | بازگشت درگاه (هر دو سبک: زرین‌پال `Authority/Status=OK`، سپال `paymentNumber/status=1` با `callbackMethod=get`) → نرمال‌سازی به یک قرارداد و verify سمت سرور با همان providerِ ثبت‌شده (کد 100/101 = موفق)؛ تراکنش موفق در یک تراکنش DB به `SUCCESS` + ایجاد `Subscription` می‌شود (تکرارِ callback → `ALREADY_PAID` بدون اشتراک دوم)؛ وگرنه `CANCELED`/`FAILED`؛ سپس 302 به `WEB_URL/plans/result?status=...` |
 | GET `/payments/mine` | Bearer | تاریخچه پرداخت‌های کاربر (مبلغ عددی، برچسب پلن) |
 | GET `/subscriptions/mine` | Bearer | اشتراک‌های کاربر + وضعیت (`ACTIVE`/`PENDING_REVIEW`) و نام کسب‌وکار |
 
-قانون اشتراک: پلنِ متصل به کسب‌وکار پس از پرداخت `PENDING_REVIEW` می‌ماند (تأیید مدیر)؛ پلنِ شخصی بلافاصله `ACTIVE` می‌شود. merchant id فقط در env (`ZARINPAL_*`).
+قانون اشتراک: پلنِ متصل به کسب‌وکار پس از پرداخت `PENDING_REVIEW` می‌ماند (تأیید مدیر)؛ پلنِ شخصی بلافاصله `ACTIVE` می‌شود. کلیدها فقط در env (`SEPAL_*` و `ZARINPAL_*`) — هرگز در کد یا سمت کلاینت.
 
 ## Content (همه City-scoped)
 

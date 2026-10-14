@@ -8,6 +8,7 @@ import {
 import type { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CheckoutDto } from './payments.dto';
+import { SepalService } from './sepal.service';
 import { ZarinpalService } from './zarinpal.service';
 
 /** Per-user hourly checkout cap — aborted sessions should not spam the gateway. */
@@ -34,24 +35,28 @@ export interface CheckoutResult {
 export type PaymentResultStatus = 'SUCCESS' | 'FAILED' | 'CANCELED' | 'ALREADY_PAID';
 
 /**
- * Subscription purchase via ZarinPal (Phase 7).
+ * Subscription purchase (Phase 7) — Sepal (سپال) is the live gateway,
+ * ZarinPal stays as the configured fallback (whichever is configured wins:
+ * Sepal first).
  *
- * Flow: POST /payments/checkout creates a CREATED payment and asks ZarinPal
- * for an authority -> the payer is redirected to the gateway -> ZarinPal
+ * Flow: POST /payments/checkout creates a CREATED payment and asks the
+ * gateway for a pay URL -> the payer is redirected there -> the gateway
  * redirects back to GET /payments/callback, which verifies server-to-server,
  * marks the payment SUCCESS and creates the Subscription. A paid subscription
  * bound to a business still requires admin approval before it promotes
  * anything public; a personal subscription activates immediately.
  *
  * The callback is the only place money is confirmed — the client never
- * reports success, and `Status` from the query string is never trusted on
- * its own (verify is always called with our own stored amount).
+ * reports success, and the gateway's `Status`/`status` from the query string
+ * is never trusted on its own (verify is always called with our own stored
+ * amount and the Payment row's own provider).
  */
 @Injectable()
 export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly zarinpal: ZarinpalService,
+    private readonly sepal: SepalService,
   ) {}
 
   /** Active purchasable plans (public — shown on /plans before login). */
@@ -97,6 +102,12 @@ export class PaymentsService {
       throw new HttpException('سقف پرداخت در ساعت پر شده است؛ کمی بعد دوباره تلاش کنید', HttpStatus.TOO_MANY_REQUESTS);
     }
 
+    // Sepal (سپال) is the active gateway; ZarinPal only serves when Sepal
+    // has no key (local sandbox). The choice is frozen on the Payment row so
+    // the callback verifies against the same gateway that took the money.
+    const useSepal = this.sepal.isConfigured;
+    const description = `اشتراک ${plan.label} شهرجو (${plan.code})`;
+
     const payment = await this.prisma.payment.create({
       data: {
         userId: user.id,
@@ -104,16 +115,16 @@ export class PaymentsService {
         planId: plan.id,
         amount: plan.price, // BigInt Rial — the exact amount we will verify later
         status: 'CREATED',
+        provider: useSepal ? 'SEPAL' : 'ZARINPAL',
       },
       select: { id: true, amount: true },
     });
 
     let gateway;
     try {
-      gateway = await this.zarinpal.requestPayment(
-        payment.amount,
-        `اشتراک ${plan.label} شهرجو (${plan.code})`,
-      );
+      gateway = useSepal
+        ? await this.sepal.requestPayment(payment.amount, String(payment.id), description)
+        : await this.zarinpal.requestPayment(payment.amount, description);
     } catch (err) {
       // Keep the failed attempt for audit instead of leaving a dangling CREATED row.
       await this.prisma.payment.update({
@@ -157,6 +168,7 @@ export class PaymentsService {
         amount: true,
         status: true,
         refId: true,
+        provider: true,
       },
     });
     if (!payment) throw new NotFoundException('تراکنش یافت نشد');
@@ -170,7 +182,12 @@ export class PaymentsService {
       return 'CANCELED';
     }
 
-    const verify = await this.zarinpal.verifyPayment(payment.amount, authority);
+    // Verify with the gateway that created this payment (frozen at checkout).
+    // Sepal's invoice number is our payment id — deterministic, no extra column.
+    const verify =
+      payment.provider === 'SEPAL'
+        ? await this.sepal.verifyPayment(payment.amount, authority, String(payment.id))
+        : await this.zarinpal.verifyPayment(payment.amount, authority);
     if (verify.code !== 100 && verify.code !== 101) {
       await this.prisma.payment.updateMany({
         where: { id: payment.id, status: { in: ['CREATED', 'STARTED'] } },
@@ -199,7 +216,8 @@ export class PaymentsService {
         data: {
           status: 'SUCCESS',
           resultCode: verify.code,
-          refId: verify.refId === null ? null : String(verify.refId),
+          // refId is varchar(32): Sepal reference numbers are digit strings — clip defensively.
+          refId: verify.refId === null ? null : String(verify.refId).slice(0, 32),
           verifiedAt: new Date(),
           paidAt: new Date(),
         },

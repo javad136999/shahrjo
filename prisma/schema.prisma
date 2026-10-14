@@ -716,6 +716,7 @@ enum PaymentStatus {
 
 enum PaymentProvider {
   ZARINPAL
+  SEPAL
 }
 
 // Admin-defined purchasable plans (prices in Rial, editable without code changes).

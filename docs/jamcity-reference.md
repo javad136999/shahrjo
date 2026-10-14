@@ -81,6 +81,6 @@ Stack JamCity: Next.js 14 + Supabase (Auth/DB/RLS) + Leaflet + Tailwind + PWA �
 ## ۶. تفاوت‌های اجباری ShahrJo
 
 1. **Auth**: OTP پیامکی بدون Password (پیاده‌شده در Phase 2).
-2. **Payment**: زرین‌پال با Callback+Verify و تأیید ادمین قبل از فعال‌سازی اشتراک.
+2. **Payment**: سپال (Sepal) با Callback+Verify و تأیید ادمین قبل از فعال‌سازی اشتراک (ZarinPal fallback).
 3. **بدون Supabase**: همه RPS/Trigger/Storage آن‌ها → NestJS + Prisma + StorageService.
 4. Multi-City از روز اول: `city_id` روی همه رکوردهای شهرمحور.

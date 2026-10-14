@@ -21,8 +21,7 @@ describe('صفحه حریم خصوصی', () => {
     render(<PrivacyPage />);
     expect(screen.getByRole('heading', { level: 1, name: 'حریم خصوصی' })).toBeTruthy();
     expect(screen.getByTestId('legal-date').textContent).toContain('آخرین به‌روزرسانی');
-    const text = screen.getByTestId('privacy-page').textContent ?? '';
-    for (const keyword of ['احراز هویت', 'زرین‌پال', 'پیامک', 'کوکی', 'مدت نگهداری', 'دسترسی، اصلاح', 'تغییرات این سیاست', 'OpenStreetMap']) {
+    const text = screen.getByTestId('privacy-page').textContent ?? '';     for (const keyword of ['احراز هویت', 'سپال', 'پیامک', 'کوکی', 'مدت نگهداری', 'دسترسی، اصلاح', 'تغییرات این سیاست', 'OpenStreetMap']) {
       expect(text).toContain(keyword);
     }
     expect(text).toContain('کوکی استفاده نمی‌شود');
@@ -51,8 +50,7 @@ describe('صفحه شرایط استفاده', () => {
     render(<TermsPage />);
     expect(screen.getByRole('heading', { level: 1, name: 'شرایط استفاده' })).toBeTruthy();
     expect(screen.getByTestId('legal-date').textContent).toContain('آخرین به‌روزرسانی');
-    const text = screen.getByTestId('terms-page').textContent ?? '';
-    for (const keyword of ['طلایی', 'نقره‌ای', 'زرین‌پال', 'تأیید موفق پرداخت توسط سرور', 'تأیید مدیر', 'تمدید خودکار وجود ندارد', 'گزارش تخلف', 'بازپرداخت', 'شناسه پیگیری', 'خودکار انجام نمی‌شود', 'CVV2', 'پیش‌نویس']) {
+    const text = screen.getByTestId('terms-page').textContent ?? '';     for (const keyword of ['طلایی', 'نقره‌ای', 'سپال', 'تأیید موفق پرداخت توسط سرور', 'تأیید مدیر', 'تمدید خودکار وجود ندارد', 'گزارش تخلف', 'بازپرداخت', 'شناسه پیگیری', 'خودکار انجام نمی‌شود', 'CVV2', 'پیش‌نویس']) {
       expect(text).toContain(keyword);
     }
   });

@@ -7,12 +7,15 @@ import { CheckoutDto } from './payments.dto';
 import { PaymentsService } from './payments.service';
 
 /**
- * ZarinPal subscription payments (Phase 7).
+ * Subscription payments (Phase 7) — Sepal (سپال) live, ZarinPal fallback.
  *
- * The callback is public on purpose: ZarinPal redirects the payer's browser
- * there without any JWT. It never trusts the query string for success — the
- * service always verifies server-to-server with our stored amount — and it
- * answers with a 302 to the web result page instead of JSON.
+ * The callback is public on purpose: the gateway redirects the payer's browser
+ * there without any JWT. Both gateways arrive as GET query strings:
+ *   ZarinPal: ?Authority=...&Status=OK|NOK
+ *   Sepal:    ?paymentNumber=...&status=1|0&invoiceNumber=... (callbackMethod=get)
+ * It never trusts the query string for success — the service always verifies
+ * server-to-server with our stored amount — and answers with a 302 to the web
+ * result page instead of JSON.
  */
 @Controller()
 export class PaymentsController {
@@ -56,10 +59,17 @@ export class PaymentsController {
   async callback(
     @Query('Authority') authorityQuery?: string,
     @Query('Status') statusQuery?: string,
+    @Query('paymentNumber') paymentNumberQuery?: string,
+    @Query('status') sepalStatusQuery?: string,
     @Res() res?: Response,
   ): Promise<void> {
-    const authority = String(authorityQuery ?? '').trim();
-    const status = String(statusQuery ?? '').trim();
+    // Normalize both gateways onto (authority, status=OK|NOK):
+    // Sepal identifies the row by paymentNumber and reports 1/0.
+    const authority = String(paymentNumberQuery ?? authorityQuery ?? '').trim();
+    const rawStatus = paymentNumberQuery !== undefined ? sepalStatusQuery : statusQuery;
+    const normalized =
+      paymentNumberQuery !== undefined ? (String(rawStatus ?? '').trim() === '1' ? 'OK' : 'NOK') : String(rawStatus ?? '').trim();
+    const status = normalized;
     const webUrl = (this.config.get<string>('WEB_URL') ?? 'http://localhost:3000').replace(/\/+$/, '');
 
     let result: string = 'FAILED';
