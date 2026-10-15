@@ -24,6 +24,7 @@ const endpoints = [
   "@Post('ads/:id/approve')",
   "@Post('ads/:id/reject')",
   "@Get('businesses')",
+  "@Post('businesses')", // manual signup by an operator (ثبت دستی)
   "@Post('businesses/:id/approve')",
   "@Post('businesses/:id/reject')",
   "@Post('businesses/:id/suspend')",

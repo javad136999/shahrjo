@@ -353,6 +353,23 @@ export async function getAdminBusinesses(status: string): Promise<QueueBusiness[
   return api.get<QueueBusiness[]>(`/admin/businesses?status=${encodeURIComponent(status)}`);
 }
 
+/**
+ * Manual signup by an operator («ثبت دستی کسب‌وکار»): published immediately —
+ * the operator IS the moderation step. The owner is an existing user found by
+ * phone, or the operator's own account when `ownerPhone` is omitted.
+ */
+export async function adminCreateBusiness(body: {
+  cityId: number;
+  categoryId: number;
+  name: string;
+  description?: string;
+  phone?: string;
+  address?: string;
+  ownerPhone?: string;
+}): Promise<{ id: number; name: string; status: string }> {
+  return api.post<{ id: number; name: string; status: string }>('/admin/businesses', body);
+}
+
 export async function approveAdminBusiness(
   id: number,
   body: { reason?: string; latitude?: number; longitude?: number } = {},

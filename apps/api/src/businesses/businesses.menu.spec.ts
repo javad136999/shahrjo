@@ -70,7 +70,8 @@ describe('BusinessesService — «کسب‌وکارهای من» + menu/products
       ]);
       const list = await service.mine(owner);
       expect(prisma.business.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { ownerId: 7 } }),
+        // deleted rows are gone for their owner too; suspended ones stay
+        expect.objectContaining({ where: { ownerId: 7, status: { not: 'DELETED' } } }),
       );
       expect(list[0]).toMatchObject({ productCount: 2, pinned: true, status: 'PENDING' });
     });

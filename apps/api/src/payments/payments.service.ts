@@ -44,10 +44,12 @@ export type PaymentResultStatus = 'SUCCESS' | 'FAILED' | 'CANCELED' | 'ALREADY_P
  * redirects back to GET /payments/callback, which verifies server-to-server,
  * marks the payment SUCCESS and creates the Subscription ACTIVE. The same
  * transaction also promotes the business the plan was paid for: its tier,
- * expiry and showcase priority are set immediately, and a business still
- * waiting in the moderation queue (PENDING) is approved right there — a paid
- * registration needs no admin step. An explicit admin REJECTED/CLOSED is
- * never overridden by money (the tier is applied, the status is left alone).
+ * expiry and showcase priority are set immediately, a business still waiting
+ * in the moderation queue (PENDING) is approved right there — a paid
+ * registration needs no admin step — and a suspended business (CLOSED, either
+ * manually or after its subscription ran out) is brought back for the
+ * purchased duration. An explicit admin REJECTED/DELETED is never overridden
+ * by money (the tier is applied, the moderation decision is left alone).
  *
  * The callback is the only place money is confirmed — the client never
  * reports success, and the gateway's `Status`/`status` from the query string
@@ -251,29 +253,51 @@ export class PaymentsService {
       });
 
       if (payment.businessId !== null) {
-        // Same transaction: promote the business this plan was paid for. A
-        // registration still waiting in the queue (PENDING) is approved right
-        // here — no admin step for a paid signup. An explicit admin decision
-        // (REJECTED/CLOSED/DELETED) is never overridden: only the tier changes.
+        // Same transaction: promote the business this plan was paid for.
+        // - PENDING (still in the moderation queue) → approved: a paid signup
+        //   needs no admin step.
+        // - CLOSED (suspended — by an admin, or because the subscription ran
+        //   out) → back to life, and the purchased duration is APPENDED to
+        //   whatever is left of the old period, so a suspension never eats
+        //   the plan the owner just bought.
+        // An explicit admin REJECTED/DELETED is never overridden: money does
+        // not undo a moderation decision, only the tier changes there.
         const business = await tx.business.findUnique({
           where: { id: payment.businessId },
           select: { status: true, subscriptionExpiresAt: true },
         });
         if (business) {
-          // Never shorten an already-active period: keep the later expiry
-          // (same rule the admin approval path applies).
           const current = business.subscriptionExpiresAt;
-          const effective = current && current > expiresAt ? current : expiresAt;
-          await tx.business.update({
-            where: { id: payment.businessId },
-            data: {
-              ...(business.status === 'PENDING' ? { status: 'APPROVED' as const } : {}),
-              subscriptionTier: plan.tier,
-              subscriptionStatus: 'ACTIVE',
-              subscriptionExpiresAt: effective,
-              showcasePriority: plan.tier === 'GOLD' ? 10 : 50,
-            },
-          });
+
+          if (business.status === 'CLOSED') {
+            // Reactivation: count from the later of "now" and the still-running
+            // period, then add the purchased duration.
+            const base = current && current > now ? current.getTime() : now.getTime();
+            await tx.business.update({
+              where: { id: payment.businessId },
+              data: {
+                status: 'APPROVED' as const,
+                subscriptionTier: plan.tier,
+                subscriptionStatus: 'ACTIVE',
+                subscriptionExpiresAt: new Date(base + plan.durationDays * 86_400_000),
+                showcasePriority: plan.tier === 'GOLD' ? 10 : 50,
+              },
+            });
+          } else {
+            // Never shorten an already-active period: keep the later expiry
+            // (same rule the admin approval path applies).
+            const effective = current && current > expiresAt ? current : expiresAt;
+            await tx.business.update({
+              where: { id: payment.businessId },
+              data: {
+                ...(business.status === 'PENDING' ? { status: 'APPROVED' as const } : {}),
+                subscriptionTier: plan.tier,
+                subscriptionStatus: 'ACTIVE',
+                subscriptionExpiresAt: effective,
+                showcasePriority: plan.tier === 'GOLD' ? 10 : 50,
+              },
+            });
+          }
         }
       }
 

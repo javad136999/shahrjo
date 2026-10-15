@@ -5070,6 +5070,50 @@ button.pill {
   gap: 6px;
   flex-wrap: wrap;
 }
+/* Owner comfort: the row behaves like a product card — photo first, actions
+   tucked under the info on narrow screens so nothing overlaps. */
+@media (max-width: 560px) {
+  .biz-menu__row {
+    flex-wrap: wrap;
+  }
+  .biz-menu__info {
+    flex-basis: calc(100% - 66px);
+  }
+  .biz-menu__rowactions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+.biz-menu__row:hover {
+  border-color: var(--brand-soft);
+  box-shadow: var(--shadow);
+}
+
+/* Suspended business card (تعلیق): why + the reactivate path. */
+.mybiz__suspended {
+  margin: 2px 0 0;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  color: #92600a;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+/* Manual signup form in the admin panel (ثبت دستی کسب‌وکار). */
+.admin-create {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 13px 14px;
+  border: 1px dashed var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+.admin-create__form {
+  margin-top: 4px;
+}
 .biz-product-form {
   margin-top: 14px;
   padding-top: 14px;

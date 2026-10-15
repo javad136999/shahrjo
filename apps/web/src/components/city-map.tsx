@@ -91,6 +91,9 @@ const MIN_HALF_LNG = 0.025;
 /** Widest zoom we ever force: a town/city overview, never a single street. */
 const URBAN_MAX_ZOOM = 14;
 const FILTER_MAX_ZOOM = 15;
+/** How far past the city outline the pan frame reaches (degrees). */
+const SLACK_LAT = 0.02;
+const SLACK_LNG = 0.02;
 
 function growBox(box: LatLngBox, lat: number, lng: number): LatLngBox {
   return [
@@ -197,29 +200,35 @@ export function CityMap({ data }: CityMapProps) {
       // bounds of the admin outline, computed before the map exists
       const outline = boundary ? boundsOfBoundary(boundary) : null;
 
-      // stay inside the city — no endless empty countryside (but every pin stays reachable)
+      // stay inside the city — no endless empty countryside (but every pin stays
+      // reachable). The slack around the outline is thin on purpose: the frame
+      // hugs the urban area instead of showing a ring of desert (Shiraz used to
+      // open with ~15 km of empty land around it).
       const pinPoints = businesses.map((b) => [b.latitude, b.longitude] as [number, number]);
       const baseBox: LatLngBox | undefined = outline
         ? [
-            [outline[0][0] - 0.1, outline[0][1] - 0.1],
-            [outline[1][0] + 0.1, outline[1][1] + 0.1],
+            [outline[0][0] - SLACK_LAT, outline[0][1] - SLACK_LNG],
+            [outline[1][0] + SLACK_LAT, outline[1][1] + SLACK_LNG],
           ]
         : center
           ? [
-              [center[0] - 0.4, center[1] - 0.4],
-              [center[0] + 0.4, center[1] + 0.4],
+              [center[0] - 0.25, center[1] - 0.25],
+              [center[0] + 0.25, center[1] + 0.25],
             ]
           : undefined;
       let maxBounds: LatLngBox | undefined = baseBox;
       for (const [lat, lng] of pinPoints) {
-        if (maxBounds) maxBounds = growBox(maxBounds, lat - 0.1, lng - 0.1);
-        if (maxBounds) maxBounds = growBox(maxBounds, lat + 0.1, lng + 0.1);
+        if (maxBounds) maxBounds = growBox(maxBounds, lat - SLACK_LAT, lng - SLACK_LNG);
+        if (maxBounds) maxBounds = growBox(maxBounds, lat + SLACK_LAT, lng + SLACK_LNG);
       }
 
+      // maxBounds + full viscosity = a hard frame: panning into the surrounding
+      // countryside simply bounces back, so the canvas never leaves the city.
+      // Wheel zoom stays on — zooming is exactly what a visitor does inside it.
       map = L.map(holder.current, {
-        scrollWheelZoom: false,
+        scrollWheelZoom: true,
         zoomControl: true,
-        maxBoundsViscosity: 0.6,
+        maxBoundsViscosity: 1.0,
         ...(maxBounds ? { maxBounds } : {}),
       });
 

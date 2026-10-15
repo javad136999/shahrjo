@@ -33,6 +33,48 @@ export class BusinessDecisionDto extends DecisionDto {
   longitude?: number;
 }
 
+/**
+ * Manual signup by an operator («ثبت دستی کسب‌وکار»). The owner economy is
+ * self-serve (register + pay → live), but an admin must also be able to put a
+ * business on the map by hand: a shop that never signs up, a migrated
+ * listing, a sponsor. Published immediately — the operator IS the moderation
+ * step — so the shape is deliberately small.
+ */
+export class AdminCreateBusinessDto extends BusinessDecisionDto {
+  @Type(() => Number)
+  @IsNumber()
+  cityId!: number;
+
+  @Type(() => Number)
+  @IsNumber()
+  categoryId!: number;
+
+  @IsString()
+  @MaxLength(160)
+  name!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(15)
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  address?: string;
+
+  /** Owner account: phone of an existing user; omitted → the operator owns it. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(15)
+  ownerPhone?: string;
+}
+
 /** GeoJSON Polygon boundary of a city map (null/undefined clears it). */
 export class BoundaryDto {
   /** Deep shape/range/cap checks live in normalizeBoundary. */
@@ -434,6 +476,104 @@ export class AdminService {
     });
     this.logger.log(`business #${id} deleted (${purged.removed} file(s) freed)`);
     return { ...updated, status: String(updated.status), removedFiles: purged.removed };
+  }
+
+  /**
+   * Manual signup (ثبت دستی): an operator publishes a business directly —
+   * status APPROVED, FREE tier, no payment flow and no queue. The city must
+   * fall inside the operator's scope, and the owner is an existing user found
+   * by phone or, by default, the operator's own account. Every row is audited.
+   */
+  async createBusiness(
+    user: User,
+    dto: AdminCreateBusinessDto,
+  ): Promise<{ id: number; name: string; status: string }> {
+    const scope = await this.scopeOf(user.id);
+    const adminId = await this.adminRowId(user.id);
+
+    if (scope.cityId && scope.cityId !== dto.cityId) {
+      throw new ForbiddenException('خارج از محدوده شهر شماست');
+    }
+    const city = await this.prisma.city.findFirst({
+      where: {
+        id: dto.cityId,
+        isActive: true,
+        ...(scope.provinceId ? { provinceId: scope.provinceId } : {}),
+      },
+      select: { id: true },
+    });
+    if (!city) throw new NotFoundException('شهر یافت نشد');
+
+    const category = await this.prisma.businessCategory.findFirst({
+      where: { id: dto.categoryId, isActive: true },
+      select: { id: true },
+    });
+    if (!category) throw new NotFoundException('دسته‌بندی یافت نشد');
+
+    // Optional map pin: both coordinates or neither (same rule as approve).
+    const hasLat = dto.latitude !== undefined;
+    const hasLng = dto.longitude !== undefined;
+    if (hasLat !== hasLng) throw new BadRequestException('مختصات باید کامل وارد شود');
+    if (hasLat && (dto.latitude! < -90 || dto.latitude! > 90 || dto.longitude! < -180 || dto.longitude! > 180)) {
+      throw new BadRequestException('مختصات نامعتبر است');
+    }
+
+    let ownerId = user.id;
+    if (dto.ownerPhone?.trim()) {
+      const owner = await this.prisma.user.findFirst({
+        where: { phone: dto.ownerPhone.trim() },
+        select: { id: true },
+      });
+      if (!owner) throw new NotFoundException('کاربری با این شماره ثبت نکرده است');
+      ownerId = owner.id;
+    }
+
+    // Unique slug: transliterated base + short random suffix (same recipe the
+    // owner signup uses — Persian names keep their letters/numbers).
+    const base =
+      dto.name
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60) || 'business';
+    let slug = '';
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const candidate = `${base}-${Math.random().toString(36).slice(2, 8)}`;
+      const clash = await this.prisma.business.findUnique({ where: { slug: candidate }, select: { id: true } });
+      if (!clash) {
+        slug = candidate;
+        break;
+      }
+    }
+    if (!slug) throw new BadRequestException('خطا در ثبت کسب‌وکار؛ دوباره تلاش کنید');
+
+    const created = await this.prisma.business.create({
+      data: {
+        ownerId,
+        cityId: city.id,
+        categoryId: category.id,
+        name: dto.name.trim(),
+        slug,
+        description: dto.description?.trim() || null,
+        phone: dto.phone?.trim() || null,
+        address: dto.address?.trim() || null,
+        latitude: hasLat ? dto.latitude! : null,
+        longitude: hasLng ? dto.longitude! : null,
+        status: 'APPROVED', // the operator IS the moderation step
+        subscriptionTier: 'FREE',
+        subscriptionStatus: 'NONE',
+      },
+      select: { id: true, name: true, status: true },
+    });
+
+    await this.audit(adminId, 'business.create', 'business', String(created.id), {
+      status: 'APPROVED',
+      cityId: city.id,
+      categoryId: category.id,
+      ownerId,
+    });
+    this.logger.log(`business #${created.id} «${created.name}» created manually by admin #${adminId}`);
+    return { ...created, status: String(created.status) };
   }
 
   // ---------- subscriptions (the ZarinPal approval step) ----------

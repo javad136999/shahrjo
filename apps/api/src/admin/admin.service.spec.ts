@@ -287,3 +287,51 @@ describe('AdminService city boundary (Phase 9)', () => {
     expect(prisma.city.update).not.toHaveBeenCalled();
   });
 });
+
+describe('AdminService.createBusiness — manual signup (ثبت دستی)', () => {
+  function makeReady(scope: { role: string; provinceId: number | null; cityId: number | null }) {
+    const ctx = makeService(scope);
+    const prisma = ctx.prisma as unknown as ReturnType<typeof makePrisma> & {
+      businessCategory: { findFirst: jest.Mock };
+      user: { findFirst: jest.Mock };
+      business: { create: jest.Mock; findUnique: jest.Mock };
+    };
+    prisma.businessCategory = { findFirst: jest.fn().mockResolvedValue({ id: 3 }) };
+    prisma.user = { findFirst: jest.fn() };
+    prisma.business.create = jest.fn().mockResolvedValue({ id: 50, name: 'نانوایی تست', status: 'APPROVED' });
+    prisma.business.findUnique = jest.fn().mockResolvedValue(null);
+    return { ...ctx, prisma };
+  }
+
+  it('publishes immediately (APPROVED, FREE) and audits the row', async () => {
+    const { service, prisma } = makeReady({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+    prisma.city.findFirst.mockResolvedValue({ id: 5 });
+
+    const created = await service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'نانوایی تست' });
+
+    expect(created).toMatchObject({ id: 50, status: 'APPROVED' });
+    const data = prisma.business.create.mock.calls[0][0].data;
+    // the operator IS the moderation step: no queue for a manual signup
+    expect(data).toMatchObject({ status: 'APPROVED', subscriptionTier: 'FREE', subscriptionStatus: 'NONE', ownerId: admin.id });
+    expect(data.slug).toMatch(/^نانوایی-تست-[a-z0-9]+$/u); // unique-slug recipe
+    expect(prisma.auditLog.create).toHaveBeenCalled();
+  });
+
+  it('refuses a city outside the operator’s scope', async () => {
+    const { service, prisma } = makeReady({ role: 'CITY_ADMIN', provinceId: null, cityId: 5 });
+
+    await expect(service.createBusiness(admin, { cityId: 9, categoryId: 3, name: 'x' })).rejects.toMatchObject({ status: 403 });
+    expect(prisma.business.create).not.toHaveBeenCalled();
+  });
+
+  it('attaches the business to an existing owner found by phone', async () => {
+    const { service, prisma } = makeReady({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+    prisma.city.findFirst.mockResolvedValue({ id: 5 });
+    prisma.user.findFirst.mockResolvedValue({ id: 42 });
+
+    await service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'مغازه', ownerPhone: '09121112233' });
+
+    expect(prisma.user.findFirst.mock.calls[0][0].where).toEqual({ phone: '09121112233' });
+    expect(prisma.business.create.mock.calls[0][0].data.ownerId).toBe(42);
+  });
+});

@@ -1,9 +1,11 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 const mockReplace = jest.fn();
+const mockSearchGet = jest.fn();
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mockReplace, push: jest.fn(), refresh: jest.fn() }),
+  useSearchParams: () => ({ get: (key: string) => mockSearchGet(key) }),
 }));
 
 const mockGetTokens = jest.fn();
@@ -42,6 +44,7 @@ const plans = [
 describe('PlansView', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSearchGet.mockReturnValue(null);
     mockGetTokens.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
     mockGetPlans.mockResolvedValue(plans);
     mockGetMySubscriptions.mockResolvedValue([]);
@@ -55,6 +58,18 @@ describe('PlansView', () => {
     expect(screen.getByText('۴٬۰۰۰٬۰۰۰ ریال')).toBeInTheDocument();
     expect(screen.getByText('۶ ماهه')).toBeInTheDocument(); // 180 days rendered as months
     expect(screen.getByText('پیشنهاد ویژه')).toBeInTheDocument();
+  });
+
+  it('binds the checkout to a suspended business when it landed from «فعال‌سازی»', async () => {
+    mockSearchGet.mockImplementation((key: string) => (key === 'business' ? '9' : null));
+    mockCheckoutPlan.mockResolvedValue({ payUrl: 'https://sandbox.zarinpal.com/pg/StartPay/A99' });
+    render(<PlansView />);
+
+    // the banner tells the owner this purchase reactivates that business
+    expect(await screen.findByTestId('plans-reactivate-note')).toBeInTheDocument();
+
+    fireEvent.click(await screen.findByTestId('buy-GOLD_1M'));
+    await waitFor(() => expect(mockCheckoutPlan).toHaveBeenCalledWith({ planId: 1, businessId: 9 }));
   });
 
   it('redirects to login when there is no session', async () => {

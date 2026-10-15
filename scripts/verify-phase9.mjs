@@ -129,7 +129,7 @@ for (const marker of ['showcase-marquee', 'translateX(50%)', 'prefers-reduced-mo
   if (!css.includes(marker)) { console.error(`CSS: missing ${marker}`); fail++; }
 }
 const mapComponent = read('apps/web/src/components/city-map.tsx');
-for (const marker of ["await import('leaflet')", 'tile.openstreetmap.org', 'scrollWheelZoom: false']) {
+for (const marker of ["await import('leaflet')", 'tile.openstreetmap.org', 'maxBoundsViscosity: 1.0', 'scrollWheelZoom: true']) {
   if (!mapComponent.includes(marker)) { console.error(`MAP UI: missing ${marker}`); fail++; }
 }
 const apiClient = read('apps/web/src/lib/api.ts');

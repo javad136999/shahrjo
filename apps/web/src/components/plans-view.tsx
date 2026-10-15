@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ApiError, checkoutPlan, getMySubscriptions, getPlans, getTokens } from '@/lib/api';
 import { redirectTo } from '@/lib/navigation';
 import type { MySubscription, PlanItem } from '@/lib/types';
@@ -40,6 +40,10 @@ function formatDays(days: number): string {
  */
 export function PlansView() {
   const router = useRouter();
+  // «فع‌ل‌سازی با خرید اشتراک» lands here with the suspended business; the
+  // checkout then binds the plan to it and the verify step brings it back.
+  const searchParams = useSearchParams();
+  const reactivateId = Number(searchParams.get('business')) || null;
   const [plans, setPlans] = useState<PlanItem[] | null>(null);
   const [subs, setSubs] = useState<MySubscription[]>([]);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
@@ -79,7 +83,7 @@ export function PlansView() {
     }
     setLoading(plan.id);
     try {
-      const session = await checkoutPlan({ planId: plan.id });
+      const session = await checkoutPlan({ planId: plan.id, ...(reactivateId ? { businessId: reactivateId } : {}) });
       // Full navigation: the gateway owns the next page.
       redirectTo(session.payUrl);
     } catch (err) {
@@ -99,6 +103,12 @@ export function PlansView() {
           </p>
         </div>
       </section>
+
+      {reactivateId !== null && (
+        <div className="banner banner--ok" role="status" data-testid="plans-reactivate-note">
+          برای فعال‌سازی دوبارهٔ کسب‌وکارت (#{reactivateId.toLocaleString('fa-IR')}) هر پلنی را که می‌خواهی بخر — به همان مدتِ انتخابی، همان لحظه فعال می‌شود.
+        </div>
+      )}
 
       {pageError && <div className="banner banner--error">{pageError}</div>}
       {error && (

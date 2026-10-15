@@ -445,6 +445,10 @@ export interface MyBusiness {
   slug: string;
   status: string;
   subscriptionTier: string;
+  /** ACTIVE / EXPIRED / NONE — why a suspended row is suspended. */
+  subscriptionStatus: string;
+  /** Paid-until timestamp (null for FREE registrations). */
+  subscriptionExpiresAt: string | null;
   logoUrl: string | null;
   rating: number;
   ratingCount: number;

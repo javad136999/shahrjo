@@ -296,4 +296,36 @@ describe('CityMap', () => {
     });
     expect(screen.getByTestId('map-catbtn')).toHaveTextContent('دسته‌بندی کسب‌وکارها');
   });
+
+  it('locks the frame: hard maxBounds hugging the outline + wheel zoom inside it', async () => {
+    const leaflet = require('leaflet');
+    render(
+      <CityMap
+        data={{
+          ...data,
+          city: {
+            ...data.city,
+            boundary: { type: 'Polygon', coordinates: [[[52.2, 27.7], [52.5, 27.7], [52.5, 27.95], [52.2, 27.95], [52.2, 27.7]]] },
+          },
+        }}
+      />,
+    );
+    await waitFor(() => expect(leaflet.map).toHaveBeenCalled());
+
+    const options = leaflet.map.mock.calls[0][1] as {
+      maxBoundsViscosity: number;
+      scrollWheelZoom: boolean;
+      maxBounds: [[number, number], [number, number]];
+    };
+    // 1.0 = full viscosity: dragging past the frame bounces straight back —
+    // the visitor never ends up in the countryside around the city
+    expect(options.maxBoundsViscosity).toBe(1.0);
+    // zooming/scrolling INSIDE the frame stays allowed
+    expect(options.scrollWheelZoom).toBe(true);
+    // and the frame itself hugs the urban outline (thin 0.02° slack only)
+    expect(options.maxBounds[0][0]).toBeCloseTo(27.7 - 0.02, 5);
+    expect(options.maxBounds[0][1]).toBeCloseTo(52.2 - 0.02, 5);
+    expect(options.maxBounds[1][0]).toBeCloseTo(27.95 + 0.02, 5);
+    expect(options.maxBounds[1][1]).toBeCloseTo(52.5 + 0.02, 5);
+  });
 });

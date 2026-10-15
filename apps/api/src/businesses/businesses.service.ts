@@ -34,6 +34,10 @@ export interface MyBusiness {
   slug: string;
   status: string;
   subscriptionTier: string;
+  /** ACTIVE / EXPIRED / NONE — a suspended row tells the owner why + how to reactivate. */
+  subscriptionStatus: string;
+  /** Paid-until timestamp (null for FREE registrations). */
+  subscriptionExpiresAt: Date | null;
   logoUrl: string | null;
   rating: number;
   ratingCount: number;
@@ -310,10 +314,15 @@ export class BusinessesService {
     throw new HttpException('خطا در ثبت کسب‌وکار؛ دوباره تلاش کنید', HttpStatus.INTERNAL_SERVER_ERROR);
   }
 
-  /** The caller's own businesses (any status) — the «کسب‌وکارهای من» list. */
+  /**
+   * The caller's own businesses — the «کسب‌وکارهای من» list. Deleted rows are
+   * gone for good (an admin delete is final); suspended ones (manual or after
+   * the subscription ran out) stay visible so the owner can reactivate them
+   * by buying a plan.
+   */
   async mine(user: User): Promise<MyBusiness[]> {
     const rows = await this.prisma.business.findMany({
-      where: { ownerId: user.id },
+      where: { ownerId: user.id, status: { not: 'DELETED' } },
       orderBy: [{ createdAt: 'desc' }],
       select: {
         id: true,
@@ -321,6 +330,8 @@ export class BusinessesService {
         slug: true,
         status: true,
         subscriptionTier: true,
+        subscriptionStatus: true,
+        subscriptionExpiresAt: true,
         logoUrl: true,
         rating: true,
         ratingCount: true,
@@ -333,6 +344,7 @@ export class BusinessesService {
       ...rest,
       status: String(rest.status),
       subscriptionTier: String(rest.subscriptionTier),
+      subscriptionStatus: String(rest.subscriptionStatus),
       productCount: _count.products,
       pinned: latitude !== null,
     }));
@@ -352,6 +364,8 @@ export class BusinessesService {
         slug: true,
         status: true,
         subscriptionTier: true,
+        subscriptionStatus: true,
+        subscriptionExpiresAt: true,
         logoUrl: true,
         rating: true,
         ratingCount: true,
@@ -385,6 +399,7 @@ export class BusinessesService {
       latitude,
       status: String(rest.status),
       subscriptionTier: String(rest.subscriptionTier),
+      subscriptionStatus: String(rest.subscriptionStatus),
       pinned: latitude !== null,
       productCount: products.length,
       products: products.map((product) => ({ ...product, price: rial(product.price) })),

@@ -91,3 +91,35 @@ describe('BusinessesService.create — profile city + pin containment', () => {
     expect(prisma.business.create).toHaveBeenCalled();
   });
 });
+
+describe('BusinessesService.mine — the owner’s working list', () => {
+  it('drops deleted rows but keeps suspended ones (with the expiry facts)', async () => {
+    const findMany = jest.fn().mockResolvedValue([
+      {
+        id: 1,
+        name: 'کافه',
+        slug: 'cafe-1',
+        status: 'CLOSED',
+        subscriptionTier: 'SILVER',
+        subscriptionStatus: 'EXPIRED',
+        subscriptionExpiresAt: new Date('2026-01-01T00:00:00.000Z'),
+        logoUrl: null,
+        rating: 0,
+        ratingCount: 0,
+        latitude: null,
+        category: { id: 3, name: 'کافه', icon: '☕' },
+        _count: { products: 2 },
+      },
+    ]);
+    const service = new BusinessesService({ business: { findMany } } as unknown as PrismaService);
+
+    const rows = await service.mine(owner);
+
+    // a deleted business is gone for its owner too — that is what «delete» means
+    expect(findMany.mock.calls[0][0].where).toEqual({ ownerId: owner.id, status: { not: 'DELETED' } });
+    // …but a suspended one stays, so the owner can reactivate it via a purchase
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ status: 'CLOSED', subscriptionStatus: 'EXPIRED', productCount: 2, pinned: false });
+    expect(rows[0].subscriptionExpiresAt).toBeInstanceOf(Date);
+  });
+});

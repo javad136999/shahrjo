@@ -344,6 +344,34 @@ describe('PaymentsService.handleCallback', () => {
     expect(data.subscriptionExpiresAt).toBe(later); // never shorten an active period
   });
 
+  it('reactivates a suspended (CLOSED) business and appends the purchased duration', async () => {
+    const { service, prisma, zarinpal } = makeService();
+    prisma.payment.findUnique.mockResolvedValue(storedPayment({ businessId: 9 }));
+    prisma.payment.updateMany.mockResolvedValue({ count: 1 });
+    zarinpal.verifyPayment.mockResolvedValue({ code: 100, refId: 1, message: '' });
+    prisma.subscriptionPlan.findUniqueOrThrow.mockResolvedValue({ tier: 'SILVER', durationDays: 180 });
+    prisma.subscription.create.mockResolvedValue({ id: 5 });
+    // suspended long ago (manually or by the expiry sweep)
+    const staleExpiry = new Date(Date.now() - 30 * 86_400_000);
+    prisma.business.findUnique.mockResolvedValue({ status: 'CLOSED', subscriptionExpiresAt: staleExpiry });
+    prisma.business.update.mockResolvedValue({ id: 9 });
+
+    expect(await service.handleCallback('A123', 'OK')).toBe('SUCCESS');
+
+    const data = prisma.business.update.mock.calls[0][0].data;
+    // the paid plan is what reactivates it: back on the street the same minute
+    expect(data).toMatchObject({
+      status: 'APPROVED',
+      subscriptionTier: 'SILVER',
+      subscriptionStatus: 'ACTIVE',
+      showcasePriority: 50,
+    });
+    // a stale period never eats the purchased one: 180 days from now
+    const expiry = data.subscriptionExpiresAt as Date;
+    expect(expiry.getTime() - Date.now()).toBeGreaterThan(179 * 86_400_000);
+    expect(expiry.getTime() - Date.now()).toBeLessThanOrEqual(180 * 86_400_000);
+  });
+
   it('does not double-activate when a concurrent duplicate callback loses the claim', async () => {
     const { service, prisma, zarinpal } = makeService();
     prisma.payment.findUnique.mockResolvedValue(storedPayment());

@@ -22,6 +22,9 @@ const mockApproveAdminSubscription = jest.fn();
 const mockRejectAdminSubscription = jest.fn();
 const mockSuspendAdminBusiness = jest.fn();
 const mockDeleteAdminBusiness = jest.fn();
+const mockAdminCreateBusiness = jest.fn();
+const mockGetBusinessCategories = jest.fn();
+const mockApiGet = jest.fn();
 
 jest.mock('@/lib/api', () => ({
   ApiError: class ApiError extends Error {
@@ -46,6 +49,9 @@ jest.mock('@/lib/api', () => ({
   rejectAdminSubscription: (id: number, reason: string) => mockRejectAdminSubscription(id, reason),
   suspendAdminBusiness: (id: number, reason: string) => mockSuspendAdminBusiness(id, reason),
   deleteAdminBusiness: (id: number) => mockDeleteAdminBusiness(id),
+  adminCreateBusiness: (body: unknown) => mockAdminCreateBusiness(body),
+  getBusinessCategories: () => mockGetBusinessCategories(),
+  api: { get: (path: string) => mockApiGet(path) },
 }));
 
 import { AdminPanel } from '@/components/admin-panel';
@@ -135,6 +141,9 @@ describe('AdminPanel', () => {
     mockRejectAdminSubscription.mockResolvedValue({ id: 44, status: 'REJECTED' });
     mockSuspendAdminBusiness.mockResolvedValue({ id: 21, status: 'CLOSED' });
     mockDeleteAdminBusiness.mockResolvedValue({ id: 21, status: 'DELETED', removedFiles: 2 });
+    mockGetBusinessCategories.mockResolvedValue([{ id: 3, name: 'کافه', slug: 'cafe', icon: '☕' }]);
+    mockApiGet.mockResolvedValue([{ id: 1, name: 'شهر نمونه', slug: 'sample-city' }]);
+    mockAdminCreateBusiness.mockResolvedValue({ id: 50, name: 'نانوایی مرکزی', status: 'APPROVED' });
   });
 
   it('redirects to login when there is no session', () => {
@@ -209,6 +218,32 @@ describe('AdminPanel', () => {
     fireEvent.click(screen.getByTestId('approve-44'));
     await waitFor(() => expect(mockApproveAdminSubscription).toHaveBeenCalledWith(44));
     expect(await screen.findByRole('status')).toHaveTextContent('اشتراک فعال شد');
+  });
+
+  it('publishes a business manually from the businesses tab (ثبت دستی)', async () => {
+    render(<AdminPanel />);
+    await screen.findByTestId('tab-businesses');
+    fireEvent.click(screen.getByTestId('tab-businesses'));
+
+    fireEvent.click(await screen.findByTestId('admin-create-toggle'));
+    fireEvent.change(await screen.findByTestId('ac-name'), { target: { value: 'نانوایی مرکزی' } });
+    fireEvent.change(screen.getByTestId('ac-category'), { target: { value: '3' } });
+    fireEvent.change(screen.getByTestId('ac-city'), { target: { value: '1' } });
+    fireEvent.click(screen.getByTestId('ac-submit'));
+
+    // no payment, no queue: the operator's submit IS the publish
+    await waitFor(() =>
+      expect(mockAdminCreateBusiness).toHaveBeenCalledWith({
+        name: 'نانوایی مرکزی',
+        cityId: 1,
+        categoryId: 3,
+        phone: undefined,
+        address: undefined,
+        description: undefined,
+        ownerPhone: undefined,
+      }),
+    );
+    expect(await screen.findByRole('status')).toHaveTextContent('نانوایی مرکزی');
   });
 
   it('shows the empty state when a queue has no rows', async () => {

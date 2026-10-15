@@ -67,7 +67,7 @@
 | GET `/payments/mine` | Bearer | تاریخچه پرداخت‌های کاربر (مبلغ عددی، برچسب پلن) |
 | GET `/subscriptions/mine` | Bearer | اشتراک‌های کاربر + وضعیت (`ACTIVE`؛ ردیف‌های قدیمی `PENDING_REVIEW`) و نام کسب‌وکار |
 
-قانون اشتراک: هر پرداختِ تأییدشده (شخصی یا کسب‌وکاری) بلافاصله `ACTIVE` می‌شود و تراکنشِ verify همان لحظه تیِر کسب‌وکار را اعمال و ثبت‌نامِ `PENDING` را تأیید می‌کند — بدون تأیید مدیر. ردِ صریح مدیر (بازبینی‌شده) هرگز با پرداخت جدید بازنویسی نمی‌شود؛ `PENDING_REVIEW` فقط برای ردیف‌های قدیمی می‌ماند. کلیدها فقط در env (`SEPAL_*` و `ZARINPAL_*`) — هرگز در کد یا سمت کلاینت.
+قانون اشتراک: هر پرداختِ تأییدشده (شخصی یا کسب‌وکاری) بلافاصله `ACTIVE` می‌شود و تراکنشِ verify همان لحظه تیِر کسب‌وکار را اعمال و ثبت‌نامِ `PENDING` را تأیید می‌کند — بدون تأیید مدیر. کسب‌وکارِ `CLOSED` (تعلیق‌شده — دستی توسط مدیر یا با پایان مهلت اشتراک) با همین پرداخت به `APPROVED` برمی‌گردد و مدتِ خریداری‌شده به باقی‌ماندهٔ دورهٔ قبلی اضافه می‌شود. ردِ صریح مدیر (`REJECTED`) هرگز با پرداخت جدید بازنویسی نمی‌شود؛ `PENDING_REVIEW` فقط برای ردیف‌های قدیمی می‌ماند. کلیدها فقط در env (`SEPAL_*` و `ZARINPAL_*`) — هرگز در کد یا سمت کلاینت.
 
 ## Content (همه City-scoped)
 
@@ -100,9 +100,10 @@
 | POST `/admin/ads/:id/approve` | `ads.moderate` | `APPROVED` + `publishedAt` + تمدید انقضای ۳۰ روزه + audit |
 | POST `/admin/ads/:id/reject` | `ads.moderate` | `{ reason }` الزامی (حداقل ۳ حرف) → `REJECTED` + audit |
 | GET `/admin/businesses?status=PENDING` | `businesses.view` | صف کسب‌وکارها |
+| POST `/admin/businesses` | `businesses.moderate` | **ثبت دستی کسب‌وکار توسط مدیر**: `{ cityId, categoryId, name, description?, phone?, address?, ownerPhone?, latitude?, longitude? }` → انتشار فوری (`APPROVED`، تیِر `FREE`، بدون صف و بدون پرداخت)؛ شهر باید در محدودهٔ مدیر باشد؛ مالک با `ownerPhone` (کاربر موجود) یا خودِ مدیر؛ + audit |
 | POST `/admin/businesses/:id/approve` | `businesses.moderate` | تأیید + اختیاراً `latitude`/`longitude` (هر دو یا هیچ، با اعتبارسنجی دامنه) برای مارکر نقشه |
 | POST `/admin/businesses/:id/reject` | `businesses.moderate` | `{ reason }` الزامی → `REJECTED` + audit |
-| POST `/admin/businesses/:id/suspend` | `businesses.moderate` | `{ reason }` الزامی (حداقل ۳ حرف) → **تعلیق**: `CLOSED` — کسب‌وکار همان لحظه از فهرست/نقشه/ویترین/جزئیات خارج می‌شود (همهٔ کوئری‌های عمومی `APPROVED` فیلتر می‌کنند)؛ برگشت‌پذیر با تأیید دوباره + audit |
+| POST `/admin/businesses/:id/suspend` | `businesses.moderate` | `{ reason }` الزامی (حداقل ۳ حرف) → **تعلیق**: `CLOSED` — کسب‌وکار همان لحظه از فهرست/نقشه/ویترین/جزئیات خارج می‌شود (همهٔ کوئری‌های عمومی `APPROVED` فیلتر می‌کنند) اما در «کسب‌وکارهای من» صاحبش می‌ماند و با خرید اشتراک خودبه‌خود فعال می‌شود؛ برگشت‌پذیر با تأیید دوباره هم هست + audit |
 | POST `/admin/businesses/:id/delete` | `businesses.moderate` | **حذف**: `DELETED` + صفرشدن `logoUrl`/`coverUrl` + پاک‌سازی فوری عکس‌های claim‌شدهٔ همان کسب‌وکار از دیسک (`purgeEntity('BUSINESS', id)`)؛ ردیف برای audit می‌ماند + audit با `removedFiles` |
 | GET `/admin/subscriptions?status=PENDING_REVIEW` | `subscriptions.manage` | صف اشتراک‌های قدیمیِ در انتظار تأیید (پرداخت‌های جدید خودکار فعال می‌شوند) |
 | POST `/admin/subscriptions/:id/approve` | `subscriptions.manage` | `ACTIVE` + `startsAt`/`expiresAt` + ارتقای tier کسب‌وکار (`showcasePriority` طلایی=۱۰، نقره‌ای=۵۰)؛ هرگز انقضای فعالِ فعلی را کوتاه‌تر نمی‌کند + audit |
@@ -208,7 +209,7 @@ Guard: `PermissionsGuard` (کد permission از `role_permissions`) + Scope
 |---|---|---|
 | GET `/business-categories` | @Public | دسته‌بندی‌های فعال برای فرم ثبت کسب‌وکار (ترتیب `sortOrder`) |
 | POST `/businesses` | Bearer | ثبت کسب‌وکار جدید — `{ name, categoryId, description?, phone?, address?, logoUrl?, latitude?, longitude? }` → وضعیت `PENDING` + `FREE`؛ شهر از پروفایل کاربر و پین باید داخل محدودهٔ همان شهر باشد (سقف ۵ ثبت در روز) |
-| GET `/my-businesses` | Bearer | کسب‌وکارهای خودِ کاربر در هر وضعیت نظارتی: `status`, `subscriptionTier`, `productCount`, `pinned` (آیا روی نقشه هست) |
+| GET `/my-businesses` | Bearer | کسب‌وکارهای خودِ کاربر (حذف‌شده‌ها `DELETED` دیگر نمی‌آیند؛ تعلیق‌شده‌ها `CLOSED` می‌مانند): `status`, `subscriptionTier`, `subscriptionStatus`, `subscriptionExpiresAt`, `productCount`, `pinned` (آیا روی نقشه هست) |
 | GET `/my-businesses/:id` | Bearer | همان ردیف + `description`/`phone`/`address`/`latitude`/`longitude`/`categoryId` + `products[]` کامل منو |
 | PATCH `/my-businesses/:id` | Bearer | ویرایش `name`, `categoryId`, `description`, `phone`, `address`, **`logoUrl`** — رشتهٔ خالی = پاک‌کردن مقدار (NULL)؛ وضعیت/اشتراک/شهر در اختیار پلتفرم می‌ماند (ویرایش، تأیید را باطل نمی‌کند) |
 | POST `/my-businesses/:id/products` | Bearer | `{ name, section?, description?, price?, imageUrl?, sortOrder?, isAvailable? }` — `section` = دستهٔ منو («نوشیدنی»، «غذاهای اصلی»)، `price` ریال و خالی = «توافقی» (NULL)، `imageUrl` از `POST /uploads/business` (باید آپلود خودِ کاربر باشد) |

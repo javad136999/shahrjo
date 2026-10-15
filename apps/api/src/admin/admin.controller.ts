@@ -3,7 +3,7 @@ import type { User } from '@prisma/client';
 import { CurrentUser, RequirePermissions } from '../common/decorators';
 // Value import (incl. DTOs): `import type` would erase them from
 // design:paramtypes and ValidationPipe would never run on these bodies.
-import { AdminService, BoundaryDto, BusinessDecisionDto, DecisionDto } from './admin.service';
+import { AdminService, AdminCreateBusinessDto, BoundaryDto, BusinessDecisionDto, DecisionDto } from './admin.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 
@@ -58,6 +58,13 @@ export class AdminController {
   @RequirePermissions('businesses.view')
   businesses(@CurrentUser() user: User, @Query('status') status?: string) {
     return this.admin.businesses(user, status ?? 'PENDING');
+  }
+
+  /** Manual signup: the operator publishes a business directly (no payment, no queue). */
+  @Post('businesses')
+  @RequirePermissions('businesses.moderate')
+  createBusiness(@CurrentUser() user: User, @Body() dto: AdminCreateBusinessDto) {
+    return this.admin.createBusiness(user, dto);
   }
 
   /** Approve + optionally pin the map location (both coordinates or neither). */

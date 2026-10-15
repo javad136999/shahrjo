@@ -12,8 +12,16 @@ const STATUS: Record<string, string> = {
   PENDING: 'در انتظار تأیید',
   APPROVED: 'تأییدشده',
   REJECTED: 'رد‌شده',
-  SUSPENDED: 'معلق',
+  // admin suspension AND the expiry sweep both land here — the owner still
+  // sees the row (with a reactivate CTA), it just leaves every public surface
+  CLOSED: 'تعلیق',
+  SUSPENDED: 'تعلیق',
 };
+
+/** A suspended business (manual or expired) can come back by buying a plan. */
+function isSuspended(business: MyBusiness): boolean {
+  return business.status === 'CLOSED' || business.status === 'SUSPENDED' || business.subscriptionStatus === 'EXPIRED';
+}
 
 /**
  * «کسب‌وکارهای من» — the owner's businesses in every moderation status, each
@@ -83,6 +91,7 @@ export function MyBusinesses() {
         <ul className="mybiz__list">
           {items.map((business) => {
             const status = business.status.toLowerCase();
+            const suspended = isSuspended(business);
             return (
               <li key={business.id} className="mybiz__card" data-testid={`my-business-${business.id}`}>
                 {business.logoUrl ? (
@@ -108,17 +117,41 @@ export function MyBusinesses() {
                     {business.productCount.toLocaleString('fa-IR')} محصول ·{' '}
                     {business.pinned ? '📍 روی نقشه' : 'بدون موقعیت روی نقشه'}
                   </p>
+                  {suspended && (
+                    <p className="mybiz__suspended" data-testid={`my-business-suspended-${business.id}`}>
+                      این کسب‌وکار تعلیق است {business.subscriptionStatus === 'EXPIRED' ? '(پایان مهلت اشتراک)' : ''} و از نقشه و جستجو خارج شده. با خرید اشتراک، به همان مدتی که انتخاب می‌کنی دوباره فعال می‌شود.
+                    </p>
+                  )}
                   <div className="mybiz__actions">
-                    <Link
-                      href={`/business/${business.id}/manage`}
-                      className="btn btn-primary"
-                      data-testid={`my-business-manage-${business.id}`}
-                    >
-                      ویرایش و منو
-                    </Link>
+                    {suspended ? (
+                      <Link
+                        href={`/plans?business=${business.id}`}
+                        className="btn btn-primary"
+                        data-testid={`my-business-reactivate-${business.id}`}
+                      >
+                        🔄 فعال‌سازی با خرید اشتراک
+                      </Link>
+                    ) : (
+                      <Link
+                        href={`/business/${business.id}/manage`}
+                        className="btn btn-primary"
+                        data-testid={`my-business-manage-${business.id}`}
+                      >
+                        ویرایش و منو
+                      </Link>
+                    )}
                     <Link href={`/business/${business.id}`} className="btn btn-ghost">
                       مشاهدهٔ صفحهٔ عمومی
                     </Link>
+                    {suspended && (
+                      <Link
+                        href={`/business/${business.id}/manage`}
+                        className="btn btn-ghost"
+                        data-testid={`my-business-manage-${business.id}`}
+                      >
+                        ویرایش منو
+                      </Link>
+                    )}
                   </div>
                 </div>
               </li>
