@@ -98,13 +98,16 @@ const apiClient = read('apps/web/src/lib/api.ts');
 for (const helper of ['getAdminOverview', 'getAdminAds', 'approveAdminAd', 'rejectAdminAd', 'getAdminBusinesses', 'approveAdminBusiness', 'getAdminSubscriptions', 'approveAdminSubscription']) {
   if (!apiClient.includes(helper)) { console.error(`WEB: api client missing ${helper}`); fail++; }
 }
-// Entries: header (operators only) and profile.
+// Entry: the admin panel lives in the profile only (role-gated there) — it
+// deliberately left the header, where every visitor could see it.
 const headerActions = read('apps/web/src/components/header-actions.tsx');
-if (!headerActions.includes('/admin') || !headerActions.includes('roles.some')) {
-  console.error('WEB: header admin entry must be role-gated'); fail++;
+if (headerActions.includes('/admin')) {
+  console.error('WEB: admin entry must not live in the header (profile only)'); fail++;
 }
 const profile = read('apps/web/src/components/profile-view.tsx');
-if (!profile.includes('/admin')) { console.error('WEB: profile must link to the admin panel'); fail++; }
+if (!profile.includes('/admin') || !profile.includes('roles.some')) {
+  console.error('WEB: profile admin entry must be role-gated'); fail++;
+}
 
 // --- Same multi-city rule: no hard-coded city names ---
 const hardcoded = ['جم', 'عسلویه', 'شیراز', 'بوشهر', 'کنگان'];

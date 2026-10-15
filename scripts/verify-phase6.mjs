@@ -95,8 +95,14 @@ for (const marker of ['toggleAdFavorite', 'getTokens', 'notice--pending', 'image
   if (!adDetail.includes(marker)) { console.error(`WEB: ad detail missing ${marker}`); fail++; }
 }
 const profileView = read('apps/web/src/components/profile-view.tsx');
-for (const marker of ['getMyAds', 'getMyFavorites', 'MyAdsList', 'updateProfile']) {
+// The profile is an account screen: favorites + editing the display name.
+// Owner ads deliberately left it («ثبت آگهی جدید»/«آگهی‌های من» are gone —
+// ads are composed and managed from the city wall).
+for (const marker of ['getMyFavorites', 'MyAdsList', 'updateProfile']) {
   if (!profileView.includes(marker)) { console.error(`WEB: profile missing ${marker}`); fail++; }
+}
+if (profileView.includes('getMyAds')) {
+  console.error('WEB: profile must not fetch the owner\u2019s ads any more'); fail++;
 }
 
 // --- Same multi-city rule: no hard-coded city names ---
