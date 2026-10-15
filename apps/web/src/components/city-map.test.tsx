@@ -15,6 +15,7 @@ jest.mock('leaflet', () => {
   const mapInstance = {
     setView: jest.fn(),
     fitBounds: jest.fn(),
+    invalidateSize: jest.fn(),
     remove: jest.fn(),
     on: jest.fn(),
     getZoom: jest.fn(() => 12),
@@ -327,5 +328,36 @@ describe('CityMap', () => {
     expect(options.maxBounds[0][1]).toBeCloseTo(52.2 - 0.02, 5);
     expect(options.maxBounds[1][0]).toBeCloseTo(27.95 + 0.02, 5);
     expect(options.maxBounds[1][1]).toBeCloseTo(52.5 + 0.02, 5);
+  });
+
+  it('re-fits when the canvas settles its size (the map opened one zoom-level out)', async () => {
+    // Controllable ResizeObserver — jsdom does not ship one
+    const callbacks: ResizeObserverCallback[] = [];
+    class TestRO {
+      constructor(cb: ResizeObserverCallback) {
+        callbacks.push(cb);
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+    (global as unknown as { ResizeObserver: unknown }).ResizeObserver = TestRO;
+
+    try {
+      const leaflet = require('leaflet');
+      render(<CityMap data={data} />);
+      await waitFor(() => expect(leaflet.map).toHaveBeenCalled());
+      const instance = leaflet.map.mock.results[0].value;
+      expect(instance.fitBounds).toHaveBeenCalledTimes(1);
+
+      // fonts/banners/layout finish → the canvas changes size after the first fit
+      callbacks.forEach((cb) => cb([], {} as ResizeObserver));
+
+      expect(instance.invalidateSize).toHaveBeenCalledWith({ animate: false });
+      // …and the view is framed again instead of staying a zoom-level out
+      expect(instance.fitBounds.mock.calls.length).toBeGreaterThan(1);
+    } finally {
+      delete (global as unknown as { ResizeObserver?: unknown }).ResizeObserver;
+    }
   });
 });

@@ -185,6 +185,7 @@ export function CityMap({ data }: CityMapProps) {
   useEffect(() => {
     let disposed = false;
     let map: import('leaflet').Map | null = null;
+    let resizeObserver: ResizeObserver | null = null;
 
     (async () => {
       const L = await import('leaflet');
@@ -311,19 +312,56 @@ export function CityMap({ data }: CityMapProps) {
         }
       }
 
-      if (activeCat && pins.length > 0) {
-        // Never a street-level view: at least a neighbourhood-sized window, max level 15.
-        const focus = withMinSpan(boxOfPoints(pins) as LatLngBox);
-        map.fitBounds(focus, { padding: [26, 26], maxZoom: FILTER_MAX_ZOOM });
-      } else if (urban) {
-        map.fitBounds(withMinSpan(urban), { padding: [24, 24], maxZoom: URBAN_MAX_ZOOM });
-      } else if (pins.length > 0) {
-        map.fitBounds(withMinSpan(boxOfPoints(pins) as LatLngBox), { padding: [56, 56], maxZoom: URBAN_MAX_ZOOM });
+      const frameMap = () => {
+        if (!map) return;
+        if (activeCat && pins.length > 0) {
+          // Never a street-level view: at least a neighbourhood-sized window, max level 15.
+          const focus = withMinSpan(boxOfPoints(pins) as LatLngBox);
+          map.fitBounds(focus, { padding: [26, 26], maxZoom: FILTER_MAX_ZOOM });
+        } else if (urban) {
+          map.fitBounds(withMinSpan(urban), { padding: [24, 24], maxZoom: URBAN_MAX_ZOOM });
+        } else if (pins.length > 0) {
+          map.fitBounds(withMinSpan(boxOfPoints(pins) as LatLngBox), { padding: [56, 56], maxZoom: URBAN_MAX_ZOOM });
+        }
+      };
+
+      // The canvas often gets its final size AFTER the first fit (fonts, banners,
+      // layout settling) — the map then sits a zoom-level out and opens on the
+      // countryside instead of the city. Re-fit whenever the frame resizes, but
+      // only until the visitor takes over (their first drag/own zoom).
+      let selfFitting = false;
+      let userTookOver = false;
+      const refit = () => {
+        if (!map || userTookOver) return;
+        selfFitting = true;
+        try {
+          frameMap();
+        } finally {
+          selfFitting = false;
+        }
+      };
+      map.on('dragstart', () => {
+        userTookOver = true;
+      });
+      map.on('zoomstart', () => {
+        if (!selfFitting) userTookOver = true;
+      });
+
+      refit();
+      if (typeof ResizeObserver !== 'undefined' && holder.current) {
+        resizeObserver = new ResizeObserver(() => {
+          if (!map || userTookOver) return;
+          map.invalidateSize({ animate: false });
+          refit();
+        });
+        resizeObserver.observe(holder.current);
       }
     })();
 
     return () => {
       disposed = true;
+      resizeObserver?.disconnect();
+      resizeObserver = null;
       map?.remove();
       map = null;
     };
