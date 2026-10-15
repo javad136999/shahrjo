@@ -393,10 +393,15 @@ model BusinessCategory {
   color     String?  @db.VarChar(20)
   sortOrder Int      @default(0) @map("sort_order")
   isActive  Boolean  @default(true) @map("is_active")
+  // Service-desk trades (تعمیرکار کولر، نقاش ساختمان، کابینت‌ساز…): only these
+  // feed the city-home service tiles; the general /business/new signup lists
+  // every active category regardless of this flag.
+  isService Boolean  @default(false) @map("is_service")
   createdAt DateTime @default(now()) @map("created_at")
 
   businesses Business[]
 
+  @@index([isService, isActive])
   @@map("business_categories")
 }
 
@@ -687,8 +692,9 @@ enum SubscriptionTier {
 }
 
 // Business-level subscription state (denormalized on `businesses` for fast queries).
-// PENDING_REVIEW: payment succeeded but admin approval is required —
-// a successful payment alone never publishes/promotes a business.
+// A verified payment sets ACTIVE + the paid tier immediately (and approves a
+// PENDING registration in the same transaction); PENDING_REVIEW remains only
+// for legacy rows — new payments never enter it.
 enum BusinessSubscriptionStatus {
   NONE
   PENDING_REVIEW
@@ -741,9 +747,10 @@ model SubscriptionPlan {
 }
 
 // Subscription history: owned by the paying user, optionally bound to one of
-// their businesses. Created after successful ZarinPal verify — business-bound
-// subscriptions still need admin approval (PENDING_REVIEW -> ACTIVE) before
-// they promote anything public; personal ones activate immediately.
+// their businesses. Created ACTIVE right after a successful gateway verify —
+// the same transaction promotes the paid business tier and approves a still-
+// PENDING registration. PENDING_REVIEW only remains for legacy rows (new
+// payments never enter it).
 model Subscription {
   id           Int                @id @default(autoincrement())
   userId       Int                @map("user_id")

@@ -189,6 +189,21 @@ a:hover {
   font-size: 18px;
 }
 
+/* The header's first slot shows where you are, not a destination: a fixed
+   label (no hover, no cursor change, no navigation). */
+.brand--city {
+  cursor: default;
+}
+.brand--city:hover {
+  text-decoration: none;
+}
+.brand-cityname {
+  max-width: 34vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .header-user {
   display: flex;
   align-items: center;
@@ -573,6 +588,177 @@ a:hover {
   margin: 5px 0 0;
   font-size: clamp(14px, 2.6vw, 17px);
   font-weight: 900;
+}
+
+/* ---------- دفتر خدمات شهر — two compact tiles + one open panel ---------- */
+.city-services {
+  margin-bottom: 14px;
+}
+
+/* راست و چپ کنار هم: پهنای متوسط، ارتفاع کم — نقشه پایین‌تر نقطهٔ صفحه است. */
+.city-services__tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.service-tile {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 58px;
+  padding: 9px 12px;
+  text-align: right;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fff 0%, #f6faf7 100%);
+  box-shadow: 0 8px 20px rgb(14 122 95 / 8%);
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+.service-tile:hover {
+  border-color: rgb(14 122 95 / 45%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.service-tile.is-open {
+  border-color: rgb(14 122 95 / 60%);
+  background: linear-gradient(135deg, #f2fbf6 0%, #eaf5ef 100%);
+}
+.service-tile--find {
+  background: linear-gradient(135deg, #fff 0%, #fff9ec 100%);
+}
+.service-tile--find.is-open {
+  border-color: var(--gold-line);
+  background: linear-gradient(135deg, #fffcf2 0%, #fdf3dd 100%);
+}
+
+.service-tile__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  font-size: 17px;
+}
+.service-tile__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  line-height: 1.35;
+}
+.service-tile__copy b {
+  font-size: 13.5px;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.service-tile__copy small {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+/* The panel that opens under the tiles — same card language as form-card. */
+.service-panel {
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.service-panel h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 900;
+}
+.service-panel label {
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+/* Service chips in the finder panel. */
+.service-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.service-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.service-chip:hover {
+  border-color: rgb(14 122 95 / 45%);
+}
+.service-chip.is-active {
+  border-color: rgb(14 122 95 / 65%);
+  background: var(--brand-soft, #eaf6f0);
+  color: var(--brand-dark, #0e7a5f);
+}
+
+/* Registered tradespeople of the picked service. */
+.service-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.service-result {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+.service-result__main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  line-height: 1.4;
+}
+.service-result__main b {
+  font-size: 13.5px;
+  font-weight: 900;
+}
+.service-result__main small {
+  color: var(--muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.service-result__call {
+  flex-shrink: 0;
+}
+
+@media (max-width: 460px) {
+  .city-services__tiles {
+    grid-template-columns: 1fr;
+  }
+  .service-tile__copy b {
+    font-size: 13px;
+  }
 }
 
 /* Red entry to the city wall — pulses like a beating heart */

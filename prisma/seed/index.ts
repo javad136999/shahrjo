@@ -264,6 +264,50 @@ const businessCategories: { name: string; slug: string; icon: string }[] = [
   { name: 'سایر', slug: 'other', icon: '✨' },
 ];
 
+// Service-desk trades (دفتر خدمات شهر): the «شغلتو ثبت کن» / «چه خدماتی نیاز داری»
+// tiles on the city home page. Deliberately service-only — shops, restaurants
+// and venues are NOT in here, they stay in `businessCategories` for the full
+// /business/new signup. Slugs are prefixed so they can never collide with (or
+// overwrite) a general category, and the list ends with a «سایر» catch-all.
+const serviceCategories: { name: string; slug: string; icon: string }[] = [
+  { name: 'تعمیرکار کولر', slug: 'svc_ac_repair', icon: '❄️' },
+  { name: 'نقاش ساختمان', slug: 'svc_house_painter', icon: '🎨' },
+  { name: 'برقکار ساختمان', slug: 'svc_electrician', icon: '💡' },
+  { name: 'تعمیر یخچال', slug: 'svc_fridge_repair', icon: '🧊' },
+  { name: 'لوله‌کش و تعمیرات تاسیسات', slug: 'svc_plumber', icon: '🚰' },
+  { name: 'کابینت‌ساز', slug: 'svc_cabinet_maker', icon: '🪚' },
+  { name: 'بنایی و بازسازی', slug: 'svc_mason', icon: '🧱' },
+  { name: 'نقاش و گچ‌کار', slug: 'svc_plasterer', icon: '🧰' },
+  { name: 'کاشی‌کار و سرامیک‌کار', slug: 'svc_tiler', icon: '🟫' },
+  { name: 'جوشکار و آهنگر', slug: 'svc_welder', icon: '🔩' },
+  { name: 'تعمیر ماشین لباسشویی', slug: 'svc_washer_repair', icon: '🌀' },
+  { name: 'تعمیر ظرفشویی و اجاق‌گاز', slug: 'svc_stove_repair', icon: '🍳' },
+  { name: 'سرویس پکیج و شوفاژ', slug: 'svc_heating_repair', icon: '🌡️' },
+  { name: 'تعمیر تلویزیون', slug: 'svc_tv_repair', icon: '📺' },
+  { name: 'تعمیر موبایل', slug: 'svc_phone_repair', icon: '📱' },
+  { name: 'تعمیر لپ‌تاپ و کامپیوتر', slug: 'svc_pc_repair', icon: '💻' },
+  { name: 'سرویس آسانسور', slug: 'svc_elevator_service', icon: '🛗' },
+  { name: 'نظافت منزل و محل کار', slug: 'svc_cleaner', icon: '🧼' },
+  { name: 'باربری و اتوبار', slug: 'svc_mover', icon: '📦' },
+  { name: 'سمپاشی و مبارزه با آفات', slug: 'svc_pest_control', icon: '🐜' },
+  { name: 'باغبانی و فضای سبز', slug: 'svc_gardener', icon: '🌿' },
+  { name: 'کارواش سیار', slug: 'svc_car_wash', icon: '🚿' },
+  { name: 'آپاراتی و تعویض لاستیک', slug: 'svc_tire_repair', icon: '🛞' },
+  { name: 'تعمیر موتورسیکلت', slug: 'svc_motorcycle_repair', icon: '🏍️' },
+  { name: 'صافکاری و رنگ خودرو', slug: 'svc_auto_body', icon: '🚘' },
+  { name: 'خیاط و تعمیر لباس', slug: 'svc_tailor', icon: '🧵' },
+  { name: 'آرایشگر سیار', slug: 'svc_barber', icon: '💈' },
+  { name: 'تعمیر کیف و کفش', slug: 'svc_shoe_repair', icon: '👞' },
+  { name: 'تعمیر ساعت', slug: 'svc_watch_repair', icon: '⌚' },
+  { name: 'پرستار کودک', slug: 'svc_babysitter', icon: '🧸' },
+  { name: 'پرستار سالمند', slug: 'svc_elder_care', icon: '🧓' },
+  { name: 'معلم خصوصی', slug: 'svc_private_tutor', icon: '📚' },
+  { name: 'عکاس و فیلم‌بردار', slug: 'svc_photographer', icon: '📷' },
+  { name: 'تابلوساز', slug: 'svc_sign_maker', icon: '🪧' },
+  { name: 'مترجم', slug: 'svc_translator', icon: '🔤' },
+  { name: 'سایر خدمات', slug: 'svc_other', icon: '✨' },
+];
+
 const newsCategories = [
   { name: 'عمومی', slug: 'general' },
   { name: 'اجتماعی', slug: 'social' },
@@ -357,6 +401,16 @@ async function main(): Promise<void> {
     await prisma.businessCategory.upsert({ where: { slug: c.slug }, update: { name: c.name, icon: c.icon }, create: c });
   }
   await prisma.businessCategory.deleteMany({ where: { slug: { notIn: businessCategories.map((c) => c.slug) } } });
+
+  // Service-desk trades (flagged isService so only the city-home tiles list
+  // them). Slugs are prefixed, so this never touches a general category.
+  for (const c of serviceCategories) {
+    await prisma.businessCategory.upsert({
+      where: { slug: c.slug },
+      update: { name: c.name, icon: c.icon, isService: true },
+      create: { ...c, isService: true },
+    });
+  }
 
   // News categories
   for (const c of newsCategories) {

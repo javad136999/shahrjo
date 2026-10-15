@@ -25,10 +25,13 @@ describe('HeaderPills', () => {
     mockGetCities.mockResolvedValue([]);
   });
 
-  it('shows the remembered city name and opens the picker in place (no page jump)', async () => {
+  it('reads «انتخاب شهر» and opens the picker in place (no page jump)', async () => {
     render(<HeaderPills />);
     const pill = await screen.findByTestId('header-city-pill');
-    expect(pill).toHaveTextContent('شهر نمونه');
+    // The pill is a fixed action, never a state readout — the header's first
+    // slot (header-city.tsx) is where the current city is displayed.
+    expect(pill).toHaveTextContent('انتخاب شهر');
+    expect(pill).not.toHaveTextContent('شهر نمونه');
     // it is a toggle button now, not a link to the first-run screen
     expect(pill.tagName).toBe('BUTTON');
     expect(pill).not.toHaveAttribute('href');
@@ -70,16 +73,17 @@ describe('HeaderPills', () => {
     expect(screen.queryByRole('link', { name: /ثبت آگهی/ })).not.toBeInTheDocument();
   });
 
-  it('re-reads the city when another part of the page stores a new one', async () => {
+  it('keeps the news link on the remembered city after another part stores a new one', async () => {
     render(<HeaderPills />);
     await screen.findByTestId('header-city-pill');
-    expect(screen.getByTestId('header-city-pill')).toHaveTextContent('شهر نمونه');
+    expect(screen.getByTestId('header-news-pill')).toHaveAttribute('href', '/city/sample-city/news');
 
     mockGetLocalCity.mockReturnValue({ id: 7, slug: 'new-city', name: 'شهر جدید' });
     window.dispatchEvent(new CustomEvent('shahrjo:city-changed'));
 
-    expect(await screen.findByTestId('header-city-pill')).toHaveTextContent('شهر جدید');
-    expect(screen.getByTestId('header-news-pill')).toHaveAttribute('href', '/city/new-city/news');
+    expect(await screen.findByTestId('header-news-pill')).toHaveAttribute('href', '/city/new-city/news');
+    // the pill label never changes — it is «انتخاب شهر», not a readout
+    expect(screen.getByTestId('header-city-pill')).toHaveTextContent('انتخاب شهر');
   });
 
   it('keeps the header to news + city (no subscription, no submit pill)', async () => {

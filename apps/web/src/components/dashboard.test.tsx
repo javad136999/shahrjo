@@ -8,6 +8,14 @@ jest.mock('@/components/city-map', () => ({
   CityMap: ({ data }: { data: CityMapData }) => <div data-testid="city-map" data-pins={data.businesses.length} />,
 }));
 
+// The service desk (city-services.test.tsx covers it) — stubbed so these tests
+// stay about the dashboard layout, not about the desk's fetches/router.
+jest.mock('@/components/city-services', () => ({
+  CityServices: ({ cityName }: { cityName: string }) => (
+    <div data-testid="city-services" data-city={cityName} />
+  ),
+}));
+
 const city: City = {
   id: 1,
   name: 'شهر نمونه',
@@ -79,6 +87,17 @@ describe('CityDashboard', () => {
     expect(cta).toHaveAttribute('href', '/wall');
     expect(cta).toHaveTextContent('ورود به دیوار شهر');
     expect(cta).toHaveClass('wall-cta');
+  });
+
+  it('mounts the service desk right under the welcome card', () => {
+    renderDashboard({ mapData });
+    const desk = screen.getByTestId('city-services');
+    expect(desk).toHaveAttribute('data-city', 'شهر نمونه');
+    // the greeting card comes first, the desk sits between it and the map
+    const order = [...document.querySelectorAll('[data-testid="dash-welcome"], [data-testid="city-services"], [data-testid="city-map"]')].map(
+      (el) => el.getAttribute('data-testid'),
+    );
+    expect(order).toEqual(['dash-welcome', 'city-services', 'city-map']);
   });
 
   it('keeps news, ads and businesses off the home page', () => {

@@ -8,13 +8,11 @@ import { CityPicker } from '@/components/city-picker';
 import type { LocalCity } from '@/lib/types';
 
 /**
- * Header quick actions (JamCity-style pills): the city's news page and the
- * remembered city's name — clicking the city name opens the in-place city
- * picker (search + suggestions) instead of navigating to another page. The «ثبت آگهی» entry no longer lives here: it
- * moved to the composer of the city wall (Phase 10). The city is re-read
- * after mount, on navigation and whenever another part of the page stores a
- * new city, so SSR output stays deterministic (no hydration mismatch) and
- * the pill never goes stale.
+ * Header quick actions: the city's news page and the «انتخاب شهر» pill.
+ * The pill opens the in-place city picker (search + suggestions) instead of
+ * navigating — it is the single entry point for changing city, since the
+ * header's first slot only displays where you are. The «ثبت آگهی» entry no
+ * longer lives here: it moved to the composer of the city wall.
  */
 export function HeaderPills() {
   const [city, setCity] = useState<LocalCity | null>(null);
@@ -44,7 +42,10 @@ export function HeaderPills() {
         <span aria-hidden>📰</span>
         <span className="pill__label">اخبار شهر</span>
       </Link>
-      {/* the city pill opens the picker in place — no page jump */}
+      {/* This is the ONLY way to change the city: it opens the picker with
+          search in place — no page jump. It always reads «انتخاب شهر» rather
+          than the current city, because the adjacent header slot already
+          shows where you are. */}
       <button
         type="button"
         className="pill header-citybtn"
@@ -55,7 +56,7 @@ export function HeaderPills() {
         onClick={() => setPickerOpen((open) => !open)}
       >
         <span aria-hidden>🏙</span>
-        <span className="pill__label">{city ? city.name : 'انتخاب شهر'}</span>
+        <span className="pill__label">انتخاب شهر</span>
       </button>
       <CityPicker open={pickerOpen} onClose={() => setPickerOpen(false)} />
     </div>

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import { BottomNav } from '@/components/bottom-nav';
 import { HeaderActions } from '@/components/header-actions';
+import { HeaderCity } from '@/components/header-city';
 import { HeaderPills } from '@/components/header-pills';
 import { SiteChrome } from '@/components/site-chrome';
 import { VisitBeacon } from '@/components/visit-beacon';
@@ -73,12 +74,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SiteChrome>
           <header className="site-header">
             <div className="container header-inner">
-              <Link href="/" className="brand">
-                <span className="brand-mark" aria-hidden>
-                  🏙
-                </span>
-                انتخاب شهر
-              </Link>
+              {/* The first slot on the right is the city the visitor is in.
+                  It is a fixed label, not a link: clicking it goes nowhere —
+                  changing the city lives in the «انتخاب شهر» pill next to it. */}
+              <HeaderCity />
               <HeaderPills />
               <HeaderActions />
             </div>

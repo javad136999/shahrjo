@@ -81,16 +81,25 @@ describe('ProfileView', () => {
     expect(await screen.findByText(/شهر نمونه/)).toBeInTheDocument();
   });
 
-  it('lists my ads and favorites as separate sections', async () => {
+  it('keeps favorites but no longer lists or links the owner\u2019s ads', async () => {
     render(<ProfileView />);
 
-    expect(await screen.findByRole('region', { name: 'آگهی‌های من' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'علاقه‌مندی‌ها' })).toBeInTheDocument();
-    expect(screen.getByTestId('my-ad-3')).toHaveTextContent('آگهی من');
+    // «آگهی‌های من» left the profile — ads are composed and managed from the
+    // city wall, so the profile stays an account screen.
+    expect(screen.queryByRole('region', { name: 'آگهی‌های من' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /ثبت آگهی جدید/ })).not.toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'علاقه‌مندی‌ها' })).toBeInTheDocument();
     expect(screen.getByTestId('my-ad-9')).toHaveTextContent('آگهی ذخیره‌شده');
-    // both link into the ad detail page
-    expect(screen.getByTestId('my-ad-3').querySelector('a')).toHaveAttribute('href', '/ad/3');
     expect(screen.getByTestId('my-ad-9').querySelector('a')).toHaveAttribute('href', '/ad/9');
+    // and it never fetched the owner's ads at all
+    expect(mockGetMyAds).not.toHaveBeenCalled();
+  });
+
+  it('offers the admin panel to operators only', async () => {
+    render(<ProfileView />);
+    await screen.findByTestId('profile-card');
+    // a plain user has no admin entry here (it was removed from the header)
+    expect(screen.queryByTestId('profile-admin')).not.toBeInTheDocument();
   });
 
   it('saves an edited display name', async () => {

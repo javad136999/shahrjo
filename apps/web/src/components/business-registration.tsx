@@ -46,9 +46,10 @@ type Step = 1 | 2 | 3;
 /**
  * Three-step business registration: details → pin location on the city map →
  * pick a Gold/Silver plan and pay. On confirm it creates the business (PENDING
- * + FREE), then starts a ZarinPal checkout bound to that business; the browser
- * is redirected to the gateway. The paid tier is applied server-side after a
- * verified payment (and admin review for business-bound plans).
+ * + FREE), then starts a Sepal checkout bound to that business; the browser
+ * is redirected to the gateway. A verified payment applies the paid tier AND
+ * approves the still-PENDING business server-side — there is no admin step
+ * for a paid signup (an explicit earlier admin rejection is still respected).
  */
 export function BusinessRegistration() {
   const router = useRouter();
@@ -363,7 +364,9 @@ export function BusinessRegistration() {
 
       {step === 3 && (
         <div>
-          <p className="muted">             اشتراک کسب‌وکارت را انتخاب کن. با «تأیید و پرداخت»، کسب‌وکارت ثبت و به درگاه پرداخت سپال منتقل می‌شوی.
+          <p className="muted">
+            اشتراک کسب‌وکارت را انتخاب کن. با «تأیید و پرداخت»، کسب‌وکارت ثبت و به درگاه پرداخت سپال
+            منتقل می‌شوی؛ بلافاصله پس از پرداخت موفق، اشتراک فعال و کسب‌وکارت تأیید می‌شود.
           </p>
           {!plans && !error && (
             <p className="loading muted" aria-busy>

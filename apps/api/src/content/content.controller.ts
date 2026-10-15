@@ -21,11 +21,11 @@ export class ContentController {
     return this.content.ads(query.city, query.limit, query.category);
   }
 
-  /** Approved businesses of one city (showcase order). */
+  /** Approved businesses of one city (showcase order; optional category filter). */
   @Public()
   @Get('businesses')
   businesses(@Query() query: CityContentQueryDto): ReturnType<ContentService['businesses']> {
-    return this.content.businesses(query.city, query.limit);
+    return this.content.businesses(query.city, query.limit, query.category);
   }
 
   /** Golden showcase: paid-tier businesses for the animated marquee (Phase 9). */

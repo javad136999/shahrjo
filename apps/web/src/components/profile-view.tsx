@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import {
   ApiError,
   api,
-  getMyAds,
   getMyFavorites,
   getProfile,
   getTokens,
@@ -18,14 +17,16 @@ import type { City, MeResponse, MyAdItem } from '@/lib/types';
 import { MyAdsList } from './my-ads';
 
 /**
- * Profile page (Phase 6): account info + editable display name, the owner's
- * ads (with moderation status) and the saved/favorited ads.
+ * Profile page: account info + editable display name and the saved/favorited
+ * ads. The ad-submission entry and «آگهی‌های من» deliberately do NOT live here
+ * any more — ads are composed and managed from the city wall, so the profile
+ * stays an account screen. Operators (non-USER roles) keep a link to the admin
+ * panel here, which is the only place it is offered now.
  */
 export function ProfileView() {
   const router = useRouter();
   const [me, setMe] = useState<MeResponse | null | undefined>(undefined); // undefined = loading
   const [cityName, setCityName] = useState<string | null>(null);
-  const [myAds, setMyAds] = useState<MyAdItem[]>([]);
   const [favorites, setFavorites] = useState<MyAdItem[]>([]);
   const [fullName, setFullName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -40,15 +41,13 @@ export function ProfileView() {
     let alive = true;
     (async () => {
       try {
-        const [profile, ads, favs] = await Promise.all([
+        const [profile, favs] = await Promise.all([
           getProfile(),
-          getMyAds(),
           getMyFavorites(),
         ]);
         if (!alive) return;
         setMe(profile);
         setFullName(profile.fullName ?? '');
-        setMyAds(ads);
         setFavorites(favs);
         if (profile.cityId) {
           api
@@ -136,9 +135,8 @@ export function ProfileView() {
         )}
 
         <div className="auth-actions">
-          <Link href="/ads/new" className="btn btn-ghost">
-            📝 ثبت آگهی جدید
-          </Link>
+          {/* ثبت آگهی/لیست آگهی‌های من اینجا نیست — آگهی از دیوار شهر ثبت
+              می‌شود و مدیریتِ آن همان‌جاست. پنل مدیریت فقط برای اپراتور. */}
           {me.roles.some((r) => r !== 'USER') && (
             <Link href="/admin" className="btn btn-ghost" data-testid="profile-admin">
               🛡️ پنل مدیریت
@@ -148,11 +146,6 @@ export function ProfileView() {
             خروج از حساب
           </button>
         </div>
-      </section>
-
-      <section className="form-card my-ads" aria-label="آگهی‌های من">
-        <h2>آگهی‌های من</h2>
-        <MyAdsList items={myAds} />
       </section>
 
       <section className="form-card my-ads" aria-label="علاقه‌مندی‌ها">

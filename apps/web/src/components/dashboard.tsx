@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { CityMap } from '@/components/city-map';
+import { CityServices } from '@/components/city-services';
 import { ShowcaseMarquee } from '@/components/showcase-marquee';
 import type { City, CityMapData, ShowcaseItem } from '@/lib/types';
 
@@ -35,6 +36,11 @@ export function CityDashboard({ city, showcase, mapData, loading, feedError }: C
           به شهر {city.name} خوش آمدید
         </h1>
       </header>
+
+      {/* دفتر خدمات شهر: راست «شغلتو ثبت کن» (رایگان و فوری)، چپ «چه خدماتی
+          در شهر … نیاز داری؟» با فهرست مشاغل ثبت‌شده و دکمهٔ تماس. زیر همین
+          کارت و بالای نقشه می‌نشیند. */}
+      <CityServices cityName={city.name} citySlug={city.slug} />
 
       {feedError && (
         <div className="banner banner--error" role="alert">

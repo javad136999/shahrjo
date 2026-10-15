@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateBusinessDto,
   CreateProductDto,
+  CreateQuickBusinessDto,
   UpdateBusinessDto,
   UpdateProductDto,
 } from './businesses.dto';
@@ -167,6 +168,19 @@ export class BusinessesService {
     });
   }
 
+  /**
+   * Active *service* trades (تعمیرکار کولر، نقاش ساختمان، کابینت‌ساز…) — the
+   * list the city-home service desk offers. The general signup keeps every
+   * category, so shops and venues stay out of here.
+   */
+  async serviceCategories(): Promise<BusinessCategoryOption[]> {
+    return this.prisma.businessCategory.findMany({
+      where: { isActive: true, isService: true },
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      select: { id: true, name: true, slug: true, icon: true },
+    });
+  }
+
   async create(user: User, dto: CreateBusinessDto): Promise<CreatedBusiness> {
     if (!user.cityId) throw new BadRequestException('ابتدا شهر خودت را انتخاب کن');
 
@@ -193,29 +207,8 @@ export class BusinessesService {
     });
     if (!category) throw new NotFoundException('دسته‌بندی یافت نشد');
 
-    const dayAgo = new Date(Date.now() - 86_400_000);
-    const recent = await this.prisma.business.count({
-      where: { ownerId: user.id, createdAt: { gte: dayAgo } },
-    });
-    if (recent >= MAX_NEW_PER_DAY) {
-      throw new HttpException(
-        'سقف ثبت کسب‌وکار در روز پر شده است؛ فردا دوباره تلاش کنید',
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
-
-    // Unique slug: base + short random suffix, verified against the table.
-    const base = businessSlug(dto.name);
-    let slug = '';
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      const candidate = `${base}-${Math.random().toString(36).slice(2, 8)}`;
-      const clash = await this.prisma.business.findUnique({ where: { slug: candidate }, select: { id: true } });
-      if (!clash) {
-        slug = candidate;
-        break;
-      }
-    }
-    if (!slug) throw new HttpException('خطا در ثبت کسب‌وکار؛ دوباره تلاش کنید', HttpStatus.INTERNAL_SERVER_ERROR);
+    await this.assertDailyCap(user.id);
+    const slug = await this.uniqueSlug(dto.name);
 
     const created = await this.prisma.business.create({
       data: {
@@ -240,6 +233,81 @@ export class BusinessesService {
     if (logoUrl) await this.claimImage(user, logoUrl, created.id);
 
     return { ...created, status: String(created.status), subscriptionTier: String(created.subscriptionTier) };
+  }
+
+  /**
+   * The city-home service desk («شغلتو ثبت کن»): a compact, free signup for a
+   * service trade that publishes immediately — neighbours must be able to find
+   * and call the tradesperson the same minute they registered.
+   *
+   * Deliberate difference from `create`: no payment, no admin step, so the
+   * abuse surface is trimmed elsewhere instead — only `isService` categories
+   * are accepted, the contact phone is mandatory (it is the point of the
+   * listing), the same per-day cap applies, and the slug is still unique. An
+   * operator can suspend or delete any row from the admin queue.
+   */
+  async createQuick(user: User, dto: CreateQuickBusinessDto): Promise<CreatedBusiness> {
+    if (!user.cityId) throw new BadRequestException('ابتدا شهر خودت را انتخاب کن');
+
+    const city = await this.prisma.city.findFirst({
+      where: { id: user.cityId, isActive: true, province: { isActive: true } },
+      select: { id: true },
+    });
+    if (!city) throw new NotFoundException('شهر انتخاب‌شده یافت نشد');
+
+    const category = await this.prisma.businessCategory.findFirst({
+      where: { id: dto.categoryId, isActive: true, isService: true },
+      select: { id: true },
+    });
+    if (!category) throw new NotFoundException('این دسته‌بندی در فهرست خدمات شهر نیست');
+
+    await this.assertDailyCap(user.id);
+    const slug = await this.uniqueSlug(dto.name);
+
+    const created = await this.prisma.business.create({
+      data: {
+        ownerId: user.id,
+        cityId: city.id,
+        categoryId: category.id,
+        name: dto.name,
+        slug,
+        description: dto.description ?? null,
+        phone: dto.phone ?? user.phone ?? null,
+        address: dto.address ?? null,
+        // Service desk: published immediately (see the doc comment above).
+        status: 'APPROVED',
+        subscriptionTier: 'FREE',
+        subscriptionStatus: 'NONE',
+      },
+      select: { id: true, name: true, slug: true, status: true, subscriptionTier: true },
+    });
+
+    return { ...created, status: String(created.status), subscriptionTier: String(created.subscriptionTier) };
+  }
+
+  /** Shared anti-flood cap for both signup paths (per owner, per rolling day). */
+  private async assertDailyCap(ownerId: number): Promise<void> {
+    const dayAgo = new Date(Date.now() - 86_400_000);
+    const recent = await this.prisma.business.count({
+      where: { ownerId, createdAt: { gte: dayAgo } },
+    });
+    if (recent >= MAX_NEW_PER_DAY) {
+      throw new HttpException(
+        'سقف ثبت کسب‌وکار در روز پر شده است؛ فردا دوباره تلاش کنید',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+  }
+
+  /** Unique slug: base + short random suffix, verified against the table. */
+  private async uniqueSlug(name: string): Promise<string> {
+    const base = businessSlug(name);
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const candidate = `${base}-${Math.random().toString(36).slice(2, 8)}`;
+      const clash = await this.prisma.business.findUnique({ where: { slug: candidate }, select: { id: true } });
+      if (!clash) return candidate;
+    }
+    throw new HttpException('خطا در ثبت کسب‌وکار؛ دوباره تلاش کنید', HttpStatus.INTERNAL_SERVER_ERROR);
   }
 
   /** The caller's own businesses (any status) — the «کسب‌وکارهای من» list. */

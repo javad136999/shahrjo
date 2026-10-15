@@ -40,16 +40,11 @@ export function HeaderActions() {
     );
   }
 
-  const isOperator = me.roles.some((r) => r !== 'USER');
-
+  // The admin entry is NOT in the header any more (only operators ever saw it,
+  // and it lives in the profile page where it belongs) — the header is for
+  // everyone, signed in or not.
   return (
     <div className="header-user">
-      {isOperator && (
-        <Link href="/admin" className="pill pill--gold" title="پنل مدیریت" data-testid="header-admin">
-          <span aria-hidden>🛡️</span>
-          <span className="pill__label">مدیریت</span>
-        </Link>
-      )}
       <Link href="/profile" className="header-phone" dir="ltr" title="پروفایل من" data-testid="header-profile">
         {me.phone}
       </Link>

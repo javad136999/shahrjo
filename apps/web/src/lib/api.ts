@@ -409,8 +409,13 @@ export async function getCityAds(slug: string, limit = 8, category?: string): Pr
   return api.get<AdItem[]>(`/ads?${cityQS(slug, limit)}${cat}`);
 }
 
-export async function getCityBusinesses(slug: string, limit = 8): Promise<BusinessItem[]> {
-  return api.get<BusinessItem[]>(`/businesses?${cityQS(slug, limit)}`);
+export async function getCityBusinesses(
+  slug: string,
+  limit = 8,
+  category?: string,
+): Promise<BusinessItem[]> {
+  const cat = category ? `&category=${encodeURIComponent(category)}` : '';
+  return api.get<BusinessItem[]>(`/businesses?${cityQS(slug, limit)}${cat}`);
 }
 
 // ---------- city wall (دیوار شهر — Phase 8b) ----------
@@ -520,6 +525,29 @@ export function setLocalCity(city: LocalCity): void {
 /** Active business categories for the registration form (public). */
 export async function getBusinessCategories(): Promise<BusinessCategoryOption[]> {
   return api.get<BusinessCategoryOption[]>('/business-categories');
+}
+
+/**
+ * Active *service* trades (تعمیرکار کولر، نقاش ساختمان…) — only these feed the
+ * city-home service desk; the general signup keeps every category.
+ */
+export async function getServiceCategories(): Promise<BusinessCategoryOption[]> {
+  return api.get<BusinessCategoryOption[]>('/service-categories');
+}
+
+/**
+ * Compact service-desk signup (auth). No payment, no admin step — a service
+ * trade publishes immediately. The category must be a service one and the
+ * phone is required (calling is how the listing is used).
+ */
+export async function createQuickBusiness(body: {
+  name: string;
+  categoryId: number;
+  phone: string;
+  description?: string;
+  address?: string;
+}): Promise<CreatedBusiness> {
+  return api.post<CreatedBusiness>('/businesses/quick', body);
 }
 
 /** Registers a new business (auth) — starts PENDING + FREE; tier is applied after payment. */

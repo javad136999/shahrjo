@@ -216,10 +216,23 @@ export class ContentService {
     }));
   }
 
-  async businesses(citySlug: string, limit: number = DEFAULT_CONTENT_LIMIT): Promise<BusinessItem[]> {
+  /**
+   * Approved businesses of one city (showcase order), optionally narrowed to a
+   * single category — the city-home service desk («چه خدماتی نیاز داری») uses
+   * that filter to list the trades of the chosen service.
+   */
+  async businesses(
+    citySlug: string,
+    limit: number = DEFAULT_CONTENT_LIMIT,
+    categorySlug?: string,
+  ): Promise<BusinessItem[]> {
     const cityId = await this.resolveCity(citySlug);
     return this.prisma.business.findMany({
-      where: { cityId, status: 'APPROVED' },
+      where: {
+        cityId,
+        status: 'APPROVED',
+        ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+      },
       // showcase order: lower priority first (gold showcase), then best rated
       orderBy: [{ showcasePriority: 'asc' }, { rating: 'desc' }],
       take: limit,
