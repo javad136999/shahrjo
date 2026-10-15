@@ -495,7 +495,14 @@ export async function getCityMap(slug: string): Promise<CityMapData> {
   return api.get<CityMapData>(`/map?city=${encodeURIComponent(slug)}`);
 }
 
-export async function sendOtp(phone: string): Promise<{ sent: true; cooldownSeconds: number }> {
+export async function sendOtp(phone: string): Promise<{
+  sent: true;
+  cooldownSeconds: number;
+  /** Expected OTP length — the form auto-submits the moment the field is full. */
+  codeLength?: number;
+  /** Only with the console SMS provider (nothing actually leaves the server). */
+  autoFillCode?: string;
+}> {
   return api.post('/auth/send-otp', { phone });
 }
 

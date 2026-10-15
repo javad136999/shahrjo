@@ -133,7 +133,8 @@ describe('AuthService.sendOtp', () => {
 
     const result = await service.sendOtp({ phone: PHONE, ip: 'ip1' });
 
-    expect(result).toEqual({ sent: true, cooldownSeconds: 60 });
+    expect(result).toEqual({ sent: true, cooldownSeconds: 60, codeLength: 5 });
+    expect(result.autoFillCode).toBeUndefined(); // a real provider never echoes the code
     expect(sms.sendOtp).toHaveBeenCalledTimes(1);
     const [sentTo, sentCode] = sms.sendOtp.mock.calls[0];
     expect(sentTo).toBe(PHONE);
@@ -152,6 +153,22 @@ describe('AuthService.sendOtp', () => {
     expect(prisma.otpCode.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { phone: PHONE, purpose: 'LOGIN', consumedAt: null } }),
     );
+  });
+
+  it('echoes the code only when the console provider is used (no real SMS leaves)', async () => {
+    const { service, prisma, sms } = makeService();
+    prisma.otpCode.findFirst.mockResolvedValue(null);
+    prisma.otpCode.updateMany.mockResolvedValue({ count: 0 });
+    prisma.otpCode.create.mockResolvedValue({});
+    (sms as unknown as { name: string }).name = 'console'; // delivery never leaves the server
+
+    const result = await service.sendOtp({ phone: PHONE, ip: 'ip1' });
+
+    const sentCode = sms.sendOtp.mock.calls[0][1] as string;
+    expect(result.codeLength).toBe(sentCode.length);
+    expect(result.autoFillCode).toBe(sentCode); // → the form auto-fills and logs in
+    // still never stored raw: the row keeps only the peppered hash
+    expect(prisma.otpCode.create.mock.calls[0][0].data.codeHash).not.toContain(sentCode);
   });
 
   it('invalidates the fresh OTP and returns 502 when the SMS provider fails', async () => {

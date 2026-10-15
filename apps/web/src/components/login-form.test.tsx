@@ -64,11 +64,42 @@ describe('LoginForm', () => {
     await waitFor(() => expect(screen.getByLabelText('کد تأیید')).toBeInTheDocument());
 
     fireEvent.change(screen.getByLabelText('کد تأیید'), { target: { value: '123456' } });
-    fireEvent.click(screen.getByRole('button', { name: 'ورود' }));
-
+    // a full code auto-submits — the ورود button is no longer needed for it
     await waitFor(() =>
       expect(verifyOtp).toHaveBeenCalledWith('09123456789', '123456'),
     );
+    expect(push).toHaveBeenCalledWith('/city/dayer');
+  });
+
+  it('auto-fills the code and completes the login by itself (console SMS)', async () => {
+    // the console provider never sends a real SMS, so the API echoes the code
+    // for the form to fill — and then nobody should type it
+    sendOtp.mockResolvedValue({ sent: true, cooldownSeconds: 60, codeLength: 5, autoFillCode: '54321' });
+    verifyOtp.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', user: { id: 1 } });
+    render(<LoginForm />);
+
+    fireEvent.change(screen.getByLabelText('شماره موبایل'), { target: { value: '09123456789' } });
+    fireEvent.click(screen.getByRole('button', { name: /ارسال کد تأیید/ }));
+
+    // the field fills itself AND the login runs without another tap
+    await waitFor(() => expect(screen.getByLabelText('کد تأیید')).toHaveValue('54321'));
+    await waitFor(() => expect(verifyOtp).toHaveBeenCalledWith('09123456789', '54321'));
+    expect(push).toHaveBeenCalledWith('/city/dayer');
+  });
+
+  it('logs in the moment an autofilled/pasted code fills the field', async () => {
+    sendOtp.mockResolvedValue({ sent: true, cooldownSeconds: 60, codeLength: 5 });
+    verifyOtp.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', user: { id: 1 } });
+    render(<LoginForm />);
+
+    fireEvent.change(screen.getByLabelText('شماره موبایل'), { target: { value: '09123456789' } });
+    fireEvent.click(screen.getByRole('button', { name: /ارسال کد تأیید/ }));
+    await waitFor(() => expect(screen.getByLabelText('کد تأیید')).toBeInTheDocument());
+
+    // SMS autofill/paste drops the full code in — no ورود tap needed
+    fireEvent.change(screen.getByLabelText('کد تأیید'), { target: { value: '12345' } });
+
+    await waitFor(() => expect(verifyOtp).toHaveBeenCalledWith('09123456789', '12345'));
     expect(push).toHaveBeenCalledWith('/city/dayer');
   });
 
@@ -81,7 +112,9 @@ describe('LoginForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /ارسال کد تأیید/ }));
     await waitFor(() => expect(screen.getByLabelText('کد تأیید')).toBeInTheDocument());
 
-    fireEvent.change(screen.getByLabelText('کد تأیید'), { target: { value: '000000' } });
+    // a short (still valid-shaped) code does NOT auto-submit: the button path
+    // stays reachable for anyone who wants to fix and resubmit
+    fireEvent.change(screen.getByLabelText('کد تأیید'), { target: { value: '0000' } });
     fireEvent.click(screen.getByRole('button', { name: 'ورود' }));
 
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('کد نامعتبر است'));

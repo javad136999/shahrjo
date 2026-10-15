@@ -22,7 +22,11 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  /** How long the code is — auto-submit fires the moment the field is full. */
+  const [codeLength, setCodeLength] = useState(5);
   const codeRef = useRef<HTMLInputElement>(null);
+  /** State updates lag behind events — a ref stops a double login race. */
+  const submitting = useRef(false);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -43,8 +47,17 @@ export function LoginForm() {
       const res = await sendOtp(p);
       setStep('code');
       setCooldown(res.cooldownSeconds ?? 0);
-      // focus the code input after the step switch renders
-      setTimeout(() => codeRef.current?.focus(), 0);
+      setCodeLength(res.codeLength ?? 5);
+      if (res.autoFillCode) {
+        // The code never left the server (console SMS provider): fill it and
+        // log the user in — no typing, no second tap.
+        setCode(res.autoFillCode);
+        setTimeout(() => void doLogin(res.autoFillCode as string), 0);
+      } else {
+        // focus the code input after the step switch renders (the browser can
+        // then autofill it straight from the incoming SMS)
+        setTimeout(() => codeRef.current?.focus(), 0);
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'ارسال کد با خطا مواجه شد');
     } finally {
@@ -52,13 +65,16 @@ export function LoginForm() {
     }
   };
 
-  const submitCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const c = code.trim();
+  /** The actual login — called by the button, by autofill/paste (field full)
+   *  and by the auto-filled console code. */
+  const doLogin = async (raw: string) => {
+    if (submitting.current) return;
+    const c = raw.trim();
     if (!OTP_CODE.test(c)) {
       setError('کد ۴ تا ۸ رقمی را وارد کنید');
       return;
     }
+    submitting.current = true;
     setError(null);
     setBusy(true);
     try {
@@ -85,7 +101,21 @@ export function LoginForm() {
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'کد نامعتبر است');
       setBusy(false);
+      submitting.current = false;
     }
+  };
+
+  const submitCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    void doLogin(code);
+  };
+
+  /** Typing / pasting / SMS autofill all land here: a full code logs in by itself. */
+  const onCodeChange = (raw: string) => {
+    const digits = raw.replace(/\D/g, '').slice(0, 8);
+    setCode(digits);
+    setError(null);
+    if (digits.length >= codeLength) void doLogin(digits);
   };
 
   const resend = async () => {
@@ -95,6 +125,12 @@ export function LoginForm() {
     try {
       const res = await sendOtp(phone.trim());
       setCooldown(res.cooldownSeconds ?? 0);
+      setCodeLength(res.codeLength ?? 5);
+      // a fresh code arrives the same way: fill + auto-login (console provider)
+      if (res.autoFillCode) {
+        setCode(res.autoFillCode);
+        setTimeout(() => void doLogin(res.autoFillCode as string), 0);
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'ارسال مجدد کد با خطا مواجه شد');
     } finally {
@@ -146,11 +182,12 @@ export function LoginForm() {
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
+            pattern="[0-9]*"
             maxLength={8}
             placeholder="12345"
             dir="ltr"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={(e) => onCodeChange(e.target.value)}
             required
           />
           {error && <p className="error" role="alert">{error}</p>}

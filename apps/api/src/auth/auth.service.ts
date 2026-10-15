@@ -47,7 +47,9 @@ export class AuthService {
 
   // ================= send OTP =================
 
-  async sendOtp(input: { phone: string; ip: string }): Promise<{ sent: true; cooldownSeconds: number }> {
+  async sendOtp(
+    input: { phone: string; ip: string },
+  ): Promise<{ sent: true; cooldownSeconds: number; codeLength: number; autoFillCode?: string }> {
     const phone = this.requirePhone(input.phone);
 
     const ipLimit = await this.rateLimiter.hit(`otp:send:ip:${input.ip}`, this.int('OTP_IP_LIMIT_PER_HOUR', 20), 3600);
@@ -101,7 +103,18 @@ export class AuthService {
       );
     }
 
-    return { sent: true, cooldownSeconds: cooldown };
+    return {
+      sent: true as const,
+      cooldownSeconds: cooldown,
+      // Not secret: lets the login form auto-submit the moment the field is
+      // full (paste / browser SMS autofill / typing the last digit).
+      codeLength: code.length,
+      // The console provider never leaves the server — with nothing echoed the
+      // code would be unreachable and nobody could ever sign in, so it comes
+      // back for the form to auto-fill. With a real SMS provider nothing is
+      // echoed (the phone fills the one-time-code field from the message).
+      ...(this.sms.name === 'console' ? { autoFillCode: code } : {}),
+    };
   }
 
   // ================= verify OTP =================
