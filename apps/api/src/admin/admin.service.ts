@@ -142,9 +142,11 @@ export interface QueueSubscription {
  * everything, PROVINCE_ADMIN/CITY_ADMIN only their area), with every decision
  * written to `audit_logs`.
  *
- * A successful payment never publishes anything by itself: business-bound
- * subscriptions only go live here (approve -> ACTIVE + business tier), which
- * is what feeds the golden showcase and the city map.
+ * A verified payment now activates its subscription and promotes the business
+ * by itself (see PaymentsService.verifyPayment) — these queues review content
+ * (ads, businesses) and any legacy PENDING_REVIEW subscription rows. An
+ * explicit rejection here is never overridden by a later payment: only the
+ * tier changes, the rejected status stays.
  */
 @Injectable()
 export class AdminService {

@@ -65,9 +65,9 @@
 | POST `/payments/checkout` | Bearer | `{ planId, businessId? }` → ایجاد پرداخت `CREATED` (+ `provider`)، دریافت pay URL از سپال (`invoiceNumber` = شناسه پرداخت)، وضعیت `STARTED` → `{ paymentId, payUrl, authority, amount }`؛ سقف ۱۰ checkout در ساعت؛ `businessId` فقط اگر متعلق به خود کاربر باشد |
 | GET `/payments/callback?Authority=&Status=` یا `?paymentNumber=&status=` | @Public | بازگشت درگاه (هر دو سبک: زرین‌پال `Authority/Status=OK`، سپال `paymentNumber/status=1` با `callbackMethod=get`) → نرمال‌سازی به یک قرارداد و verify سمت سرور با همان providerِ ثبت‌شده (کد 100/101 = موفق)؛ تراکنش موفق در یک تراکنش DB به `SUCCESS` + ایجاد `Subscription` می‌شود (تکرارِ callback → `ALREADY_PAID` بدون اشتراک دوم)؛ وگرنه `CANCELED`/`FAILED`؛ سپس 302 به `WEB_URL/plans/result?status=...` |
 | GET `/payments/mine` | Bearer | تاریخچه پرداخت‌های کاربر (مبلغ عددی، برچسب پلن) |
-| GET `/subscriptions/mine` | Bearer | اشتراک‌های کاربر + وضعیت (`ACTIVE`/`PENDING_REVIEW`) و نام کسب‌وکار |
+| GET `/subscriptions/mine` | Bearer | اشتراک‌های کاربر + وضعیت (`ACTIVE`؛ ردیف‌های قدیمی `PENDING_REVIEW`) و نام کسب‌وکار |
 
-قانون اشتراک: پلنِ متصل به کسب‌وکار پس از پرداخت `PENDING_REVIEW` می‌ماند (تأیید مدیر)؛ پلنِ شخصی بلافاصله `ACTIVE` می‌شود. کلیدها فقط در env (`SEPAL_*` و `ZARINPAL_*`) — هرگز در کد یا سمت کلاینت.
+قانون اشتراک: هر پرداختِ تأییدشده (شخصی یا کسب‌وکاری) بلافاصله `ACTIVE` می‌شود و تراکنشِ verify همان لحظه تیِر کسب‌وکار را اعمال و ثبت‌نامِ `PENDING` را تأیید می‌کند — بدون تأیید مدیر. ردِ صریح مدیر (بازبینی‌شده) هرگز با پرداخت جدید بازنویسی نمی‌شود؛ `PENDING_REVIEW` فقط برای ردیف‌های قدیمی می‌ماند. کلیدها فقط در env (`SEPAL_*` و `ZARINPAL_*`) — هرگز در کد یا سمت کلاینت.
 
 ## Content (همه City-scoped)
 
@@ -104,7 +104,7 @@
 | POST `/admin/businesses/:id/reject` | `businesses.moderate` | `{ reason }` الزامی → `REJECTED` + audit |
 | POST `/admin/businesses/:id/suspend` | `businesses.moderate` | `{ reason }` الزامی (حداقل ۳ حرف) → **تعلیق**: `CLOSED` — کسب‌وکار همان لحظه از فهرست/نقشه/ویترین/جزئیات خارج می‌شود (همهٔ کوئری‌های عمومی `APPROVED` فیلتر می‌کنند)؛ برگشت‌پذیر با تأیید دوباره + audit |
 | POST `/admin/businesses/:id/delete` | `businesses.moderate` | **حذف**: `DELETED` + صفرشدن `logoUrl`/`coverUrl` + پاک‌سازی فوری عکس‌های claim‌شدهٔ همان کسب‌وکار از دیسک (`purgeEntity('BUSINESS', id)`)؛ ردیف برای audit می‌ماند + audit با `removedFiles` |
-| GET `/admin/subscriptions?status=PENDING_REVIEW` | `subscriptions.manage` | اشتراک‌های پرداخت‌شده در انتظار تأیید |
+| GET `/admin/subscriptions?status=PENDING_REVIEW` | `subscriptions.manage` | صف اشتراک‌های قدیمیِ در انتظار تأیید (پرداخت‌های جدید خودکار فعال می‌شوند) |
 | POST `/admin/subscriptions/:id/approve` | `subscriptions.manage` | `ACTIVE` + `startsAt`/`expiresAt` + ارتقای tier کسب‌وکار (`showcasePriority` طلایی=۱۰، نقره‌ای=۵۰)؛ هرگز انقضای فعالِ فعلی را کوتاه‌تر نمی‌کند + audit |
 | POST `/admin/subscriptions/:id/reject` | `subscriptions.manage` | `{ reason }` الزامی → `REJECTED` + `reviewNote` + audit |
 

@@ -42,9 +42,12 @@ export type PaymentResultStatus = 'SUCCESS' | 'FAILED' | 'CANCELED' | 'ALREADY_P
  * Flow: POST /payments/checkout creates a CREATED payment and asks the
  * gateway for a pay URL -> the payer is redirected there -> the gateway
  * redirects back to GET /payments/callback, which verifies server-to-server,
- * marks the payment SUCCESS and creates the Subscription. A paid subscription
- * bound to a business still requires admin approval before it promotes
- * anything public; a personal subscription activates immediately.
+ * marks the payment SUCCESS and creates the Subscription ACTIVE. The same
+ * transaction also promotes the business the plan was paid for: its tier,
+ * expiry and showcase priority are set immediately, and a business still
+ * waiting in the moderation queue (PENDING) is approved right there — a paid
+ * registration needs no admin step. An explicit admin REJECTED/CLOSED is
+ * never overridden by money (the tier is applied, the status is left alone).
  *
  * The callback is the only place money is confirmed — the client never
  * reports success, and the gateway's `Status`/`status` from the query string
@@ -230,24 +233,50 @@ export class PaymentsService {
       });
       const now = new Date();
       const expiresAt = new Date(now.getTime() + plan.durationDays * 86_400_000);
-      // Business-bound plans wait for admin approval; personal plans go live now.
-      // startsAt is set at approval for PENDING_REVIEW, immediately otherwise.
-      const needsReview = payment.businessId !== null;
 
+      // A verified payment IS the approval: every subscription (personal or
+      // business-bound) goes live immediately — there is no admin step for a
+      // plan that was actually paid. The row below is the source of truth
+      // (the profile reads it via mySubscriptions()).
       await tx.subscription.create({
         data: {
           userId: payment.userId,
           businessId: payment.businessId,
           planId: payment.planId,
           tier: plan.tier,
-          status: needsReview ? 'PENDING_REVIEW' : 'ACTIVE',
-          startsAt: needsReview ? null : now,
-          expiresAt: needsReview ? null : expiresAt,
+          status: 'ACTIVE',
+          startsAt: now,
+          expiresAt,
         },
       });
 
-      // A personal subscription starts immediately; the row above is the
-      // source of truth (the profile reads it via mySubscriptions()).
+      if (payment.businessId !== null) {
+        // Same transaction: promote the business this plan was paid for. A
+        // registration still waiting in the queue (PENDING) is approved right
+        // here — no admin step for a paid signup. An explicit admin decision
+        // (REJECTED/CLOSED/DELETED) is never overridden: only the tier changes.
+        const business = await tx.business.findUnique({
+          where: { id: payment.businessId },
+          select: { status: true, subscriptionExpiresAt: true },
+        });
+        if (business) {
+          // Never shorten an already-active period: keep the later expiry
+          // (same rule the admin approval path applies).
+          const current = business.subscriptionExpiresAt;
+          const effective = current && current > expiresAt ? current : expiresAt;
+          await tx.business.update({
+            where: { id: payment.businessId },
+            data: {
+              ...(business.status === 'PENDING' ? { status: 'APPROVED' as const } : {}),
+              subscriptionTier: plan.tier,
+              subscriptionStatus: 'ACTIVE',
+              subscriptionExpiresAt: effective,
+              showcasePriority: plan.tier === 'GOLD' ? 10 : 50,
+            },
+          });
+        }
+      }
+
       return 'SUCCESS' as const;
     });
 

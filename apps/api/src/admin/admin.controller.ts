@@ -99,7 +99,7 @@ export class AdminController {
     return this.admin.deleteBusiness(user, id);
   }
 
-  /** Paid subscriptions waiting for approval (ZarinPal PENDING_REVIEW). */
+  /** Legacy paid subscriptions still awaiting approval (rows from before auto-activation). */
   @Get('subscriptions')
   @RequirePermissions('subscriptions.manage')
   subscriptions(@CurrentUser() user: User, @Query('status') status?: string) {

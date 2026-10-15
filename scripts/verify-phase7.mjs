@@ -60,12 +60,14 @@ if (/redirect\(\s*(authorityQuery|statusQuery|req\.) /.test(controller)) {
 
 const service = read('apps/api/src/payments/payments.service.ts');
 // Money rules: verify uses OUR stored amount; success only via verify code 100/101;
-// business-bound subscriptions need admin approval; rate cap exists.
+// a verified payment activates the subscription AND auto-approves the PENDING
+// business in the same transaction; rate cap exists.
 for (const marker of [
   'verifyPayment(payment.amount, authority)', // never the query/client amount
   "code !== 100 && verify.code !== 101",
   "'CREATED', 'STARTED'", // status claim guards the double-callback race
-  'PENDING_REVIEW',
+  "status: 'ACTIVE'", // paid subscription is live right after verify
+  "status: 'APPROVED'", // paid business leaves the moderation queue too
   'MAX_CHECKOUTS_PER_HOUR',
   'Number(p.price)',
   'Number(updated.amount)',

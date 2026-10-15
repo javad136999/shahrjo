@@ -64,7 +64,7 @@ for (const marker of [
   'provinceId', // province admins narrowed by province
   "status: 'APPROVED'",
   "status: 'REJECTED'",
-  'PENDING_REVIEW', // paid subscriptions wait for this exact state
+  'PENDING_REVIEW', // legacy subscriptions queue (admin still reviews old rows)
   'reviewedById',
   'auditLog.create', // every decision is audited
   'subscriptionExpiresAt', // approval never shortens an active period

@@ -10,7 +10,7 @@ const user = { id: 21, phone: '09123456789', cityId: 7 } as User;
 function makeService() {
   const prisma = {
     subscriptionPlan: { findMany: jest.fn(), findFirst: jest.fn(), findUnique: jest.fn(), findUniqueOrThrow: jest.fn() },
-    business: { findFirst: jest.fn() },
+    business: { findFirst: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     payment: {
       count: jest.fn(),
       create: jest.fn(),
@@ -293,20 +293,55 @@ describe('PaymentsService.handleCallback', () => {
     expect((sub.expiresAt as Date).getTime() - (sub.startsAt as Date).getTime()).toBe(30 * 86_400_000);
   });
 
-  it('leaves a business-bound subscription in PENDING_REVIEW (admin approves later)', async () => {
+  it('activates a business-bound subscription immediately and auto-approves the PENDING business', async () => {
     const { service, prisma, zarinpal } = makeService();
     prisma.payment.findUnique.mockResolvedValue(storedPayment({ businessId: 9 }));
     prisma.payment.updateMany.mockResolvedValue({ count: 1 });
     zarinpal.verifyPayment.mockResolvedValue({ code: 100, refId: 1, message: '' });
     prisma.subscriptionPlan.findUniqueOrThrow.mockResolvedValue({ tier: 'SILVER', durationDays: 180 });
     prisma.subscription.create.mockResolvedValue({ id: 2 });
+    prisma.business.findUnique.mockResolvedValue({ status: 'PENDING', subscriptionExpiresAt: null });
+    prisma.business.update.mockResolvedValue({ id: 9 });
 
     expect(await service.handleCallback('A123', 'OK')).toBe('SUCCESS');
 
+    // the subscription is live right away — no admin step for a paid plan
     const sub = prisma.subscription.create.mock.calls[0][0].data;
-    expect(sub).toMatchObject({ businessId: 9, tier: 'SILVER', status: 'PENDING_REVIEW' });
-    expect(sub.startsAt).toBeNull();
-    expect(sub.expiresAt).toBeNull();
+    expect(sub).toMatchObject({ businessId: 9, tier: 'SILVER', status: 'ACTIVE' });
+    expect(sub.startsAt).toBeInstanceOf(Date);
+    expect(sub.expiresAt).toBeInstanceOf(Date);
+    expect((sub.expiresAt as Date).getTime() - (sub.startsAt as Date).getTime()).toBe(180 * 86_400_000);
+
+    // and the registration it was paid for leaves the moderation queue
+    expect(prisma.business.findUnique.mock.calls[0][0].where).toEqual({ id: 9 });
+    const biz = prisma.business.update.mock.calls[0][0];
+    expect(biz.where).toEqual({ id: 9 });
+    expect(biz.data).toMatchObject({
+      status: 'APPROVED',
+      subscriptionTier: 'SILVER',
+      subscriptionStatus: 'ACTIVE',
+      subscriptionExpiresAt: sub.expiresAt,
+      showcasePriority: 50,
+    });
+  });
+
+  it('keeps a later business expiry and never overrides an explicit admin REJECTED', async () => {
+    const { service, prisma, zarinpal } = makeService();
+    const later = new Date(Date.now() + 90 * 86_400_000);
+    prisma.payment.findUnique.mockResolvedValue(storedPayment({ businessId: 9 }));
+    prisma.payment.updateMany.mockResolvedValue({ count: 1 });
+    zarinpal.verifyPayment.mockResolvedValue({ code: 100, refId: 1, message: '' });
+    prisma.subscriptionPlan.findUniqueOrThrow.mockResolvedValue({ tier: 'GOLD', durationDays: 30 });
+    prisma.subscription.create.mockResolvedValue({ id: 4 });
+    prisma.business.findUnique.mockResolvedValue({ status: 'REJECTED', subscriptionExpiresAt: later });
+    prisma.business.update.mockResolvedValue({ id: 9 });
+
+    expect(await service.handleCallback('A123', 'OK')).toBe('SUCCESS');
+
+    const data = prisma.business.update.mock.calls[0][0].data;
+    expect(data).not.toHaveProperty('status'); // a rejected business stays rejected
+    expect(data).toMatchObject({ subscriptionTier: 'GOLD', subscriptionStatus: 'ACTIVE', showcasePriority: 10 });
+    expect(data.subscriptionExpiresAt).toBe(later); // never shorten an active period
   });
 
   it('does not double-activate when a concurrent duplicate callback loses the claim', async () => {
