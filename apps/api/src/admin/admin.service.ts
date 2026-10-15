@@ -5,6 +5,7 @@ import { IsNumber, IsObject, IsOptional, IsString, MaxLength } from 'class-valid
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService, type AdminScope } from '../rbac/rbac.service';
 import { UploadsService } from '../uploads/uploads.service';
+import { assertInCity } from '../businesses/businesses.service';
 
 /**
  * Body DTOs are decorated CLASSES, not interfaces: Nest's ValidationPipe can
@@ -73,6 +74,24 @@ export class AdminCreateBusinessDto extends BusinessDecisionDto {
   @IsString()
   @MaxLength(15)
   ownerPhone?: string;
+
+  /** Paid tier to publish with (`GOLD`/`SILVER`); omitted → FREE. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  tier?: string;
+
+  /** How many months the chosen tier stays active (required with a tier). */
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  months?: number;
+
+  /** Business photo: the operator's own `POST /uploads/business` URL. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  logoUrl?: string;
 }
 
 /** GeoJSON Polygon boundary of a city map (null/undefined clears it). */
@@ -487,7 +506,7 @@ export class AdminService {
   async createBusiness(
     user: User,
     dto: AdminCreateBusinessDto,
-  ): Promise<{ id: number; name: string; status: string }> {
+  ): Promise<{ id: number; name: string; status: string; subscriptionTier: string }> {
     const scope = await this.scopeOf(user.id);
     const adminId = await this.adminRowId(user.id);
 
@@ -500,7 +519,7 @@ export class AdminService {
         isActive: true,
         ...(scope.provinceId ? { provinceId: scope.provinceId } : {}),
       },
-      select: { id: true },
+      select: { id: true, latitude: true, longitude: true, boundary: true },
     });
     if (!city) throw new NotFoundException('شهر یافت نشد');
 
@@ -517,6 +536,9 @@ export class AdminService {
     if (hasLat && (dto.latitude! < -90 || dto.latitude! > 90 || dto.longitude! < -180 || dto.longitude! > 180)) {
       throw new BadRequestException('مختصات نامعتبر است');
     }
+    // The pin must belong to the chosen city — same containment rule the
+    // owner signup uses (a map framed on another city must not save a pin there).
+    if (hasLat) assertInCity(city, dto.latitude!, dto.longitude!);
 
     let ownerId = user.id;
     if (dto.ownerPhone?.trim()) {
@@ -526,6 +548,32 @@ export class AdminService {
       });
       if (!owner) throw new NotFoundException('کاربری با این شماره ثبت نکرده است');
       ownerId = owner.id;
+    }
+
+    // Optional paid tier: the operator picks GOLD/SILVER and for how many
+    // months it runs — it goes live immediately (no payment path here), and
+    // the expiry sweep suspends it when that chosen period ends.
+    const tier = dto.tier === 'GOLD' || dto.tier === 'SILVER' ? dto.tier : null;
+    if (dto.tier !== undefined && dto.tier !== '' && !tier) {
+      throw new BadRequestException('تیپ اشتراک فقط طلایی یا نقره‌ای است');
+    }
+    if (tier) {
+      if (dto.months === undefined || !Number.isInteger(dto.months) || dto.months < 1 || dto.months > 60) {
+        throw new BadRequestException('تعداد ماه فعال‌سازی (۱ تا ۶۰) را انتخاب کنید');
+      }
+    }
+
+    // The photo must be the operator's own upload (same rule as the owner flow).
+    const logoUrl = dto.logoUrl?.trim() || null;
+    if (logoUrl) {
+      if (!logoUrl.startsWith('/api/v1/files/')) {
+        throw new BadRequestException('فقط عکس‌های آپلودشده در سایت قابل انتخاب هستند');
+      }
+      const media = await this.prisma.media.findFirst({
+        where: { url: logoUrl, ownerUserId: user.id },
+        select: { id: true },
+      });
+      if (!media) throw new BadRequestException('این عکس پیدا نشد؛ دوباره آپلود کنید');
     }
 
     // Unique slug: transliterated base + short random suffix (same recipe the
@@ -554,26 +602,46 @@ export class AdminService {
         categoryId: category.id,
         name: dto.name.trim(),
         slug,
+        logoUrl,
         description: dto.description?.trim() || null,
         phone: dto.phone?.trim() || null,
         address: dto.address?.trim() || null,
         latitude: hasLat ? dto.latitude! : null,
         longitude: hasLng ? dto.longitude! : null,
         status: 'APPROVED', // the operator IS the moderation step
-        subscriptionTier: 'FREE',
-        subscriptionStatus: 'NONE',
+        ...(tier
+          ? {
+              subscriptionTier: tier as 'GOLD' | 'SILVER',
+              subscriptionStatus: 'ACTIVE' as const,
+              subscriptionExpiresAt: new Date(Date.now() + dto.months! * 30 * 86_400_000),
+              showcasePriority: tier === 'GOLD' ? 10 : 50,
+            }
+          : { subscriptionTier: 'FREE' as const, subscriptionStatus: 'NONE' as const }),
       },
-      select: { id: true, name: true, status: true },
+      select: { id: true, name: true, status: true, subscriptionTier: true },
     });
+
+    // The photo now belongs to the business — the orphan sweep keeps it alive.
+    if (logoUrl) {
+      await this.prisma.media.updateMany({
+        where: { url: logoUrl, ownerUserId: user.id },
+        data: { entityType: 'BUSINESS', entityId: String(created.id) },
+      });
+    }
 
     await this.audit(adminId, 'business.create', 'business', String(created.id), {
       status: 'APPROVED',
       cityId: city.id,
       categoryId: category.id,
       ownerId,
+      tier: tier ?? 'FREE',
+      ...(tier ? { months: dto.months } : {}),
     });
-    this.logger.log(`business #${created.id} «${created.name}» created manually by admin #${adminId}`);
-    return { ...created, status: String(created.status) };
+    this.logger.log(
+      `business #${created.id} «${created.name}» created manually by admin #${adminId}` +
+        (tier ? ` (${tier}/${dto.months}m)` : ''),
+    );
+    return { ...created, status: String(created.status), subscriptionTier: String(created.subscriptionTier) };
   }
 
   // ---------- subscriptions (the ZarinPal approval step) ----------

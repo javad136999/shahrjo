@@ -366,8 +366,17 @@ export async function adminCreateBusiness(body: {
   phone?: string;
   address?: string;
   ownerPhone?: string;
-}): Promise<{ id: number; name: string; status: string }> {
-  return api.post<{ id: number; name: string; status: string }>('/admin/businesses', body);
+  /** Paid tier to publish with (omit = FREE). */
+  tier?: 'GOLD' | 'SILVER';
+  /** Months the tier stays active (required with a tier). */
+  months?: number;
+  /** The admin's own `uploadBusinessImage` URL. */
+  logoUrl?: string;
+  /** Map pin inside the chosen city (both or neither). */
+  latitude?: number;
+  longitude?: number;
+}): Promise<{ id: number; name: string; status: string; subscriptionTier: string }> {
+  return api.post<{ id: number; name: string; status: string; subscriptionTier: string }>('/admin/businesses', body);
 }
 
 export async function approveAdminBusiness(

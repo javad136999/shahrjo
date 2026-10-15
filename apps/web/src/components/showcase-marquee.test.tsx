@@ -84,10 +84,16 @@ describe('ShowcaseMarquee', () => {
     expect(screen.queryByTestId('showcase-viewport')).not.toBeInTheDocument();
   });
 
-  it('shows the join CTA when there are no paid businesses yet', () => {
+  it('offers the signup (not the plans) when there are no paid businesses yet', () => {
     render(<ShowcaseMarquee items={[]} loading={false} />);
     expect(screen.getByTestId('showcase-empty')).toHaveTextContent('هنوز کسب‌وکار طلایی‌ای');
-    expect(screen.getByRole('link', { name: /مشاهده اشتراک‌ها/ })).toHaveAttribute('href', '/plans');
+    // one door out of an empty showcase: register a business
+    expect(screen.getByTestId('showcase-empty-cta')).toHaveAttribute('href', '/business/new');
+    expect(screen.getByRole('link', { name: /ثبت کسب‌وکار/ })).toHaveAttribute('href', '/business/new');
+    // both old CTAs are gone in this state («معرفی کسب‌وکار من» lives only
+    // next to a filled showcase)
+    expect(screen.queryByRole('link', { name: /معرفی کسب‌وکار من/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /مشاهده اشتراک‌ها/ })).not.toBeInTheDocument();
     expect(screen.queryByTestId('showcase-viewport')).not.toBeInTheDocument();
   });
 });

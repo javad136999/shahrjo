@@ -100,7 +100,7 @@
 | POST `/admin/ads/:id/approve` | `ads.moderate` | `APPROVED` + `publishedAt` + تمدید انقضای ۳۰ روزه + audit |
 | POST `/admin/ads/:id/reject` | `ads.moderate` | `{ reason }` الزامی (حداقل ۳ حرف) → `REJECTED` + audit |
 | GET `/admin/businesses?status=PENDING` | `businesses.view` | صف کسب‌وکارها |
-| POST `/admin/businesses` | `businesses.moderate` | **ثبت دستی کسب‌وکار توسط مدیر**: `{ cityId, categoryId, name, description?, phone?, address?, ownerPhone?, latitude?, longitude? }` → انتشار فوری (`APPROVED`، تیِر `FREE`، بدون صف و بدون پرداخت)؛ شهر باید در محدودهٔ مدیر باشد؛ مالک با `ownerPhone` (کاربر موجود) یا خودِ مدیر؛ + audit |
+| POST `/admin/businesses` | `businesses.moderate` | **ثبت دستی کسب‌وکار توسط مدیر**: `{ cityId, categoryId, name, description?, phone?, address?, ownerPhone?, latitude?, longitude?, tier?, months?, logoUrl? }` → انتشار فوری (`APPROVED`، بدون صف و بدون پرداخت)؛ شهر و پین باید داخل محدودهٔ همان شهر باشند؛ `tier=GOLD/SILVER` + `months` (۱–۶۰) اشتراک را همان لحظه فعال می‌کند (پایانش را sweep ساعتی تعلیق می‌کند)؛ `logoUrl` باید آپلود خودِ مدیر باشد؛ مالک با `ownerPhone` (کاربر موجود) یا خودِ مدیر؛ + audit |
 | POST `/admin/businesses/:id/approve` | `businesses.moderate` | تأیید + اختیاراً `latitude`/`longitude` (هر دو یا هیچ، با اعتبارسنجی دامنه) برای مارکر نقشه |
 | POST `/admin/businesses/:id/reject` | `businesses.moderate` | `{ reason }` الزامی → `REJECTED` + audit |
 | POST `/admin/businesses/:id/suspend` | `businesses.moderate` | `{ reason }` الزامی (حداقل ۳ حرف) → **تعلیق**: `CLOSED` — کسب‌وکار همان لحظه از فهرست/نقشه/ویترین/جزئیات خارج می‌شود (همهٔ کوئری‌های عمومی `APPROVED` فیلتر می‌کنند) اما در «کسب‌وکارهای من» صاحبش می‌ماند و با خرید اشتراک خودبه‌خود فعال می‌شود؛ برگشت‌پذیر با تأیید دوباره هم هست + audit |

@@ -152,9 +152,14 @@ describe('CityDashboard', () => {
     expect(hidden.length).toBeGreaterThan(0);
   });
 
-  it('shows the showcase CTA when the city has no paid businesses', () => {
+  it('offers the signup instead of the plans when the city has no paid businesses', () => {
     renderDashboard();
     expect(screen.getByTestId('showcase-empty')).toHaveTextContent('هنوز کسب‌وکار طلایی‌ای در این شهر ثبت نشده');
+    // an empty showcase drops both old CTAs — the one door out is signup
+    expect(screen.queryByTestId('showcase-cta')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /معرفی کسب‌وکار من/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /مشاهده اشتراک‌ها/ })).not.toBeInTheDocument();
+    expect(screen.getByTestId('showcase-empty-cta')).toHaveAttribute('href', '/business/new');
   });
 
   it('puts the city map above the golden showcase', () => {

@@ -6,17 +6,14 @@ import { SITE_CONTACT } from '@/lib/site-contact';
 import { useRouter } from 'next/navigation';
 import {
   ApiError,
-  adminCreateBusiness,
   approveAdminAd,
   approveAdminBusiness,
   approveAdminSubscription,
-  api,
   getAdminAds,
   getAdminBusinesses,
   getAdminOverview,
   getAdminSubscriptions,
   getAdminVisits,
-  getBusinessCategories,
   getProfile,
   getTokens,
   rejectAdminAd,
@@ -26,7 +23,7 @@ import {
   deleteAdminBusiness,
 } from '@/lib/api';
 import { formatDate } from '@/lib/format';
-import type { AdminOverview, BusinessCategoryOption, City, QueueAd, QueueBusiness, QueueSubscription, VisitStats } from '@/lib/types';
+import type { AdminOverview, QueueAd, QueueBusiness, QueueSubscription, VisitStats } from '@/lib/types';
 
 type Tab = 'ads' | 'businesses' | 'subscriptions';
 type VisitPeriod = 'daily' | 'monthly' | 'yearly';
@@ -80,14 +77,6 @@ export function AdminPanel() {
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-
-  // manual signup (ثبت دستی کسب‌وکار) — the businesses tab only
-  const [createOpen, setCreateOpen] = useState(false);
-  const [createBusy, setCreateBusy] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [cities, setCities] = useState<City[]>([]);
-  const [categories, setCategories] = useState<BusinessCategoryOption[]>([]);
-  const [form, setForm] = useState({ name: '', cityId: '', categoryId: '', phone: '', address: '', description: '', ownerPhone: '' });
 
   const loadOverview = useCallback(async () => {
     try {
@@ -172,53 +161,6 @@ export function AdminPanel() {
   async function askReason(): Promise<string | null> {
     // Simple prompt keeps the panel dependency-free; empty/cancel = abort.
     return window.prompt('علت رد چیست؟ (حداقل ۳ حرف)');
-  }
-
-  /** Opens the manual-signup form, loading the city/category pickers once. */
-  async function openCreate() {
-    setCreateOpen((open) => !open);
-    setCreateError(null);
-    if (cities.length > 0 || categories.length > 0) return;
-    try {
-      const [cityRows, categoryRows] = await Promise.all([
-        api.get<City[]>('/cities'),
-        getBusinessCategories(),
-      ]);
-      setCities(cityRows);
-      setCategories(categoryRows);
-    } catch {
-      setCreateError('دریافت فهرست شهرها/دسته‌بندی‌ها ممکن نشد');
-    }
-  }
-
-  /** Manual signup: publishes immediately (the operator is the moderation). */
-  async function submitCreate(e: React.FormEvent) {
-    e.preventDefault();
-    setCreateError(null);
-    if (!form.name.trim() || !form.cityId || !form.categoryId) {
-      setCreateError('نام، شهر و دسته‌بندی الزامی است');
-      return;
-    }
-    setCreateBusy(true);
-    try {
-      const created = await adminCreateBusiness({
-        name: form.name.trim(),
-        cityId: Number(form.cityId),
-        categoryId: Number(form.categoryId),
-        phone: form.phone.trim() || undefined,
-        address: form.address.trim() || undefined,
-        description: form.description.trim() || undefined,
-        ownerPhone: form.ownerPhone.trim() || undefined,
-      });
-      setNotice(`کسب‌وکار «${created.name}» همین حالا ثبت و منتشر شد`);
-      setForm({ name: '', cityId: '', categoryId: '', phone: '', address: '', description: '', ownerPhone: '' });
-      setCreateOpen(false);
-      await Promise.all([loadQueue(tab, status[tab]), loadOverview()]);
-    } catch (err) {
-      setCreateError(err instanceof ApiError ? err.message : 'ثبت کسب‌وکار ممکن نشد');
-    } finally {
-      setCreateBusy(false);
-    }
   }
 
   if (allowed === null) {
@@ -379,126 +321,12 @@ export function AdminPanel() {
 
       {tab === 'businesses' && (
         <section className="admin-create" data-testid="admin-create-business">
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => void openCreate()}
-            aria-expanded={createOpen}
-            data-testid="admin-create-toggle"
-          >
-            {createOpen ? '− بستن فرم' : '＋ ثبت دستی کسب‌وکار'}
-          </button>
+          <Link href="/admin/business/new" className="btn btn-primary" data-testid="admin-create-toggle">
+            ＋ ثبت دستی کسب‌وکار
+          </Link>
           <p className="muted small">
-            کسب‌وکاری که صاحبَش ثبت‌نام نکرده یا می‌خواهی خودت مستقیم منتشرش کنی — بدون پرداخت و بدون صف، همان لحظه روی نقشه و در جستجو دیده می‌شود.
+            کسب‌وکاری که صاحبَش ثبت‌نام نکرده یا می‌خواهی خودت مستقیم منتشرش کنی — در یک صفحهٔ جدا: عکس، موقعیت روی نقشهٔ همان شهر، و اشتراک طلایی/نقره‌ای با مدت دلخواه.
           </p>
-
-          {createOpen && (
-            <form className="ad-form admin-create__form" onSubmit={(e) => void submitCreate(e)} noValidate>
-              <div className="biz-form__row">
-                <div>
-                  <label htmlFor="ac-name">نام کسب‌وکار *</label>
-                  <input
-                    id="ac-name"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    maxLength={160}
-                    required
-                    data-testid="ac-name"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="ac-cat">دسته‌بندی *</label>
-                  <select
-                    id="ac-cat"
-                    value={form.categoryId}
-                    onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-                    required
-                    data-testid="ac-category"
-                  >
-                    <option value="">— انتخاب دسته —</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={String(category.id)}>
-                        {category.icon ? `${category.icon} ` : ''}
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="biz-form__row">
-                <div>
-                  <label htmlFor="ac-city">شهر *</label>
-                  <select
-                    id="ac-city"
-                    value={form.cityId}
-                    onChange={(e) => setForm({ ...form, cityId: e.target.value })}
-                    required
-                    data-testid="ac-city"
-                  >
-                    <option value="">— انتخاب شهر —</option>
-                    {cities.map((city) => (
-                      <option key={city.id} value={String(city.id)}>
-                        {city.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="ac-phone">شماره تماس</label>
-                  <input
-                    id="ac-phone"
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    maxLength={15}
-                    inputMode="tel"
-                    data-testid="ac-phone"
-                  />
-                </div>
-              </div>
-
-              <label htmlFor="ac-address">آدرس — اختیاری</label>
-              <input
-                id="ac-address"
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-                maxLength={300}
-                data-testid="ac-address"
-              />
-
-              <label htmlFor="ac-desc">توضیحات — اختیاری</label>
-              <textarea
-                id="ac-desc"
-                rows={2}
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                maxLength={2000}
-                data-testid="ac-description"
-              />
-
-              <label htmlFor="ac-owner">شمارهٔ مالک — اختیاری (خالی = خودِ مدیر)</label>
-              <input
-                id="ac-owner"
-                value={form.ownerPhone}
-                onChange={(e) => setForm({ ...form, ownerPhone: e.target.value })}
-                maxLength={15}
-                inputMode="tel"
-                data-testid="ac-owner"
-              />
-
-              {createError && (
-                <p className="error" role="alert" data-testid="ac-error">
-                  {createError}
-                </p>
-              )}
-
-              <div className="auth-actions">
-                <button type="submit" className="btn btn-primary" disabled={createBusy} data-testid="ac-submit">
-                  {createBusy ? 'در حال ثبت…' : 'ثبت و انتشار'}
-                </button>
-              </div>
-            </form>
-          )}
         </section>
       )}
 

@@ -220,30 +220,17 @@ describe('AdminPanel', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('اشتراک فعال شد');
   });
 
-  it('publishes a business manually from the businesses tab (ثبت دستی)', async () => {
+  it('sends the manual signup to its own dedicated page (ثبت دستی)', async () => {
     render(<AdminPanel />);
     await screen.findByTestId('tab-businesses');
     fireEvent.click(screen.getByTestId('tab-businesses'));
 
-    fireEvent.click(await screen.findByTestId('admin-create-toggle'));
-    fireEvent.change(await screen.findByTestId('ac-name'), { target: { value: 'نانوایی مرکزی' } });
-    fireEvent.change(screen.getByTestId('ac-category'), { target: { value: '3' } });
-    fireEvent.change(screen.getByTestId('ac-city'), { target: { value: '1' } });
-    fireEvent.click(screen.getByTestId('ac-submit'));
-
-    // no payment, no queue: the operator's submit IS the publish
-    await waitFor(() =>
-      expect(mockAdminCreateBusiness).toHaveBeenCalledWith({
-        name: 'نانوایی مرکزی',
-        cityId: 1,
-        categoryId: 3,
-        phone: undefined,
-        address: undefined,
-        description: undefined,
-        ownerPhone: undefined,
-      }),
-    );
-    expect(await screen.findByRole('status')).toHaveTextContent('نانوایی مرکزی');
+    // the panel only links; the whole flow (photo, map pin, tier/months)
+    // lives on the separate /admin/business/new screen
+    const link = await screen.findByTestId('admin-create-toggle');
+    expect(link).toHaveAttribute('href', '/admin/business/new');
+    expect(link).toHaveTextContent('ثبت دستی کسب‌وکار');
+    expect(mockAdminCreateBusiness).not.toHaveBeenCalled();
   });
 
   it('shows the empty state when a queue has no rows', async () => {

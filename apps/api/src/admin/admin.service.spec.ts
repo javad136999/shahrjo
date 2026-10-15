@@ -326,12 +326,42 @@ describe('AdminService.createBusiness — manual signup (ثبت دستی)', () =
 
   it('attaches the business to an existing owner found by phone', async () => {
     const { service, prisma } = makeReady({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
-    prisma.city.findFirst.mockResolvedValue({ id: 5 });
+    prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: null, longitude: null, boundary: null });
     prisma.user.findFirst.mockResolvedValue({ id: 42 });
 
     await service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'مغازه', ownerPhone: '09121112233' });
 
     expect(prisma.user.findFirst.mock.calls[0][0].where).toEqual({ phone: '09121112233' });
     expect(prisma.business.create.mock.calls[0][0].data.ownerId).toBe(42);
+  });
+
+  it('publishes with the chosen tier for the chosen months (no payment path)', async () => {
+    const { service, prisma } = makeReady({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+    prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: null, longitude: null, boundary: null });
+
+    await service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'کافه گلد', tier: 'GOLD', months: 6 });
+
+    const data = prisma.business.create.mock.calls[0][0].data;
+    expect(data).toMatchObject({ status: 'APPROVED', subscriptionTier: 'GOLD', subscriptionStatus: 'ACTIVE', showcasePriority: 10 });
+    // exactly the selected period, starting today
+    const expiry = data.subscriptionExpiresAt as Date;
+    const sixMonths = 180 * 86_400_000;
+    expect(expiry.getTime() - Date.now()).toBeGreaterThan(sixMonths - 60_000);
+    expect(expiry.getTime() - Date.now()).toBeLessThanOrEqual(sixMonths);
+    // …and when it runs out, the hourly sweep suspends it like any paid plan
+    expect(prisma.auditLog.create).toHaveBeenCalled();
+  });
+
+  it('refuses a paid tier without a duration (and an unknown tier)', async () => {
+    const { service, prisma } = makeReady({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+    prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: null, longitude: null, boundary: null });
+
+    await expect(
+      service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'x', tier: 'GOLD' } as never),
+    ).rejects.toThrow('تعداد ماه');
+    await expect(
+      service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'x', tier: 'BRONZE', months: 3 } as never),
+    ).rejects.toThrow('طلایی یا نقره‌ای');
+    expect(prisma.business.create).not.toHaveBeenCalled();
   });
 });

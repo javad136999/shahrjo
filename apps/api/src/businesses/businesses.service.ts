@@ -94,6 +94,9 @@ function rial(value: bigint | null): number | null {
 
 type CityGeo = { latitude: number | null; longitude: number | null; boundary: unknown };
 
+/** Shared with the admin manual signup — the pin must be in the chosen city. */
+export type BusinessCityGeo = CityGeo;
+
 /** Bounding box of a stored boundary (GeoJSON object or the seed's raw rings). */
 function boundaryBox(raw: unknown): { minLat: number; minLng: number; maxLat: number; maxLng: number } | null {
   const points: number[][] = [];
@@ -122,8 +125,9 @@ function boundaryBox(raw: unknown): { minLat: number; minLng: number; maxLat: nu
  * Rough containment for owner-picked pins: inside the admin boundary
  * (bbox + ~5 km margin) or within ~0.35° of the city centre. Cities with no
  * geo data accept any pin — there is nothing to compare against.
+ * Exported: the admin's manual signup validates its pin the same way.
  */
-function assertInCity(city: CityGeo, lat: number, lng: number): void {
+export function assertInCity(city: CityGeo, lat: number, lng: number): void {
   const bbox = boundaryBox(city.boundary);
   if (bbox) {
     const margin = 0.05;

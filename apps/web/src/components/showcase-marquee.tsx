@@ -36,12 +36,16 @@ export function ShowcaseMarquee({ items, loading }: ShowcaseMarqueeProps) {
           <h2>ویترین طلایی</h2>
           <p>کسب‌وکارهای برتر شهر</p>
         </div>
-        <Link href="/plans" className="pill pill--gold showcase__cta" data-testid="showcase-cta">
-          <span className="showcase__cta-icon" aria-hidden>
-            ✨
-          </span>{' '}
-          معرفی کسب‌وکار من
-        </Link>
+        {/* An empty showcase offers the signup (not the plans page): the first
+            step for an ownerless city is a business, not a subscription. */}
+        {items.length > 0 && (
+          <Link href="/plans" className="pill pill--gold showcase__cta" data-testid="showcase-cta">
+            <span className="showcase__cta-icon" aria-hidden>
+              ✨
+            </span>{' '}
+            معرفی کسب‌وکار من
+          </Link>
+        )}
       </div>
 
       {loading ? (
@@ -52,8 +56,8 @@ export function ShowcaseMarquee({ items, loading }: ShowcaseMarqueeProps) {
         <div className="showcase__empty-card" data-testid="showcase-empty">
           <span aria-hidden>🌟</span>
           <p>هنوز کسب‌وکار طلایی‌ای در این شهر ثبت نشده — اولین نفر باشید.</p>
-          <Link href="/plans" className="pill pill--gold">
-            👑 مشاهده اشتراک‌ها
+          <Link href="/business/new" className="pill pill--gold" data-testid="showcase-empty-cta">
+            🏪 ثبت کسب‌وکار
           </Link>
         </div>
       ) : (
