@@ -180,13 +180,14 @@ const cityMap = read('apps/web/src/components/city-map.tsx');
 for (const marker of ['city-map__frame', 'map-pin__photo', 'thumbUrlFor(b.logoUrl)']) {
   if (!cityMap.includes(marker)) { console.error(`MAP: missing ${marker}`); fail++; }
 }
-// The golden showcase leads into the city map; service actions follow below.
+// Service actions live in the welcome card; showcase leads into the city map.
 const dashboardOrder = read('apps/web/src/components/dashboard.tsx');
+const welcomeOrder = dashboardOrder.indexOf('data-testid="dash-welcome"');
+const servicesOrder = dashboardOrder.indexOf('<CityServices');
 const mapOrder = dashboardOrder.indexOf('<CityMap');
 const showcaseOrder = dashboardOrder.indexOf('<ShowcaseMarquee');
-const servicesOrder = dashboardOrder.indexOf('<CityServices');
-if (mapOrder === -1 || showcaseOrder === -1 || servicesOrder === -1 || showcaseOrder > mapOrder || mapOrder > servicesOrder) {
-  console.error('WEB: golden showcase must be above map and city services below it');
+if (welcomeOrder === -1 || servicesOrder === -1 || mapOrder === -1 || showcaseOrder === -1 || welcomeOrder > servicesOrder || servicesOrder > showcaseOrder || showcaseOrder > mapOrder) {
+  console.error('WEB: city services must sit in welcome card, followed by showcase and map');
   fail++;
 }
 const cssDock = read('apps/web/src/app/globals.css').includes('.map-catbar {\n  position: absolute;');

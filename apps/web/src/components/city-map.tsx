@@ -244,20 +244,23 @@ export function CityMap({ data }: CityMapProps) {
 
       for (const b of shown) {
         const gold = b.subscriptionTier === 'GOLD';
-        // The owner's real photo wins over the category emoji; the emoji stays
-        // as the fallback (and the pin still says what the business is).
+        // The owner's logo is the business-specific map icon. If the thumbnail
+        // is unavailable, retry the original upload before falling back to the
+        // category glyph, so the pin never becomes an empty/broken image.
         const photo = thumbUrlFor(b.logoUrl);
+        const fallbackGlyph = esc(b.category.icon || b.name.trim().slice(0, 1) || '◆');
         const icon = L.divIcon({
           className: 'map-pin-wrap',
           html:
             `<span class="map-pin map-pin--cat${gold ? ' map-pin--gold' : ''}${photo ? ' map-pin--photo' : ''}">` +
+            `<span class="map-pin__icon" aria-hidden="true">${fallbackGlyph}</span>` +
             (photo
-              ? `<img class="map-pin__photo" src="${esc(photo)}" alt="" loading="lazy" />`
-              : `<span class="map-pin__icon">${esc(b.category.icon ?? '◆')}</span>`) +
+              ? `<img class="map-pin__photo" src="${esc(photo)}" data-full-src="${esc(b.logoUrl ?? '')}" alt="${esc(b.name)}" loading="lazy" />`
+              : '') +
             `<span class="map-pin__name">${esc(b.name)}</span>` +
             `</span>`,
-          iconSize: [34, 34],
-          iconAnchor: [17, 17],
+          iconSize: [46, 46],
+          iconAnchor: [23, 23],
         });
         const popup =
           `<div class="map-popup">` +
@@ -265,9 +268,23 @@ export function CityMap({ data }: CityMapProps) {
           `<span class="map-popup__cat">${esc(b.category.icon ?? '◆')} ${esc(b.category.name)}</span>` +
           `<a href="/business/${b.id}">مشاهده صفحه</a>` +
           `</div>`;
-        L.marker([b.latitude, b.longitude], { icon })
+        const marker = L.marker([b.latitude, b.longitude], { icon, title: b.name, alt: b.name })
           .addTo(map)
           .bindPopup(popup);
+        if (photo) {
+          const markerElement = marker.getElement();
+          const image = markerElement?.querySelector<HTMLImageElement>('.map-pin__photo');
+          image?.addEventListener('error', () => {
+            const fullUrl = image.dataset.fullSrc;
+            if (fullUrl && image.dataset.fullTried !== '1' && image.src !== fullUrl) {
+              image.dataset.fullTried = '1';
+              image.src = fullUrl;
+              return;
+            }
+            image.remove();
+            markerElement?.querySelector('.map-pin--photo')?.classList.remove('map-pin--photo');
+          });
+        }
       }
 
       // deep zoom → the business names above their pins become visible

@@ -89,14 +89,17 @@ describe('CityDashboard', () => {
     expect(cta).toHaveClass('wall-cta');
   });
 
-  it('places the golden showcase before the map and service actions below it', () => {
+  it('keeps city services inside the welcome card and the showcase above the map', () => {
     renderDashboard({ mapData });
     const desk = screen.getByTestId('city-services');
     expect(desk).toHaveAttribute('data-city', 'شهر نمونه');
-    const order = [...document.querySelectorAll('[data-testid="dash-welcome"], [data-testid="showcase"], [data-testid="city-map"], [data-testid="city-services"]')].map(
+    const welcome = screen.getByTestId('dash-welcome');
+    expect(welcome).toContainElement(desk);
+    expect(welcome).toContainElement(screen.getByTestId('wall-cta'));
+    const order = [...document.querySelectorAll('[data-testid="dash-welcome"], [data-testid="showcase"], [data-testid="city-map"]')].map(
       (el) => el.getAttribute('data-testid'),
     );
-    expect(order).toEqual(['dash-welcome', 'showcase', 'city-map', 'city-services']);
+    expect(order).toEqual(['dash-welcome', 'showcase', 'city-map']);
   });
 
   it('keeps news, ads and businesses off the home page', () => {

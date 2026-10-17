@@ -570,29 +570,47 @@ a:hover {
   font-size: 11.5px;
 }
 
-/* Compact welcome card: greeting + the beating-heart city wall entry */
+/* City welcome card: greeting, social entry and the two city-service actions. */
 .dash-welcome {
   position: relative;
-  text-align: center;
-  margin-bottom: 14px;
-  padding: 15px 14px 13px;
-  border: 1px solid rgb(241 193 203 / 70%);
-  border-radius: 22px;
+  text-align: right;
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid rgb(14 122 95 / 16%);
+  border-radius: 26px;
   background:
-    radial-gradient(circle at 12% 110%, rgb(239 71 111 / 14%), transparent 34%),
-    radial-gradient(circle at 96% 0%, rgb(220 171 66 / 16%), transparent 36%),
-    linear-gradient(135deg, #fff 0%, #fff5f7 60%, #fff9e9 100%);
-  box-shadow: 0 12px 30px rgb(198 38 76 / 10%), inset 0 1px 0 #fff;
+    radial-gradient(circle at 6% 0%, rgb(14 122 95 / 10%), transparent 35%),
+    radial-gradient(circle at 100% 100%, rgb(220 171 66 / 12%), transparent 34%),
+    linear-gradient(135deg, #fff 0%, #f7fcf9 58%, #fffaf0 100%);
+  box-shadow: 0 14px 34px rgb(21 59 45 / 9%), inset 0 1px 0 #fff;
+}
+.dash-welcome__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.dash-welcome__greeting {
+  min-width: 0;
+}
+.dash-welcome__eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--brand-dark);
+  font-size: 12px;
+  font-weight: 800;
 }
 .dash-welcome h1 {
-  margin: 5px 0 0;
-  font-size: clamp(14px, 2.6vw, 17px);
+  margin: 0;
+  font-size: clamp(18px, 3vw, 25px);
   font-weight: 900;
+  line-height: 1.45;
 }
 
-/* ---------- دفتر خدمات شهر — two compact tiles + one open panel ---------- */
+/* ---------- دفتر خدمات شهر — lives inside the welcome card ---------- */
 .city-services {
-  margin-bottom: 14px;
+  margin: 0;
 }
 
 /* راست و چپ کنار هم: پهنای متوسط، ارتفاع کم — نقشه پایین‌تر نقطهٔ صفحه است. */
@@ -607,8 +625,8 @@ a:hover {
   align-items: center;
   gap: 9px;
   min-width: 0;
-  min-height: 58px;
-  padding: 9px 12px;
+  min-height: 68px;
+  padding: 11px 13px;
   text-align: right;
   border: 1px solid var(--line);
   border-radius: 18px;
@@ -638,12 +656,13 @@ a:hover {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
   background: #fff;
   border: 1px solid var(--line);
-  font-size: 17px;
+  font-size: 20px;
+  box-shadow: 0 3px 9px rgb(21 59 45 / 8%);
 }
 .service-tile__copy {
   display: flex;
@@ -684,19 +703,21 @@ a:hover {
   font-weight: 800;
 }
 
-/* Service chips in the finder panel. */
+/* Service categories are always easy to scan in two balanced columns. */
 .service-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 .service-chip {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 10px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 14px;
   background: #fff;
   font-size: 12.5px;
   font-weight: 800;
@@ -752,62 +773,85 @@ a:hover {
   flex-shrink: 0;
 }
 
-@media (max-width: 460px) {
-  .city-services__tiles {
-    grid-template-columns: 1fr;
+@media (max-width: 640px) {
+  .dash-welcome {
+    padding: 14px;
+    border-radius: 21px;
+  }
+  .dash-welcome__head {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 11px;
+    margin-bottom: 13px;
+  }
+  .wall-cta {
+    width: 100%;
+    min-width: 0;
+  }
+  .service-tile {
+    gap: 7px;
+    min-height: 72px;
+    padding: 9px;
   }
   .service-tile__copy b {
-    font-size: 13px;
+    white-space: normal;
+    font-size: 12.5px;
   }
 }
 
-/* Red entry to the city wall — pulses like a beating heart */
+/* Bright, high-contrast entry to the city wall. */
 .wall-cta {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #c6264c, #ef476f);
+  gap: 10px;
+  min-width: 220px;
+  padding: 10px 13px;
+  border: 1px solid rgb(255 255 255 / 50%);
+  border-radius: 19px;
+  background: linear-gradient(120deg, #7b247e 0%, #c6264c 52%, #ef476f 100%);
   color: #fff;
-  font-size: 11.5px;
-  font-weight: 900;
   text-decoration: none;
   white-space: nowrap;
-  box-shadow: 0 8px 20px rgb(198 38 76 / 32%);
-  animation: wall-cta-beat 1.4s ease-in-out infinite;
+  box-shadow: 0 10px 24px rgb(198 38 76 / 24%), inset 0 1px 0 rgb(255 255 255 / 22%);
+  transition: transform 0.18s, box-shadow 0.18s;
 }
 .wall-cta:hover {
-  box-shadow: 0 11px 26px rgb(198 38 76 / 48%);
+  color: #fff;
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgb(198 38 76 / 32%), inset 0 1px 0 rgb(255 255 255 / 22%);
 }
-@keyframes wall-cta-beat {
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow: 0 8px 20px rgb(198 38 76 / 28%);
-  }
-  12% {
-    transform: scale(1.05);
-    box-shadow: 0 11px 28px rgb(198 38 76 / 52%);
-  }
-  24% {
-    transform: scale(1);
-    box-shadow: 0 8px 20px rgb(198 38 76 / 28%);
-  }
-  36% {
-    transform: scale(1.03);
-    box-shadow: 0 10px 24px rgb(198 38 76 / 42%);
-  }
-  48% {
-    transform: scale(1);
-  }
+.wall-cta__icon {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  flex: 0 0 43px;
+  border-radius: 15px;
+  background: rgb(255 255 255 / 17%);
+  border: 1px solid rgb(255 255 255 / 25%);
+  font-size: 22px;
 }
-@media (prefers-reduced-motion: reduce) {
-  .wall-cta {
-    animation: none;
-  }
+.wall-cta__copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
 }
-
+.wall-cta__copy b {
+  font-size: 14px;
+  font-weight: 900;
+}
+.wall-cta__copy small {
+  color: rgb(255 255 255 / 82%);
+  font-size: 11px;
+  font-weight: 700;
+}
+.wall-cta__arrow {
+  font-size: 20px;
+  font-weight: 900;
+}
 /* City news page (/city/<slug>/news) */
 .news-page__head {
   text-align: center;
@@ -2249,14 +2293,14 @@ a.my-ads__item:hover {
 .map-pin--cat {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background: #fff;
-  border: 2px solid var(--brand);
+  border: 3px solid var(--brand);
   transform: none;
-  box-shadow: 0 3px 8px rgb(0 0 0 / 28%);
-  font-size: 15px;
+  box-shadow: 0 4px 10px rgb(0 0 0 / 30%);
+  font-size: 20px;
   line-height: 1;
 }
 .map-pin--cat.map-pin--gold {
@@ -2265,8 +2309,14 @@ a.my-ads__item:hover {
   box-shadow: 0 0 0 3px rgb(242 201 76 / 38%), 0 3px 8px rgb(0 0 0 / 25%);
 }
 .map-pin__icon {
+  position: absolute;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  inset: 0;
   font-size: 1em;
   line-height: 1;
+  pointer-events: none;
 }
 .map-pin--legend {
   width: 15px;
@@ -5381,10 +5431,12 @@ button.pill {
   padding: 0;
   border: 0;
   background: transparent;
-  box-shadow: none;
+  box-shadow: 0 0 0 2px #fff, 0 5px 12px rgb(0 0 0 / 30%);
   overflow: hidden;
 }
 .map-pin__photo {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: cover;

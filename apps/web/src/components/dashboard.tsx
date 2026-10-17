@@ -17,9 +17,8 @@ export interface CityDashboardProps {
 }
 
 /**
- * City home page: a single welcome card («به شهر X خوش آمدید») with the
- * beating-heart entry to the city wall, then the golden showcase and the
- * city map (framed by its own card, without a section title above it).
+ * City home page: one welcome card with the city wall and service actions,
+ * then the golden showcase and the city map.
  * News, ads and businesses live on their own pages now — the home page
  * deliberately stays light.
  * City names always come from the data — never from the code.
@@ -27,15 +26,20 @@ export interface CityDashboardProps {
 export function CityDashboard({ city, showcase, mapData, loading, feedError }: CityDashboardProps) {
   return (
     <div className="dashboard">
-      <header className="dash-welcome" data-testid="dash-welcome">
-        {/* red, heart-like pulse — the primary social entry of the city */}
-        <Link href="/wall" className="wall-cta" data-testid="wall-cta">
-          <span aria-hidden>❤️</span> ورود به دیوار شهر
-        </Link>
-        <h1>
-          به شهر {city.name} خوش آمدید
-        </h1>
-      </header>
+      <section className="dash-welcome" data-testid="dash-welcome" aria-label={`خوش‌آمدگویی شهر ${city.name}`}>
+        <header className="dash-welcome__head">
+          <div className="dash-welcome__greeting">
+            <span className="dash-welcome__eyebrow">شهر شما، یک قدم نزدیک‌تر</span>
+            <h1>به شهر {city.name} خوش آمدید</h1>
+          </div>
+          <Link href="/wall" className="wall-cta" data-testid="wall-cta">
+            <span className="wall-cta__icon" aria-hidden>💬</span>
+            <span className="wall-cta__copy"><b>ورود به دیوار شهر</b><small>گفت‌وگو با همشهری‌ها</small></span>
+            <span className="wall-cta__arrow" aria-hidden>←</span>
+          </Link>
+        </header>
+        <CityServices cityName={city.name} citySlug={city.slug} />
+      </section>
 
       {feedError && (
         <div className="banner banner--error" role="alert">
@@ -57,8 +61,6 @@ export function CityDashboard({ city, showcase, mapData, loading, feedError }: C
         </section>
       )}
 
-      {/* ثبت شغل و جست‌وجوی خدمات زیر نقشه می‌آیند. */}
-      <CityServices cityName={city.name} citySlug={city.slug} />
     </div>
   );
 }

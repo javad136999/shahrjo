@@ -121,14 +121,14 @@ for (const marker of [
 const wallPage = read('apps/web/src/app/wall/page.tsx');
 if (!wallPage.includes('WallView')) { console.error('WALL PAGE: does not render WallView'); fail++; }
 
-// --- Web: dashboard order — welcome + wall CTA, showcase, map, then services ---
+// --- Web: dashboard order — welcome + wall CTA + service tiles, showcase, map ---
 const dashboard = read('apps/web/src/components/dashboard.tsx');
 const wallIdx = dashboard.indexOf('data-testid="wall-cta"');
+const servicesIdx = dashboard.indexOf('<CityServices');
 const marqueeIdx = dashboard.indexOf('<ShowcaseMarquee');
 const mapIdx = dashboard.indexOf('<CityMap');
-const servicesIdx = dashboard.indexOf('<CityServices');
-if (wallIdx === -1 || wallIdx > marqueeIdx || marqueeIdx > mapIdx || mapIdx > servicesIdx) {
-  console.error('WEB: dashboard must render wall CTA → showcase → map → city services'); fail++;
+if (wallIdx === -1 || servicesIdx === -1 || wallIdx > servicesIdx || servicesIdx > marqueeIdx || marqueeIdx > mapIdx) {
+  console.error('WEB: dashboard must render wall CTA + services in welcome → showcase → map'); fail++;
 }
 if (!dashboard.includes('خوش آمدید')) { console.error('WEB: welcome greeting missing'); fail++; }
 

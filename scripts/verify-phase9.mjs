@@ -109,11 +109,12 @@ if (!seed.includes("'storage.manage'")) { console.error('SEED: storage.manage pe
 
 // --- Web: marquee sits above the map, no hard-coded cities ---
 const dashboard = read('apps/web/src/components/dashboard.tsx');
+const welcomeIdx = dashboard.indexOf('data-testid="dash-welcome"');
+const serviceIdx = dashboard.indexOf('<CityServices');
 const marqueeIdx = dashboard.indexOf('<ShowcaseMarquee');
 const mapIdx = dashboard.indexOf('<CityMap');
-const serviceIdx = dashboard.indexOf('<CityServices');
-if (marqueeIdx === -1 || mapIdx === -1 || serviceIdx === -1 || marqueeIdx > mapIdx || mapIdx > serviceIdx) {
-  console.error('WEB: the golden showcase must be above the map, with service actions below it');
+if (welcomeIdx === -1 || serviceIdx === -1 || marqueeIdx === -1 || mapIdx === -1 || welcomeIdx > serviceIdx || serviceIdx > marqueeIdx || marqueeIdx > mapIdx) {
+  console.error('WEB: service actions must be inside the welcome card, followed by showcase and map');
   fail++;
 }
 const marquee = read('apps/web/src/components/showcase-marquee.tsx');
@@ -124,6 +125,10 @@ for (const marker of ['aria-hidden', 'prefers-reduced-motion']) {
   }
 }
 const css = read('apps/web/src/app/globals.css');
+if (!/\.service-chips\s*\{\s*display:\s*grid;\s*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/.test(css)) {
+  console.error('CSS: service categories must be arranged in two columns');
+  fail++;
+}
 for (const marker of ['showcase-marquee', 'translateX(50%)', 'prefers-reduced-motion', 'animation-play-state: paused']) {
   if (!css.includes(marker)) { console.error(`CSS: missing ${marker}`); fail++; }
 }
@@ -165,4 +170,4 @@ for (const endpoint of ['GET `/showcase?city=<slug>&limit=`', 'GET `/map?city=<s
 }
 
 if (fail) { console.error(`\nPhase 9 FAILED (${fail} problem${fail > 1 ? 's' : ''})`); process.exit(1); }
-console.log('Phase 9 OK: golden showcase above the city map, service actions below it, pinned approved businesses, storage quota + sweep');
+console.log('Phase 9 OK: welcome-card service actions, two-column services, golden showcase above city map, pinned approved businesses, storage quota + sweep');

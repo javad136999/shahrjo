@@ -13,7 +13,7 @@ import {
 import type { BusinessItem, BusinessCategoryOption } from '@/lib/types';
 
 /**
- * The two service-desk tiles that sit right under the «به شهر X خوش آمدید»
+ * The two service-desk tiles inside the «به شهر X خوش آمدید»
  * card on the city home page:
  *
  * - **راست — «شغلتو ثبت کن»**: a tradesperson registers their trade, phone and
@@ -24,8 +24,8 @@ import type { BusinessItem, BusinessCategoryOption } from '@/lib/types';
  * - **چپ — «چه خدماتی در شهر … نیاز داری»**: pick a service and get every
  *   tradesperson who registered through the tile, with a one-tap call button.
  *
- * Both tiles are deliberately compact (medium width, short height) — the map
- * below them is the point of the page.
+ * The actions stay in two columns on desktop and mobile; service categories
+ * inside the finder are arranged in a separate, scan-friendly two-column grid.
  */
 
 /** Which of the two panels is open, if any. */

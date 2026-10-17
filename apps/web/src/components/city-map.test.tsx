@@ -7,9 +7,18 @@ import type { CityMapData } from '@/lib/types';
 jest.mock('leaflet', () => {
   const makeLayer = () => {
     const layer: Record<string, unknown> = {};
+    const element = document.createElement('div');
+    const pin = document.createElement('span');
+    pin.className = 'map-pin--cat map-pin--photo';
+    const image = document.createElement('img');
+    image.className = 'map-pin__photo';
+    image.dataset.fullSrc = '/api/v1/files/businesses/40.webp';
+    pin.append(image);
+    element.append(pin);
     layer.addTo = jest.fn(() => layer);
     layer.bindPopup = jest.fn(() => layer);
     layer.getBounds = jest.fn(() => ({ isValid: () => false }));
+    layer.getElement = jest.fn(() => element);
     return layer;
   };
   const mapInstance = {
@@ -180,6 +189,35 @@ describe('CityMap', () => {
     expect(icon.html).toContain('map-pin__name');
     expect(icon.html).toContain('&lt;script&gt;'); // label escapes DB strings too
     expect(icon.html).not.toContain('<script>');
+  });
+
+  it('uses the business logo as a larger map icon and falls back safely if both image variants fail', async () => {
+    const leaflet = require('leaflet');
+    const withLogo: CityMapData = {
+      ...data,
+      businesses: data.businesses.map((business, index) =>
+        index === 0 ? { ...business, logoUrl: '/api/v1/files/businesses/40.webp' } : business,
+      ),
+    };
+    render(<CityMap data={withLogo} />);
+    await waitFor(() => expect(leaflet.marker).toHaveBeenCalledTimes(2));
+
+    const iconOptions = leaflet.divIcon.mock.calls[0][0];
+    const icon = iconOptions as { html: string; iconSize: number[] };
+    expect(icon.html).toContain('/api/v1/files/businesses/40.thumb.webp');
+    expect(icon.html).toContain('alt="رستوران ویترین"');
+    expect(icon.html).toContain('map-pin__icon'); // category glyph remains behind the photo
+    expect(leaflet.marker.mock.calls[0][1]).toMatchObject({ title: 'رستوران ویترین', alt: 'رستوران ویترین' });
+    expect(icon.iconSize).toEqual([46, 46]);
+
+    const marker = leaflet.marker.mock.results[0].value;
+    const element = marker.getElement();
+    const image = element.querySelector('.map-pin__photo') as HTMLImageElement;
+    image.dispatchEvent(new Event('error'));
+    expect(image.dataset.fullTried).toBe('1');
+    image.dispatchEvent(new Event('error'));
+    expect(element.querySelector('.map-pin--photo')).toBeNull();
+    expect(element.querySelector('.map-pin__photo')).toBeNull();
   });
 
   it('reveals the business names only once the user zooms in', async () => {
