@@ -1,11 +1,28 @@
 import type { NextConfig } from 'next';
+import { SITE_URL } from './src/lib/site';
 
 // Proxy target for same-origin /api calls (dev server & direct container access).
 // In production Caddy routes /api/* straight to the NestJS API before it reaches Next.
 const internalApi = process.env.INTERNAL_API_URL ?? 'http://127.0.0.1:4000';
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  output: 'standalone',  // One canonical host: www → apex as a permanent 301, so the same page is
+  // never reachable under two hosts. Every page's rel=canonical points at
+  // SITE_URL too — redirect and canonical must agree or Google has to guess
+  // which URL to show.
+  async redirects() {
+    const canonical = new URL(SITE_URL);
+    // an already-www primary host must not redirect to itself
+    if (canonical.hostname.startsWith('www.')) return [];
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: `www.${canonical.hostname}` }],
+        destination: `${canonical.origin}/:path*`,
+        permanent: true,
+      },
+    ];
+  },
   poweredByHeader: false,
   async rewrites() {
     return [{ source: '/api/:path*', destination: `${internalApi}/api/:path*` }];

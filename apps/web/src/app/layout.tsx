@@ -7,14 +7,18 @@ import { HeaderPills } from '@/components/header-pills';
 import { SiteChrome } from '@/components/site-chrome';
 import { VisitBeacon } from '@/components/visit-beacon';
 import './globals.css';
+import { SITE_URL } from '@/lib/site';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://shahrjo.ir'),
+  // one canonical host (shahrju.ir): metadataBase feeds every relative URL below —
+  // og:image, twitter image and any page that resolves against it.
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: 'شهرجو | همه‌چیز شهر شما',
+    default: 'شهرجو | آگهی‌ها و کسب‌وکارهای محلی شهرها',
     template: '%s | شهرجو',
   },
-  description: 'شهرجو؛ اخبار، آگهی‌ها و کسب‌وکارهای شهر شما — پلتفرم چندشهری ایرانی',
+  description:
+    'آگهی‌های محلی، خدمات، کسب‌وکارها و اخبار شهر خود را در شهرجو پیدا کنید؛ یا کسب‌وکار و آگهی‌تان را برای همشهری‌ها معرفی کنید.',
   applicationName: 'شهرجو',
   manifest: '/site.webmanifest',
   // The `?v=2` suffix busts whatever the previous icon set cached under the
@@ -69,6 +73,17 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fa" dir="rtl">
+      <head>
+        {/* Self-hosted Vazirmatn (variable) — preload so Persian text renders in
+            the soft site font instead of falling back to Tahoma on first paint. */}
+        <link
+          rel="preload"
+          as="font"
+          type="font/woff2"
+          href="/fonts/Vazirmatn-wght.woff2"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body>
         {/* Site frame: hidden on full-screen rooms (the city wall chat room). */}
         <SiteChrome>

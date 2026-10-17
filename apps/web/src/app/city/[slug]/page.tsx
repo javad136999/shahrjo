@@ -1,120 +1,83 @@
-'use client';
-
-import { useEffect, useState } from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { CityDashboard } from '@/components/dashboard';
-import { api, getCityMap, getShowcase, getTokens, setLocalCity } from '@/lib/api';
-import type { City, CityMapData, MeResponse, ShowcaseItem } from '@/lib/types';
+import { notFound } from 'next/navigation';
+import { CityHomeClient } from '@/components/city-home-client';
+import { serverApi } from '@/lib/server-data';
+import { absoluteUrl, openGraphFor } from '@/lib/site';
+import type { City, CityMapData, ShowcaseItem } from '@/lib/types';
 
-interface DashboardState {
-  city: City | null | undefined; // undefined = loading, null = not found
-  showcase: ShowcaseItem[];
-  mapData: CityMapData | null;
-  loading: boolean;
-  feedError: string | null;
+interface CityPageProps {
+  params: Promise<{ slug: string }>;
 }
 
-const INITIAL: DashboardState = {
-  city: undefined,
-  showcase: [],
-  mapData: null,
-  loading: true,
-  feedError: null,
-};
-
 /**
- * City home (Phase 4, redesigned): resolves the slug, remembers the selection,
- * syncs `cityId` into the profile when logged in, then loads the golden
- * showcase and the city map. News has its own page (`/city/<slug>/news`);
- * ads and businesses are no longer listed here.
+ * City home (`/city/<slug>`) — server-rendered on purpose.
+ *
+ * Before, this was a client page whose first paint said «در حال بارگذاری» and
+ * carried the generic site title, so crawlers got no city name, no H1 and no
+ * canonical (SEO audit, 2026-10). Now the city is resolved on the server, the
+ * dashboard is rendered into the HTML, and each city gets its own title,
+ * description and canonical pointing at the confirmed host.
  */
-export default function CityPage() {
-  const { slug } = useParams<{ slug: string }>();
-  const [state, setState] = useState<DashboardState>(INITIAL);
+export const revalidate = 60;
 
-  useEffect(() => {
-    let alive = true;
-    setState(INITIAL);
+/** `null` = the slug does not exist · `undefined` = the API could not answer (outage). */
+async function resolveCity(slug: string): Promise<City | null | undefined> {
+  const list = await serverApi<City[]>('/cities', 60);
+  if (!list) return undefined;
+  return list.find((c) => c.slug === slug) ?? null;
+}
 
-    (async () => {
-      // 1) resolve the city from the public list
-      let city: City | null;
-      try {
-        const list = await api.get<City[]>('/cities');
-        city = list.find((c) => c.slug === slug) ?? null;
-      } catch {
-        if (alive) setState((s) => ({ ...s, city: null, loading: false, feedError: 'دریافت اطلاعات شهر ناموفق بود' }));
-        return;
-      }
-      if (!alive) return;
+export async function generateMetadata({ params }: CityPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const city = await resolveCity(slug);
+  if (city === undefined) return {}; // outage: fall back to the site-wide defaults
+  if (city === null) return { title: 'شهر پیدا نشد' };
 
-      if (!city) {
-        setState((s) => ({ ...s, city: null, loading: false }));
-        return;
-      }
+  const title = `آگهی و کسب‌وکارهای شهر ${city.name}`;
+  const description = `خدمات، کسب‌وکارها و آگهی‌های محلی ${city.name} را در شهرجو پیدا کنید؛ اگر صاحب کسب‌وکار هستید، آن را برای همشهری‌ها معرفی کنید.`;
+  const url = absoluteUrl(`/city/${city.slug}`);
 
-      setState((s) => ({ ...s, city }));
-      setLocalCity({ id: city!.id, slug: city!.slug, name: city!.name });
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: openGraphFor({ url, title, description }),
+  };
+}
 
-      // 2) keep the profile in sync when logged in (best-effort)
-      if (getTokens()) {
-        api
-          .get<MeResponse>('/users/me')
-          .then((me) => {
-            if (me.cityId !== city!.id) {
-              void api.patch<MeResponse>('/users/me', { cityId: city!.id }).catch(() => {});
-            }
-          })
-          .catch(() => {});
-      }
+export default async function CityPage({ params }: CityPageProps) {
+  const { slug } = await params;
+  const city = await resolveCity(slug);
 
-      // 3) golden showcase + map (Phase 9) — header still renders on failure
-      try {
-        const [showcase, mapData] = await Promise.all([getShowcase(city.slug), getCityMap(city.slug)]);
-        if (alive) setState((s) => ({ ...s, showcase, mapData, loading: false }));
-      } catch (err) {
-        if (alive) {
-          setState((s) => ({
-            ...s,
-            loading: false,
-            feedError: err instanceof Error ? err.message : 'دریافت محتوای شهر ناموفق بود',
-          }));
-        }
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, [slug]);
-
-  if (state.city === undefined) {
-    return (
-      <p className="muted loading" aria-busy>
-        در حال بارگذاری…
-      </p>
-    );
-  }
-
-  if (state.city === null) {
+  if (city === undefined) {
+    // API outage — a soft failure, not a 404: never let a downtime read as
+    // «this city does not exist» to a crawler.
     return (
       <div className="banner banner--error" role="alert">
-        <span>چنین شهری پیدا نشد.</span>
+        <span>دریافت اطلاعات شهر ناموفق بود؛ چند لحظه دیگر دوباره تلاش کنید.</span>
         <Link href="/" className="btn btn-ghost">
           بازگشت به فهرست شهرها
         </Link>
       </div>
     );
   }
+  if (city === null) notFound();
+
+  const [showcase, mapData] = await Promise.all([
+    serverApi<ShowcaseItem[]>(`/showcase?city=${encodeURIComponent(city.slug)}&limit=12`, 60),
+    serverApi<CityMapData>(`/map?city=${encodeURIComponent(city.slug)}`, 60),
+  ]);
+
+  const feedError =
+    showcase === null && mapData === null ? 'دریافت محتوای شهر ناموفق بود؛ چند لحظه دیگر دوباره تلاش کنید.' : null;
 
   return (
-    <CityDashboard
-      city={state.city}
-      showcase={state.showcase}
-      mapData={state.mapData}
-      loading={state.loading}
-      feedError={state.feedError}
+    <CityHomeClient
+      city={city}
+      showcase={showcase ?? []}
+      mapData={mapData}
+      feedError={feedError}
     />
   );
 }

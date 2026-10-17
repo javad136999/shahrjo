@@ -70,8 +70,14 @@ describe('CityGrid', () => {
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 2, slug: 'city-two' }));
   });
 
-  it('disables cards while syncing', () => {
-    render(<CityGrid cities={cities} onSelect={jest.fn()} disabled />);
-    expect(screen.getByTestId('city-city-one')).toBeDisabled();
+  it('disables cards while syncing (no navigation mid-sync)', () => {
+    const onSelect = jest.fn();
+    render(<CityGrid cities={cities} onSelect={onSelect} disabled />);
+    const card = screen.getByTestId('city-city-one');
+    // cards are real links now: the syncing state is expressed with
+    // aria-disabled and a click that changes nothing
+    expect(card).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(card);
+    expect(onSelect).not.toHaveBeenCalled();
   });
 });

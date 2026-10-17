@@ -19,6 +19,10 @@ coverage/
 
 # Freebuff local workspace metadata
 .freebuff/
+.cloud-attachments/
+
+# Local preview aids (stub API + captured HTML) — never deploy material
+.preview/
 
 # JamCity reference clone (study only - never committed)
 .jamcity-ref/

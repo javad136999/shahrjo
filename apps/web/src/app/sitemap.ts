@@ -1,39 +1,44 @@
 import type { MetadataRoute } from 'next';
+import { serverApi } from '@/lib/server-data';
+import { SITE_URL } from '@/lib/site';
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://shahrjo.ir';
-const API = process.env.INTERNAL_API_URL ?? 'http://127.0.0.1:4000';
-
+/**
+ * Public sitemap — every <loc> on the confirmed host (shahrju.ir), only URLs a
+ * crawler may actually show:
+ *
+ * - the static public pages,
+ * - every city home that exists in the API (data-driven, never hardcoded),
+ *
+ * Deliberately absent: `priority` and `changeFrequency` (Google ignores both),
+ * private/personal routes (/profile, /messages, /businesses, /login, /admin),
+ * and detail URLs whose indexable content is not guaranteed yet — ad, business
+ * and news detail pages should be added here once each has a stable, crawlable
+ * page with real content.
+ */
 export const revalidate = 3600;
 
+/** Real content date of the static pages below — not "whenever the file ran". */
+const STATIC_UPDATED = new Date('2026-10-17T00:00:00.000Z');
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
   const fixed: MetadataRoute.Sitemap = [
-    { url: SITE, lastModified: now, changeFrequency: 'daily', priority: 1 },
-    { url: `${SITE}/ads`, lastModified: now, changeFrequency: 'hourly', priority: 0.9 },
-    { url: `${SITE}/plans`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
-    { url: `${SITE}/contact`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
-    { url: `${SITE}/about`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
-    { url: `${SITE}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
-    { url: `${SITE}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
+    { url: SITE_URL, lastModified: STATIC_UPDATED },
+    { url: `${SITE_URL}/ads`, lastModified: STATIC_UPDATED },
+    { url: `${SITE_URL}/plans`, lastModified: STATIC_UPDATED },
+    { url: `${SITE_URL}/about`, lastModified: STATIC_UPDATED },
+    { url: `${SITE_URL}/contact`, lastModified: STATIC_UPDATED },
+    { url: `${SITE_URL}/privacy`, lastModified: STATIC_UPDATED },
+    { url: `${SITE_URL}/terms`, lastModified: STATIC_UPDATED },
   ];
 
-  // City pages come from data (never hardcoded); tolerate the API being
-  // unreachable at build time and keep the static entries.
-  let cities: MetadataRoute.Sitemap = [];
-  try {
-    const res = await fetch(`${API}/api/v1/cities`, { next: { revalidate: 3600 } });
-    if (res.ok) {
-      const body = (await res.json()) as { data?: Array<{ slug: string }> };
-      cities = (body.data ?? []).map((c) => ({
-        url: `${SITE}/city/${c.slug}`,
-        lastModified: now,
-        changeFrequency: 'daily' as const,
-        priority: 0.8,
-      }));
-    }
-  } catch {
-    // build-time offline: static routes only
-  }
+  // Cities come from data (never hardcoded); the API being unreachable leaves
+  // the static entries in place instead of failing the route.
+  const cities = await serverApi<Array<{ slug: string }>>('/cities', 3600);
+  const cityEntries: MetadataRoute.Sitemap = (cities ?? []).map((city) => ({
+    url: `${SITE_URL}/city/${city.slug}`,
+    // no lastModified on purpose: we have no reliable "last important change"
+    // for a city page, and a guessed date is worse than none.
+  }));
 
-  return [...fixed, ...cities];
+  return [...fixed, ...cityEntries];
 }

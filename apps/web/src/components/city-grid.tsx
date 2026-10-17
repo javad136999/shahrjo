@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import type { City } from '@/lib/types';
 
 interface CityGridProps {
@@ -55,17 +56,28 @@ export function CityGrid({ cities, onSelect, selectedCityId, disabled }: CityGri
                 const isSelected = selectedCityId === city.id;
                 return (
                   <li key={city.id}>
-                    <button
-                      type="button"
+                    {/* A real href: crawlers discover /city/<slug> from this list
+                        instead of the sitemap alone. The click is still
+                        intercepted so the parent can remember the city and sync
+                        the profile before navigating. */}
+                    <Link
+                      href={`/city/${city.slug}`}
                       className={`city-card${isSelected ? ' city-card--selected' : ''}`}
-                      disabled={disabled}
-                      onClick={() => onSelect(city)}
+                      aria-disabled={disabled ? true : undefined}
+                      onClick={(event) => {
+                        if (disabled) {
+                          event.preventDefault();
+                          return;
+                        }
+                        event.preventDefault();
+                        onSelect(city);
+                      }}
                       data-testid={`city-${city.slug}`}
                     >
                       <span className="city-card__name">{city.name}</span>
                       {city.isFeatured && <span className="badge">ویژه</span>}
                       {isSelected && <span className="city-card__check">✓ انتخاب‌شده</span>}
-                    </button>
+                    </Link>
                   </li>
                 );
               })}
