@@ -1,4 +1,14 @@
-/* ShahrJo global styles — Phase 3 (no external fonts/CDN). */
+/* ShahrJo global styles — Phase 3 (no external fonts/CDN).
+   Type: Vazirmatn, self-hosted from /fonts (variable, weights 100–900) so the
+   site never depends on a third-party font CDN and renders Persian smoothly. */
+
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('/fonts/Vazirmatn-wght.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   --bg: #fffdf8;
@@ -37,12 +47,17 @@ body {
 
 body {
   /* JamCity-inspired warm canvas: soft gold + green glows over off-white. */
+  /* minimal canvas: the glows are whispers, not paint */
   background:
-    radial-gradient(circle at 90% -10%, rgb(226 179 79 / 22%), transparent 28%),
-    radial-gradient(circle at 5% 24%, rgb(31 157 112 / 12%), transparent 30%),
-    linear-gradient(180deg, #fffdf8 0%, #f7fbf7 46%, #eef8f2 100%);
+    radial-gradient(circle at 90% -10%, rgb(226 179 79 / 10%), transparent 30%),
+    radial-gradient(circle at 5% 24%, rgb(31 157 112 / 7%), transparent 32%),
+    linear-gradient(180deg, #fffdfb 0%, #fbfdfb 46%, #f6faf7 100%);
   color: var(--text);
-  font-family: Vazirmatn, Tahoma, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Vazirmatn', Tahoma, 'Segoe UI', system-ui, -apple-system,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
   line-height: 1.7;
   min-height: 100vh;
   display: flex;
@@ -306,15 +321,20 @@ a:hover {
   border-radius: var(--radius);
   font: inherit;
   font-size: 16px;
+  /* the card is a real <a href="/city/…"> now: no link styling leaking in */
+  color: var(--text);
+  text-decoration: none;
   cursor: pointer;
   transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
 }
-.city-card:hover:not(:disabled) {
+.city-card:hover:not(:disabled):not([aria-disabled='true']) {
   border-color: var(--brand);
   transform: translateY(-2px);
   box-shadow: var(--shadow);
+  text-decoration: none;
 }
-.city-card:disabled {
+.city-card:disabled,
+.city-card[aria-disabled='true'] {
   opacity: 0.6;
   cursor: wait;
 }
@@ -620,36 +640,38 @@ a:hover {
   gap: 10px;
 }
 
+/* Minimal desk cards: hairline border, one whisper of a shadow, a soft tinted
+   icon tile — no gradients and no heavy type. */
 .service-tile {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 11px;
   min-width: 0;
   min-height: 68px;
   padding: 11px 13px;
   text-align: right;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: linear-gradient(135deg, #fff 0%, #f6faf7 100%);
-  box-shadow: 0 8px 20px rgb(14 122 95 / 8%);
+  border: 1px solid #e8efe9;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(20 35 29 / 4%), 0 10px 22px -20px rgb(20 35 29 / 30%);
   cursor: pointer;
-  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
 }
 .service-tile:hover {
-  border-color: rgb(14 122 95 / 45%);
+  border-color: rgb(14 122 95 / 35%);
   transform: translateY(-2px);
-  box-shadow: var(--shadow);
+  box-shadow: 0 2px 6px rgb(20 35 29 / 5%), 0 16px 30px -22px rgb(20 35 29 / 35%);
 }
 .service-tile.is-open {
-  border-color: rgb(14 122 95 / 60%);
-  background: linear-gradient(135deg, #f2fbf6 0%, #eaf5ef 100%);
+  border-color: rgb(14 122 95 / 55%);
+  background: #f8fcfa;
 }
 .service-tile--find {
-  background: linear-gradient(135deg, #fff 0%, #fff9ec 100%);
+  background: #fffefb;
 }
 .service-tile--find.is-open {
   border-color: var(--gold-line);
-  background: linear-gradient(135deg, #fffcf2 0%, #fdf3dd 100%);
+  background: #fffdf5;
 }
 
 .service-tile__icon {
@@ -659,27 +681,28 @@ a:hover {
   width: 40px;
   height: 40px;
   border-radius: 14px;
-  background: #fff;
-  border: 1px solid var(--line);
-  font-size: 20px;
-  box-shadow: 0 3px 9px rgb(21 59 45 / 8%);
+  /* quiet tinted tile instead of a white box on a white card */
+  background: var(--brand-soft);
+  font-size: 19px;
+  line-height: 1;
+}
+.service-tile--find .service-tile__icon {
+  background: var(--gold-soft);
 }
 .service-tile__copy {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  line-height: 1.35;
+  line-height: 1.5;
 }
 .service-tile__copy b {
   font-size: 13.5px;
-  font-weight: 900;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-weight: 800;
 }
 .service-tile__copy small {
   color: var(--muted);
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* The panel that opens under the tiles — same card language as form-card. */
@@ -793,9 +816,24 @@ a:hover {
     min-height: 72px;
     padding: 9px;
   }
+}
+
+/* Phones never show the two tiles in a squeezed row: one full-width line each,
+   long titles clamp to two lines so the box keeps its shape. */
+@media (max-width: 560px) {
+  .city-services__tiles {
+    grid-template-columns: 1fr;
+  }
+  .service-tile {
+    min-height: 56px;
+    padding: 10px 12px;
+  }
   .service-tile__copy b {
-    white-space: normal;
-    font-size: 12.5px;
+    font-size: 13px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 }
 
@@ -831,6 +869,21 @@ a:hover {
   background: rgb(255 255 255 / 17%);
   border: 1px solid rgb(255 255 255 / 25%);
   font-size: 22px;
+}
+
+/* the little white tick that says «the way in is open» */
+.wall-cta__tick {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 20%);
+  border: 1px solid rgb(255 255 255 / 70%);
+  font-size: 9px;
+  line-height: 1;
+
 }
 .wall-cta__copy {
   display: flex;
@@ -885,6 +938,7 @@ a:hover {
   font-size: 16.5px;
   margin: 0;
   line-height: 1.4;
+  overflow-wrap: break-word; /* long section titles wrap inside the card */
 }
 .dash-section__sub {
   margin: 0;
@@ -1559,6 +1613,10 @@ a.my-ads__item:hover {
 @media (max-width: 480px) {
   .city-grid {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+  /* stat chips reflow instead of three-up crowding small screens */
+  .stats-row {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   }
 }
 
@@ -2290,23 +2348,27 @@ a.my-ads__item:hover {
 }
 
 /* round category pin: the emoji says what kind of business it is */
+/* No white disc behind the icon: just one white ring, so the map shows
+   through — the pin reads on any tile colour and stays believable. */
 .map-pin--cat {
   display: grid;
   place-items: center;
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: #fff;
-  border: 3px solid var(--brand);
+  /* no white disc behind the icon: one white ring, the map shows through */
+  background: transparent;
+  border: 2px solid #fff;
   transform: none;
-  box-shadow: 0 4px 10px rgb(0 0 0 / 30%);
+  box-shadow: 0 2px 7px rgb(0 0 0 / 35%);
   font-size: 20px;
   line-height: 1;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 60%));
 }
 .map-pin--cat.map-pin--gold {
-  background: #fffaf0;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgb(242 201 76 / 38%), 0 3px 8px rgb(0 0 0 / 25%);
+  background: transparent;
+  border-color: #fff;
+  box-shadow: 0 0 0 2px rgb(217 143 43 / 95%), 0 2px 7px rgb(0 0 0 / 35%);
 }
 .map-pin__icon {
   position: absolute;
@@ -2318,11 +2380,18 @@ a.my-ads__item:hover {
   line-height: 1;
   pointer-events: none;
 }
+/* the legend row is white paper — its swatches keep a small filled chip */
 .map-pin--legend {
   width: 15px;
   height: 15px;
   font-size: 8px;
   border-width: 1.5px;
+  box-shadow: none;
+  filter: none;
+  background: var(--brand);
+}
+.map-pin--legend.map-pin--gold {
+  background: var(--gold);
   box-shadow: none;
 }
 
@@ -5431,6 +5500,8 @@ button.pill {
   padding: 0;
   border: 0;
   background: transparent;
+  /* round photo pin carrying the same one-line white ring as the emoji pins */
+  border-radius: 50%;
   box-shadow: 0 0 0 2px #fff, 0 5px 12px rgb(0 0 0 / 30%);
   overflow: hidden;
 }
@@ -5441,11 +5512,12 @@ button.pill {
   height: 100%;
   object-fit: cover;
   border-radius: inherit;
+  /* the photo carries the same one-line white ring as the emoji pins */
   border: 2px solid #fff;
-  box-shadow: 0 6px 14px -6px rgb(21 59 45 / 60%);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 12%), 0 6px 14px -6px rgb(21 59 45 / 60%);
 }
 .map-pin--gold .map-pin__photo {
-  border-color: var(--gold-line);
+  box-shadow: 0 0 0 2px rgb(217 143 43 / 95%), 0 6px 14px -6px rgb(21 59 45 / 55%);
 }
 
 /* Destructive wall actions (حذف کامل آگهی) read as red. */

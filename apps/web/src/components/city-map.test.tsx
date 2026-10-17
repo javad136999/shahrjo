@@ -19,6 +19,10 @@ jest.mock('leaflet', () => {
     layer.bindPopup = jest.fn(() => layer);
     layer.getBounds = jest.fn(() => ({ isValid: () => false }));
     layer.getElement = jest.fn(() => element);
+    // pin nudging + the tap-to-open card use these three
+    layer.on = jest.fn(() => layer);
+    layer.openPopup = jest.fn();
+    layer.setLatLng = jest.fn(() => layer);
     return layer;
   };
   const mapInstance = {
@@ -28,6 +32,9 @@ jest.mock('leaflet', () => {
     remove: jest.fn(),
     on: jest.fn(),
     getZoom: jest.fn(() => 12),
+    // screen-space projection: 1° ≈ 36k px is as good as any for a stub
+    latLngToLayerPoint: jest.fn((ll: [number, number]) => ({ x: ll[1] * 36000, y: ll[0] * 36000 })),
+    layerPointToLatLng: jest.fn((p: { x: number; y: number }) => [p.y / 36000, p.x / 36000]),
   };
   return {
     map: jest.fn(() => mapInstance),
@@ -397,5 +404,55 @@ describe('CityMap', () => {
     } finally {
       delete (global as unknown as { ResizeObserver?: unknown }).ResizeObserver;
     }
+  });
+
+  it('pulls stacked pins apart and sends them home when the user zooms', async () => {
+    const leaflet = require('leaflet');
+    // two businesses registered on the very same metre
+    const stacked: CityMapData = {
+      ...data,
+      businesses: [
+        data.businesses[0],
+        { ...data.businesses[1], latitude: data.businesses[0].latitude, longitude: data.businesses[0].longitude },
+      ],
+    };
+    render(<CityMap data={stacked} />);
+    await waitFor(() => expect(leaflet.marker).toHaveBeenCalledTimes(2));
+
+    const instance = leaflet.map.mock.results[0].value;
+    const zoomStarts = instance.on.mock.calls.filter((c: unknown[]) => c[0] === 'zoomstart');
+    const zoomEnds = instance.on.mock.calls.filter((c: unknown[]) => c[0] === 'zoomend');
+    const restorePins = zoomStarts[0][1] as () => void;
+    const spreadPins = zoomEnds[1][1] as () => void; // zoomend #1 = the is-zoomed label
+
+    const created = leaflet.marker.mock.results.slice(0, 2) as unknown as Array<{
+      value: { setLatLng: jest.Mock; on: jest.Mock; openPopup: jest.Mock; bindPopup: jest.Mock };
+    }>;
+    const first = created[0].value;
+    const second = created[1].value;
+
+    spreadPins();
+    expect(first.setLatLng).toHaveBeenCalled();
+    expect(second.setLatLng).toHaveBeenCalled();
+    const apartA = first.setLatLng.mock.calls.at(-1)[0];
+    const apartB = second.setLatLng.mock.calls.at(-1)[0];
+    expect(apartA).not.toEqual(apartB); // they no longer cover each other
+    expect(apartA).not.toEqual([27.831, 52.321]); // nudged away from the shared spot
+
+    restorePins();
+    expect(first.setLatLng).toHaveBeenLastCalledWith([27.831, 52.321]);
+    expect(second.setLatLng).toHaveBeenLastCalledWith([27.831, 52.321]);
+  });
+
+  it('opens that business’s info card when its pin is hit', async () => {
+    const leaflet = require('leaflet');
+    render(<CityMap data={data} />);
+    await waitFor(() => expect(leaflet.marker).toHaveBeenCalledTimes(2));
+
+    const marker = leaflet.marker.mock.results[0].value;
+    expect(marker.bindPopup).toHaveBeenCalled();
+    expect(marker.on).toHaveBeenCalledWith('click', expect.any(Function));
+    marker.on.mock.calls[0][1]();
+    expect(marker.openPopup).toHaveBeenCalled();
   });
 });
