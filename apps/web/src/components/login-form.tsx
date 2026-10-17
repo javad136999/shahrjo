@@ -15,6 +15,7 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get('next');
+  const referralCode = searchParams.get('ref')?.trim().toUpperCase();
 
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
@@ -78,7 +79,8 @@ export function LoginForm() {
     setError(null);
     setBusy(true);
     try {
-      await verifyOtp(phone.trim(), c);
+      if (referralCode) await verifyOtp(phone.trim(), c, referralCode);
+      else await verifyOtp(phone.trim(), c);
       // به محض ورود: اگر next نداریم، مستقیم به شهر خودِ کاربر برو (وگرنه انتخاب شهر)
       let target: string | null = next && next.startsWith('/') ? next : null;
       if (!target) {

@@ -37,21 +37,14 @@ export function CityDashboard({ city, showcase, mapData, loading, feedError }: C
         </h1>
       </header>
 
-      {/* دفتر خدمات شهر: راست «شغلتو ثبت کن» (رایگان و فوری)، چپ «چه خدماتی
-          در شهر … نیاز داری؟» با فهرست مشاغل ثبت‌شده و دکمهٔ تماس. زیر همین
-          کارت و بالای نقشه می‌نشیند. */}
-      <CityServices cityName={city.name} citySlug={city.slug} />
-
       {feedError && (
         <div className="banner banner--error" role="alert">
           <span>{feedError}</span>
         </div>
       )}
 
-      {/* The map comes first now (Phase 11b): the city is the point of the
-          page, the golden showcase sits right under it. The «نقشه شهر»
-          title row and the category bar above the canvas are gone, so the
-          canvas itself starts at the top of this card. */}
+      {/* The golden showcase and its product entry lead into the map. */}
+      <ShowcaseMarquee items={showcase} loading={loading} />
       {(loading || mapData) && (
         <section className="dash-map" id="map" aria-label="نقشه شهر">
           {mapData ? (
@@ -64,8 +57,8 @@ export function CityDashboard({ city, showcase, mapData, loading, feedError }: C
         </section>
       )}
 
-      {/* Golden showcase marquee — directly under the city map */}
-      <ShowcaseMarquee items={showcase} loading={loading} />
+      {/* ثبت شغل و جست‌وجوی خدمات زیر نقشه می‌آیند. */}
+      <CityServices cityName={city.name} citySlug={city.slug} />
     </div>
   );
 }

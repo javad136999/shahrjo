@@ -17,6 +17,11 @@ export class VerifyOtpDto {
   @IsString()
   @Matches(/^\d{4,8}$/, { message: 'کد ورود باید عددی باشد' })
   code!: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Za-z0-9_-]{4,16}$/)
+  referralCode?: string;
 }
 
 export class RefreshTokenDto {

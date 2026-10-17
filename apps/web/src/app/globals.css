@@ -5193,6 +5193,48 @@ button.pill {
   border-radius: 14px;
   background: var(--brand-soft);
 }
+.showcase__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.referral-reward {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 10px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.referral-reward h3,
+.referral-reward p {
+  margin: 0 0 4px;
+}
+.referral-reward__earned {
+  color: #166534;
+  background: #dcfce7;
+}
+.form-card progress {
+  display: block;
+  width: 100%;
+  height: 12px;
+  margin: 8px 0 16px;
+  accent-color: var(--brand);
+}
+@media (max-width: 560px) {
+  .showcase__actions {
+    width: 100%;
+  }
+  .referral-reward {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
 @media (max-width: 560px) {
   .admin-newbiz__map {
     height: 240px;

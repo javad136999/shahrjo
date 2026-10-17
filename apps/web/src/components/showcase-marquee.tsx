@@ -36,16 +36,14 @@ export function ShowcaseMarquee({ items, loading }: ShowcaseMarqueeProps) {
           <h2>ویترین طلایی</h2>
           <p>کسب‌وکارهای برتر شهر</p>
         </div>
-        {/* An empty showcase offers the signup (not the plans page): the first
-            step for an ownerless city is a business, not a subscription. */}
-        {items.length > 0 && (
-          <Link href="/plans" className="pill pill--gold showcase__cta" data-testid="showcase-cta">
-            <span className="showcase__cta-icon" aria-hidden>
-              ✨
-            </span>{' '}
-            معرفی کسب‌وکار من
+        <div className="showcase__actions">
+          <Link href="/businesses" className="pill pill--gold showcase__cta" data-testid="showcase-products-cta">
+            📋 منو و محصولات
           </Link>
-        )}
+          <Link href="/referrals" className="pill pill--gold showcase__cta" data-testid="showcase-cta">
+            <span className="showcase__cta-icon" aria-hidden>↗</span> معرفی شهرجو
+          </Link>
+        </div>
       </div>
 
       {loading ? (

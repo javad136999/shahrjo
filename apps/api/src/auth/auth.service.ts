@@ -119,7 +119,7 @@ export class AuthService {
 
   // ================= verify OTP =================
 
-  async verifyOtp(input: { phone: string; code: string; ip: string; userAgent?: string }): Promise<AuthTokens> {
+  async verifyOtp(input: { phone: string; code: string; ip: string; userAgent?: string; referralCode?: string }): Promise<AuthTokens> {
     const phone = this.requirePhone(input.phone);
 
     const phoneLimit = await this.rateLimiter.hit(`otp:verify:phone:${phone}`, 10, 300);
@@ -154,7 +154,21 @@ export class AuthService {
 
     let user = await this.prisma.user.findUnique({ where: { phone } });
     if (!user) {
-      user = await this.prisma.user.create({ data: { phone, lastLoginAt: new Date() } });
+      const referralCode = input.referralCode?.trim().toUpperCase();
+      const inviter = referralCode
+        ? await this.prisma.user.findUnique({ where: { referralCode }, select: { id: true } })
+        : null;
+      if (referralCode && !inviter) {
+        throw new HttpException({ code: 'INVALID_REFERRAL_CODE', message: 'لینک معرفی معتبر نیست' }, HttpStatus.BAD_REQUEST);
+      }
+      user = await this.prisma.user.create({
+        data: {
+          phone,
+          lastLoginAt: new Date(),
+          referralCode: `SJ${randomBytes(6).toString('hex').toUpperCase()}`,
+          ...(inviter ? { referredByUserId: inviter.id } : {}),
+        },
+      });
     } else if (user.status === 'BANNED') {
       throw new HttpException(
         { code: 'ACCOUNT_BANNED', message: 'حساب کاربری شما مسدود شده است' },

@@ -121,10 +121,10 @@ const plansView = read('apps/web/src/components/plans-view.tsx');
 for (const marker of ['getTokens', 'redirectTo', '/login?next=/plans', 'checkoutPlan', 'payUrl']) {
   if (!plansView.includes(marker)) { console.error(`WEB: plans view missing ${marker}`); fail++; }
 }
-// The subscription entry lives on the golden showcase (the header itself
-// was slimmed down to news + city + submit).
+// The showcase now links to the referral program; plans stay reachable from
+// the business registration flow rather than being promoted as a standalone CTA.
 const showcaseMarquee = read('apps/web/src/components/showcase-marquee.tsx');
-if (!showcaseMarquee.includes('/plans')) { console.error('WEB: showcase must offer the subscription entry'); fail++; }
+if (!showcaseMarquee.includes('href="/referrals"')) { console.error('WEB: showcase must offer the ShahrJo referral program'); fail++; }
 const resultPage = read('apps/web/src/app/plans/result/page.tsx');
 if (!resultPage.includes('useSearchParams')) { console.error('WEB: result page must read the callback status'); fail++; }
 

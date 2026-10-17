@@ -506,13 +506,33 @@ export async function sendOtp(phone: string): Promise<{
   return api.post('/auth/send-otp', { phone });
 }
 
-export async function verifyOtp(phone: string, code: string) {
+export async function verifyOtp(phone: string, code: string, referralCode?: string) {
   const result = await api.post<{ accessToken: string; refreshToken: string; user: { id: number; phone: string; cityId: number | null } }>(
     '/auth/verify-otp',
-    { phone, code },
+    { phone, code, ...(referralCode ? { referralCode } : {}) },
   );
   setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
   return result;
+}
+
+export interface ReferralMilestone {
+  count: number;
+  tier: 'SILVER' | 'GOLD';
+  months: number;
+  title: string;
+  valueToman: number;
+  achieved: boolean;
+  remaining: number;
+  cashToman?: number;
+  cashStatus?: 'NEEDS_ADMIN_REVIEW';
+}
+export interface ReferralSummary {
+  code: string;
+  successfulSignups: number;
+  milestones: ReferralMilestone[];
+}
+export async function getReferralSummary(): Promise<ReferralSummary> {
+  return api.get<ReferralSummary>('/referrals/me');
 }
 
 export async function logoutServer(): Promise<void> {

@@ -24,7 +24,7 @@ export class AuthController {
     @ClientIp() ip: string,
     @Headers('user-agent') userAgent?: string,
   ): ReturnType<AuthService['verifyOtp']> {
-    return this.auth.verifyOtp({ phone: dto.phone, code: dto.code, ip, userAgent });
+    return this.auth.verifyOtp({ phone: dto.phone, code: dto.code, ip, userAgent, referralCode: dto.referralCode });
   }
 
   @Public()

@@ -12,6 +12,7 @@ import { HealthController } from './health/health.controller';
 import { PaymentsModule } from './payments/payments.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RbacModule } from './rbac/rbac.module';
+import { ReferralsModule } from './referrals/referrals.module';
 import { RedisModule } from './redis/redis.module';
 import { SmsModule } from './sms/sms.module';
 import { UploadsModule } from './uploads/uploads.module';
@@ -25,6 +26,7 @@ import { WallModule } from './wall/wall.module';
     PrismaModule,
     RedisModule,
     RbacModule,
+    ReferralsModule,
     SmsModule,
     AuthModule,
     UsersModule,

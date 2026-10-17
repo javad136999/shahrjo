@@ -31,7 +31,8 @@ describe('ShowcaseMarquee', () => {
   it('renders the golden panel with title and CTA', () => {
     render(<ShowcaseMarquee items={items} loading={false} />);
     expect(screen.getByTestId('showcase')).toHaveTextContent('ویترین طلایی');
-    expect(screen.getByTestId('showcase-cta')).toHaveAttribute('href', '/plans');
+    expect(screen.getByTestId('showcase-cta')).toHaveAttribute('href', '/referrals');
+    expect(screen.getByTestId('showcase-products-cta')).toHaveAttribute('href', '/businesses');
     expect(screen.getByTestId('showcase-40')).toHaveTextContent('رستوران ویترین');
     expect(screen.getByTestId('showcase-41')).toHaveTextContent('فروشگاه نقره‌ای');
   });
@@ -90,9 +91,8 @@ describe('ShowcaseMarquee', () => {
     // one door out of an empty showcase: register a business
     expect(screen.getByTestId('showcase-empty-cta')).toHaveAttribute('href', '/business/new');
     expect(screen.getByRole('link', { name: /ثبت کسب‌وکار/ })).toHaveAttribute('href', '/business/new');
-    // both old CTAs are gone in this state («معرفی کسب‌وکار من» lives only
-    // next to a filled showcase)
-    expect(screen.queryByRole('link', { name: /معرفی کسب‌وکار من/ })).not.toBeInTheDocument();
+    // Introduction link remains available in an empty city too.
+    expect(screen.getByTestId('showcase-cta')).toHaveAttribute('href', '/referrals');
     expect(screen.queryByRole('link', { name: /مشاهده اشتراک‌ها/ })).not.toBeInTheDocument();
     expect(screen.queryByTestId('showcase-viewport')).not.toBeInTheDocument();
   });

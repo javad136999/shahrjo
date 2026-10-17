@@ -267,8 +267,39 @@ describe('AuthService.verifyOtp', () => {
 
     const result = await service.verifyOtp({ phone: PHONE, code: '12345', ip: 'ip1' });
 
-    expect(prisma.user.create).toHaveBeenCalledWith({ data: { phone: PHONE, lastLoginAt: expect.any(Date) } });
+    expect(prisma.user.create).toHaveBeenCalledWith({ data: { phone: PHONE, lastLoginAt: expect.any(Date), referralCode: expect.stringMatching(/^SJ[A-F0-9]{12}$/) } });
     expect(result.user.cityId).toBeNull();
+  });
+
+  it('attributes a new signup to a valid referral code exactly once', async () => {
+    const { service, prisma } = makeService();
+    prisma.otpCode.findFirst.mockResolvedValue(activeOtpRow('12345'));
+    prisma.otpCode.updateMany.mockResolvedValue({ count: 1 });
+    prisma.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 22 });
+    prisma.user.create.mockResolvedValue({ ...activeUser, id: 23 });
+    prisma.userSession.create.mockResolvedValue({});
+
+    await service.verifyOtp({ phone: PHONE, code: '12345', ip: 'ip1', referralCode: 'sj-ref-22' });
+
+    expect(prisma.user.findUnique).toHaveBeenNthCalledWith(2, {
+      where: { referralCode: 'SJ-REF-22' },
+      select: { id: true },
+    });
+    expect(prisma.user.create.mock.calls[0][0].data).toMatchObject({ referredByUserId: 22 });
+  });
+
+  it('rejects an unknown referral code instead of silently losing attribution', async () => {
+    const { service, prisma } = makeService();
+    prisma.otpCode.findFirst.mockResolvedValue(activeOtpRow('12345'));
+    prisma.otpCode.updateMany.mockResolvedValue({ count: 1 });
+    prisma.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+
+    await expectHttp(
+      service.verifyOtp({ phone: PHONE, code: '12345', ip: 'ip1', referralCode: 'SJ-UNKNOWN' }),
+      400,
+      'INVALID_REFERRAL_CODE',
+    );
+    expect(prisma.user.create).not.toHaveBeenCalled();
   });
 
   it('rejects when the OTP was already consumed (one-time use race)', async () => {

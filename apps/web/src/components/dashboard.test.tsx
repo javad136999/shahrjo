@@ -89,15 +89,14 @@ describe('CityDashboard', () => {
     expect(cta).toHaveClass('wall-cta');
   });
 
-  it('mounts the service desk right under the welcome card', () => {
+  it('places the golden showcase before the map and service actions below it', () => {
     renderDashboard({ mapData });
     const desk = screen.getByTestId('city-services');
     expect(desk).toHaveAttribute('data-city', 'شهر نمونه');
-    // the greeting card comes first, the desk sits between it and the map
-    const order = [...document.querySelectorAll('[data-testid="dash-welcome"], [data-testid="city-services"], [data-testid="city-map"]')].map(
+    const order = [...document.querySelectorAll('[data-testid="dash-welcome"], [data-testid="showcase"], [data-testid="city-map"], [data-testid="city-services"]')].map(
       (el) => el.getAttribute('data-testid'),
     );
-    expect(order).toEqual(['dash-welcome', 'city-services', 'city-map']);
+    expect(order).toEqual(['dash-welcome', 'showcase', 'city-map', 'city-services']);
   });
 
   it('keeps news, ads and businesses off the home page', () => {
@@ -145,7 +144,8 @@ describe('CityDashboard', () => {
     const panel = screen.getByTestId('showcase');
     expect(panel).toHaveTextContent('ویترین طلایی');
     expect(screen.getByTestId('showcase-40')).toHaveTextContent('رستوران ویترین');
-    expect(screen.getByTestId('showcase-cta')).toHaveAttribute('href', '/plans');
+    expect(screen.getByTestId('showcase-cta')).toHaveAttribute('href', '/referrals');
+    expect(screen.getByTestId('showcase-products-cta')).toHaveAttribute('href', '/businesses');
     expect(screen.getByRole('link', { name: 'رستوران ویترین' })).toHaveAttribute('href', '/business/40');
     // the list is rendered twice for the seamless loop; the copy is aria-hidden
     const hidden = panel.querySelectorAll('[aria-hidden="true"]');
@@ -155,20 +155,19 @@ describe('CityDashboard', () => {
   it('offers the signup instead of the plans when the city has no paid businesses', () => {
     renderDashboard();
     expect(screen.getByTestId('showcase-empty')).toHaveTextContent('هنوز کسب‌وکار طلایی‌ای در این شهر ثبت نشده');
-    // an empty showcase drops both old CTAs — the one door out is signup
-    expect(screen.queryByTestId('showcase-cta')).not.toBeInTheDocument();
+    // an empty showcase keeps signup and the site-introduction link
+    expect(screen.getByTestId('showcase-cta')).toHaveAttribute('href', '/referrals');
     expect(screen.queryByRole('link', { name: /معرفی کسب‌وکار من/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /مشاهده اشتراک‌ها/ })).not.toBeInTheDocument();
     expect(screen.getByTestId('showcase-empty-cta')).toHaveAttribute('href', '/business/new');
   });
 
-  it('puts the city map above the golden showcase', () => {
+  it('puts the golden showcase above the map', () => {
     renderDashboard({ mapData, showcase });
     expect(screen.getByTestId('city-map')).toHaveAttribute('data-pins', '1');
     const map = document.querySelector('.dash-map') as HTMLElement;
     const showcaseEl = screen.getByTestId('showcase');
     expect(map).not.toBeNull();
-    // Phase 11b: the map comes first, the showcase right under it
-    expect(map.compareDocumentPosition(showcaseEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(showcaseEl.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

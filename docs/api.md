@@ -7,11 +7,17 @@
 | Endpoint | Body | توضیح |
 |---|---|---|
 | POST `/auth/send-otp` | `{ phone }` | Validate شماره، Rate Limit (IP+Phone)، تولید OTP امن، Hash، ذخیره در Postgres با انقضا، ارسال SMS |
-| POST `/auth/verify-otp` | `{ phone, code }` | بررسی Hash/انقضا/تلاش‌ها/یک‌بارمصرف؛ ایجاد یا Login کاربر؛ برمی‌گرداند `{ accessToken, refreshToken, user }` |
+| POST `/auth/verify-otp` | `{ phone, code, referralCode? }` | بررسی Hash/انقضا/تلاش‌ها/یک‌بارمصرف؛ ایجاد یا Login کاربر؛ کد معرف فقط به حساب تازه ثبت‌شده وصل می‌شود؛ برمی‌گرداند `{ accessToken, refreshToken, user }` |
 | POST `/auth/refresh` | `{ refreshToken }` | چرخش Refresh Token (hash در `user_sessions`) |
 | POST `/auth/logout` | `{ refreshToken }` | Revoked کردن یک Session |
 | GET `/auth/sessions` | — | لیست نشست‌های فعال کاربر (نیازمند Access Token) |
 | POST `/auth/logout-all` | — | Revoked کردن همه نشست‌های کاربر (همه دستگاه‌ها) |
+
+## معرفی شهرجو و پاداش دعوت
+
+| Endpoint | Auth | توضیح |
+|---|---|---|
+| GET `/referrals/me` | Bearer | کد دعوت اختصاصی، تعداد ثبت‌نام‌های موفق و وضعیت آستانه‌های ۵/۱۰/۲۰/۵۰/۱۰۰ نفر را برمی‌گرداند. کد معرف فقط هنگام ساخت حساب جدید ثبت می‌شود؛ کاربران قدیمی با کد لینک جدید دوباره به معرف متصل نمی‌شوند. پاداش وجه نقدِ ۱۰۰ نفره فقط پس از بررسی مدیر قابل پرداخت است و endpoint پرداخت خودکار ندارد. |
 
 ## Users / City
 

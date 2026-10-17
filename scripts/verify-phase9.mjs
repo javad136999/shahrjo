@@ -107,14 +107,13 @@ if (!migration.includes('ADD COLUMN') || !migration.includes('boundary')) {
 const seed = read('prisma/seed/index.ts');
 if (!seed.includes("'storage.manage'")) { console.error('SEED: storage.manage permission missing'); fail++; }
 
-// --- Web: marquee sits under the map, no hard-coded cities ---
-// (Phase 11b moved the map to the top of the city home — the showcase follows
-// it directly, so the golden panel is still the map's neighbour.)
+// --- Web: marquee sits above the map, no hard-coded cities ---
 const dashboard = read('apps/web/src/components/dashboard.tsx');
 const marqueeIdx = dashboard.indexOf('<ShowcaseMarquee');
 const mapIdx = dashboard.indexOf('<CityMap');
-if (marqueeIdx === -1 || mapIdx === -1 || mapIdx > marqueeIdx) {
-  console.error('WEB: the city map must be rendered above the golden showcase (Phase 11b)');
+const serviceIdx = dashboard.indexOf('<CityServices');
+if (marqueeIdx === -1 || mapIdx === -1 || serviceIdx === -1 || marqueeIdx > mapIdx || mapIdx > serviceIdx) {
+  console.error('WEB: the golden showcase must be above the map, with service actions below it');
   fail++;
 }
 const marquee = read('apps/web/src/components/showcase-marquee.tsx');
@@ -166,4 +165,4 @@ for (const endpoint of ['GET `/showcase?city=<slug>&limit=`', 'GET `/map?city=<s
 }
 
 if (fail) { console.error(`\nPhase 9 FAILED (${fail} problem${fail > 1 ? 's' : ''})`); process.exit(1); }
-console.log('Phase 9 OK: city map above the golden showcase marquee, pinned approved businesses, per-user storage quota + sweep, docs/CI in sync');
+console.log('Phase 9 OK: golden showcase above the city map, service actions below it, pinned approved businesses, storage quota + sweep');
