@@ -31,9 +31,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/terms`, lastModified: STATIC_UPDATED },
   ];
 
-  // Cities come from data (never hardcoded); the API being unreachable leaves
-  // the static entries in place instead of failing the route.
-  const cities = await serverApi<Array<{ slug: string }>>('/cities', 3600);
+  // Cities come from data (never hardcoded). The fetch must NOT be cached:
+  // during `next build` the API container is usually still starting, so a
+  // cached (empty) city list would sit in the sitemap for a whole hour and
+  // search engines would see only the static pages. Fresh on every request.
+  const cities = await serverApi<Array<{ slug: string }>>('/cities', 0);
   const cityEntries: MetadataRoute.Sitemap = (cities ?? []).map((city) => ({
     url: `${SITE_URL}/city/${city.slug}`,
     // no lastModified on purpose: we have no reliable "last important change"
