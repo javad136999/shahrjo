@@ -20,6 +20,7 @@ function makeService() {
       findMany: jest.fn(),
     },
     subscription: { create: jest.fn(), findMany: jest.fn() },
+    notification: { create: jest.fn() },
     $transaction: jest.fn(),
   };
   prisma.$transaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma));
@@ -281,6 +282,14 @@ describe('PaymentsService.handleCallback', () => {
     prisma.subscription.create.mockResolvedValue({ id: 1 });
 
     expect(await service.handleCallback('A123', 'OK')).toBe('SUCCESS');
+    expect(prisma.notification.create).toHaveBeenCalledWith({
+      data: {
+        userId: 21,
+        type: 'PAYMENT',
+        title: 'پرداخت با موفقیت ثبت شد',
+        body: 'اشتراک شما فعال شد.',
+      },
+    });
 
     const claim = prisma.payment.updateMany.mock.calls[0][0]; // claim is the only updateMany on this path
     expect(claim.where.status.in).toEqual(['CREATED', 'STARTED']);
