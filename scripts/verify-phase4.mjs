@@ -54,7 +54,7 @@ if (!appModule.includes('ContentModule')) { console.error('MISSING ContentModule
 
 // --- Frontend: light home page (welcome + showcase + map); news on its own page ---
 const page = read('apps/web/src/app/city/[slug]/page.tsx');
-for (const marker of ["'/showcase?city=", "'/map?city="]) {
+for (const marker of ['/showcase?city=', '/map?city=']) {
   if (!page.includes(marker)) { console.error(`WEB: dashboard must load city-scoped feed ${marker}`); fail++; }
 }
 if (!page.includes('Promise.all')) { console.error('WEB: feeds should load in parallel'); fail++; }
