@@ -449,7 +449,7 @@ export function BusinessRegistration() {
           )}
           <div className="auth-actions">
             <button className="btn btn-primary" disabled={!selectedPlanId || busy} onClick={confirmAndPay}>
-              {busy ? 'در حال انتقال…' : 'تأیید و پرداخت'}
+              {busy ? 'در حال ثبت…' : 'تأیید و پرداخت'}
             </button>
             <button className="btn btn-ghost" onClick={() => setStep(2)} disabled={busy}>
               بازگشت
