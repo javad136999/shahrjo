@@ -163,7 +163,8 @@ describe('CityMap', () => {
     render(<CityMap data={multipart} />);
     await waitFor(() => expect(leaflet.map.mock.results[0].value.fitBounds).toHaveBeenCalled());
     const [box] = leaflet.map.mock.results[0].value.fitBounds.mock.calls[0];
-    expect(roundBox(box)).toEqual([[27.7, 52.2], [27.95, 52.7]]); // every part of the city stays in frame
+    // a wide outline opens on its central core (not the empty land around it)
+    expect(roundBox(box)).toEqual([[27.78, 52.22], [27.88, 52.42]]);
     expect(leaflet.geoJSON).not.toHaveBeenCalled();
   });
 
