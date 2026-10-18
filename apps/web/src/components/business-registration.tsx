@@ -428,10 +428,6 @@ export function BusinessRegistration() {
                       setSelectedPlanId(plan.id);
                     }
                   }}
-                  style={{
-                    cursor: 'pointer',
-                    outline: selectedPlanId === plan.id ? '2px solid #c9971f' : undefined,
-                  }}
                   data-testid={`biz-plan-${plan.id}`}
                 >
                   <div className="plan-card__tier">
