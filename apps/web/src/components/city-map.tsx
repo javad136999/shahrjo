@@ -90,6 +90,8 @@ const MIN_HALF_LNG = 0.025;
 /** Widest zoom we ever force: a town/city overview, never a single street. */
 const URBAN_MAX_ZOOM = 14;
 const FILTER_MAX_ZOOM = 15;
+/** Share of a big outline (half-width) that the opening view keeps around the centre. */
+const CORE_SHARE = 0.2;
 /** How far past the city outline the pan frame reaches (degrees). */
 const SLACK_LAT = 0.02;
 const SLACK_LNG = 0.02;
@@ -418,6 +420,26 @@ export function CityMap({ data }: CityMapProps) {
           } else {
             urban = pinBox;
           }
+        }
+      }
+
+      // The admin outline of a big city (Shiraz is a ~30 km box) is mostly desert.
+      // The first frame hugs the built-up core instead: the pins' extent when
+      // there are enough of them, else the central part of the outline. The pan
+      // frame (maxBounds) stays the full outline, so everything is still reachable.
+      if (outline && urban) {
+        const pinBox = allPins.length >= 3 ? boxOfPoints(allPins) : null;
+        if (pinBox) {
+          urban = pinBox;
+        } else {
+          const cLat = center ? center[0] : (outline[0][0] + outline[1][0]) / 2;
+          const cLng = center ? center[1] : (outline[0][1] + outline[1][1]) / 2;
+          const halfLat = Math.min((outline[1][0] - outline[0][0]) / 2, Math.max((outline[1][0] - outline[0][0]) * CORE_SHARE, MIN_HALF_LAT));
+          const halfLng = Math.min((outline[1][1] - outline[0][1]) / 2, Math.max((outline[1][1] - outline[0][1]) * CORE_SHARE, MIN_HALF_LNG));
+          urban = [
+            [cLat - halfLat, cLng - halfLng],
+            [cLat + halfLat, cLng + halfLng],
+          ];
         }
       }
 
