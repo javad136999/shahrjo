@@ -169,7 +169,7 @@ for (const marker of ['data-testid="business-menu"', 'menuSections', 'formatPric
   if (!detail.includes(marker)) { console.error(`WEB detail: missing ${marker}`); fail++; }
 }
 
-// Map: real business photos on the pins + the filter docked on the canvas
+// Map: compact JamApp-style category markers + the filter docked on the canvas
 // corner (no full-width bar above the map any more).
 const content = read('apps/api/src/content/content.service.ts');
 if (!/logoUrl: true, \/\/ owner photo first/.test(content)) {
@@ -177,7 +177,7 @@ if (!/logoUrl: true, \/\/ owner photo first/.test(content)) {
   fail++;
 }
 const cityMap = read('apps/web/src/components/city-map.tsx');
-for (const marker of ['city-map__frame', 'map-pin__photo', 'thumbUrlFor(b.logoUrl)']) {
+for (const marker of ['city-map__frame', 'shahrjo-jam-marker', 'jam-map-marker__body', 'b.category.icon']) {
   if (!cityMap.includes(marker)) { console.error(`MAP: missing ${marker}`); fail++; }
 }
 // Service actions live in the welcome card; showcase leads into the city map.
