@@ -15,7 +15,10 @@ import { SITE_URL } from '@/lib/site';
  * and news detail pages should be added here once each has a stable, crawlable
  * page with real content.
  */
-export const revalidate = 3600;
+// The sitemap must reflect newly enabled cities immediately. A positive
+// route revalidation interval would cache the entire XML response even though
+// the inner API fetch uses `cache: 'no-store'`.
+export const revalidate = 0;
 
 /** Real content date of the static pages below — not "whenever the file ran". */
 const STATIC_UPDATED = new Date('2026-10-17T00:00:00.000Z');
