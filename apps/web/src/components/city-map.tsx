@@ -90,6 +90,10 @@ const MIN_HALF_LNG = 0.025;
 /** Widest zoom we ever force: a town/city overview, never a single street. */
 const URBAN_MAX_ZOOM = 14;
 const FILTER_MAX_ZOOM = 15;
+/** Share of a big outline (half-width) that the opening view keeps around the centre. */
+const CORE_SHARE = 0.2;
+/** Outlines wider than this (degrees, ~33 km) are mostly empty land around the town. */
+const BIG_OUTLINE_SPAN = 0.3;
 /** How far past the city outline the pan frame reaches (degrees). */
 const SLACK_LAT = 0.02;
 const SLACK_LNG = 0.02;
@@ -418,6 +422,37 @@ export function CityMap({ data }: CityMapProps) {
           } else {
             urban = pinBox;
           }
+        }
+      }
+
+      // The admin outline of a big city (Shiraz is a ~30 km box) is mostly desert.
+      // The first frame hugs the built-up core instead: the pins' extent when
+      // there are enough of them, else the central part of the outline. The pan
+      // frame (maxBounds) stays the full outline, so everything is still reachable.
+      const bigOutline =
+        outline !== null && Math.max(outline[1][0] - outline[0][0], outline[1][1] - outline[0][1]) > BIG_OUTLINE_SPAN;
+      if (outline && urban && bigOutline) {
+        const inside = allPins.filter(
+          ([lat, lng]) => lat >= outline[0][0] && lat <= outline[1][0] && lng >= outline[0][1] && lng <= outline[1][1],
+        );
+        const pinBox = inside.length >= 3 ? boxOfPoints(inside) : null;
+        if (pinBox) {
+          urban = pinBox;
+        } else {
+          const centreInside =
+            center !== null &&
+            center[0] >= outline[0][0] &&
+            center[0] <= outline[1][0] &&
+            center[1] >= outline[0][1] &&
+            center[1] <= outline[1][1];
+          const cLat = center && centreInside ? center[0] : (outline[0][0] + outline[1][0]) / 2;
+          const cLng = center && centreInside ? center[1] : (outline[0][1] + outline[1][1]) / 2;
+          const halfLat = Math.min((outline[1][0] - outline[0][0]) / 2, Math.max((outline[1][0] - outline[0][0]) * CORE_SHARE, MIN_HALF_LAT));
+          const halfLng = Math.min((outline[1][1] - outline[0][1]) / 2, Math.max((outline[1][1] - outline[0][1]) * CORE_SHARE, MIN_HALF_LNG));
+          urban = [
+            [cLat - halfLat, cLng - halfLng],
+            [cLat + halfLat, cLng + halfLng],
+          ];
         }
       }
 
