@@ -12,7 +12,7 @@ interface CityNewsPageProps {
 
 /**
  * City news (`/city/<slug>/news`) — server-rendered like the city home: the
- * headline «اخبار شهر جم» and the news themselves are in the first HTML, and
+ * city-specific headline and the news themselves are in the first HTML, and
  * the page carries its own title, description and canonical.
  */
 export const revalidate = 60;
