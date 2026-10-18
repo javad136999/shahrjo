@@ -889,7 +889,7 @@ export function WallView({ city }: WallViewProps) {
   const ordered = [...feed.posts].reverse();
 
   return (
-    <div className="wall" data-testid="wall">
+    <div className="wall wall--jam-theme" data-testid="wall">
       <header className="wall-room" data-testid="wall-room">
         {/* The site header/nav are hidden in the room — the city home lives here. */}
         <Link

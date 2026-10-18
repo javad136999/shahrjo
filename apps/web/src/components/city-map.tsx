@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { thumbUrlFor } from '@/lib/format';
 import type { CityMapData } from '@/lib/types';
 import 'leaflet/dist/leaflet.css';
 
@@ -247,24 +246,35 @@ export function CityMap({ data }: CityMapProps) {
       const placedPins: { marker: import('leaflet').Marker; anchor: [number, number] }[] = [];
 
       for (const b of shown) {
-        const gold = b.subscriptionTier === 'GOLD';
-        // The owner's logo is the business-specific map icon. If the thumbnail
-        // is unavailable, retry the original upload before falling back to the
-        // category glyph, so the pin never becomes an empty/broken image.
-        const photo = thumbUrlFor(b.logoUrl);
-        const fallbackGlyph = esc(b.category.icon || b.name.trim().slice(0, 1) || '◆');
+        const tier = (b.subscriptionTier || '').toUpperCase();
+        const categoryName = b.category.name || '';
+        const categorySlug = b.category.slug || '';
+        const theme =
+          tier === 'GOLD'
+            ? { main: '#c58a28', soft: '#fff3ca', ring: '#e5b84f' }
+            : tier === 'SILVER'
+              ? { main: '#718092', soft: '#eef2f6', ring: '#aeb9c7' }
+              : /cafe|restaurant|food|coffee|کافه|رستوران|غذا|قهوه/i.test(categoryName + ' ' + categorySlug)
+                ? { main: '#c46a40', soft: '#fff0e7', ring: '#e9a27d' }
+                : /car|auto|vehicle|خودرو|اتومبیل|تعمیرگاه/i.test(categoryName + ' ' + categorySlug)
+                  ? { main: '#4777a8', soft: '#eaf4ff', ring: '#9fc5e6' }
+                  : /sport|gym|ورزش|باشگاه/i.test(categoryName + ' ' + categorySlug)
+                    ? { main: '#7a62a7', soft: '#f3edff', ring: '#c5b6e7' }
+                    : /health|medical|doctor|پزشک|درمان|دارو/i.test(categoryName + ' ' + categorySlug)
+                      ? { main: '#2f8d7d', soft: '#e7f8f3', ring: '#94d6c8' }
+                      : { main: '#2f7657', soft: '#e8f5ed', ring: '#99cdb0' };
+        const glyph = esc(b.category.icon || '📍');
+        // Match JamApp's compact, category-first marker: a coloured emoji pin,
+        // with tier-specific accents. Business logos stay in business cards/popups.
         const icon = L.divIcon({
-          className: 'map-pin-wrap',
+          className: 'shahrjo-jam-marker',
           html:
-            `<span class="map-pin map-pin--cat${gold ? ' map-pin--gold' : ''}${photo ? ' map-pin--photo' : ''}">` +
-            `<span class="map-pin__icon" aria-hidden="true">${fallbackGlyph}</span>` +
-            (photo
-              ? `<img class="map-pin__photo" src="${esc(photo)}" data-full-src="${esc(b.logoUrl ?? '')}" alt="${esc(b.name)}" loading="lazy" />`
-              : '') +
-            `<span class="map-pin__name">${esc(b.name)}</span>` +
+            `<span class="jam-map-marker" style="--marker-main:${theme.main};--marker-soft:${theme.soft};--marker-ring:${theme.ring}">` +
+            `<span class="jam-map-marker__pulse"></span>` +
+            `<span class="jam-map-marker__body" aria-hidden="true">${glyph}</span>` +
             `</span>`,
-          iconSize: [46, 46],
-          iconAnchor: [23, 23],
+          iconSize: [38, 38],
+          iconAnchor: [19, 19],
         });
         const popup =
           `<div class="map-popup">` +
@@ -276,20 +286,6 @@ export function CityMap({ data }: CityMapProps) {
           .addTo(map)
           .bindPopup(popup, { autoPanPadding: [24, 48] });
         placedPins.push({ marker, anchor: [b.latitude, b.longitude] });
-        if (photo) {
-          const markerElement = marker.getElement();
-          const image = markerElement?.querySelector<HTMLImageElement>('.map-pin__photo');
-          image?.addEventListener('error', () => {
-            const fullUrl = image.dataset.fullSrc;
-            if (fullUrl && image.dataset.fullTried !== '1' && image.src !== fullUrl) {
-              image.dataset.fullTried = '1';
-              image.src = fullUrl;
-              return;
-            }
-            image.remove();
-            markerElement?.querySelector('.map-pin--photo')?.classList.remove('map-pin--photo');
-          });
-        }
         // Hit a pin (tap, or a pinch/zoom straight onto it) → that business's
         // info card opens. bindPopup already binds a click; this keeps it
         // explicit so a name label layered over the pin never swallows it.

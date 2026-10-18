@@ -9,7 +9,7 @@ import type { City, CityMapData, MeResponse, ShowcaseItem } from '@/lib/types';
  * Browser half of the city home page. The dashboard itself (welcome card, the
  * two service tiles, the golden showcase and every map pin) is rendered on the
  * server from the props below — the HTML a crawler receives already contains
- * «به شهر جم خوش آمدید», the business names and their links. Only the
+ * the city-specific welcome text, business names and their links. Only the
  * side-effects that need a browser run here: remembering the selected city and
  * syncing it into the profile when the visitor is logged in.
  */

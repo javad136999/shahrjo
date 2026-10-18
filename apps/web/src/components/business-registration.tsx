@@ -20,6 +20,7 @@ import { thumbFallback, thumbUrlFor } from '@/lib/format';
 import type { BusinessCategoryOption, City, CityMapData, PlanItem } from '@/lib/types';
 
 const formatRial = (rial: number) => `${new Intl.NumberFormat('fa-IR').format(rial)} ریال`;
+const formatPlanDuration = (days: number) => days >= 30 && days % 30 === 0 ? `${(days / 30).toLocaleString('fa-IR')} ماهه` : `${days.toLocaleString('fa-IR')} روزه`;
 const TIER_ICON: Record<string, string> = { GOLD: '👑', SILVER: '🥈', FREE: '⭐' };
 
 /**
@@ -228,7 +229,24 @@ export function BusinessRegistration() {
   ];
 
   return (
-    <section className="form-card" data-testid="business-registration">
+    <section className="form-card biz-registration--jam-style" data-testid="business-registration">
+      <header className="biz-registration__hero">
+        <span className="biz-registration__hero-icon" aria-hidden>🏪</span>
+        <div>
+          <p className="biz-registration__eyebrow">ویژه کسب‌وکارهای محلی</p>
+          <h1>ثبت کسب‌وکار در شهرجو</h1>
+          <p>مشخصات کسب‌وکارت را ثبت کن تا شهروندان راحت‌تر پیدایت کنند.</p>
+        </div>
+      </header>
+      <div className="biz-registration__progress">
+        <div className="biz-registration__progress-copy">
+          <strong>{steps.find((s) => s.n === step)?.label}</strong>
+          <span>مرحله {step.toLocaleString('fa-IR')} از ۳</span>
+        </div>
+        <div className="biz-registration__progress-track" aria-hidden>
+          <span style={{ width: `${(step / 3) * 100}%` }} />
+        </div>
+      </div>
       <div className="biz-steps" aria-label="مراحل ثبت">
         {steps.map((s) => (
           <span
@@ -248,13 +266,18 @@ export function BusinessRegistration() {
 
       {step === 1 && (
         <form
-          className="ad-form"
+          className="ad-form biz-registration__form"
           onSubmit={(e) => {
             e.preventDefault();
             if (detailsValid) setStep(2);
           }}
           noValidate
         >
+          <div className="biz-registration__section-heading">
+            <span>۱</span><div><h2>مشخصات کسب‌وکار</h2><p>اطلاعات اصلی که در صفحه کسب‌وکار نمایش داده می‌شود.</p></div>
+          </div>
+          <div className="biz-registration__fields">
+          <div className="biz-registration__field biz-registration__field--wide">
           <label htmlFor="biz-name">نام کسب‌وکار</label>
           <input
             id="biz-name"
@@ -266,6 +289,8 @@ export function BusinessRegistration() {
             required
           />
 
+          </div>
+          <div className="biz-registration__field">
           <label htmlFor="biz-cat">دسته‌بندی</label>
           <select id="biz-cat" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
             <option value="">— انتخاب دسته‌بندی —</option>
@@ -277,6 +302,8 @@ export function BusinessRegistration() {
             ))}
           </select>
 
+          </div>
+          <div className="biz-registration__field biz-registration__field--wide">
           <label htmlFor="biz-logo">عکس کسب‌وکار — اختیاری</label>
           <div className="biz-image">
             {logoUrl ? (
@@ -314,6 +341,8 @@ export function BusinessRegistration() {
               : 'عکس فشرده ذخیره می‌شود و روی پین نقشه و در ویترین طلایی شهر (اگر اشتراک طلایی/نقره‌ای داشته باشی) جای آیکون نمایش داده می‌شود.'}
           </p>
 
+          </div>
+          <div className="biz-registration__field biz-registration__field--wide">
           <label htmlFor="biz-desc">توضیحات — اختیاری</label>
           <textarea
             id="biz-desc"
@@ -323,21 +352,29 @@ export function BusinessRegistration() {
             maxLength={2000}
           />
 
+          </div>
+          <div className="biz-registration__field">
           <label htmlFor="biz-phone">شماره تماس — اختیاری</label>
           <input id="biz-phone" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={15} inputMode="tel" />
 
+          </div>
+          <div className="biz-registration__field biz-registration__field--wide">
           <label htmlFor="biz-addr">آدرس — اختیاری</label>
-          <input id="biz-addr" value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} />
+          <input id="biz-addr" value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} placeholder="خیابان، محله یا نشانی کسب‌وکار" />
+          </div>
+          </div>
 
-          <button className="btn btn-primary" type="submit" disabled={!detailsValid}>
-            مرحله بعد: موقعیت روی نقشه
+          <button className="btn btn-primary biz-registration__next" type="submit" disabled={!detailsValid}>
+            مرحله بعد: موقعیت
           </button>
         </form>
       )}
 
       {step === 2 && (
-        <div>
-          <p className="muted">روی نقشه شهر، موقعیت کسب‌وکارت را با یک کلیک مشخص کن (اختیاری است).</p>
+        <div className="biz-registration__step-panel">
+          <div className="biz-registration__section-heading">
+            <span>۲</span><div><h2>موقعیت کسب‌وکار</h2><p>موقعیت روی نقشه اختیاری است و به مشتری‌ها کمک می‌کند راحت‌تر پیدایت کنند.</p></div>
+          </div>
           <div ref={mapEl} className="biz-map" data-testid="biz-map" />
           {location ? (
             <p className="chip chip--ok">
@@ -363,10 +400,12 @@ export function BusinessRegistration() {
       )}
 
       {step === 3 && (
-        <div>
+        <div className="biz-registration__step-panel">
+          <div className="biz-registration__section-heading">
+            <span>۳</span><div><h2>انتخاب اشتراک</h2><p>طرح مناسب کسب‌وکارت را انتخاب کن؛ مبلغ و مدت هر طرح پیش از ادامه مشخص است.</p></div>
+          </div>
           <p className="muted">
-            اشتراک کسب‌وکارت را انتخاب کن. با «تأیید و پرداخت»، کسب‌وکارت ثبت و به درگاه پرداخت سپال
-            منتقل می‌شوی؛ بلافاصله پس از پرداخت موفق، اشتراک فعال و کسب‌وکارت تأیید می‌شود.
+            اشتراک کسب‌وکارت را انتخاب کن. با «تأیید و پرداخت»، کسب‌وکارت ثبت و به درگاه پرداخت سپال منتقل می‌شوی؛ بلافاصله پس از پرداخت موفق، اشتراک فعال و کسب‌وکارت تأیید می‌شود.
           </p>
           {!plans && !error && (
             <p className="loading muted" aria-busy>
@@ -378,7 +417,7 @@ export function BusinessRegistration() {
               {plans.map((plan) => (
                 <article
                   key={plan.id}
-                  className={`plan-card plan-card--${plan.tier.toLowerCase()}`}
+                  className={`plan-card plan-card--${plan.tier.toLowerCase()} biz-registration__plan${selectedPlanId === plan.id ? ' is-selected' : ''}`}
                   role="button"
                   tabIndex={0}
                   aria-pressed={selectedPlanId === plan.id}
@@ -389,17 +428,17 @@ export function BusinessRegistration() {
                       setSelectedPlanId(plan.id);
                     }
                   }}
-                  style={{
-                    cursor: 'pointer',
-                    outline: selectedPlanId === plan.id ? '2px solid #c9971f' : undefined,
-                  }}
                   data-testid={`biz-plan-${plan.id}`}
                 >
                   <div className="plan-card__tier">
                     <span aria-hidden>{TIER_ICON[plan.tier] ?? '⭐'}</span> {plan.label}
                   </div>
-                  <div className="plan-card__duration">{plan.durationDays} روز</div>
+                  <div className="plan-card__duration">{formatPlanDuration(plan.durationDays)}</div>
                   <div className="plan-card__price">{formatRial(plan.price)}</div>
+                  <p className="biz-registration__plan-note">
+                    {plan.tier === 'GOLD' ? 'بالاترین سطح اشتراک' : plan.tier === 'SILVER' ? 'اشتراک ویژه کسب‌وکار' : 'طرح رایگان'}
+                  </p>
+                  {selectedPlanId === plan.id && <span className="biz-registration__selected">✓ انتخاب شما</span>}
                 </article>
               ))}
             </div>
