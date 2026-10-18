@@ -186,19 +186,22 @@ describe('CityMap', () => {
     expect(popup).not.toContain('<script>');
   });
 
-  it('gives every pin its category icon and a (hidden) business-name label', async () => {
+  it('renders compact JamApp-style category markers without business-name labels', async () => {
     const leaflet = require('leaflet');
     render(<CityMap data={data} />);
     await waitFor(() => expect(leaflet.marker).toHaveBeenCalledTimes(2));
-    const icon = leaflet.divIcon.mock.calls[1][0] as { html: string };
-    expect(icon.html).toContain('map-pin--cat');
-    expect(icon.html).toContain('☕'); // category emoji, not a plain dot
-    expect(icon.html).toContain('map-pin__name');
-    expect(icon.html).toContain('&lt;script&gt;'); // label escapes DB strings too
-    expect(icon.html).not.toContain('<script>');
+    const iconOptions = leaflet.divIcon.mock.calls[1][0] as { html: string; className: string; iconSize: number[] };
+    expect(iconOptions.className).toBe('shahrjo-jam-marker');
+    expect(iconOptions.html).toContain('jam-map-marker__body');
+    expect(iconOptions.html).toContain('☕'); // category emoji, not a plain dot
+    expect(iconOptions.html).toContain('--marker-main:');
+    expect(iconOptions.html).toContain('jam-map-marker__pulse');
+    expect(iconOptions.html).not.toContain('map-pin__name');
+    expect(iconOptions.html).not.toContain('<script>');
+    expect(iconOptions.iconSize).toEqual([38, 38]);
   });
 
-  it('uses the business logo as a larger map icon and falls back safely if both image variants fail', async () => {
+  it('keeps business logos out of compact map markers while retaining business title and popup', async () => {
     const leaflet = require('leaflet');
     const withLogo: CityMapData = {
       ...data,
@@ -209,22 +212,15 @@ describe('CityMap', () => {
     render(<CityMap data={withLogo} />);
     await waitFor(() => expect(leaflet.marker).toHaveBeenCalledTimes(2));
 
-    const iconOptions = leaflet.divIcon.mock.calls[0][0];
-    const icon = iconOptions as { html: string; iconSize: number[] };
-    expect(icon.html).toContain('/api/v1/files/businesses/40.thumb.webp');
-    expect(icon.html).toContain('alt="رستوران ویترین"');
-    expect(icon.html).toContain('map-pin__icon'); // category glyph remains behind the photo
+    const iconOptions = leaflet.divIcon.mock.calls[0][0] as { html: string; iconSize: number[] };
+    expect(iconOptions.html).not.toContain('/api/v1/files/businesses/40.webp');
+    expect(iconOptions.html).toContain('jam-map-marker__body');
+    expect(iconOptions.html).toContain('👑'); // gold tier accent is shown via marker colour
     expect(leaflet.marker.mock.calls[0][1]).toMatchObject({ title: 'رستوران ویترین', alt: 'رستوران ویترین' });
-    expect(icon.iconSize).toEqual([46, 46]);
-
-    const marker = leaflet.marker.mock.results[0].value;
-    const element = marker.getElement();
-    const image = element.querySelector('.map-pin__photo') as HTMLImageElement;
-    image.dispatchEvent(new Event('error'));
-    expect(image.dataset.fullTried).toBe('1');
-    image.dispatchEvent(new Event('error'));
-    expect(element.querySelector('.map-pin--photo')).toBeNull();
-    expect(element.querySelector('.map-pin__photo')).toBeNull();
+    expect(iconOptions.iconSize).toEqual([38, 38]);
+    const popup = leaflet.marker.mock.results[0].value.bindPopup.mock.calls[0][0] as string;
+    expect(popup).toContain('رستوران ویترین');
+    expect(popup).toContain('/business/');
   });
 
   it('reveals the business names only once the user zooms in', async () => {
