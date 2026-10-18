@@ -905,6 +905,63 @@ a:hover {
   font-size: 20px;
   font-weight: 900;
 }
+/* Phones: the wall entry and the two service tiles sit side by side as three
+   compact columns (icon over title), like the website — not stacked. */
+@media (max-width: 560px) {
+  .dash-welcome {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .dash-welcome__head,
+  .city-services,
+  .city-services__tiles {
+    display: contents;
+  }
+  .dash-welcome__greeting {
+    grid-column: 1 / -1;
+    margin-bottom: 4px;
+  }
+  .service-panel {
+    grid-column: 1 / -1;
+  }
+  .wall-cta,
+  .service-tile {
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    min-height: 92px;
+    padding: 10px 4px;
+    text-align: center;
+    white-space: normal;
+  }
+  .wall-cta__icon,
+  .service-tile__icon {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    border-radius: 12px;
+    font-size: 18px;
+  }
+  .wall-cta__copy,
+  .service-tile__copy {
+    flex: 0 1 auto;
+    align-items: center;
+    gap: 0;
+  }
+  .wall-cta__copy b,
+  .service-tile__copy b {
+    font-size: 11.5px;
+    line-height: 1.5;
+  }
+  .wall-cta__copy small,
+  .service-tile__copy small,
+  .wall-cta__tick,
+  .wall-cta__arrow {
+    display: none;
+  }
+}
+
 /* City news page (/city/<slug>/news) */
 .news-page__head {
   text-align: center;
