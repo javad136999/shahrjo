@@ -267,6 +267,8 @@ export async function uploadBusinessImage(file: File): Promise<UploadedImage> {
   return requestForm<UploadedImage>('/uploads/business', form);
 }
 
+export const NOTIFICATIONS_CHANGED_EVENT = 'shahrjo:notifications-changed';
+
 export interface UserNotification {
   id: number;
   type: string;
