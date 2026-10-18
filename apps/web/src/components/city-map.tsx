@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { thumbUrlFor } from '@/lib/format';
 import type { CityMapData } from '@/lib/types';
 import 'leaflet/dist/leaflet.css';
 
