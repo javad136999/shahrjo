@@ -1,19 +1,19 @@
 # Deploy the production VPS using a SELF-HOSTED runner installed on the server.
 #
-# Why self-hosted: inbound SSH (port 22) to the server is firewalled — both the
-# sandbox and GitHub-hosted runners time out ("dial tcp :22: i/o timeout").
-# A self-hosted runner connects OUTBOUND to GitHub (port 443) and executes the
-# deploy locally on the server, so no inbound port and no SSH are needed.
+# Production deploys triggered by a push to main wait for the CI workflow to
+# finish successfully. Stale CI runs are skipped if main has moved on, so an
+# untested commit is never deployed by an older workflow run.
 #
-# One-time server setup (see repo docs / runner install commands):
+# One-time server setup:
 #   1. Register a runner with labels: self-hosted + shahrjo-prod
-#   2. Install the runner service as a user that can run docker (e.g. `deploy`,
-#      which docs/deploy.md adds to the docker group).
-#   3. Ensure that user can `git pull` the repo (repo is public -> no token needed).
+#   2. Install the runner service as a user that can run docker (e.g. deploy).
+#   3. Ensure that user can git pull the public repository.
 name: Deploy to VPS
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -23,62 +23,81 @@ concurrency:
 
 jobs:
   deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
     name: Pull · rebuild · migrate · seed · health
     runs-on: [self-hosted, shahrjo-prod]
     environment: production
     env:
       DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/home/deploy/shahrjo' }}
+      TESTED_SHA: ${{ github.event.workflow_run.head_sha || '' }}
     steps:
       - name: Preflight (user · docker · path)
         run: |
-          set -uo pipefail
+          set -euo pipefail
           echo "whoami=$(whoami) groups=$(groups)"
-          echo "docker=$(docker compose version 2>&1 | head -1)"
+          docker compose version
           echo "deploy_path=$DEPLOY_PATH"
-          if ! docker compose version >/dev/null 2>&1; then
-            echo "::error::runner user cannot run docker — add it to the docker group and restart the runner service"
-            exit 1
-          fi
           if [ ! -d "$DEPLOY_PATH/.git" ]; then
             echo "::error::DEPLOY_PATH ($DEPLOY_PATH) is not a git checkout"
             exit 1
           fi
 
-      - name: git pull (main)
+      - name: Select tested commit (skip stale CI runs)
+        id: select_commit
         run: |
           set -euo pipefail
           cd "$DEPLOY_PATH"
-          git fetch origin
+          git fetch origin main
+
+          # workflow_dispatch is an explicit manual deployment; otherwise only
+          # deploy the exact main commit whose CI workflow completed successfully.
+          if [ -n "$TESTED_SHA" ]; then
+            MAIN_SHA="$(git rev-parse origin/main)"
+            if [ "$MAIN_SHA" != "$TESTED_SHA" ]; then
+              echo "main advanced after CI passed; skipping stale deployment."
+              echo "deploy=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
           git checkout main
           git pull --ff-only origin main
-          echo "deployed_sha=$(git rev-parse --short HEAD)"
+          if [ -n "$TESTED_SHA" ] && [ "$(git rev-parse HEAD)" != "$TESTED_SHA" ]; then
+            echo "::error::Checked-out commit differs from the commit that passed CI"
+            exit 1
+          fi
+          echo "deploy=true" >> "$GITHUB_OUTPUT"
+          echo "deploying_sha=$(git rev-parse --short HEAD)"
 
-      - name: rebuild + up
+      - name: Rebuild and start services
+        if: steps.select_commit.outputs.deploy == 'true'
         run: |
           set -euo pipefail
           cd "$DEPLOY_PATH"
           docker compose -f docker-compose.prod.yml up -d --build
 
-      - name: migrate
+      - name: Apply database migrations
+        if: steps.select_commit.outputs.deploy == 'true'
         run: |
           set -euo pipefail
           cd "$DEPLOY_PATH"
-          # -w /repo: the api image's WORKDIR is /repo/apps/api, where Prisma
-          # finds neither prisma/schema.prisma nor the root package.json seed
-          # config — running from there always failed ("Could not find Prisma
-          # Schema"), so migrations silently never applied.
+          # Prisma schema and seed configuration live at /repo, not the API
+          # image's default WORKDIR (/repo/apps/api).
           docker compose -f docker-compose.prod.yml exec -T -w /repo api npx prisma migrate deploy
           docker compose -f docker-compose.prod.yml exec -T -w /repo api npx prisma migrate status
 
-      - name: seed (idempotent upsert)
+      - name: Seed reference data (idempotent upsert)
+        if: steps.select_commit.outputs.deploy == 'true'
         run: |
           set -euo pipefail
           cd "$DEPLOY_PATH"
           docker compose -f docker-compose.prod.yml exec -T -w /repo api npx prisma db seed
 
-      - name: health check
+      - name: Health check
+        if: steps.select_commit.outputs.deploy == 'true'
         run: |
           set -euo pipefail
           cd "$DEPLOY_PATH"
           docker compose -f docker-compose.prod.yml ps
-          curl -sf http://127.0.0.1/api/v1/health >/dev/null && echo "DEPLOY OK"
+          curl -sf http://127.0.0.1/api/v1/health >/dev/null
+          echo "DEPLOY OK"
