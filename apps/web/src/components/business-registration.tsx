@@ -365,7 +365,7 @@ export function BusinessRegistration() {
           </div>
 
           <button className="btn btn-primary biz-registration__next" type="submit" disabled={!detailsValid}>
-            ادامه ثبت <span aria-hidden>←</span>
+            مرحله بعد: موقعیت
           </button>
         </form>
       )}
@@ -405,7 +405,7 @@ export function BusinessRegistration() {
             <span>۳</span><div><h2>انتخاب اشتراک</h2><p>طرح مناسب کسب‌وکارت را انتخاب کن؛ مبلغ و مدت هر طرح پیش از ادامه مشخص است.</p></div>
           </div>
           <p className="muted">
-            پس از انتخاب طرح، برای تکمیل خرید به درگاه پرداخت امن شهرجو منتقل می‌شوی.
+            اشتراک کسب‌وکارت را انتخاب کن. با «تأیید و پرداخت»، کسب‌وکارت ثبت و به درگاه پرداخت سپال منتقل می‌شوی؛ بلافاصله پس از پرداخت موفق، اشتراک فعال و کسب‌وکارت تأیید می‌شود.
           </p>
           {!plans && !error && (
             <p className="loading muted" aria-busy>
@@ -449,7 +449,7 @@ export function BusinessRegistration() {
           )}
           <div className="auth-actions">
             <button className="btn btn-primary" disabled={!selectedPlanId || busy} onClick={confirmAndPay}>
-              {busy ? 'در حال انتقال…' : 'ادامه به درگاه پرداخت'}
+              {busy ? 'در حال انتقال…' : 'تأیید و پرداخت'}
             </button>
             <button className="btn btn-ghost" onClick={() => setStep(2)} disabled={busy}>
               بازگشت
