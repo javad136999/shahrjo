@@ -368,7 +368,7 @@ export class AdminService {
     const adminId = await this.adminRowId(user.id);
     const ad = await this.prisma.ad.findFirst({
       where: { id, ...this.cityFilter(scope) },
-      select: { id: true },
+      select: { id: true, userId: true, title: true },
     });
     if (!ad) throw new NotFoundException('آگهی یافت نشد');
 
@@ -452,7 +452,7 @@ export class AdminService {
     const adminId = await this.adminRowId(user.id);
     const business = await this.prisma.business.findFirst({
       where: { id, ...this.cityFilter(scope) },
-      select: { id: true },
+      select: { id: true, ownerId: true, name: true },
     });
     if (!business) throw new NotFoundException('کسب‌وکار یافت نشد');
 
