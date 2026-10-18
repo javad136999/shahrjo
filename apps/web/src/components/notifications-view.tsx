@@ -8,6 +8,7 @@ import {
   getTokens,
   markAllNotificationsRead,
   markNotificationRead,
+  NOTIFICATIONS_CHANGED_EVENT,
   type UserNotification,
 } from '@/lib/api';
 
@@ -65,6 +66,7 @@ export function NotificationsView() {
     try {
       const updated = await markNotificationRead(item.id);
       setItems((current) => current.map((row) => row.id === updated.id ? updated : row));
+      window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED_EVENT));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ثبت وضعیت اعلان ناموفق بود');
     } finally {
@@ -80,6 +82,7 @@ export function NotificationsView() {
       await markAllNotificationsRead();
       const now = new Date().toISOString();
       setItems((current) => current.map((item) => item.readAt ? item : { ...item, readAt: now }));
+      window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED_EVENT));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ثبت وضعیت اعلان‌ها ناموفق بود');
     } finally {
