@@ -216,6 +216,23 @@ export class DmService {
         ...(convo.userAId === user.id ? { aLastReadAt: msg.createdAt } : { bLastReadAt: msg.createdAt }),
       },
     });
+
+    // Notification delivery is best-effort and must not make a successfully
+    // saved private message appear to have failed.
+    const recipientId = convo.userAId === user.id ? convo.userBId : convo.userAId;
+    try {
+      await this.prisma.notification.create({
+        data: {
+          userId: recipientId,
+          type: 'MESSAGE',
+          title: 'پیام خصوصی جدید',
+          body: 'برای مشاهده پیام جدید وارد صندوق پیام‌ها شوید.',
+        },
+      });
+    } catch {
+      // The message remains available in the inbox even if notification delivery fails.
+    }
+
     return this.messageView(msg);
   }
 

@@ -304,6 +304,23 @@ export class PaymentsService {
       return 'SUCCESS' as const;
     });
 
+    if (outcome === 'SUCCESS') {
+      // The verified payment and subscription are already committed. Notification
+      // delivery is best-effort so it can never turn a paid callback into an error.
+      try {
+        await this.prisma.notification.create({
+          data: {
+            userId: payment.userId,
+            type: 'PAYMENT',
+            title: 'پرداخت با موفقیت ثبت شد',
+            body: 'اشتراک شما فعال شد.',
+          },
+        });
+      } catch {
+        // The subscription remains active; the user can still see it in their profile.
+      }
+    }
+
     return outcome;
   }
 

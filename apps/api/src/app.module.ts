@@ -10,6 +10,7 @@ import { ContentModule } from './content/content.module';
 import { DmModule } from './dm/dm.module';
 import { HealthController } from './health/health.controller';
 import { PaymentsModule } from './payments/payments.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RbacModule } from './rbac/rbac.module';
 import { ReferralsModule } from './referrals/referrals.module';
@@ -37,6 +38,7 @@ import { WallModule } from './wall/wall.module';
     AdsModule,
     UploadsModule,
     PaymentsModule,
+    NotificationsModule,
     AdminModule,
     WallModule,
     AnalyticsModule,

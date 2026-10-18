@@ -5,6 +5,7 @@ const mockPathname = { current: '/' };
 const mockTokens = jest.fn();
 const mockGet = jest.fn();
 const mockLogout = jest.fn();
+const mockGetUnread = jest.fn();
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mockReplace, push: jest.fn(), refresh: jest.fn() }),
@@ -14,6 +15,8 @@ jest.mock('next/navigation', () => ({
 jest.mock('@/lib/api', () => ({
   ApiError: class ApiError extends Error {},
   getTokens: () => mockTokens(),
+  getNotificationUnreadCount: () => mockGetUnread(),
+  NOTIFICATIONS_CHANGED_EVENT: 'shahrjo:notifications-changed',
   api: { get: (path: string) => mockGet(path) },
   logoutServer: () => mockLogout(),
 }));
@@ -38,6 +41,7 @@ describe('HeaderActions (سمت چپ هدر)', () => {
     mockPathname.current = '/';
     mockTokens.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
     mockGet.mockResolvedValue(profile);
+    mockGetUnread.mockResolvedValue({ total: 0 });
   });
 
   it('shows the plain login button to guests', () => {

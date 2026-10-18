@@ -267,6 +267,34 @@ export async function uploadBusinessImage(file: File): Promise<UploadedImage> {
   return requestForm<UploadedImage>('/uploads/business', form);
 }
 
+export const NOTIFICATIONS_CHANGED_EVENT = 'shahrjo:notifications-changed';
+
+export interface UserNotification {
+  id: number;
+  type: string;
+  title: string;
+  body: string | null;
+  data: unknown;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export async function getNotifications(limit = 20): Promise<UserNotification[]> {
+  return api.get<UserNotification[]>(`/notifications?limit=${Math.min(50, Math.max(1, Math.trunc(limit) || 20))}`);
+}
+
+export async function getNotificationUnreadCount(): Promise<{ total: number }> {
+  return api.get<{ total: number }>('/notifications/unread-count');
+}
+
+export async function markNotificationRead(id: number): Promise<UserNotification> {
+  return api.post<UserNotification>(`/notifications/${id}/read`);
+}
+
+export async function markAllNotificationsRead(): Promise<{ updated: number }> {
+  return api.post<{ updated: number }>('/notifications/read-all');
+}
+
 export async function getProfile(): Promise<MeResponse> {
   return api.get<MeResponse>('/users/me');
 }
