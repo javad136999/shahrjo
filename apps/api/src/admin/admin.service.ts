@@ -148,6 +148,15 @@ export function normalizeBoundary(input: unknown): object | null {
   return { type: 'Polygon', coordinates: rings };
 }
 
+const MODERATION_QUEUE_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'] as const;
+const SUBSCRIPTION_QUEUE_STATUSES = ['PENDING_REVIEW', 'ACTIVE', 'EXPIRED', 'REJECTED', 'CANCELED'] as const;
+
+function assertQueueStatus(status: string, allowed: readonly string[], resource: string): void {
+  if (!allowed.includes(status)) {
+    throw new BadRequestException(`وضعیت ${resource} نامعتبر است`);
+  }
+}
+
 export interface AdminOverview {
   pendingAds: number;
   pendingBusinesses: number;
@@ -285,9 +294,10 @@ export class AdminService {
   // ---------- ads ----------
 
   async ads(user: User, status: string): Promise<QueueAd[]> {
+    assertQueueStatus(status, MODERATION_QUEUE_STATUSES, 'آگهی');
     const scope = await this.scopeOf(user.id);
     const rows = await this.prisma.ad.findMany({
-      where: { status: status as 'PENDING', ...this.cityFilter(scope) },
+      where: { status: status as Prisma.AdWhereInput['status'], ...this.cityFilter(scope) },
       orderBy: { createdAt: 'asc' },
       take: 100,
       select: {
@@ -357,9 +367,10 @@ export class AdminService {
   // ---------- businesses ----------
 
   async businesses(user: User, status: string): Promise<QueueBusiness[]> {
+    assertQueueStatus(status, MODERATION_QUEUE_STATUSES, 'کسب‌وکار');
     const scope = await this.scopeOf(user.id);
     const rows = await this.prisma.business.findMany({
-      where: { status: status as 'PENDING', ...this.cityFilter(scope) },
+      where: { status: status as Prisma.BusinessWhereInput['status'], ...this.cityFilter(scope) },
       orderBy: { createdAt: 'asc' },
       take: 100,
       select: {
@@ -647,10 +658,11 @@ export class AdminService {
   // ---------- subscriptions (the ZarinPal approval step) ----------
 
   async subscriptions(user: User, status: string): Promise<QueueSubscription[]> {
+    assertQueueStatus(status, SUBSCRIPTION_QUEUE_STATUSES, 'اشتراک');
     const scope = await this.scopeOf(user.id);
     const rows = await this.prisma.subscription.findMany({
       where: {
-        status: status as 'PENDING_REVIEW',
+        status: status as Prisma.SubscriptionWhereInput['status'],
         ...(scope.cityId || scope.provinceId
           ? { business: this.cityFilter(scope) }
           : {}),
