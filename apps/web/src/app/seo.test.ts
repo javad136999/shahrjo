@@ -54,6 +54,8 @@ describe('canonical host (shahrju.ir)', () => {
       expect(sitemap).not.toContain(privatePath);
     }
     expect(sitemap).toContain('/city/');
+    // The API fetch alone cannot prevent the route output itself being cached.
+    expect(sitemap).toMatch(/export const revalidate = 0;/);
   });
 
   it('the www host is redirected to the apex by the Next config', () => {
