@@ -54,14 +54,15 @@ if (!appModule.includes('ContentModule')) { console.error('MISSING ContentModule
 
 // --- Frontend: light home page (welcome + showcase + map); news on its own page ---
 const page = read('apps/web/src/app/city/[slug]/page.tsx');
-for (const helper of ['getShowcase', 'getCityMap']) {
-  if (!page.includes(helper)) { console.error(`WEB: dashboard must load ${helper}`); fail++; }
+for (const marker of ["'/showcase?city=", "'/map?city="]) {
+  if (!page.includes(marker)) { console.error(`WEB: dashboard must load city-scoped feed ${marker}`); fail++; }
 }
 if (!page.includes('Promise.all')) { console.error('WEB: feeds should load in parallel'); fail++; }
 
 // The news feed lives on /city/<slug>/news (linked from the header + bottom nav).
 const newsPage = read('apps/web/src/app/city/[slug]/news/page.tsx');
-if (!newsPage.includes('getCityNews')) { console.error('WEB: city news page must load getCityNews'); fail++; }
+if (!newsPage.includes('/news?city=')) { console.error('WEB: city news page must load the city-scoped news endpoint'); fail++; }
+if (!newsPage.includes('serverApi')) { console.error('WEB: city news page must use the server API client'); fail++; }
 const newsView = read('apps/web/src/components/city-news.tsx');
 for (const marker of ['اخبار شهر', '`/news/${item.slug}`', 'card-grid']) {
   if (!newsView.includes(marker)) { console.error(`WEB: city news view missing ${marker}`); fail++; }
