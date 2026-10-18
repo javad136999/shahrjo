@@ -69,6 +69,24 @@ describe('AdminService scope enforcement', () => {
   });
 });
 
+describe('AdminService queue status validation', () => {
+  it('returns a client error for unsupported ad and business statuses', async () => {
+    const { service, prisma } = makeService({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+
+    await expect(service.ads(admin, 'NOT_A_STATUS')).rejects.toMatchObject({ status: 400 });
+    await expect(service.businesses(admin, 'NOT_A_STATUS')).rejects.toMatchObject({ status: 400 });
+    expect(prisma.ad.findMany).not.toHaveBeenCalled();
+    expect(prisma.business.findMany).not.toHaveBeenCalled();
+  });
+
+  it('returns a client error for unsupported subscription statuses', async () => {
+    const { service, prisma } = makeService({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+
+    await expect(service.subscriptions(admin, 'NOT_A_STATUS')).rejects.toMatchObject({ status: 400 });
+    expect(prisma.subscription.findMany).not.toHaveBeenCalled();
+  });
+});
+
 describe('AdminService ad moderation', () => {
   it('approves with publish stamp + fresh 30-day TTL and writes an audit log', async () => {
     const { service, prisma } = makeService({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });

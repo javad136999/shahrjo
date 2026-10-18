@@ -1,24 +1,27 @@
 # شهرجو (ShahrJo)
 
-پلتفرم شهری چنداستانی (وب‌اپ/PWA + Android). نسخه اول: فارس و بوشهر.
-**بدون Supabase** — تمام Backend/Auth/DB/Realtime/Storage مال خود پروژه و روی VPS.
+پلتفرم شهری چنداستانی (وب‌اپ/PWA + Android). نسخهٔ اول: فارس و بوشهر.
+**بدون Supabase** — Backend، احراز هویت، پایگاه داده، پیام‌رسانی و ذخیره‌سازی در زیرساخت خود پروژه و VPS.
 
 ## استک
-Next.js + TypeScript + Tailwind · NestJS + TypeScript · PostgreSQL 17 + Prisma · Redis 7 · Nginx (Let's Encrypt) · Docker
+
+Next.js + TypeScript + Tailwind · NestJS + TypeScript · PostgreSQL 17 + Prisma · Redis 7 · Docker
 
 ## ساختار
+
 ```
-apps/web     وب‌اپ کاربران (shahrjo.ir)
-apps/api     Backend مشترک (api.shahrjo.ir)
-apps/admin   پنل مدیریت (admin.shahrjo.ir)
+apps/web     وب‌اپ کاربران (shahrju.ir)
+apps/api     Backend مشترک (api.shahrju.ir)
+apps/admin   پنل مدیریت (admin.shahrju.ir)
 packages/    types / config / ui مشترک
 prisma/      schema, migrations, seed
-docker/      nginx (reverse proxy)
-docs/        معماری، دیتابیس، API
-scripts/     اسکریپت‌های کمکی
+docker/      تنظیمات reverse proxy و بکاپ
+docs/        معماری، دیتابیس، API و استقرار
+scripts/     اسکریپت‌های بررسی و تست
 ```
 
 ## راه‌اندازی محلی
+
 ```bash
 cp .env.example .env          # سپس مقادیر CHANGE_ME را عوض کنید
 pnpm install                  # وابستگی‌ها
@@ -28,31 +31,55 @@ docker compose ps             # هر دو باید healthy باشند
 pnpm db:migrate               # اعمال migration
 pnpm db:seed                  # استان/شهر/نقش/دسته‌بندی‌ها
 pnpm verify:step1             # بررسی ساختار
+pnpm typecheck:all            # بررسی TypeScript همهٔ workspaceها
+pnpm test                     # اجرای تست‌های workspaceها
 ```
 
-## CI (GitHub Actions)
-`.github/workflows/ci.yml` بعد از هر push/PR اجرا می‌شود:
-- **checks**: `pnpm verify:phase1..phase9` (شامل 8b — ساختار + اسکن Secret + قواعد امنیتی هر فاز + `prisma validate` + typecheck) و سپس تست‌ها (`pnpm run --if-present test`)
-- **database**: `prisma migrate deploy` + seed روی یک PostgreSQL 17 تمیز
+## CI و استقرار
+
+- فایل `.github/workflows/ci.yml` روی push به `main` و Pull Request اجرا می‌شود.
+- CI شامل بررسی ساختار/امنیت، Prisma validation، TypeScript، تست‌ها و migration/seed روی PostgreSQL تمیز است.
+- فازهای ۱ تا ۱۱c که بررسی خودکار دارند، در CI بررسی می‌شوند؛ موفقیت این بررسی‌های ساختاری به‌تنهایی جای تست دستی جریان کامل روی محیط واقعی را نمی‌گیرد.
+- استقرار خودکار فقط پس از موفقیت workflow با نام `CI` روی `main` آغاز می‌شود. اگر `main` بعد از اجرای CI جلو رفته باشد، اجرای قدیمی استقرار را رد می‌کند.
+- استقرار VPS به runner خودمیزبان با برچسب‌های `self-hosted` و `shahrjo-prod` و مسیر معتبر پروژه نیاز دارد. راهنما: [docs/deploy.md](docs/deploy.md).
+- اجرای دستی workflow استقرار نیز در دسترس است؛ اجرای دستی مسئولیت انتخاب زمان استقرار را به اپراتور می‌سپارد.
 
 ## دستورات مفید
+
 ```bash
-pnpm --filter @shahrjo/api start:dev   # اجرای API (نیازمند infra بالا)
-pnpm --filter @shahrjo/api test        # تست‌های unit
-pnpm smoke                             # تست زنده جریان auth (نیازمند infra + build)
-pnpm typecheck:all                     # بررسی تایپ همه پکیج‌ها
+pnpm --filter @shahrjo/api start:dev   # API (نیازمند PostgreSQL و Redis)
+pnpm --filter @shahrjo/api test        # تست‌های API
+pnpm smoke                             # تست زندهٔ جریان auth (نیازمند infra و build)
+pnpm typecheck:all                     # بررسی تایپ همهٔ workspaceها
 pnpm db:studio                         # مرور دیتابیس
 ```
 
-## فازها (هر فاز: Build + TypeCheck + Tests + Security Check)
-1. Architecture + Database ✅ · 2. Backend + Auth ✅ · 3. City Selection ✅ · 4. City Dashboard ✅
-5. Ad Submission (ثبت آگهی + آپلود عکس + تأیید) ✅ · 6. جزئیات + پروفایل + علاقه‌مندی ✅
-7. اشتراک و پرداخت سپال (زرین‌پال به‌عنوان fallback) ✅ · 8. پنل مدیریت ✅ · 8b. دیوار شهر + فیلتر دسته‌بندی نقشه + ورود مستقیم به شهر ✅ · 9. ویترین طلایی + نقشه شهر + سهمیه ذخیره‌سازی ✅
-10. چت · 11. کسب‌وکار + محصولات + نظرات · 12. تخفیف/رویداد · 13. ناظر/ادمین + اعلان‌ها
-14. PWA + معرفی + بیمه/ترب · 15. Docker + Production
+## وضعیت فازها
+
+علامت «دارای بررسی خودکار» به معنی وجود کنترل در CI است، نه تضمین تست کامل همهٔ سناریوهای عملیاتی.
+
+1. معماری و دیتابیس — دارای بررسی خودکار
+2. Backend و احراز هویت — دارای بررسی خودکار
+3. انتخاب شهر — دارای بررسی خودکار
+4. داشبورد شهر — دارای بررسی خودکار
+5. ثبت آگهی، آپلود عکس و تأیید — دارای بررسی خودکار
+6. جزئیات، پروفایل و علاقه‌مندی — دارای بررسی خودکار
+7. اشتراک و پرداخت سپال/زرین‌پال — دارای بررسی خودکار؛ تنظیمات درگاه نباید بدون تست واقعی تغییر کند
+8. پنل مدیریت و دسترسی‌ها — دارای بررسی خودکار
+8b. دیوار شهر، فیلتر دسته‌بندی نقشه و ورود مستقیم به شهر — دارای بررسی خودکار
+9. ویترین طلایی، نقشه شهر و سهمیه ذخیره‌سازی — دارای بررسی خودکار
+10. دیوار و چت عمومی، صدا و بازنشر آگهی — دارای بررسی خودکار
+11. پیام خصوصی، صندوق پیام‌ها و نشان پیام خوانده‌نشده — دارای بررسی خودکار
+11b–11c. مدیریت کسب‌وکار، محصولات، تبلیغ کسب‌وکار و ابزارهای مدیریت — دارای بررسی خودکار
+12. تخفیف‌ها و رویدادها — نیازمند تکمیل/تأیید
+13. ناظر، گردش کار اعلان‌ها و کنترل‌های مدیریتی — نیازمند تکمیل/تأیید
+14. PWA، معرفی، بیمه و ترب — نیازمند تکمیل/تأیید سرتاسری
+15. Docker و Production — فایل‌های استقرار موجودند؛ نیازمند اعتبارسنجی روی VPS واقعی
 
 ## قوانین
-- هیچ Secret ای در Git قرار نگیرد (فقط `.env.example`).
-- استان/شهر/دسته‌بندی هرگز در Frontend یا Backend hard-code نمی‌شوند.
-- هر مرحله فقط پس از تست موفق مرحله قبل شروع می‌شود.
-- هیچ وابستگی به Supabase (Auth/DB/Realtime/Storage) ایجاد نمی‌شود.
+
+- هیچ Secret ای در Git قرار نگیرد؛ فقط نمونه‌های بی‌خطر در `.env.example`.
+- استان، شهر و دسته‌بندی نباید در Frontend یا Backend به‌صورت ثابت hard-code شوند.
+- تغییرات دیتابیس باید migration داشته باشند؛ دادهٔ واقعی و سابقهٔ پرداخت بدون بکاپ/برنامهٔ مهاجرت تغییر نکند.
+- قابلیت‌ها تنها بعد از عبور تست‌های مربوط و بررسی جریان واقعی، «تکمیل‌شده» اعلام شوند.
+- هیچ وابستگی به Supabase (Auth/DB/Realtime/Storage) ایجاد نشود.
