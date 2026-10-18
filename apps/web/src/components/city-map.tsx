@@ -286,20 +286,6 @@ export function CityMap({ data }: CityMapProps) {
           .addTo(map)
           .bindPopup(popup, { autoPanPadding: [24, 48] });
         placedPins.push({ marker, anchor: [b.latitude, b.longitude] });
-        if (photo) {
-          const markerElement = marker.getElement();
-          const image = markerElement?.querySelector<HTMLImageElement>('.map-pin__photo');
-          image?.addEventListener('error', () => {
-            const fullUrl = image.dataset.fullSrc;
-            if (fullUrl && image.dataset.fullTried !== '1' && image.src !== fullUrl) {
-              image.dataset.fullTried = '1';
-              image.src = fullUrl;
-              return;
-            }
-            image.remove();
-            markerElement?.querySelector('.map-pin--photo')?.classList.remove('map-pin--photo');
-          });
-        }
         // Hit a pin (tap, or a pinch/zoom straight onto it) → that business's
         // info card opens. bindPopup already binds a click; this keeps it
         // explicit so a name label layered over the pin never swallows it.
