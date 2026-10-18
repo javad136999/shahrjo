@@ -264,6 +264,22 @@ export class AdminService {
     });
   }
 
+  /** Notifications are best-effort: a notification write must never undo moderation. */
+  private async notify(
+    userId: number,
+    type: 'SYSTEM' | 'AD_APPROVED' | 'AD_REJECTED',
+    title: string,
+    body: string,
+  ): Promise<void> {
+    if (!userId) return;
+    try {
+      await this.prisma.notification.create({ data: { userId, type, title, body } });
+    } catch (error) {
+      this.logger.warn(`notification delivery failed for user #${userId}: ${error instanceof Error ? error.message : 'unknown error'}`);
+    }
+  }
+
+
   // ---------- overview ----------
 
   async overview(user: User): Promise<AdminOverview> {
@@ -326,7 +342,7 @@ export class AdminService {
     const adminId = await this.adminRowId(user.id);
     const ad = await this.prisma.ad.findFirst({
       where: { id, ...this.cityFilter(scope) },
-      select: { id: true, status: true },
+      select: { id: true, status: true, userId: true, title: true },
     });
     if (!ad) throw new NotFoundException('آگهی یافت نشد');
 
@@ -341,6 +357,7 @@ export class AdminService {
       select: { id: true, status: true },
     });
     await this.audit(adminId, 'ad.approve', 'ad', String(id), { status: 'APPROVED' });
+    await this.notify(ad.userId, 'AD_APPROVED', 'آگهی شما تأیید شد', ad.title);
     return updated;
   }
 
@@ -361,6 +378,7 @@ export class AdminService {
       select: { id: true, status: true },
     });
     await this.audit(adminId, 'ad.reject', 'ad', String(id), { status: 'REJECTED', reason });
+    await this.notify(ad.userId, 'AD_REJECTED', 'آگهی شما تأیید نشد', reason);
     return updated;
   }
 
@@ -397,7 +415,7 @@ export class AdminService {
     const adminId = await this.adminRowId(user.id);
     const business = await this.prisma.business.findFirst({
       where: { id, ...this.cityFilter(scope) },
-      select: { id: true },
+      select: { id: true, ownerId: true, name: true },
     });
     if (!business) throw new NotFoundException('کسب‌وکار یافت نشد');
 
@@ -423,6 +441,7 @@ export class AdminService {
       status: 'APPROVED',
       ...(hasLat ? { latitude: dto.latitude, longitude: dto.longitude } : {}),
     });
+    await this.notify(business.ownerId, 'SYSTEM', 'کسب‌وکار شما تأیید شد', business.name);
     return updated;
   }
 
@@ -443,6 +462,7 @@ export class AdminService {
       select: { id: true, status: true },
     });
     await this.audit(adminId, 'business.reject', 'business', String(id), { status: 'REJECTED', reason });
+    await this.notify(business.ownerId, 'SYSTEM', 'وضعیت کسب‌وکار شما تغییر کرد', reason);
     return updated;
   }
 
