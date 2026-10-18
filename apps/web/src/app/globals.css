@@ -5863,3 +5863,59 @@ button.pill {
  .biz-registration__step-panel { padding:13px; }
  .biz-registration--jam-style .biz-registration__plan { min-height:170px; }
 }
+
+
+/* JamApp-style compact business markers: category emoji + tier/category colour. */
+.shahrjo-jam-marker {
+  background: transparent !important;
+  border: 0 !important;
+  overflow: visible !important;
+}
+.jam-map-marker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: var(--marker-main, #2f7657);
+  transform: translate(var(--jam-marker-offset, 0, 0));
+  isolation: isolate;
+}
+.jam-map-marker__pulse {
+  position: absolute;
+  inset: 2px;
+  border: 2px solid var(--marker-ring, #99cdb0);
+  border-radius: 50%;
+  background: var(--marker-soft, #e8f5ed);
+  box-shadow: 0 2px 8px rgb(25 54 38 / 22%);
+  opacity: .9;
+  animation: jam-map-marker-pulse 2.4s ease-out infinite;
+  z-index: -1;
+}
+.jam-map-marker__body {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--marker-soft, #e8f5ed);
+  box-shadow: 0 2px 6px rgb(25 54 38 / 28%), 0 0 0 1px var(--marker-ring, #99cdb0);
+  font-size: 17px;
+  line-height: 1;
+  transform: translateZ(0);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.shahrjo-jam-marker:hover .jam-map-marker__body,
+.shahrjo-jam-marker:focus-visible .jam-map-marker__body {
+  transform: scale(1.14);
+  box-shadow: 0 4px 12px rgb(25 54 38 / 32%), 0 0 0 2px var(--marker-ring, #99cdb0);
+}
+@keyframes jam-map-marker-pulse {
+  0%, 100% { transform: scale(.88); opacity: .45; }
+  50% { transform: scale(1.08); opacity: .9; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jam-map-marker__pulse { animation: none; }
+  .jam-map-marker__body { transition: none; }
+}
