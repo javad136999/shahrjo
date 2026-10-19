@@ -10,8 +10,8 @@ import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import ir.cafebazaar.poolakey.Payment
-import ir.cafebazaar.poolakey.PaymentConfiguration
-import ir.cafebazaar.poolakey.SecurityCheck
+import ir.cafebazaar.poolakey.config.PaymentConfiguration
+import ir.cafebazaar.poolakey.config.SecurityCheck
 import ir.cafebazaar.poolakey.request.PurchaseRequest
 import org.json.JSONObject
 
