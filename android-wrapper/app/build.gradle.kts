@@ -3,10 +3,10 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-val releaseStoreFile = providers.environmentVariable("SHJAHRJO_KEYSTORE_PATH").orNull
-val releaseStorePassword = providers.environmentVariable("SHJAHRJO_KEYSTORE_PASSWORD").orNull
-val releaseKeyAlias = providers.environmentVariable("SHJAHRJO_KEY_ALIAS").orNull
-val releaseKeyPassword = providers.environmentVariable("SHJAHRJO_KEY_PASSWORD").orNull
+val releaseStoreFile = providers.environmentVariable("SHAHRJO_KEYSTORE_PATH").orNull
+val releaseStorePassword = providers.environmentVariable("SHAHRJO_KEYSTORE_PASSWORD").orNull
+val releaseKeyAlias = providers.environmentVariable("SHAHRJO_KEY_ALIAS").orNull
+val releaseKeyPassword = providers.environmentVariable("SHAHRJO_KEY_PASSWORD").orNull
 val releaseSigningAvailable = listOf(releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword).all { !it.isNullOrBlank() }
 
 android {
