@@ -203,6 +203,12 @@ export function BusinessRegistration() {
 
   const confirmAndPay = async () => {
     if (!selectedPlanId) return;
+    // Bazaar billing is provided by the Android APK bridge, not a normal browser.
+    // Check before creating a business so a browser attempt cannot leave a duplicate PENDING row.
+    if (typeof window === 'undefined' || !window.ShahrjoBazaar) {
+      setError('پرداخت اشتراک بازار فقط داخل اپلیکیشن اندروید شهرجو نصب‌شده از بازار امکان‌پذیر است. برنامه را از بازار باز کنید و ثبت کسب‌وکار را آنجا انجام دهید.');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -222,7 +228,7 @@ export function BusinessRegistration() {
       if (result !== 'SUCCESS' && result !== 'ALREADY_PAID') throw new Error('پرداخت بازار تأیید نشد.');
       router.replace(`/plans/result?status=${encodeURIComponent(result)}`);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'خطا در ثبت کسب‌وکار؛ دوباره تلاش کنید');
+      setError(e instanceof Error ? e.message : 'خطا در ثبت کسب‌وکار؛ دوباره تلاش کنید');
       setBusy(false);
     }
   };
