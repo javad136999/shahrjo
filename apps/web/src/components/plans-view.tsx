@@ -13,6 +13,21 @@ const TIER_META: Record<string, { icon: string; label: string }> = {
   FREE: { icon: '🆓', label: 'رایگان' },
 };
 
+const TIER_BENEFITS: Record<string, string[]> = {
+  GOLD: [
+    'درج در ویترین طلایی کسب‌وکار',
+    'نمایش روی نقشه',
+    'دارای منو محصولات',
+    'انتشار تبلیغ ویژه در دیوار عمومی شهر',
+    'ساخت کلیپ تبلیغاتی از کسب‌وکار در پیج اینستاگرام به آیدی',
+  ],
+  SILVER: [
+    'درج روی نقشه',
+    'منو محصولات',
+    'ساخت کلیپ تبلیغاتی در پیج اینستاگرام به آیدی',
+  ],
+};
+
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   ACTIVE: { label: 'فعال', cls: 'chip--ok' },
   PENDING_REVIEW: { label: 'در انتظار تأیید', cls: 'chip--warn' },
@@ -174,32 +189,67 @@ export function PlansView() {
         )}
 
         {plans && (
-          <div className="plans-grid" data-testid="plans-grid">
-            {plans.map((plan) => {
-              const tier = TIER_META[plan.tier] ?? { icon: '⭐', label: plan.tier };
-              const busy = loading === plan.id;
+          <div className="plans-groups" data-testid="plans-grid">
+            {['GOLD', 'SILVER', 'FREE'].map((tierCode) => {
+              const tierPlans = plans.filter((plan) => plan.tier === tierCode);
+              if (tierPlans.length === 0) return null;
+              const tier = TIER_META[tierCode] ?? { icon: '⭐', label: tierCode };
+              const benefits = TIER_BENEFITS[tierCode];
               return (
-                <article
-                  key={plan.id}
-                  className={`plan-card plan-card--${plan.tier.toLowerCase()}`}
-                  data-testid="plan-card"
+                <section
+                  key={tierCode}
+                  className={`plans-tier-group plans-tier-group--${tierCode.toLowerCase()}`}
+                  data-testid={`plans-group-${tierCode.toLowerCase()}`}
                 >
-                  {plan.badge && <span className="plan-card__badge">{plan.badge}</span>}
-                  <div className="plan-card__tier">
-                    <span aria-hidden>{tier.icon}</span> {tier.label}
+                  <header className="plans-tier-group__heading">
+                    <span className="plans-tier-group__icon" aria-hidden>{tier.icon}</span>
+                    <div>
+                      <h3>اشتراک {tier.label}</h3>
+                      <p>{tierPlans.length === 1 ? 'پلن مناسب خودت را انتخاب کن' : 'مدت مناسب کسب‌وکارت را انتخاب کن'}</p>
+                    </div>
+                  </header>
+                  <div className="plans-grid plans-tier-group__grid">
+                    {tierPlans.map((plan) => {
+                      const busy = loading === plan.id;
+                      return (
+                        <article
+                          key={plan.id}
+                          className={`plan-card plan-card--${plan.tier.toLowerCase()}`}
+                          data-testid="plan-card"
+                        >
+                          {plan.badge && <span className="plan-card__badge">{plan.badge}</span>}
+                          <div className="plan-card__tier">
+                            <span aria-hidden>{tier.icon}</span> {tier.label}
+                          </div>
+                          <div className="plan-card__duration">{formatDays(plan.durationDays)}</div>
+                          <div className="plan-card__price">{formatRial(plan.price)}</div>
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={() => buy(plan)}
+                            disabled={busy}
+                            data-testid={`buy-${plan.code}`}
+                          >
+                            {busy ? 'در حال پرداخت در بازار…' : 'پرداخت در بازار و فعال‌سازی'}
+                          </button>
+                        </article>
+                      );
+                    })}
                   </div>
-                  <div className="plan-card__duration">{formatDays(plan.durationDays)}</div>
-                  <div className="plan-card__price">{formatRial(plan.price)}</div>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={() => buy(plan)}
-                    disabled={busy}
-                    data-testid={`buy-${plan.code}`}
-                  >
-                    {busy ? 'در حال پرداخت در بازار…' : 'پرداخت در بازار و فعال‌سازی'}
-                  </button>
-                </article>
+                  {benefits && (
+                    <div className="plans-tier-group__benefits" data-testid={`benefits-${tierCode.toLowerCase()}`}>
+                      <h4>مزیت‌های اشتراک {tier.label}</h4>
+                      <ul>
+                        {benefits.map((benefit) => (
+                          <li key={benefit}>
+                            <span aria-hidden>✓</span>
+                            <span>{benefit}{benefit.includes('اینستاگرام') && <> <b dir="ltr">@shahrju.ir</b></>}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </section>
               );
             })}
           </div>

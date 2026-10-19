@@ -61,6 +61,18 @@ describe('PlansView', () => {
     expect(screen.getByText('پیشنهاد ویژه')).toBeInTheDocument();
   });
 
+  it('groups plans and shows the requested tier benefits', async () => {
+    render(<PlansView />);
+
+    expect(await screen.findByTestId('plans-group-gold')).toBeInTheDocument();
+    expect(screen.getByTestId('plans-group-silver')).toBeInTheDocument();
+    expect(screen.getByTestId('benefits-gold')).toHaveTextContent('درج در ویترین طلایی کسب‌وکار');
+    expect(screen.getByTestId('benefits-gold')).toHaveTextContent('انتشار تبلیغ ویژه در دیوار عمومی شهر');
+    expect(screen.getByTestId('benefits-gold')).toHaveTextContent('@shahrju.ir');
+    expect(screen.getByTestId('benefits-silver')).toHaveTextContent('درج روی نقشه');
+    expect(screen.getByTestId('benefits-silver')).toHaveTextContent('منو محصولات');
+  });
+
   it('binds the checkout to a suspended business when it landed from «فعال‌سازی»', async () => {
     mockSearchGet.mockImplementation((key: string) => (key === 'business' ? '9' : null));
     mockCheckoutPlan.mockResolvedValue({ paymentId: 9, productId: 'GOLD_1M', packageName: 'ir.shahrjo', amount: 4_000_000 });
