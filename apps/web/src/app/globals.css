@@ -919,8 +919,10 @@ a:hover {
     display: contents;
   }
   .dash-welcome__greeting {
-    grid-column: 1 / -1;
-    margin-bottom: 4px;
+    grid-column: span 2;
+    align-self: center;
+    min-width: 0;
+    margin-bottom: 0;
   }
   .service-panel {
     grid-column: 1 / -1;
@@ -934,6 +936,12 @@ a:hover {
     padding: 10px 4px;
     text-align: center;
     white-space: normal;
+  }
+  .wall-cta {
+    grid-column: span 1;
+    width: 100%;
+    min-width: 0;
+    padding-inline: 3px;
   }
   .wall-cta__icon,
   .service-tile__icon {
