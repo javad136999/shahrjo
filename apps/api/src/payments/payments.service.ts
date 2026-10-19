@@ -79,6 +79,13 @@ export class PaymentsService {
 
   /** Creates a pending Bazaar purchase; the Android client completes it with Poolakey. */
   async checkout(user: User, dto: CheckoutDto): Promise<CheckoutResult> {
+    // Fail before creating a pending payment if Bazaar credentials/package are absent.
+    if (!this.bazaar.isConfigured) {
+      throw new HttpException(
+        'پرداخت بازار روی سرور پیکربندی نشده است؛ BAZAAR_ACCESS_TOKEN و BAZAAR_PACKAGE_NAME را تنظیم کنید.',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
     const plan = await this.prisma.subscriptionPlan.findFirst({
       where: { id: dto.planId, isActive: true },
       select: { id: true, code: true, tier: true, label: true, price: true },
