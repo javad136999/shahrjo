@@ -1,0 +1,117 @@
+/* Restore the web-install action and keep the city welcome + wall entry side-by-side on phones. */
+.web-install {
+  position: fixed;
+  z-index: 40;
+  left: max(12px, env(safe-area-inset-left));
+  bottom: calc(82px + env(safe-area-inset-bottom));
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  font-family: inherit;
+}
+.web-install__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1px solid rgb(255 255 255 / 60%);
+  border-radius: 999px;
+  background: linear-gradient(125deg, #0e7a5f, #07523f);
+  color: #fff;
+  box-shadow: 0 7px 22px rgb(7 82 63 / 24%);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.web-install__button:hover { background: #07523f; }
+.web-install__help {
+  position: relative;
+  width: min(300px, calc(100vw - 24px));
+  padding: 14px 15px;
+  border: 1px solid #dce9e0;
+  border-radius: 16px;
+  background: #fff;
+  color: #20372c;
+  box-shadow: 0 12px 34px rgb(20 50 35 / 18%);
+  font-size: 12px;
+  line-height: 1.9;
+}
+.web-install__help b { display: block; padding-inline-end: 20px; }
+.web-install__help p { margin: 5px 0 0; color: #53645a; }
+.web-install__close {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  border: 0;
+  background: transparent;
+  color: #53645a;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+/* Compact two-column welcome header at mobile widths. */
+@media (max-width: 640px) {
+  .dash-welcome {
+    padding: 10px;
+    border-radius: 18px;
+  }
+  .dash-welcome__head {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 7px;
+    margin-bottom: 11px;
+  }
+  .dash-welcome__greeting {
+    flex: 1 1 0;
+    width: 50%;
+    min-width: 0;
+  }
+  .dash-welcome__eyebrow {
+    margin-bottom: 2px;
+    font-size: 10px;
+  }
+  .dash-welcome h1 {
+    font-size: clamp(14px, 4vw, 17px);
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+  .wall-cta {
+    flex: 0 1 48%;
+    width: auto;
+    min-width: 0;
+    gap: 5px;
+    padding: 7px;
+    border-radius: 13px;
+    white-space: normal;
+  }
+  .wall-cta__icon {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+  .wall-cta__copy b {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .wall-cta__copy small,
+  .wall-cta__tick,
+  .wall-cta__arrow {
+    display: none;
+  }
+}
+@media (max-width: 360px) {
+  .dash-welcome { padding: 8px; }
+  .dash-welcome__head { gap: 5px; }
+  .dash-welcome__eyebrow { font-size: 9px; }
+  .dash-welcome h1 { font-size: 13px; }
+  .wall-cta { padding: 6px 5px; gap: 4px; }
+  .wall-cta__icon { width: 26px; height: 26px; flex-basis: 26px; }
+  .wall-cta__copy b { font-size: 10px; }
+}
