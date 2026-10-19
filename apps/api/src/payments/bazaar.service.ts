@@ -29,7 +29,9 @@ export class BazaarService {
     const product = encodeURIComponent(productId);
     const token = encodeURIComponent(purchaseToken);
     const pkg = encodeURIComponent(this.packageName);
-    const url = `https://pardakht.cafebazaar.ir/devapi/v2/api/validate/${pkg}/inapp/${product}/purchases/${token}/?access_token=${encodeURIComponent(this.accessToken)}`;
+    // These six products are subscriptions, so validate them using Bazaar's
+    // subscriptions endpoint, not the separate in-app one-time purchase API.
+    const url = `https://pardakht.cafebazaar.ir/devapi/v2/api/applications/${pkg}/subscriptions/${product}/purchases/${token}/?access_token=${encodeURIComponent(this.accessToken)}`;
     let response: Response;
     try {
       response = await fetch(url, {
@@ -47,14 +49,14 @@ export class BazaarService {
       throw new HttpException('پاسخ نامعتبر از بازار دریافت شد', HttpStatus.BAD_GATEWAY);
     }
     if (!response.ok || !payload || typeof payload !== 'object') {
-      this.logger.warn(`Bazaar validation rejected with HTTP ${response.status}`);
-      throw new HttpException('خرید بازار قابل تأیید نیست', HttpStatus.BAD_REQUEST);
+      this.logger.warn(`Bazaar subscription validation rejected with HTTP ${response.status}`);
+      throw new HttpException('اشتراک بازار قابل تأیید نیست', HttpStatus.BAD_REQUEST);
     }
     const raw = payload as Record<string, unknown>;
     const purchaseState = Number(raw.purchaseState ?? raw.purchase_state ?? -1);
     const orderId = typeof raw.orderId === 'string' ? raw.orderId : typeof raw.order_id === 'string' ? raw.order_id : null;
     if (!Number.isInteger(purchaseState) || purchaseState < 0) {
-      throw new HttpException('پاسخ اعتبارسنجی خرید بازار نامعتبر است', HttpStatus.BAD_GATEWAY);
+      throw new HttpException('پاسخ اعتبارسنجی اشتراک بازار نامعتبر است', HttpStatus.BAD_GATEWAY);
     }
     return { purchaseState, orderId, raw };
   }
