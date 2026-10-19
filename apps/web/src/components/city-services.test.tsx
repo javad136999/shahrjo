@@ -96,6 +96,7 @@ describe('CityServices (دفتر خدمات شهر)', () => {
 
     await waitFor(() =>
       expect(m.createQuickBusiness).toHaveBeenCalledWith({
+        citySlug: 'sample-city',
         name: 'کابینت‌کار',
         categoryId: 91,
         phone: '09121112233',
@@ -142,7 +143,7 @@ describe('CityServices (دفتر خدمات شهر)', () => {
 
     fireEvent.click(await screen.findByTestId('service-chip-svc_cabinet_maker'));
 
-    await waitFor(() => expect(m.getCityBusinesses).toHaveBeenCalledWith('sample-city', 50, 'svc_cabinet_maker'));
+    await waitFor(() => expect(m.getCityBusinesses).toHaveBeenCalledWith('sample-city', 200, 'svc_cabinet_maker'));
 
     const row = await screen.findByTestId('service-result-501');
     expect(row).toHaveTextContent('کارگاه کابینت احمدی');
@@ -160,7 +161,7 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     expect(screen.getByTestId('service-search-button')).toBeEnabled();
     fireEvent.click(screen.getByTestId('service-search-button'));
 
-    await waitFor(() => expect(m.getCityBusinesses).toHaveBeenCalledWith('sample-city', 50, 'svc_cabinet_maker'));
+    await waitFor(() => expect(m.getCityBusinesses).toHaveBeenCalledWith('sample-city', 200, 'svc_cabinet_maker'));
     expect(await screen.findByTestId('service-result-501')).toBeInTheDocument();
   });
 

@@ -98,6 +98,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
     setDone(null);
     try {
       await createQuickBusiness({
+        citySlug,
         name: form.name.trim(),
         categoryId: Number(form.categoryId),
         phone: form.phone.trim(),
@@ -121,7 +122,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
       if (!slug) return;
       setFinding(true);
       try {
-        const list = await getCityBusinesses(citySlug, 50, slug);
+        const list = await getCityBusinesses(citySlug, 200, slug);
         setResults(list);
       } catch (err) {
         setFindError(err instanceof ApiError ? err.message : 'دریافت فهرست مشاغل ناموفق بود');
@@ -247,6 +248,12 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
         <div className="service-panel" data-testid="service-find">
           <h3>چه خدماتی در شهر {cityName} نیاز داری؟</h3>
           <p className="muted small">خدمت مورد نظرت را انتخاب کن تا مشاغل ثبت‌شدهٔ همان خدمت را ببینی.</p>
+
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
 
           {!categories && !error && (
             <p className="muted loading" aria-busy>

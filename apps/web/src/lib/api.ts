@@ -630,6 +630,7 @@ export async function getServiceCategories(): Promise<BusinessCategoryOption[]> 
  * phone is required (calling is how the listing is used).
  */
 export async function createQuickBusiness(body: {
+  citySlug: string;
   name: string;
   categoryId: number;
   phone: string;

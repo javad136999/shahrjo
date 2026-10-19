@@ -12,7 +12,7 @@ export class CityContentQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(50)
+  @Max(200)
   limit?: number;
 
   /** Optional ad-category slug — only ads of that category are returned. */

@@ -82,6 +82,12 @@ export class CreateBusinessDto {
  */
 export class CreateQuickBusinessDto {
   @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  citySlug?: string;
+
+  @Transform(trim)
   @IsString()
   @MinLength(2)
   @MaxLength(160)

@@ -251,14 +251,16 @@ export class BusinessesService {
    * Deliberate difference from `create`: no payment, no admin step, so the
    * abuse surface is trimmed elsewhere instead — only `isService` categories
    * are accepted, the contact phone is mandatory (it is the point of the
-   * listing), the same per-day cap applies, and the slug is still unique. An
-   * operator can suspend or delete any row from the admin queue.
+   * listing), the same per-day cap applies, and the slug is still unique. The
+   * requested active city slug is validated server-side so the new row appears
+   * in the same city's service search. An operator can suspend or delete any
+   * row from the admin queue.
    */
   async createQuick(user: User, dto: CreateQuickBusinessDto): Promise<CreatedBusiness> {
-    if (!user.cityId) throw new BadRequestException('ابتدا شهر خودت را انتخاب کن');
-
     const city = await this.prisma.city.findFirst({
-      where: { id: user.cityId, isActive: true, province: { isActive: true } },
+      where: dto.citySlug
+        ? { slug: dto.citySlug, isActive: true, province: { isActive: true } }
+        : { id: user.cityId ?? -1, isActive: true, province: { isActive: true } },
       select: { id: true },
     });
     if (!city) throw new NotFoundException('شهر انتخاب‌شده یافت نشد');
