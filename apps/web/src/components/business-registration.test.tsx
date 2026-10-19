@@ -34,8 +34,13 @@ jest.mock('@/lib/api', () => ({
   api: { get: jest.fn() },
   createBusiness: jest.fn(),
   checkoutPlan: jest.fn(),
+  verifyBazaarPurchase: jest.fn(),
   uploadBusinessImage: jest.fn(),
   ApiError: class ApiError extends Error {},
+}));
+
+jest.mock('@/lib/bazaar', () => ({
+  purchaseWithBazaar: jest.fn().mockResolvedValue('bazaar-token'),
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,9 +120,10 @@ describe('BusinessRegistration', () => {
     expect(next).toBeEnabled();
   });
 
-  it('walks details → location → plan and redirects to the gateway on confirm', async () => {
+  it('walks details → location → plan and opens Bazaar billing on confirm', async () => {
     m.createBusiness.mockResolvedValue({ id: 77, name: 'قهوه‌خانه', slug: 'biz-77', status: 'PENDING', subscriptionTier: 'FREE' });
-    m.checkoutPlan.mockResolvedValue({ paymentId: 1, payUrl: 'https://gateway.pay/x', authority: 'A1', amount: 500_000 });
+    m.checkoutPlan.mockResolvedValue({ paymentId: 1, productId: 'GOLD_1M', packageName: 'ir.shahrjo', amount: 500_000 });
+    m.verifyBazaarPurchase.mockResolvedValue('SUCCESS');
 
     render(<BusinessRegistration />);
     fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
@@ -149,7 +155,8 @@ describe('BusinessRegistration', () => {
       url: '/api/v1/files/media/2026/10/logo.webp',
     });
     m.createBusiness.mockResolvedValue({ id: 77, name: 'قهوه‌خانه', slug: 'biz-77', status: 'PENDING', subscriptionTier: 'FREE' });
-    m.checkoutPlan.mockResolvedValue({ paymentId: 1, payUrl: 'https://gateway.pay/x', authority: 'A1', amount: 500_000 });
+    m.checkoutPlan.mockResolvedValue({ paymentId: 1, productId: 'GOLD_1M', packageName: 'ir.shahrjo', amount: 500_000 });
+    m.verifyBazaarPurchase.mockResolvedValue('SUCCESS');
 
     render(<BusinessRegistration />);
     fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });

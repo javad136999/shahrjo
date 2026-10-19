@@ -15,7 +15,9 @@ import {
   getProfile,
   getTokens,
   uploadBusinessImage,
+  verifyBazaarPurchase,
 } from '@/lib/api';
+import { purchaseWithBazaar } from '@/lib/bazaar';
 import { thumbFallback, thumbUrlFor } from '@/lib/format';
 import type { BusinessCategoryOption, City, CityMapData, PlanItem } from '@/lib/types';
 
@@ -47,8 +49,8 @@ type Step = 1 | 2 | 3;
 /**
  * Three-step business registration: details → pin location on the city map →
  * pick a Gold/Silver plan and pay. On confirm it creates the business (PENDING
- * + FREE), then starts a Sepal checkout bound to that business; the browser
- * is redirected to the gateway. A verified payment applies the paid tier AND
+ * + FREE), then starts a Cafe Bazaar checkout bound to that business. The
+ * Android bridge opens Poolakey. A verified payment applies the paid tier AND
  * approves the still-PENDING business server-side — there is no admin step
  * for a paid signup (an explicit earlier admin rejection is still respected).
  */
@@ -215,7 +217,10 @@ export function BusinessRegistration() {
         longitude: location?.lng,
       });
       const session = await checkoutPlan({ planId: selectedPlanId, businessId: biz.id });
-      window.location.href = session.payUrl; // → ZarinPal gateway
+      const purchaseToken = await purchaseWithBazaar(session.productId, session.packageName);
+      const result = await verifyBazaarPurchase({ paymentId: session.paymentId, productId: session.productId, purchaseToken });
+      if (result !== 'SUCCESS' && result !== 'ALREADY_PAID') throw new Error('پرداخت بازار تأیید نشد.');
+      router.replace(`/plans/result?status=${encodeURIComponent(result)}`);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'خطا در ثبت کسب‌وکار؛ دوباره تلاش کنید');
       setBusy(false);
@@ -405,7 +410,7 @@ export function BusinessRegistration() {
             <span>۳</span><div><h2>انتخاب اشتراک</h2><p>طرح مناسب کسب‌وکارت را انتخاب کن؛ مبلغ و مدت هر طرح پیش از ادامه مشخص است.</p></div>
           </div>
           <p className="muted">
-            اشتراک کسب‌وکارت را انتخاب کن. با «تأیید و پرداخت»، کسب‌وکارت ثبت و به درگاه پرداخت سپال منتقل می‌شوی؛ بلافاصله پس از پرداخت موفق، اشتراک فعال و کسب‌وکارت تأیید می‌شود.
+            اشتراک کسب‌وکارت را انتخاب کن. با «تأیید و پرداخت»، کسب‌وکارت ثبت و پرداخت درون‌برنامه‌ای بازار برایت باز می‌شود؛ بلافاصله پس از پرداخت موفق، اشتراک فعال و کسب‌وکارت تأیید می‌شود.
           </p>
           {!plans && !error && (
             <p className="loading muted" aria-busy>

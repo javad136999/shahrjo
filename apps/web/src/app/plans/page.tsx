@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   }),
 };
 
-/** Subscription plans (Phase 7) — checkout hands off to ZarinPal. */
+/** Subscription plans (Phase 7) — checkout hands off to Cafe Bazaar. */
 export default function PlansPage() {
   return (
     <Suspense fallback={null}>

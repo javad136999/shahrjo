@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
-import { SepalService } from './sepal.service';
-import { ZarinpalService } from './zarinpal.service';
+import { BazaarService } from './bazaar.service';
 
-/** Subscription plans + Sepal checkout (ZarinPal fallback, Phase 7). */
+/** Subscription plans + Cafe Bazaar in-app billing. */
 @Module({
   controllers: [PaymentsController],
-  providers: [PaymentsService, ZarinpalService, SepalService],
+  providers: [PaymentsService, BazaarService],
   exports: [PaymentsService],
 })
 export class PaymentsModule {}

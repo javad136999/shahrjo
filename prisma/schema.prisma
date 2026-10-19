@@ -728,6 +728,7 @@ enum PaymentStatus {
 enum PaymentProvider {
   ZARINPAL
   SEPAL
+  BAZAAR
 }
 
 // Admin-defined purchasable plans (prices in Rial, editable without code changes).
@@ -780,19 +781,19 @@ model Subscription {
   @@map("subscriptions")
 }
 
-// ZarinPal payments. Secrets (merchant id) stay in env/VPS only — never in client code.
+// Provider-verified payments. Bazaar purchase tokens stay server-side.
 model Payment {
   id               Int             @id @default(autoincrement())
   userId           Int             @map("user_id")
   businessId       Int?            @map("business_id")
   planId           Int             @map("plan_id")
   subscriptionId   Int?            @map("subscription_id")
-  provider         PaymentProvider @default(ZARINPAL)
+  provider         PaymentProvider @default(BAZAAR)
   amount           BigInt // Rial
   status           PaymentStatus   @default(CREATED)
-  authority        String?         @unique @db.VarChar(64) // ZarinPal authority
-  refId            String?         @map("ref_id") @db.VarChar(32) // bank RefID after verify
-  resultCode       Int?            @map("result_code") // ZarinPal code (100 = OK)
+  authority        String?         @unique @db.VarChar(512) // Bazaar purchase token
+  refId            String?         @map("ref_id") @db.VarChar(64) // Bazaar order id
+  resultCode       Int?            @map("result_code") // Bazaar purchase state (0 = purchased)
   errorDescription String?         @map("error_description")
   callbackPayload  Json?           @map("callback_payload")
   paidAt           DateTime?       @map("paid_at")

@@ -113,7 +113,7 @@ export interface MyAdItem {
   expiresAt: string | null;
 }
 
-/** Subscriptions + ZarinPal payments (Phase 7). */
+/** Subscriptions + Cafe Bazaar in-app billing. */
 export interface PlanItem {
   id: number;
   code: string;
@@ -127,8 +127,8 @@ export interface PlanItem {
 
 export interface CheckoutSession {
   paymentId: number;
-  payUrl: string;
-  authority: string;
+  productId: string;
+  packageName: string;
   amount: number;
 }
 

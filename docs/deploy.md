@@ -86,6 +86,6 @@ docker compose -f docker-compose.prod.yml exec -w /repo api npx prisma migrate s
 - Postgres/Redis هیچ پورتی به بیرون ندارند (فقط شبکه compose).
 - Nginx تنها درگاه 80 (و 443 بعد از SSL) را باز می‌کند.
 - `.env` سرور هرگز commit/push نمی‌شود (`.gitignore` + `.dockerignore`).
-- کلید درگاه سپال (`SEPAL_API_KEY`)، Merchant زرین‌پال و API Key پیامک فقط در `.env` سرور.
-- `SEPAL_CALLBACK_URL` باید `https://DOMAIN/api/v1/payments/callback` باشد (همان دامنهٔ درگاه، بدون `www`)؛
-  سپال آن را با دامنهٔ مجازِ درگاه می‌سنجد و در صورت عدم تطابق `invalid_callback_url` برمی‌گرداند.
+- کلید API بازار (`BAZAAR_ACCESS_TOKEN`) و API Key پیامک فقط در `.env` سرور.
+- `BAZAAR_PACKAGE_NAME` باید دقیقاً با package name برنامهٔ منتشرشده در بازار یکی باشد.
+- `BAZAAR_ACCESS_TOKEN` فقط روی سرور تنظیم شود؛ توکن خرید از اپ دریافت و دوباره با API بازار اعتبارسنجی می‌شود.

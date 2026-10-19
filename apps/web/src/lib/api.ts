@@ -325,16 +325,24 @@ export async function updateProfile(patch: { fullName?: string; cityId?: number 
   return api.patch<MeResponse>('/users/me', patch);
 }
 
-// ---------- subscriptions + ZarinPal (Phase 7) ----------
+// ---------- subscriptions + Cafe Bazaar (Phase 7) ----------
 
 /** Active purchasable plans (public). */
 export async function getPlans(): Promise<PlanItem[]> {
   return api.get<PlanItem[]>('/subscription-plans');
 }
 
-/** Starts a checkout; the caller must redirect the browser to `payUrl`. */
+/** Creates a pending purchase; the Android Bazaar wrapper completes it with Poolakey. */
 export async function checkoutPlan(body: { planId: number; businessId?: number }): Promise<CheckoutSession> {
   return api.post<CheckoutSession>('/payments/checkout', body);
+}
+
+export async function verifyBazaarPurchase(body: {
+  paymentId: number;
+  productId: string;
+  purchaseToken: string;
+}): Promise<'SUCCESS' | 'FAILED' | 'CANCELED' | 'ALREADY_PAID'> {
+  return api.post<'SUCCESS' | 'FAILED' | 'CANCELED' | 'ALREADY_PAID'>('/payments/bazaar/verify', body);
 }
 
 export async function getPaymentHistory(): Promise<PaymentHistoryItem[]> {

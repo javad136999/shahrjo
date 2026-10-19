@@ -57,7 +57,7 @@ function ResultBody() {
   );
 }
 
-/** ZarinPal lands back here via the API callback (Phase 7). */
+/** The Android Bazaar purchase returns here after server verification (Phase 7). */
 export default function PaymentResultPage() {
   return (
     <Suspense fallback={null}>

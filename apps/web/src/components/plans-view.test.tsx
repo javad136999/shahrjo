@@ -12,6 +12,7 @@ const mockGetTokens = jest.fn();
 const mockGetPlans = jest.fn();
 const mockGetMySubscriptions = jest.fn();
 const mockCheckoutPlan = jest.fn();
+const mockVerifyBazaarPurchase = jest.fn();
 
 jest.mock('@/lib/api', () => ({
   ApiError: class ApiError extends Error {
@@ -25,12 +26,11 @@ jest.mock('@/lib/api', () => ({
   getPlans: () => mockGetPlans(),
   getMySubscriptions: () => mockGetMySubscriptions(),
   checkoutPlan: (body: unknown) => mockCheckoutPlan(body),
+  verifyBazaarPurchase: (body: unknown) => mockVerifyBazaarPurchase(body),
 }));
 
-const mockRedirectTo = jest.fn();
-
-jest.mock('@/lib/navigation', () => ({
-  redirectTo: (url: string) => mockRedirectTo(url),
+jest.mock('@/lib/bazaar', () => ({
+  purchaseWithBazaar: jest.fn().mockResolvedValue('bazaar-token'),
 }));
 
 import { PlansView } from '@/components/plans-view';
@@ -62,7 +62,7 @@ describe('PlansView', () => {
 
   it('binds the checkout to a suspended business when it landed from «فعال‌سازی»', async () => {
     mockSearchGet.mockImplementation((key: string) => (key === 'business' ? '9' : null));
-    mockCheckoutPlan.mockResolvedValue({ payUrl: 'https://sandbox.zarinpal.com/pg/StartPay/A99' });
+    mockCheckoutPlan.mockResolvedValue({ paymentId: 9, productId: 'GOLD_1M', packageName: 'ir.shahrjo', amount: 4_000_000 });
     render(<PlansView />);
 
     // the banner tells the owner this purchase reactivates that business
@@ -82,19 +82,23 @@ describe('PlansView', () => {
     expect(mockCheckoutPlan).not.toHaveBeenCalled();
   });
 
-  it('starts a checkout and hands the browser to the gateway', async () => {
+  it('starts a checkout and verifies the Bazaar purchase', async () => {
     mockCheckoutPlan.mockResolvedValue({
       paymentId: 9,
-      payUrl: 'https://sandbox.zarinpal.com/pg/StartPay/A99',
-      authority: 'A99',
+      productId: 'GOLD_1M',
+      packageName: 'ir.shahrjo',
       amount: 4_000_000,
     });
+    mockVerifyBazaarPurchase.mockResolvedValue('SUCCESS');
     render(<PlansView />);
 
     fireEvent.click(await screen.findByTestId('buy-GOLD_1M'));
 
     await waitFor(() => expect(mockCheckoutPlan).toHaveBeenCalledWith({ planId: 1 }));
-    expect(mockRedirectTo).toHaveBeenCalledWith('https://sandbox.zarinpal.com/pg/StartPay/A99');
+    await waitFor(() => {
+      expect(mockVerifyBazaarPurchase).toHaveBeenCalledWith({ paymentId: 9, productId: 'GOLD_1M', purchaseToken: 'bazaar-token' });
+      expect(mockReplace).toHaveBeenCalledWith('/plans/result?status=SUCCESS');
+    });
   });
 
   it('shows the API error when the gateway cannot be reached', async () => {
@@ -106,7 +110,6 @@ describe('PlansView', () => {
     fireEvent.click(await screen.findByTestId('buy-GOLD_1M'));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('درگاه پرداخت در دسترس نیست');
-    expect(mockRedirectTo).not.toHaveBeenCalled();
     // button re-enabled for a retry
     expect(screen.getByTestId('buy-GOLD_1M')).toBeEnabled();
   });

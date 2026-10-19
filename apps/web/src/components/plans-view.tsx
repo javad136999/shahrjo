@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ApiError, checkoutPlan, getMySubscriptions, getPlans, getTokens } from '@/lib/api';
-import { redirectTo } from '@/lib/navigation';
+import { ApiError, checkoutPlan, getMySubscriptions, getPlans, getTokens, verifyBazaarPurchase } from '@/lib/api';
+import { purchaseWithBazaar } from '@/lib/bazaar';
 import type { MySubscription, PlanItem } from '@/lib/types';
 
 const TIER_META: Record<string, { icon: string; label: string }> = {
@@ -34,8 +34,8 @@ function formatDays(days: number): string {
 }
 
 /**
- * Subscription plans (Phase 7): shows Gold/Silver tiers, starts a ZarinPal
- * checkout (the browser is redirected to the gateway) and lists the caller's
+ * Subscription plans (Phase 7): shows Gold/Silver tiers, starts a Cafe Bazaar
+ * purchase through the Android bridge and lists the caller's
  * current subscriptions + payment history.
  */
 export function PlansView() {
@@ -84,8 +84,10 @@ export function PlansView() {
     setLoading(plan.id);
     try {
       const session = await checkoutPlan({ planId: plan.id, ...(reactivateId ? { businessId: reactivateId } : {}) });
-      // Full navigation: the gateway owns the next page.
-      redirectTo(session.payUrl);
+      const purchaseToken = await purchaseWithBazaar(session.productId, session.packageName);
+      const result = await verifyBazaarPurchase({ paymentId: session.paymentId, productId: session.productId, purchaseToken });
+      if (result !== 'SUCCESS' && result !== 'ALREADY_PAID') throw new Error('پرداخت بازار تأیید نشد.');
+      router.replace(`/plans/result?status=${encodeURIComponent(result)}`);
     } catch (err) {
       setLoading(null);
       setError(err instanceof ApiError ? err.message : 'شروع پرداخت ممکن نشد؛ دوباره تلاش کنید');
@@ -99,7 +101,7 @@ export function PlansView() {
         <div>
           <h1>اشتراک ویژه</h1>
           <p className="muted">
-            با اشتراک طلایی یا نقره‌ای، کسب‌وکارت را در صدر ویترین شهرش نشان بده. پرداخت امن از طریق درگاه پرداخت سپال.
+            با اشتراک طلایی یا نقره‌ای، کسب‌وکارت را در صدر ویترین شهرش نشان بده. پرداخت فقط از طریق پرداخت درون‌برنامه‌ای بازار.
           </p>
         </div>
       </section>
@@ -189,7 +191,7 @@ export function PlansView() {
                     disabled={busy}
                     data-testid={`buy-${plan.code}`}
                   >
-                    {busy ? 'در حال اتصال به درگاه…' : 'پرداخت و فعال‌سازی'}
+                    {busy ? 'در حال پرداخت در بازار…' : 'پرداخت در بازار و فعال‌سازی'}
                   </button>
                 </article>
               );

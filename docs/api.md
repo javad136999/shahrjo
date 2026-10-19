@@ -59,21 +59,18 @@
 | GET `/businesses/:id` | @Public | پروفایل کامل کسب‌وکار (توضیحات، ساعات کاری، شبکه‌های اجتماعی) + **`products[]` = منو و محصولات** (اسم، توضیح، عکس، `section`، قیمت ریالی یا `null` = توافقی، `isAvailable`) + شمارش بازدید؛ فقط `APPROVED`. ورود از پین نقشه/ویترین هم همین را نشان می‌دهد |
 | GET/PATCH `/users/me` | Bearer | اطلاعات پروفایل (نام نمایشی قابل ویرایش) — پیش‌تر پیاده‌شده |
 
-## Subscriptions / Sepal (فاز ۷ — اشتراک و پرداخت)
+## Subscriptions / Cafe Bazaar (فاز ۷ — اشتراک و پرداخت)
+> ✅ **پیاده‌شده**: انتخاب پلن → ایجاد تراکنش داخلی → خرید محصول درون‌برنامه‌ای با Poolakey در نسخه اندروید → اعتبارسنجی توکن با API بازار در سمت سرور → ایجاد اشتراک. هیچ درگاه وب یا کانال پرداخت موازی برای محتوای دیجیتال وجود ندارد.
 
-> ✅ **پیاده‌شده در Phase 7**: انتخاب پلن → **درگاه سپال (Sepal)** → بازگشت callback → verify سمت سرور → ایجاد اشتراک.
-> زرین‌پال به‌عنوان fallback می‌ماند: اگر `SEPAL_API_KEY` خالی باشد، checkout از ZarinPal استفاده می‌کند و درجِ `provider` روی ردیف پرداخت (SEPAL/ZARINPAL) تعیین می‌کند callback با کدام گیت‌وی verify شود.
-> مبلغ verify همیشه از ردیف پرداختِ ذخیره‌شده خوانده می‌شود (هرگز از query/کلاینت)؛ callback با `@Public` است و با 302 به `/plans/result` در وب برمی‌گردد.
-
-| Endpoint | Auth | Body / توضیح |
+| Endpoint | Auth | توضیح |
 |---|---|---|
 | GET `/subscription-plans` | @Public | پلن‌های فعال (`GOLD`/`SILVER`، قیمت BigInt → عدد) برای صفحه /plans |
-| POST `/payments/checkout` | Bearer | `{ planId, businessId? }` → ایجاد پرداخت `CREATED` (+ `provider`)، دریافت pay URL از سپال (`invoiceNumber` = شناسه پرداخت)، وضعیت `STARTED` → `{ paymentId, payUrl, authority, amount }`؛ سقف ۱۰ checkout در ساعت؛ `businessId` فقط اگر متعلق به خود کاربر باشد |
-| GET `/payments/callback?Authority=&Status=` یا `?paymentNumber=&status=` | @Public | بازگشت درگاه (هر دو سبک: زرین‌پال `Authority/Status=OK`، سپال `paymentNumber/status=1` با `callbackMethod=get`) → نرمال‌سازی به یک قرارداد و verify سمت سرور با همان providerِ ثبت‌شده (کد 100/101 = موفق)؛ تراکنش موفق در یک تراکنش DB به `SUCCESS` + ایجاد `Subscription` می‌شود (تکرارِ callback → `ALREADY_PAID` بدون اشتراک دوم)؛ وگرنه `CANCELED`/`FAILED`؛ سپس 302 به `WEB_URL/plans/result?status=...` |
-| GET `/payments/mine` | Bearer | تاریخچه پرداخت‌های کاربر (مبلغ عددی، برچسب پلن) |
-| GET `/subscriptions/mine` | Bearer | اشتراک‌های کاربر + وضعیت (`ACTIVE`؛ ردیف‌های قدیمی `PENDING_REVIEW`) و نام کسب‌وکار |
+| POST `/payments/checkout` | Bearer | `{ planId, businessId? }` → ایجاد پرداخت `CREATED` با `provider=BAZAAR` و بازگشت `{ paymentId, productId, packageName, amount }`؛ سقف ۱۰ checkout در ساعت |
+| POST `/payments/bazaar/verify` | Bearer | `{ paymentId, productId, purchaseToken }` → اعتبارسنجی server-to-server با Bazaar؛ فقط خرید محصول متناظر و تراکنش متعلق به همان کاربر پذیرفته می‌شود؛ فعال‌سازی در تراکنش اتمیک و تکرار امن (`ALREADY_PAID`) |
+| GET `/payments/mine` | Bearer | تاریخچه پرداخت‌های کاربر |
+| GET `/subscriptions/mine` | Bearer | اشتراک‌های کاربر و کسب‌وکار مرتبط |
 
-قانون اشتراک: هر پرداختِ تأییدشده (شخصی یا کسب‌وکاری) بلافاصله `ACTIVE` می‌شود و تراکنشِ verify همان لحظه تیِر کسب‌وکار را اعمال و ثبت‌نامِ `PENDING` را تأیید می‌کند — بدون تأیید مدیر. کسب‌وکارِ `CLOSED` (تعلیق‌شده — دستی توسط مدیر یا با پایان مهلت اشتراک) با همین پرداخت به `APPROVED` برمی‌گردد و مدتِ خریداری‌شده به باقی‌ماندهٔ دورهٔ قبلی اضافه می‌شود. ردِ صریح مدیر (`REJECTED`) هرگز با پرداخت جدید بازنویسی نمی‌شود؛ `PENDING_REVIEW` فقط برای ردیف‌های قدیمی می‌ماند. کلیدها فقط در env (`SEPAL_*` و `ZARINPAL_*`) — هرگز در کد یا سمت کلاینت.
+کلیدهای بازار فقط در env سرور (`BAZAAR_PACKAGE_NAME` و `BAZAAR_ACCESS_TOKEN`) هستند. کلید RSA عمومی در اپ اندروید و کلید JWT تخفیف پویا مطابق پنل بازار مدیریت می‌شوند و هیچ‌کدام نباید در مخزن commit شوند.
 
 ## Content (همه City-scoped)
 
