@@ -32,9 +32,37 @@ jobs:
           gradle-version: "8.9"
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-      - name: Build debug APK for testing
+
+      - name: Prepare release signing key
+        if: ${{ secrets.SHJAHRJO_KEYSTORE_BASE64 != '' && secrets.SHJAHRJO_KEYSTORE_PASSWORD != '' && secrets.SHJAHRJO_KEY_ALIAS != '' && secrets.SHJAHRJO_KEY_PASSWORD != '' }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SHJAHRJO_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/shahrjo-release.jks"
+          echo "SHJAHRJO_KEYSTORE_PATH=$RUNNER_TEMP/shahrjo-release.jks" >> "$GITHUB_ENV"
+          echo "SHJAHRJO_KEYSTORE_PASSWORD=${{ secrets.SHJAHRJO_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
+          echo "SHJAHRJO_KEY_ALIAS=${{ secrets.SHJAHRJO_KEY_ALIAS }}" >> "$GITHUB_ENV"
+          echo "SHJAHRJO_KEY_PASSWORD=${{ secrets.SHJAHRJO_KEY_PASSWORD }}" >> "$GITHUB_ENV"
+
+      - name: Build signed release APK
+        if: ${{ secrets.SHJAHRJO_KEYSTORE_BASE64 != '' && secrets.SHJAHRJO_KEYSTORE_PASSWORD != '' && secrets.SHJAHRJO_KEY_ALIAS != '' && secrets.SHJAHRJO_KEY_PASSWORD != '' }}
+        run: gradle assembleRelease
+
+      - name: Upload release APK
+        if: ${{ secrets.SHJAHRJO_KEYSTORE_BASE64 != '' && secrets.SHJAHRJO_KEYSTORE_PASSWORD != '' && secrets.SHJAHRJO_KEY_ALIAS != '' && secrets.SHJAHRJO_KEY_PASSWORD != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: shahrjo-bazaar-release-apk
+          path: android-wrapper/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Build debug APK if release signing is not configured
+        if: ${{ secrets.SHJAHRJO_KEYSTORE_BASE64 == '' || secrets.SHJAHRJO_KEYSTORE_PASSWORD == '' || secrets.SHJAHRJO_KEY_ALIAS == '' || secrets.SHJAHRJO_KEY_PASSWORD == '' }}
         run: gradle assembleDebug
-      - name: Upload test APK
+
+      - name: Upload debug test APK
+        if: ${{ secrets.SHJAHRJO_KEYSTORE_BASE64 == '' || secrets.SHJAHRJO_KEYSTORE_PASSWORD == '' || secrets.SHJAHRJO_KEY_ALIAS == '' || secrets.SHJAHRJO_KEY_PASSWORD == '' }}
         uses: actions/upload-artifact@v4
         with:
           name: shahrjo-bazaar-debug-apk
