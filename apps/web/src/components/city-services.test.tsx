@@ -151,6 +151,19 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     expect(call).toHaveAttribute('href', 'tel:09121112233');
   });
 
+  it('provides an explicit search button for the service finder', async () => {
+    render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
+    fireEvent.click(screen.getByTestId('service-tile-find'));
+    await screen.findByTestId('service-find');
+
+    fireEvent.change(await screen.findByTestId('service-search-input'), { target: { value: 'کابینت' } });
+    expect(screen.getByTestId('service-search-button')).toBeEnabled();
+    fireEvent.click(screen.getByTestId('service-search-button'));
+
+    await waitFor(() => expect(m.getCityBusinesses).toHaveBeenCalledWith('sample-city', 50, 'svc_cabinet_maker'));
+    expect(await screen.findByTestId('service-result-501')).toBeInTheDocument();
+  });
+
   it('says so when nobody registered the picked service yet', async () => {
     m.getCityBusinesses.mockResolvedValue([]);
     render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);

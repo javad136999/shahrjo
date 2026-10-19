@@ -53,6 +53,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
 
   /** Selected service slug in the finder panel (null = nothing picked yet). */
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const [serviceQuery, setServiceQuery] = useState('');
   const [results, setResults] = useState<BusinessItem[] | null>(null);
   const [finding, setFinding] = useState(false);
   const [findError, setFindError] = useState<string | null>(null);
@@ -78,6 +79,12 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
   };
 
   const valid = form.name.trim().length >= 2 && form.categoryId !== '' && form.phone.trim().length >= 4;
+
+  const filteredCategories = (categories ?? []).filter((category) => {
+    const query = serviceQuery.trim().toLocaleLowerCase();
+    if (!query) return true;
+    return `${category.name} ${category.slug}`.toLocaleLowerCase().includes(query);
+  });
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,8 +255,31 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
           )}
 
           {categories && (
-            <div className="service-chips" role="listbox" aria-label="فهرست خدمات" data-testid="service-chips">
-              {categories.map((c) => (
+            <>
+              <div className="service-search" role="search">
+                <label htmlFor="service-query">جستجوی خدمت</label>
+                <div className="service-search__row">
+                  <input
+                    id="service-query"
+                    value={serviceQuery}
+                    onChange={(e) => setServiceQuery(e.target.value)}
+                    placeholder="مثلاً کابینت‌کار یا تعمیرکار"
+                    type="search"
+                    data-testid="service-search-input"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-primary service-search__button"
+                    disabled={filteredCategories.length === 0}
+                    onClick={() => void pickService(filteredCategories.find((category) => category.slug === activeSlug)?.slug ?? filteredCategories[0]?.slug ?? null)}
+                    data-testid="service-search-button"
+                  >
+                    جستجو
+                  </button>
+                </div>
+              </div>
+              <div className="service-chips" role="listbox" aria-label="فهرست خدمات" data-testid="service-chips">
+              {filteredCategories.map((c) => (
                 <button
                   key={c.slug}
                   type="button"
@@ -263,7 +293,8 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
                   {c.name}
                 </button>
               ))}
-            </div>
+              </div>
+            </>
           )}
 
           {finding && (

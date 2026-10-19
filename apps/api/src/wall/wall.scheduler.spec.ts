@@ -2,6 +2,7 @@ import type { PrismaService } from '../prisma/prisma.service';
 import {
   TEHRAN_OFFSET_MS,
   WALL_REPOST_SLOTS,
+  WALL_REPOSTS_ENABLED,
   WallRepostScheduler,
   tehranClock,
   tehranDayStart,
@@ -72,6 +73,10 @@ describe('tehranClock / tehranDayStart', () => {
 });
 
 describe('WallRepostScheduler.tick', () => {
+  it('keeps the external timer disabled by default', () => {
+    expect(WALL_REPOSTS_ENABLED).toBe(false);
+  });
+
   it('publishes nothing before the first slot of the day', async () => {
     const { scheduler, prisma } = makeScheduler();
     // 07:59 Tehran = 04:29 UTC

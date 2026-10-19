@@ -55,6 +55,7 @@ const plans = [
 describe('BusinessRegistration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    window.ShahrjoBazaar = { purchase: jest.fn().mockResolvedValue({ purchaseToken: 'bazaar-token' }) };
     m.getTokens.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
     m.getBusinessCategories.mockResolvedValue(cats);
     m.getPlans.mockResolvedValue(plans);

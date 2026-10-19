@@ -837,6 +837,35 @@ a:hover {
   }
 }
 
+.service-search {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+.service-search label {
+  color: #53645a;
+  font-size: 12px;
+  font-weight: 800;
+}
+.service-search__row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.service-search__row input {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.service-search__button {
+  flex: 0 0 auto;
+  min-width: 78px;
+  white-space: nowrap;
+}
+@media (max-width: 360px) {
+  .service-search__row { gap: 5px; }
+  .service-search__button { min-width: 66px; padding-inline: 8px; }
+}
+
 /* Bright, high-contrast entry to the city wall. */
 .wall-cta {
   display: inline-flex;

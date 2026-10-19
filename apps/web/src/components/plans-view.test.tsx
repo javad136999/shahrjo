@@ -44,6 +44,7 @@ const plans = [
 describe('PlansView', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    window.ShahrjoBazaar = { purchase: jest.fn().mockResolvedValue({ purchaseToken: 'bazaar-token' }) };
     mockSearchGet.mockReturnValue(null);
     mockGetTokens.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
     mockGetPlans.mockResolvedValue(plans);

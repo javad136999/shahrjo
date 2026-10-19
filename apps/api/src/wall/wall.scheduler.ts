@@ -45,6 +45,8 @@ export const WALL_REPOST_SLOTS: WallRepostSlot[] = [
 
 /** How often the scheduler checks whether a slot is due. */
 export const REPOST_CHECK_MS = 60_000;
+/** Wall repost automation stays off unless explicitly enabled by the operator. */
+export const WALL_REPOSTS_ENABLED = process.env.ENABLE_WALL_REPOSTS === 'true';
 /** «اگهی قدیمی» = at least this old. */
 export const OLD_AD_MIN_AGE_MS = 7 * 86_400_000;
 /** Upper bound of the candidate pool sampled per slot. */
@@ -135,6 +137,10 @@ export class WallRepostScheduler implements OnModuleInit {
   constructor(private readonly prisma: PrismaService) {}
 
   onModuleInit(): void {
+    if (!WALL_REPOSTS_ENABLED) {
+      this.logger.log('wall repost automation disabled');
+      return;
+    }
     const timer = setInterval(() => void this.tickSafely(), REPOST_CHECK_MS);
     timer.unref?.();
     // catch up slots missed while the process was down (same Tehran day)
