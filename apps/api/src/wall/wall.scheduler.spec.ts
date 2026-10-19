@@ -240,7 +240,12 @@ describe('GOLD business promos — 2 attractive messages a day', () => {
     expect(posted).toBe(1);
     expect(prisma.business.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ status: 'APPROVED', subscriptionTier: 'GOLD' }),
+        where: expect.objectContaining({
+          status: 'APPROVED',
+          subscriptionTier: 'GOLD',
+          subscriptionStatus: 'ACTIVE',
+          subscriptionExpiresAt: { gt: expect.any(Date) },
+        }),
       }),
     );
     const data = prisma.wallPost.create.mock.calls[0][0].data;

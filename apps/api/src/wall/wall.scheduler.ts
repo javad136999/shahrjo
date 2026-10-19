@@ -231,8 +231,9 @@ export class WallRepostScheduler implements OnModuleInit {
       where: {
         status: 'APPROVED',
         subscriptionTier: 'GOLD',
+        subscriptionStatus: 'ACTIVE',
         showcaseEnabled: true,
-        OR: [{ subscriptionExpiresAt: null }, { subscriptionExpiresAt: { gt: now } }],
+        subscriptionExpiresAt: { gt: now },
       },
       take: CANDIDATE_LIMIT,
       select: {
