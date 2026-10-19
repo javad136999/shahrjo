@@ -898,6 +898,17 @@ a:hover {
   background: rgb(255 255 255 / 17%);
   border: 1px solid rgb(255 255 255 / 25%);
   font-size: 22px;
+  animation: wall-heartbeat 1.65s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes wall-heartbeat {
+  0%,
+  100% { transform: scale(1); }
+  12% { transform: scale(1.12); }
+  24% { transform: scale(1); }
+  36% { transform: scale(1.08); }
+  52% { transform: scale(1); }
 }
 
 /* the little white tick that says «the way in is open» */
@@ -934,29 +945,29 @@ a:hover {
   font-size: 20px;
   font-weight: 900;
 }
-/* Phones: the wall entry and the two service tiles sit side by side as three
-   compact columns (icon over title), like the website — not stacked. */
+/* Phones: greeting first, then the two service actions stay in a stable row;
+   the wall entry follows them without squeezing or reordering the icons. */
 @media (max-width: 560px) {
   .dash-welcome {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    display: block;
   }
-  .dash-welcome__head,
-  .city-services,
-  .city-services__tiles {
-    display: contents;
+  .dash-welcome__head {
+    display: flex;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 12px;
   }
   .dash-welcome__greeting {
-    grid-column: span 2;
-    align-self: center;
     min-width: 0;
-    margin-bottom: 0;
+  }
+  .city-services__tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
   .service-panel {
     grid-column: 1 / -1;
   }
-  .wall-cta,
   .service-tile {
     flex-direction: column;
     justify-content: center;
@@ -966,13 +977,6 @@ a:hover {
     text-align: center;
     white-space: normal;
   }
-  .wall-cta {
-    grid-column: span 1;
-    width: 100%;
-    min-width: 0;
-    padding-inline: 3px;
-  }
-  .wall-cta__icon,
   .service-tile__icon {
     width: 36px;
     height: 36px;
@@ -980,7 +984,6 @@ a:hover {
     border-radius: 12px;
     font-size: 18px;
   }
-  .wall-cta__copy,
   .service-tile__copy {
     flex: 0 1 auto;
     align-items: center;
@@ -2690,7 +2693,8 @@ a.my-ads__item:hover {
 /* motion safety: no marquee, plain horizontal scroll instead */
 @media (prefers-reduced-motion: reduce) {
   .showcase::before,
-  .showcase__crown {
+  .showcase__crown,
+  .wall-cta__icon {
     animation: none;
   }
   .showcase__track {
