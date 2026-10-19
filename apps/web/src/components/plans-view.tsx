@@ -81,6 +81,12 @@ export function PlansView() {
       router.replace('/login?next=/plans');
       return;
     }
+    // Check the Android wrapper before creating a pending payment row. A normal
+    // browser/PWA has no Poolakey bridge and cannot complete Bazaar billing.
+    if (typeof window === 'undefined' || !window.ShahrjoBazaar) {
+      setError('پرداخت بازار فقط داخل نسخه اندروید شهرجو که به بازار متصل شده باشد امکان‌پذیر است. نسخه فعلی این اتصال را ندارد.');
+      return;
+    }
     setLoading(plan.id);
     try {
       const session = await checkoutPlan({ planId: plan.id, ...(reactivateId ? { businessId: reactivateId } : {}) });
@@ -90,7 +96,7 @@ export function PlansView() {
       router.replace(`/plans/result?status=${encodeURIComponent(result)}`);
     } catch (err) {
       setLoading(null);
-      setError(err instanceof ApiError ? err.message : 'شروع پرداخت ممکن نشد؛ دوباره تلاش کنید');
+      setError(err instanceof Error ? err.message : 'شروع پرداخت ممکن نشد؛ دوباره تلاش کنید');
     }
   }
 
