@@ -102,6 +102,7 @@ type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
 interface RequestOptions {
   body?: unknown;
+  cache?: RequestCache;
 }
 
 let refreshInFlight: Promise<boolean> | null = null;
@@ -172,6 +173,7 @@ async function request<T>(method: Method, path: string, options: RequestOptions 
     method,
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    cache: options.cache,
   });
 
   if (!res.ok) throw new ApiError(res.status, await extractError(res));
@@ -409,9 +411,9 @@ export async function adminCreateBusiness(body: {
   months?: number;
   /** The admin's own `uploadBusinessImage` URL. */
   logoUrl?: string;
-  /** Map pin inside the chosen city (both or neither). */
-  latitude?: number;
-  longitude?: number;
+  /** Required map pin inside the chosen city, so the listing appears on the map. */
+  latitude: number;
+  longitude: number;
 }): Promise<{ id: number; name: string; status: string; subscriptionTier: string }> {
   return api.post<{ id: number; name: string; status: string; subscriptionTier: string }>('/admin/businesses', body);
 }
@@ -539,7 +541,7 @@ export async function getShowcase(slug: string, limit = 12): Promise<ShowcaseIte
 }
 
 export async function getCityMap(slug: string): Promise<CityMapData> {
-  return api.get<CityMapData>(`/map?city=${encodeURIComponent(slug)}`);
+  return request<CityMapData>('GET', `/map?city=${encodeURIComponent(slug)}`, { cache: 'no-store' });
 }
 
 export async function sendOtp(phone: string): Promise<{

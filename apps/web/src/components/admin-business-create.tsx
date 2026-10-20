@@ -39,7 +39,7 @@ export function AdminBusinessCreate() {
   const [categories, setCategories] = useState<BusinessCategoryOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [created, setCreated] = useState<{ id: number; name: string; subscriptionTier: string } | null>(null);
+  const [created, setCreated] = useState<{ id: number; name: string; subscriptionTier: string; citySlug: string } | null>(null);
 
   // registration form
   const [name, setName] = useState('');
@@ -185,6 +185,15 @@ export function AdminBusinessCreate() {
       setError('نام، دسته‌بندی و شهر الزامی است');
       return;
     }
+    if (!pin) {
+      setError('موقعیت کسب‌وکار را روی نقشه انتخاب کن تا روی نقشهٔ شهر نمایش داده شود');
+      return;
+    }
+    const selectedCity = cities.find((city) => city.id === Number(cityId));
+    if (!selectedCity) {
+      setError('شهر انتخاب‌شده معتبر نیست؛ دوباره انتخابش کن');
+      return;
+    }
     setBusy(true);
     try {
       const row = await adminCreateBusiness({
@@ -196,12 +205,12 @@ export function AdminBusinessCreate() {
         description: description.trim() || undefined,
         ownerPhone: ownerPhone.trim() || undefined,
         logoUrl: logoUrl || undefined,
-        latitude: pin?.lat,
-        longitude: pin?.lng,
+        latitude: pin.lat,
+        longitude: pin.lng,
         tier: tier || undefined,
         months: tier ? months : undefined,
       });
-      setCreated(row);
+      setCreated({ ...row, citySlug: selectedCity.slug });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'ثبت کسب‌وکار ممکن نشد؛ دوباره تلاش کنید');
     } finally {
@@ -245,10 +254,13 @@ export function AdminBusinessCreate() {
           </div>
           <h1>کسب‌وکار منتشر شد</h1>
           <p>
-            «{created.name}» همین حالا با وضعیت تأییدشده روی نقشه و در جستجوی شهرش دیده می‌شود.
+            «{created.name}» همین حالا با وضعیت تأییدشده در جستجوی شهرش دیده می‌شود.
             {created.subscriptionTier !== 'FREE' && ` تیپ ${created.subscriptionTier === 'GOLD' ? 'طلایی' : 'نقره‌ای'} تا پایان مدت انتخابی فعال است.`}
           </p>
           <div className="result-card__actions">
+            <Link href={`/city/${created.citySlug}#map`} className="btn btn-primary">
+              مشاهده روی نقشهٔ شهر
+            </Link>
             <Link href="/admin" className="btn btn-primary">
               بازگشت به پنل مدیریت
             </Link>
@@ -408,7 +420,7 @@ export function AdminBusinessCreate() {
             <>
               <div className="admin-newbiz__map" ref={mapEl} data-testid="nb-map" />
               <p className="muted small" data-testid="nb-pin">
-                {pin ? `منتظر: ${pin.lat}، ${pin.lng} — با کلیک روی نقشه جابه‌جا می‌شود.` : 'روی نقشه کلیک کن تا موقعیت کسب‌وکار ثبت شود (اختیاری).'}
+                {pin ? `منتظر: ${pin.lat}، ${pin.lng} — با کلیک روی نقشه جابه‌جا می‌شود.` : 'روی نقشه کلیک کن تا موقعیت کسب‌وکار ثبت شود؛ برای نمایش روی نقشه الزامی است.'}
               </p>
             </>
           )}

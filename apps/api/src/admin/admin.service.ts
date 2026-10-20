@@ -41,7 +41,7 @@ export class BusinessDecisionDto extends DecisionDto {
  * listing, a sponsor. Published immediately — the operator IS the moderation
  * step — so the shape is deliberately small.
  */
-export class AdminCreateBusinessDto extends BusinessDecisionDto {
+export class AdminCreateBusinessDto extends DecisionDto {
   @Type(() => Number)
   @IsNumber()
   cityId!: number;
@@ -53,6 +53,12 @@ export class AdminCreateBusinessDto extends BusinessDecisionDto {
   @IsString()
   @MaxLength(160)
   name!: string;
+  @Type(() => Number)
+  @IsNumber()
+  latitude!: number;
+  @Type(() => Number)
+  @IsNumber()
+  longitude!: number;
 
   @IsOptional()
   @IsString()
@@ -560,10 +566,12 @@ export class AdminService {
     });
     if (!category) throw new NotFoundException('دسته‌بندی یافت نشد');
 
-    // Optional map pin: both coordinates or neither (same rule as approve).
+    // Manual entries must have a pin: the public map only returns businesses
+    // with coordinates, so accepting a missing pin would publish an invisible row.
     const hasLat = dto.latitude !== undefined;
     const hasLng = dto.longitude !== undefined;
     if (hasLat !== hasLng) throw new BadRequestException('مختصات باید کامل وارد شود');
+    if (!hasLat) throw new BadRequestException('موقعیت کسب‌وکار را روی نقشه انتخاب کنید');
     if (hasLat && (dto.latitude! < -90 || dto.latitude! > 90 || dto.longitude! < -180 || dto.longitude! > 180)) {
       throw new BadRequestException('مختصات نامعتبر است');
     }

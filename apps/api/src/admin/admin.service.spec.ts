@@ -323,9 +323,9 @@ describe('AdminService.createBusiness — manual signup (ثبت دستی)', () =
 
   it('publishes immediately (APPROVED, FREE) and audits the row', async () => {
     const { service, prisma } = makeReady({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
-    prisma.city.findFirst.mockResolvedValue({ id: 5 });
+    prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: 29.59, longitude: 52.58, boundary: null });
 
-    const created = await service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'نانوایی تست' });
+    const created = await service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'نانوایی تست', latitude: 29.6, longitude: 52.5 });
 
     expect(created).toMatchObject({ id: 50, status: 'APPROVED' });
     const data = prisma.business.create.mock.calls[0][0].data;
@@ -338,7 +338,15 @@ describe('AdminService.createBusiness — manual signup (ثبت دستی)', () =
   it('refuses a city outside the operator’s scope', async () => {
     const { service, prisma } = makeReady({ role: 'CITY_ADMIN', provinceId: null, cityId: 5 });
 
-    await expect(service.createBusiness(admin, { cityId: 9, categoryId: 3, name: 'x' })).rejects.toMatchObject({ status: 403 });
+    await expect(service.createBusiness(admin, { cityId: 9, categoryId: 3, name: 'x' } as never)).rejects.toMatchObject({ status: 403 });
+    expect(prisma.business.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses manual publication without a map pin', async () => {
+    const { service, prisma } = makeReady({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+    prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: 29.59, longitude: 52.58, boundary: null });
+
+    await expect(service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'بی‌مکان' } as never)).rejects.toMatchObject({ status: 400 });
     expect(prisma.business.create).not.toHaveBeenCalled();
   });
 
@@ -347,7 +355,7 @@ describe('AdminService.createBusiness — manual signup (ثبت دستی)', () =
     prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: null, longitude: null, boundary: null });
     prisma.user.findFirst.mockResolvedValue({ id: 42 });
 
-    await service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'مغازه', ownerPhone: '09121112233' });
+    await service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'مغازه', ownerPhone: '09121112233', latitude: 29.6, longitude: 52.5 });
 
     expect(prisma.user.findFirst.mock.calls[0][0].where).toEqual({ phone: '09121112233' });
     expect(prisma.business.create.mock.calls[0][0].data.ownerId).toBe(42);
@@ -357,7 +365,7 @@ describe('AdminService.createBusiness — manual signup (ثبت دستی)', () =
     const { service, prisma } = makeReady({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
     prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: null, longitude: null, boundary: null });
 
-    await service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'کافه گلد', tier: 'GOLD', months: 6 });
+    await service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'کافه گلد', tier: 'GOLD', months: 6, latitude: 29.6, longitude: 52.5 });
 
     const data = prisma.business.create.mock.calls[0][0].data;
     expect(data).toMatchObject({ status: 'APPROVED', subscriptionTier: 'GOLD', subscriptionStatus: 'ACTIVE', showcasePriority: 10 });
@@ -375,10 +383,10 @@ describe('AdminService.createBusiness — manual signup (ثبت دستی)', () =
     prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: null, longitude: null, boundary: null });
 
     await expect(
-      service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'x', tier: 'GOLD' } as never),
+      service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'x', tier: 'GOLD', latitude: 29.6, longitude: 52.5 } as never),
     ).rejects.toThrow('تعداد ماه');
     await expect(
-      service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'x', tier: 'BRONZE', months: 3 } as never),
+      service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'x', tier: 'BRONZE', months: 3, latitude: 29.6, longitude: 52.5 } as never),
     ).rejects.toThrow('طلایی یا نقره‌ای');
     expect(prisma.business.create).not.toHaveBeenCalled();
   });
