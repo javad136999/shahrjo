@@ -5,8 +5,10 @@ on:
   push:
     branches:
       - build/new-bazaar-android-apk
+      - fix/bazaar-app-icon
     paths:
       - "android-wrapper/**"
+      - "apps/web/public/icon-512x512.png"
       - ".github/workflows/android-apk.yml"
 
 permissions:
@@ -21,6 +23,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Use the web app's official launcher logo
+        run: |
+          test -s ../apps/web/public/icon-512x512.png
+          mkdir -p app/src/main/res/mipmap-nodpi
+          cp ../apps/web/public/icon-512x512.png app/src/main/res/mipmap-nodpi/ic_launcher.png
+          test -s app/src/main/res/mipmap-nodpi/ic_launcher.png
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
