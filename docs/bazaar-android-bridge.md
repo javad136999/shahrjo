@@ -1,6 +1,6 @@
 # اتصال اپ اندروید شهرجو به پرداخت درون‌برنامه‌ای بازار
 
-سورس native در `apps/android` قرار دارد. اپ با شناسهٔ `ir.shahrjo` سایت `https://shahrju.ir` را در WebView باز می‌کند و کتابخانهٔ رسمی Poolakey نسخهٔ `2.3.0` را به کار می‌برد. روش ساخت و تنظیم کلید RSA در `apps/android/README.md` آمده است.
+سورس native در `apps/android` قرار دارد. اپ با شناسهٔ `ir.shahrju.app` سایت `https://shahrju.ir` را در WebView باز می‌کند و کتابخانهٔ رسمی Poolakey نسخهٔ `2.3.0` را به کار می‌برد. روش ساخت و تنظیم کلید RSA در `apps/android/README.md` آمده است.
 
 ## امنیت پل وب
 

@@ -4,7 +4,7 @@
 
 ## پیش‌نیازها
 
-Android Studio یا Android SDK با Platform 35، JDK 17 یا جدیدتر و اتصال اینترنت برای دریافت Gradle/وابستگی‌ها لازم است. شناسهٔ برنامه در این پروژه `ir.shahrjo` است و باید دقیقاً با package name برنامهٔ ثبت‌شده در پیشخوان بازار و متغیر `BAZAAR_PACKAGE_NAME` سمت API یکی باشد.
+Android Studio یا Android SDK با Platform 35، JDK 17 یا جدیدتر و اتصال اینترنت برای دریافت Gradle/وابستگی‌ها لازم است. شناسهٔ برنامه در این پروژه `ir.shahrju.app` است و باید دقیقاً با package name برنامهٔ ثبت‌شده در پیشخوان بازار و متغیر `BAZAAR_PACKAGE_NAME` سمت API یکی باشد.
 
 ## کلید عمومی بازار
 

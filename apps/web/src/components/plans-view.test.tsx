@@ -78,7 +78,7 @@ describe('PlansView', () => {
 
   it('binds the checkout to a suspended business when it landed from «فعال‌سازی»', async () => {
     mockSearchGet.mockImplementation((key: string) => (key === 'business' ? '9' : null));
-    mockCheckoutPlan.mockResolvedValue({ paymentId: 9, productId: 'GOLD_1M', packageName: 'ir.shahrjo', amount: 4_000_000 });
+    mockCheckoutPlan.mockResolvedValue({ paymentId: 9, productId: 'GOLD_1M', packageName: 'ir.shahrju.app', amount: 4_000_000 });
     render(<PlansView />);
 
     // the banner tells the owner this purchase reactivates that business
@@ -102,7 +102,7 @@ describe('PlansView', () => {
     mockCheckoutPlan.mockResolvedValue({
       paymentId: 9,
       productId: 'GOLD_1M',
-      packageName: 'ir.shahrjo',
+      packageName: 'ir.shahrju.app',
       amount: 4_000_000,
     });
     mockVerifyBazaarPurchase.mockResolvedValue('SUCCESS');
