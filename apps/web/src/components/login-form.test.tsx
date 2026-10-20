@@ -78,7 +78,7 @@ describe('LoginForm', () => {
 
   it('prefers the remembered city after login when there is no next target', async () => {
     mockSearchParams.delete('next');
-    mockGetLocalCity.mockReturnValue({ id: 7, slug: 'tehran', name: 'تهران' });
+    mockGetLocalCity.mockReturnValue({ id: 7, slug: 'test-city', name: 'شهر آزمایشی' });
     sendOtp.mockResolvedValue({ sent: true, cooldownSeconds: 60 });
     verifyOtp.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', user: { id: 1 } });
     render(<LoginForm />);
@@ -88,7 +88,7 @@ describe('LoginForm', () => {
     await waitFor(() => expect(screen.getByLabelText('کد تأیید')).toBeInTheDocument());
     fireEvent.change(screen.getByLabelText('کد تأیید'), { target: { value: '123456' } });
 
-    await waitFor(() => expect(push).toHaveBeenCalledWith('/city/tehran'));
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/city/test-city'));
   });
 
   it('auto-fills the code and completes the login by itself (console SMS)', async () => {

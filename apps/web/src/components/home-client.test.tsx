@@ -25,12 +25,12 @@ jest.mock('@/lib/api', () => ({
 const cities: City[] = [
   {
     id: 7,
-    name: 'شیراز',
-    slug: 'shiraz',
+    name: 'شهر آزمایشی',
+    slug: 'test-city',
     isFeatured: false,
     latitude: null,
     longitude: null,
-    province: { id: 1, name: 'فارس', slug: 'fars' },
+    province: { id: 1, name: 'استان آزمایشی', slug: 'test-province' },
   },
 ];
 
@@ -42,12 +42,12 @@ describe('HomeClient city restoration', () => {
   });
 
   it('returns to the locally remembered city instead of showing city selection', async () => {
-    mockGetLocalCity.mockReturnValue({ id: 7, slug: 'shiraz', name: 'شیراز' });
+    mockGetLocalCity.mockReturnValue({ id: 7, slug: 'test-city', name: 'شهر آزمایشی' });
     render(<HomeClient initialCities={cities} />);
 
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/city/shiraz'));
-    expect(mockSetLocalCity).toHaveBeenCalledWith({ id: 7, slug: 'shiraz', name: 'شیراز' });
-    expect(screen.queryByTestId('city-shiraz')).not.toBeInTheDocument();
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/city/test-city'));
+    expect(mockSetLocalCity).toHaveBeenCalledWith({ id: 7, slug: 'test-city', name: 'شهر آزمایشی' });
+    expect(screen.queryByTestId('city-test-city')).not.toBeInTheDocument();
   });
 
   it('restores a profile city when there is no locally remembered choice', async () => {
@@ -55,15 +55,15 @@ describe('HomeClient city restoration', () => {
     mockApiGet.mockResolvedValue({ cityId: 7 });
     render(<HomeClient initialCities={cities} />);
 
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/city/shiraz'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/city/test-city'));
     expect(mockApiGet).toHaveBeenCalledWith('/users/me');
-    expect(mockSetLocalCity).toHaveBeenCalledWith({ id: 7, slug: 'shiraz', name: 'شیراز' });
+    expect(mockSetLocalCity).toHaveBeenCalledWith({ id: 7, slug: 'test-city', name: 'شهر آزمایشی' });
   });
 
   it('shows city selection only when the visitor has no saved city', async () => {
     render(<HomeClient initialCities={cities} />);
 
-    expect(await screen.findByTestId('city-shiraz')).toBeInTheDocument();
+    expect(await screen.findByTestId('city-test-city')).toBeInTheDocument();
     expect(mockReplace).not.toHaveBeenCalled();
   });
 });
