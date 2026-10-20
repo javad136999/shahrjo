@@ -400,7 +400,14 @@ async function main(): Promise<void> {
   for (const c of businessCategories) {
     await prisma.businessCategory.upsert({ where: { slug: c.slug }, update: { name: c.name, icon: c.icon }, create: c });
   }
-  await prisma.businessCategory.deleteMany({ where: { slug: { notIn: businessCategories.map((c) => c.slug) } } });
+  // Keep legacy categories that still classify live businesses; removing them
+  // violates the category FK and would orphan user-managed directory entries.
+  await prisma.businessCategory.deleteMany({
+    where: {
+      slug: { notIn: businessCategories.map((c) => c.slug) },
+      businesses: { none: {} },
+    },
+  });
 
   // Service-desk trades (flagged isService so only the city-home tiles list
   // them). Slugs are prefixed, so this never touches a general category.
