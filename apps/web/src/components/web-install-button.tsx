@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -9,6 +10,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 /** Visible web-install action for supported browsers, with manual instructions as fallback. */
 export function WebInstallButton() {
+  const pathname = usePathname();
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -36,7 +38,8 @@ export function WebInstallButton() {
     };
   }, []);
 
-  if (installed) return null;
+  // Keep the floating install action off the main landing page only.
+  if (pathname === '/' || installed) return null;
 
   const install = async () => {
     if (!installEvent) {
