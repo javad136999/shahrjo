@@ -21,6 +21,7 @@ jest.mock('leaflet', () => {
 });
 
 const replace = jest.fn();
+const mockConsumeBazaarPurchase = jest.fn().mockResolvedValue(undefined);
 jest.mock('next/navigation', () => ({ useRouter: () => ({ replace }) }));
 
 jest.mock('@/lib/api', () => ({
@@ -41,6 +42,7 @@ jest.mock('@/lib/api', () => ({
 
 jest.mock('@/lib/bazaar', () => ({
   purchaseWithBazaar: jest.fn().mockResolvedValue('bazaar-token'),
+  consumeBazaarPurchase: (purchaseToken: string) => mockConsumeBazaarPurchase(purchaseToken),
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -148,6 +150,7 @@ describe('BusinessRegistration', () => {
     await waitFor(() =>
       expect(m.checkoutPlan).toHaveBeenCalledWith({ planId: 11, businessId: 77 }),
     );
+    await waitFor(() => expect(mockConsumeBazaarPurchase).toHaveBeenCalledWith('bazaar-token'));
   });
 
   it('uploads the business photo (compressed route) and sends it with the registration', async () => {

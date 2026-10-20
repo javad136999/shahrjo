@@ -13,6 +13,7 @@ const mockGetPlans = jest.fn();
 const mockGetMySubscriptions = jest.fn();
 const mockCheckoutPlan = jest.fn();
 const mockVerifyBazaarPurchase = jest.fn();
+const mockConsumeBazaarPurchase = jest.fn().mockResolvedValue(undefined);
 
 jest.mock('@/lib/api', () => ({
   ApiError: class ApiError extends Error {
@@ -31,6 +32,7 @@ jest.mock('@/lib/api', () => ({
 
 jest.mock('@/lib/bazaar', () => ({
   purchaseWithBazaar: jest.fn().mockResolvedValue('bazaar-token'),
+  consumeBazaarPurchase: (purchaseToken: string) => mockConsumeBazaarPurchase(purchaseToken),
 }));
 
 import { PlansView } from '@/components/plans-view';
@@ -111,6 +113,7 @@ describe('PlansView', () => {
     await waitFor(() => expect(mockCheckoutPlan).toHaveBeenCalledWith({ planId: 1 }));
     await waitFor(() => {
       expect(mockVerifyBazaarPurchase).toHaveBeenCalledWith({ paymentId: 9, productId: 'GOLD_1M', purchaseToken: 'bazaar-token' });
+      expect(mockConsumeBazaarPurchase).toHaveBeenCalledWith('bazaar-token');
       expect(mockReplace).toHaveBeenCalledWith('/plans/result?status=SUCCESS');
     });
   });
