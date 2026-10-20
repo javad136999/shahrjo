@@ -1,17 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { CityDashboard } from '@/components/dashboard';
-import { api, getTokens, setLocalCity } from '@/lib/api';
+import { api, getCityMap, getTokens, setLocalCity } from '@/lib/api';
 import type { City, CityMapData, MeResponse, ShowcaseItem } from '@/lib/types';
 
 /**
- * Browser half of the city home page. The dashboard itself (welcome card, the
- * two service tiles, the golden showcase and every map pin) is rendered on the
- * server from the props below — the HTML a crawler receives already contains
- * the city-specific welcome text, business names and their links. Only the
- * side-effects that need a browser run here: remembering the selected city and
- * syncing it into the profile when the visitor is logged in.
+ * Browser half of the city home page. The initial dashboard is server-rendered
+ * for SEO; the map is then refreshed from the uncached public API so a business
+ * just published by an operator is visible without waiting for the server's
+ * page/data revalidation window.
  */
 export interface CityHomeClientProps {
   city: City;
@@ -22,6 +20,9 @@ export interface CityHomeClientProps {
 }
 
 export function CityHomeClient({ city, showcase, mapData, feedError }: CityHomeClientProps) {
+  const [freshMapData, setFreshMapData] = useState(mapData);
+  const [mapLoading, setMapLoading] = useState(mapData === null);
+
   useEffect(() => {
     setLocalCity({ id: city.id, slug: city.slug, name: city.name });
     if (!getTokens()) return;
@@ -33,7 +34,46 @@ export function CityHomeClient({ city, showcase, mapData, feedError }: CityHomeC
       .catch(() => {});
   }, [city.id, city.slug, city.name]);
 
+  useEffect(() => {
+    let alive = true;
+    let latestRequest = 0;
+
+    const refreshMap = async () => {
+      const requestId = ++latestRequest;
+      try {
+        const fresh = await getCityMap(city.slug);
+        if (alive && requestId === latestRequest) setFreshMapData(fresh);
+      } catch {
+        // Keep the server-rendered map if the live refresh is temporarily unavailable.
+      } finally {
+        if (alive && requestId === latestRequest) setMapLoading(false);
+      }
+    };
+
+    void refreshMap();
+    const onFocus = () => void refreshMap();
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') void refreshMap();
+    };
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('pageshow', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      alive = false;
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('pageshow', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [city.slug]);
+
   return (
-    <CityDashboard city={city} showcase={showcase} mapData={mapData} loading={false} feedError={feedError} />
+    <CityDashboard
+      city={city}
+      showcase={showcase}
+      mapData={freshMapData}
+      loading={mapLoading}
+      feedError={feedError}
+    />
   );
 }

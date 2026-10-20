@@ -125,6 +125,11 @@ describe('AdminBusinessCreate (ثبت دستی کسب‌وکار — صفحهٔ 
     await screen.findByTestId('admin-create-page');
 
     fireEvent.change(screen.getByTestId('nb-city'), { target: { value: '5' } });
+    await screen.findByTestId('nb-map');
+    const leaflet = require('leaflet');
+    const instance = leaflet.map.mock.results[leaflet.map.mock.results.length - 1].value;
+    const onClick = instance.on.mock.calls.find((call: unknown[]) => call[0] === 'click')?.[1];
+    act(() => onClick({ latlng: { lat: 29.6, lng: 52.5 } }));
     fireEvent.change(screen.getByTestId('nb-category'), { target: { value: '3' } });
     fireEvent.change(screen.getByTestId('nb-name'), { target: { value: 'کافه گلد' } });
 
@@ -140,7 +145,22 @@ describe('AdminBusinessCreate (ثبت دستی کسب‌وکار — صفحهٔ 
 
     // success screen replaces the form
     expect(await screen.findByTestId('admin-create-done')).toHaveTextContent('کسب‌وکار منتشر شد');
+    expect(screen.getByRole('link', { name: 'مشاهده روی نقشهٔ شهر' })).toHaveAttribute('href', '/city/sample-city#map');
     expect(screen.getByRole('link', { name: /بازگشت به پنل مدیریت/ })).toHaveAttribute('href', '/admin');
+  });
+
+  it('requires a map pin before publishing so the business cannot be invisible on the city map', async () => {
+    render(<AdminBusinessCreate />);
+    await screen.findByTestId('admin-create-page');
+
+    fireEvent.change(screen.getByTestId('nb-city'), { target: { value: '5' } });
+    await screen.findByTestId('nb-map');
+    fireEvent.change(screen.getByTestId('nb-category'), { target: { value: '3' } });
+    fireEvent.change(screen.getByTestId('nb-name'), { target: { value: 'نانوایی مرکزی' } });
+    fireEvent.click(screen.getByTestId('nb-submit'));
+
+    expect(await screen.findByTestId('admin-create-error')).toHaveTextContent('موقعیت کسب‌وکار را روی نقشه انتخاب کن');
+    expect(mockCreate).not.toHaveBeenCalled();
   });
 
   it('requires name, category and city before publishing', async () => {
