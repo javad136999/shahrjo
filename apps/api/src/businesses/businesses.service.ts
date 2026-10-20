@@ -4,7 +4,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateBusinessDto,
   CreateProductDto,
-  CreateQuickBusinessDto,
   UpdateBusinessDto,
   UpdateProductDto,
 } from './businesses.dto';
@@ -235,57 +234,6 @@ export class BusinessesService {
     });
 
     if (logoUrl) await this.claimImage(user, logoUrl, created.id);
-
-    return { ...created, status: String(created.status), subscriptionTier: String(created.subscriptionTier) };
-  }
-
-  /**
-   * The city-home service desk («شغلتو ثبت کن»): a compact, free signup for a
-   * service trade that publishes immediately — neighbours must be able to find
-   * and call the tradesperson the same minute they registered.
-   *
-   * Deliberate difference from `create`: no payment, no admin step, so the
-   * abuse surface is trimmed elsewhere instead — only `isService` categories
-   * are accepted, the contact phone is mandatory (it is the point of the
-   * listing), and the slug is still unique. The
-   * requested active city slug is validated server-side so the new row appears
-   * in the same city's service search. An operator can suspend or delete any
-   * row from the admin queue.
-   */
-  async createQuick(user: User, dto: CreateQuickBusinessDto): Promise<CreatedBusiness> {
-    const city = await this.prisma.city.findFirst({
-      where: dto.citySlug
-        ? { slug: dto.citySlug, isActive: true, province: { isActive: true } }
-        : { id: user.cityId ?? -1, isActive: true, province: { isActive: true } },
-      select: { id: true },
-    });
-    if (!city) throw new NotFoundException('شهر انتخاب‌شده یافت نشد');
-
-    const category = await this.prisma.businessCategory.findFirst({
-      where: { id: dto.categoryId, isActive: true, isService: true },
-      select: { id: true },
-    });
-    if (!category) throw new NotFoundException('این دسته‌بندی در فهرست خدمات شهر نیست');
-
-    const slug = await this.uniqueSlug(dto.name);
-
-    const created = await this.prisma.business.create({
-      data: {
-        ownerId: user.id,
-        cityId: city.id,
-        categoryId: category.id,
-        name: dto.name,
-        slug,
-        description: dto.description ?? null,
-        phone: dto.phone ?? user.phone ?? null,
-        address: dto.address ?? null,
-        // Service desk: published immediately (see the doc comment above).
-        status: 'APPROVED',
-        subscriptionTier: 'FREE',
-        subscriptionStatus: 'NONE',
-      },
-      select: { id: true, name: true, slug: true, status: true, subscriptionTier: true },
-    });
 
     return { ...created, status: String(created.status), subscriptionTier: String(created.subscriptionTier) };
   }

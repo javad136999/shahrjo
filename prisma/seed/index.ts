@@ -406,6 +406,7 @@ async function main(): Promise<void> {
     where: {
       slug: { notIn: businessCategories.map((c) => c.slug) },
       businesses: { none: {} },
+      serviceListings: { none: {} },
     },
   });
 

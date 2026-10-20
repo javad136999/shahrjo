@@ -71,6 +71,15 @@ export interface BusinessItem {
   category: { name: string; slug: string; icon: string | null; color: string | null };
 }
 
+/** Lightweight city service-directory entry; not a Business profile. */
+export interface ServiceListingItem {
+  id: number;
+  name: string;
+  phone: string;
+  description: string | null;
+  category: { name: string; slug: string; icon: string | null };
+}
+
 export interface LocalCity {
   id: number;
   slug: string;

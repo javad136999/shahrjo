@@ -13,7 +13,6 @@ import { CurrentUser, Public } from '../common/decorators';
 import {
   CreateBusinessDto,
   CreateProductDto,
-  CreateQuickBusinessDto,
   UpdateBusinessDto,
   UpdateProductDto,
 } from './businesses.dto';
@@ -44,19 +43,6 @@ export class BusinessesController {
   @Get('service-categories')
   serviceCategories(): ReturnType<BusinessesService['serviceCategories']> {
     return this.businesses.serviceCategories();
-  }
-
-  /**
-   * Compact service-desk signup (auth). No payment, no admin step: a service
-   * trade publishes immediately so neighbours can call the tradesperson. The
-   * category must be a service one and the phone is required.
-   */
-  @Post('businesses/quick')
-  createQuick(
-    @CurrentUser() user: User,
-    @Body() dto: CreateQuickBusinessDto,
-  ): ReturnType<BusinessesService['createQuick']> {
-    return this.businesses.createQuick(user, dto);
   }
 
   /** Register a new business (auth) — starts PENDING + FREE, tier via payment. */

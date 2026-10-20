@@ -10,6 +10,7 @@ import type {
   BusinessDetail,
   BusinessItem,
   BusinessProductItem,
+  ServiceListingItem,
   CheckoutSession,
   CityMapData,
   DmConversation,
@@ -480,6 +481,16 @@ export async function getCityBusinesses(
   return api.get<BusinessItem[]>(`/businesses?${cityQS(slug, limit)}${cat}`);
 }
 
+/** Lightweight service listings; these are never returned as businesses. */
+export async function getCityServiceListings(
+  slug: string,
+  limit = 200,
+  category?: string,
+): Promise<ServiceListingItem[]> {
+  const cat = category ? `&category=${encodeURIComponent(category)}` : '';
+  return api.get<ServiceListingItem[]>(`/service-listings?${cityQS(slug, limit)}${cat}`);
+}
+
 // ---------- city wall (دیوار شهر — Phase 8b) ----------
 
 export async function getWall(citySlug: string, before?: string): Promise<WallFeed> {
@@ -624,20 +635,15 @@ export async function getServiceCategories(): Promise<BusinessCategoryOption[]> 
   return api.get<BusinessCategoryOption[]>('/service-categories');
 }
 
-/**
- * Compact service-desk signup (auth). No payment, no admin step — a service
- * trade publishes immediately. The category must be a service one and the
- * phone is required (calling is how the listing is used).
- */
-export async function createQuickBusiness(body: {
+/** Register a lightweight service listing (auth), without creating a Business profile. */
+export async function createServiceListing(body: {
   citySlug: string;
   name: string;
   categoryId: number;
   phone: string;
   description?: string;
-  address?: string;
-}): Promise<CreatedBusiness> {
-  return api.post<CreatedBusiness>('/businesses/quick', body);
+}): Promise<ServiceListingItem> {
+  return api.post<ServiceListingItem>('/service-listings', body);
 }
 
 /** Registers a new business (auth) — starts PENDING + FREE; tier is applied after payment. */

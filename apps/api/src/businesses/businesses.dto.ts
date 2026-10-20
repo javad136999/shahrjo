@@ -72,51 +72,6 @@ export class CreateBusinessDto {
 }
 
 /**
- * Compact service-desk signup («شغلتو ثبت کن» on the city home page).
- *
- * Deliberately narrower than {@link CreateBusinessDto}: no photo, no map pin
- * and no plan — the whole point is a tradesperson getting listed in under a
- * minute. `phone` is required (not optional) because calling is how the listing
- * is used, and `categoryId` must be a service trade: the API refuses anything
- * outside the service-desk list.
- */
-export class CreateQuickBusinessDto {
-  @Transform(trim)
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  citySlug?: string;
-
-  @Transform(trim)
-  @IsString()
-  @MinLength(2)
-  @MaxLength(160)
-  name!: string;
-
-  @IsInt()
-  @Min(1)
-  categoryId!: number;
-
-  @Transform(trim)
-  @IsString()
-  @MinLength(4)
-  @MaxLength(15)
-  phone!: string;
-
-  @Transform(trim)
-  @IsOptional()
-  @IsString()
-  @MaxLength(2000)
-  description?: string;
-
-  @Transform(trim)
-  @IsOptional()
-  @IsString()
-  @MaxLength(300)
-  address?: string;
-}
-
-/**
  * Owner edit of an already-registered business. Only the public profile
  * fields are editable here; status, tier and city stay under platform control
  * (moderation + payments own them). An empty string clears the field.

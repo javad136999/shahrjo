@@ -1,28 +1,25 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ApiError,
-  createQuickBusiness,
-  getCityBusinesses,
+  createServiceListing,
+  getCityServiceListings,
   getServiceCategories,
   getTokens,
 } from '@/lib/api';
-import type { BusinessItem, BusinessCategoryOption } from '@/lib/types';
+import type { ServiceListingItem, BusinessCategoryOption } from '@/lib/types';
 
 /**
  * The two service-desk tiles inside the «به شهر X خوش آمدید»
  * card on the city home page:
  *
  * - **راست — «شغلتو ثبت کن»**: a tradesperson registers their trade, phone and
- *   a line of description. No payment, no admin step: `POST /businesses/quick`
- *   publishes it immediately, because the whole point is a neighbour finding
- *   and calling them the same minute. The category list is service-only, so a
- *   shop or restaurant cannot slip into the desk.
+ *   a line about their services. It creates a lightweight ServiceListing, never
+ *   a Business profile, menu, or product list; the category list is service-only.
  * - **چپ — «چه خدماتی در شهر … نیاز داری»**: pick a service and get every
- *   tradesperson who registered through the tile, with a one-tap call button.
+ *   tradesperson who registered through the tile in a closable, phone-friendly results dialog.
  *
  * The actions stay in two columns on desktop and mobile; service categories
  * inside the finder are arranged in a separate, scan-friendly two-column grid.
@@ -34,7 +31,7 @@ type Panel = 'register' | 'find' | null;
 export interface CityServicesProps {
   /** City display name — used in the «چه خدماتی در شهر …» heading. */
   cityName: string;
-  /** City slug — the content API filters businesses by slug, never by name. */
+  /** City slug — the service-listings API filters entries by slug, never by name. */
   citySlug: string;
   /** Re-read after a successful registration so a new listing shows at once. */
   onRegistered?: () => void;
@@ -64,9 +61,12 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
   /** Selected service slug in the finder panel (null = nothing picked yet). */
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [serviceQuery, setServiceQuery] = useState('');
-  const [results, setResults] = useState<BusinessItem[] | null>(null);
+  const [results, setResults] = useState<ServiceListingItem[] | null>(null);
   const [finding, setFinding] = useState(false);
   const [findError, setFindError] = useState<string | null>(null);
+  const [resultsOpen, setResultsOpen] = useState(false);
+  const requestSequence = useRef(0);
+  const closeResultsButton = useRef<HTMLButtonElement>(null);
 
   // Categories load once, lazily, on the first time either panel opens.
   useEffect(() => {
@@ -82,8 +82,27 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
     };
   }, [panel, categories]);
 
+  useEffect(() => {
+    if (!resultsOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const focusTimer = window.setTimeout(() => closeResultsButton.current?.focus(), 0);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setResultsOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [resultsOpen]);
+
   const toggle = (next: Exclude<Panel, null>) => {
     setPanel((current) => (current === next ? null : next));
+    setResultsOpen(false);
     setError(null);
     setDone(null);
   };
@@ -95,9 +114,12 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
     if (!query) return true;
     return normalizePersianSearch(`${category.name} ${category.slug}`).includes(query);
   });
+  const selectedCategory = categories?.find((category) => category.slug === activeSlug) ?? null;
 
   const searchService = () => {
-    const match = filteredCategories.find((category) => category.slug === activeSlug) ?? filteredCategories[0];
+    const match = serviceQuery.trim()
+      ? filteredCategories[0]
+      : filteredCategories.find((category) => category.slug === activeSlug) ?? filteredCategories[0];
     void pickService(match?.slug ?? null);
   };
 
@@ -112,7 +134,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
     setError(null);
     setDone(null);
     try {
-      await createQuickBusiness({
+      await createServiceListing({
         citySlug,
         name: form.name.trim(),
         categoryId: Number(form.categoryId),
@@ -120,7 +142,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
         description: form.description.trim() || undefined,
       });
       setForm({ ...emptyForm });
-      setDone('ثبت شد؛ شغل شما همین حالا در فهرست خدمات شهر دیده می‌شود.');
+      setDone('ثبت شد؛ شغل شما در فهرست خدمات شهر قرار گرفت. صفحهٔ کسب‌وکار یا منو ساخته نشد.');
       onRegistered?.();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'ثبت شغل ناموفق بود؛ دوباره تلاش کنید');
@@ -134,15 +156,23 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
       setActiveSlug(slug);
       setResults(null);
       setFindError(null);
-      if (!slug) return;
+      if (!slug) {
+        setResultsOpen(false);
+        setFinding(false);
+        return;
+      }
+      setResultsOpen(true);
+      const requestId = ++requestSequence.current;
       setFinding(true);
       try {
-        const list = await getCityBusinesses(citySlug, 200, slug);
-        setResults(list);
+        const list = await getCityServiceListings(citySlug, 200, slug);
+        if (requestId === requestSequence.current) setResults(list);
       } catch (err) {
-        setFindError(err instanceof ApiError ? err.message : 'دریافت فهرست مشاغل ناموفق بود');
+        if (requestId === requestSequence.current) {
+          setFindError(err instanceof ApiError ? err.message : 'دریافت فهرست مشاغل ناموفق بود');
+        }
       } finally {
-        setFinding(false);
+        if (requestId === requestSequence.current) setFinding(false);
       }
     },
     [citySlug],
@@ -163,7 +193,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
           </span>
           <span className="service-tile__copy">
             <b>شغلتو ثبت کن</b>
-            <small>رایگان و فوری</small>
+            <small>فقط شغل، خدمات و شماره تماس</small>
           </span>
         </button>
 
@@ -188,7 +218,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
         <form className="service-panel" onSubmit={submit} noValidate data-testid="service-register">
           <h3>شغلتو ثبت کن</h3>
           <p className="muted small">
-            ثبت رایگان است و بلافاصله منتشر می‌شود؛ همشهری‌ها می‌توانند با شما تماس بگیرند.
+            فقط عنوان شغل، دستهٔ خدمات و شمارهٔ تماس ثبت می‌شود؛ پروفایل کسب‌وکار، منو یا محصولی ساخته نمی‌شود.
           </p>
 
           <label htmlFor="svc-name">عنوان شغل</label>
@@ -233,13 +263,13 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
             data-testid="service-phone"
           />
 
-          <label htmlFor="svc-desc">توضیح کوتاه — اختیاری</label>
+          <label htmlFor="svc-desc">خدماتی که ارائه می‌کنی — اختیاری</label>
           <input
             id="svc-desc"
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            placeholder="مثلاً نصب و تعمیر کابینت آشپزخانه"
-            maxLength={200}
+            placeholder="مثلاً نصب، تعمیر و سرویس کولر"
+            maxLength={500}
           />
 
           {error && (
@@ -328,45 +358,131 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
             </>
           )}
 
-          {finding && (
-            <p className="muted loading" aria-busy>
-              در حال جستجو…
-            </p>
-          )}
-          {findError && (
-            <p className="error" role="alert">
-              {findError}
-            </p>
-          )}
+        </div>
+      )}
 
-          {!finding && activeSlug && results !== null && (
-            <ul className="service-results" data-testid="service-results">
-              {results.length === 0 ? (
-                <li className="empty-state">هنوز کسی این خدمت را در شهر ثبت نکرده است.</li>
-              ) : (
-                results.map((b) => (
-                  <li key={b.id} className="service-result" data-testid={`service-result-${b.id}`}>
-                    <span className="service-result__main">
-                      <b>{b.name}</b>
-                      <small>
-                        {b.category.icon ? `${b.category.icon} ` : ''}
-                        {b.category.name}
-                        {b.address ? ` · ${b.address}` : ''}
-                      </small>
-                    </span>
-                    {b.phone && (
-                      <a className="btn btn-primary service-result__call" href={`tel:${b.phone}`} dir="ltr">
-                        📞 تماس
-                      </a>
-                    )}
-                    <Link className="btn btn-ghost" href={`/business/${b.id}`}>
-                      پروفایل
-                    </Link>
-                  </li>
-                ))
+      {resultsOpen && activeSlug && selectedCategory && (
+        <div
+          className="service-results-overlay"
+          data-testid="service-results-overlay"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setResultsOpen(false);
+          }}
+        >
+          <section
+            className="service-results-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="service-results-title"
+            data-testid="service-results-dialog"
+          >
+            <header className="service-results-dialog__head">
+              <div>
+                <p className="service-results-dialog__eyebrow">فهرست متخصصان شهر {cityName}</p>
+                <h2 id="service-results-title">
+                  <span aria-hidden>{selectedCategory.icon ?? '◆'}</span> {selectedCategory.name}
+                </h2>
+                <p>شغل‌های ثبت‌شده و شمارهٔ تماس مستقیم؛ بدون صفحهٔ کسب‌وکار</p>
+              </div>
+              <button
+                ref={closeResultsButton}
+                type="button"
+                className="service-results-dialog__close"
+                aria-label="بستن فهرست کسب‌وکارها"
+                data-testid="service-results-close"
+                onClick={() => setResultsOpen(false)}
+              >
+                ×
+              </button>
+            </header>
+
+            <div className="service-results-dialog__content" aria-live="polite">
+              {finding && (
+                <p className="service-results-loading" role="status" aria-busy="true">
+                  <span className="service-results-loading__spinner" aria-hidden />
+                  در حال جستجوی شغل‌های ثبت‌شده…
+                </p>
               )}
-            </ul>
-          )}
+
+              {!finding && findError && (
+                <div className="service-results-error" role="alert">
+                  <p>{findError}</p>
+                  <button type="button" className="btn btn-primary" onClick={() => void pickService(activeSlug)}>
+                    تلاش دوباره
+                  </button>
+                </div>
+              )}
+
+              {!finding && !findError && results?.length === 0 && (
+                <div className="service-results-empty" data-testid="service-results-empty" role="status">
+                  <span className="service-results-empty__icon" aria-hidden>🔎</span>
+                  <h3>شغلی ثبت نشده است</h3>
+                  <p>برای «{selectedCategory.name}» هنوز شغلی در شهر {cityName} ثبت نشده.</p>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    data-testid="service-empty-register"
+                    onClick={() => {
+                      setForm((current) => ({ ...current, categoryId: String(selectedCategory.id) }));
+                      setPanel('register');
+                      setError(null);
+                      setDone(null);
+                      setResultsOpen(false);
+                    }}
+                  >
+                    ثبت اولین شغل در این دسته
+                  </button>
+                </div>
+              )}
+
+              {!finding && !findError && results && results.length > 0 && (
+                <>
+                  <p className="service-results-count" data-testid="service-results-count">
+                    {results.length.toLocaleString('fa-IR')} شغل پیدا شد
+                  </p>
+                  <div className="service-results-table-wrap" data-testid="service-results">
+                    <table className="service-results-table">
+                      <thead>
+                        <tr>
+                          <th scope="col">عنوان شغل و خدمات</th>
+                          <th scope="col">شماره تماس</th>
+                          <th scope="col">تماس</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {results.map((listing) => (
+                          <tr key={listing.id} data-testid={`service-result-${listing.id}`}>
+                            <td data-label="عنوان شغل و خدمات">
+                              <strong>{listing.name}</strong>
+                              <small>
+                                {listing.category.icon ? `${listing.category.icon} ` : ''}
+                                {listing.category.name}
+                              </small>
+                              {listing.description && <small>{listing.description}</small>}
+                            </td>
+                            <td data-label="شماره تماس" className="service-results-table__phone">
+                              <a href={`tel:${listing.phone}`} dir="ltr">{listing.phone}</a>
+                            </td>
+                            <td data-label="تماس" className="service-results-table__actions">
+                              <a className="btn btn-primary" href={`tel:${listing.phone}`}>
+                                تماس مستقیم
+                              </a>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <footer className="service-results-dialog__foot">
+              <button type="button" className="btn btn-ghost" onClick={() => setResultsOpen(false)}>
+                بازگشت به فهرست خدمات
+              </button>
+            </footer>
+          </section>
         </div>
       )}
     </section>

@@ -9,8 +9,8 @@ jest.mock('@/lib/api', () => ({
   __esModule: true,
   getTokens: jest.fn(),
   getServiceCategories: jest.fn(),
-  getCityBusinesses: jest.fn(),
-  createQuickBusiness: jest.fn(),
+  getCityServiceListings: jest.fn(),
+  createServiceListing: jest.fn(),
   ApiError: class ApiError extends Error {
     constructor(public readonly status: number, message: string) {
       super(message);
@@ -27,18 +27,13 @@ const cats = [
   { id: 91, name: 'کابینت‌ساز', slug: 'svc_cabinet_maker', icon: '🪚' },
 ];
 
-const pros = [
+const listings = [
   {
     id: 501,
-    name: 'کارگاه کابینت احمدی',
-    slug: 'cab-ahmadi',
-    logoUrl: null,
-    address: 'خیابان اصلی',
+    name: 'کابینت‌کار احمدی',
     phone: '09121112233',
-    rating: 4.7,
-    ratingCount: 12,
-    subscriptionTier: 'FREE',
-    category: { name: 'کابینت‌ساز', slug: 'svc_cabinet_maker', icon: '🪚', color: null },
+    description: 'ساخت و تعمیر کابینت آشپزخانه',
+    category: { name: 'کابینت‌ساز', slug: 'svc_cabinet_maker', icon: '🪚' },
   },
 ];
 
@@ -47,27 +42,25 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     jest.clearAllMocks();
     m.getTokens.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
     m.getServiceCategories.mockResolvedValue(cats);
-    m.getCityBusinesses.mockResolvedValue(pros);
-    m.createQuickBusiness.mockResolvedValue({ id: 501, name: 'کابینت‌کار', slug: 'cab-1', status: 'APPROVED', subscriptionTier: 'FREE' });
+    m.getCityServiceListings.mockResolvedValue(listings);
+    m.createServiceListing.mockResolvedValue({ id: 501, name: 'کابینت‌کار', phone: '09121112233' });
   });
 
-  it('offers the two compact tiles side by side (register on the right, find on the left)', () => {
+  it('offers the two service actions and stays closed until a tile is clicked', () => {
     render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
 
     const tiles = screen.getByTestId('city-services').querySelectorAll('.service-tile');
     expect(tiles).toHaveLength(2);
     expect(tiles[0]).toHaveAttribute('data-testid', 'service-tile-register');
     expect(tiles[1]).toHaveAttribute('data-testid', 'service-tile-find');
-    // RTL: the first tile in the DOM is the one on the right
     expect(tiles[0]).toHaveTextContent('شغلتو ثبت کن');
     expect(tiles[1]).toHaveTextContent('چه خدماتی در شهر شهر نمونه نیاز داری');
-    // nothing is open until a tile is clicked
     expect(screen.queryByTestId('service-register')).not.toBeInTheDocument();
     expect(screen.queryByTestId('service-find')).not.toBeInTheDocument();
     expect(m.getServiceCategories).not.toHaveBeenCalled();
   });
 
-  it('opens the compact registration form and lists only service categories', async () => {
+  it('opens the registration form and lists only service categories', async () => {
     render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
     fireEvent.click(screen.getByTestId('service-tile-register'));
 
@@ -77,34 +70,36 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     expect((list as HTMLSelectElement).options.length).toBe(cats.length + 1);
     expect(list).toHaveTextContent('تعمیرکار کولر');
     expect(list).toHaveTextContent('کابینت‌ساز');
+    expect(screen.getByTestId('service-register')).toHaveTextContent('پروفایل کسب‌وکار، منو یا محصولی ساخته نمی‌شود');
   });
 
-  it('publishes a trade immediately and confirms without leaving the page', async () => {
+  it('creates a separate service listing, not a business profile', async () => {
     render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
     fireEvent.click(screen.getByTestId('service-tile-register'));
     await screen.findByTestId('service-register');
 
     const submit = screen.getByTestId('service-submit');
-    expect(submit).toBeDisabled(); // nothing filled in yet
-
+    expect(submit).toBeDisabled();
     fireEvent.change(screen.getByTestId('service-name'), { target: { value: 'کابینت‌کار' } });
     fireEvent.change(screen.getByTestId('service-category'), { target: { value: '91' } });
     fireEvent.change(screen.getByTestId('service-phone'), { target: { value: '09121112233' } });
+    fireEvent.change(screen.getByLabelText('خدماتی که ارائه می‌کنی — اختیاری'), {
+      target: { value: 'ساخت و تعمیر کابینت آشپزخانه' },
+    });
     expect(submit).toBeEnabled();
-
     fireEvent.click(submit);
 
     await waitFor(() =>
-      expect(m.createQuickBusiness).toHaveBeenCalledWith({
+      expect(m.createServiceListing).toHaveBeenCalledWith({
         citySlug: 'sample-city',
         name: 'کابینت‌کار',
         categoryId: 91,
         phone: '09121112233',
-        description: undefined,
+        description: 'ساخت و تعمیر کابینت آشپزخانه',
       }),
     );
-    expect(await screen.findByRole('status')).toHaveTextContent('همین حالا');
-    expect(replace).not.toHaveBeenCalled(); // publishing stays on the page
+    expect(await screen.findByRole('status')).toHaveTextContent('صفحهٔ کسب‌وکار یا منو ساخته نشد');
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it('sends a logged-out visitor to login instead of publishing', async () => {
@@ -112,64 +107,62 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
     fireEvent.click(screen.getByTestId('service-tile-register'));
     await screen.findByTestId('service-register');
-
     fireEvent.change(screen.getByTestId('service-name'), { target: { value: 'کابینت‌کار' } });
     fireEvent.change(screen.getByTestId('service-category'), { target: { value: '91' } });
     fireEvent.change(screen.getByTestId('service-phone'), { target: { value: '09121112233' } });
     fireEvent.click(screen.getByTestId('service-submit'));
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/login?next=/'));
-    expect(m.createQuickBusiness).not.toHaveBeenCalled();
+    expect(m.createServiceListing).not.toHaveBeenCalled();
   });
 
-  it('surfaces an API failure inline', async () => {
-    m.createQuickBusiness.mockRejectedValue(new api.ApiError(429, 'سقف ثبت در روز پر شده است'));
+  it('surfaces a service-listing API failure inline', async () => {
+    m.createServiceListing.mockRejectedValue(new api.ApiError(400, 'ثبت ناموفق بود'));
     render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
     fireEvent.click(screen.getByTestId('service-tile-register'));
     await screen.findByTestId('service-register');
-
     fireEvent.change(screen.getByTestId('service-name'), { target: { value: 'کابینت‌کار' } });
     fireEvent.change(screen.getByTestId('service-category'), { target: { value: '91' } });
     fireEvent.change(screen.getByTestId('service-phone'), { target: { value: '09121112233' } });
     fireEvent.click(screen.getByTestId('service-submit'));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('سقف ثبت در روز پر شده است');
+    expect(await screen.findByRole('alert')).toHaveTextContent('ثبت ناموفق بود');
   });
 
-  it('lists the tradespeople of the picked service with a one-tap call button', async () => {
+  it('lists registered service entries in a table with direct phone calls', async () => {
     render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
     fireEvent.click(screen.getByTestId('service-tile-find'));
     await screen.findByTestId('service-find');
-
     fireEvent.click(await screen.findByTestId('service-chip-svc_cabinet_maker'));
 
-    await waitFor(() => expect(m.getCityBusinesses).toHaveBeenCalledWith('sample-city', 200, 'svc_cabinet_maker'));
-
+    await waitFor(() => expect(m.getCityServiceListings).toHaveBeenCalledWith('sample-city', 200, 'svc_cabinet_maker'));
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('table')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'شماره تماس' })).toBeInTheDocument();
     const row = await screen.findByTestId('service-result-501');
-    expect(row).toHaveTextContent('کارگاه کابینت احمدی');
+    expect(row).toHaveTextContent('کابینت‌کار احمدی');
+    expect(row).toHaveTextContent('ساخت و تعمیر کابینت آشپزخانه');
     expect(row).toHaveTextContent('کابینت‌ساز');
-    const call = row.querySelector('a[href^="tel:"]');
-    expect(call).toHaveAttribute('href', 'tel:09121112233');
+    expect(row.querySelector('a[href^="tel:"]')).toHaveAttribute('href', 'tel:09121112233');
+    expect(row.querySelector('a[href^="/business/"]')).toBeNull();
   });
 
   it('provides an explicit search button for the service finder', async () => {
     render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
     fireEvent.click(screen.getByTestId('service-tile-find'));
     await screen.findByTestId('service-find');
-
     fireEvent.change(await screen.findByTestId('service-search-input'), { target: { value: 'کابینت' } });
     expect(screen.getByTestId('service-search-button')).toBeEnabled();
     fireEvent.click(screen.getByTestId('service-search-button'));
 
-    await waitFor(() => expect(m.getCityBusinesses).toHaveBeenCalledWith('sample-city', 200, 'svc_cabinet_maker'));
+    await waitFor(() => expect(m.getCityServiceListings).toHaveBeenCalledWith('sample-city', 200, 'svc_cabinet_maker'));
     expect(await screen.findByTestId('service-result-501')).toBeInTheDocument();
   });
 
-  it('supports typing Persian search text with Arabic letter variants and Enter', async () => {
+  it('supports Persian search text, Arabic letter variants, and Enter', async () => {
     render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
     fireEvent.click(screen.getByTestId('service-tile-find'));
     await screen.findByTestId('service-find');
-
     const input = await screen.findByTestId('service-search-input');
     expect(input).toHaveAttribute('type', 'text');
     fireEvent.change(input, { target: { value: 'كابینت ساز' } });
@@ -177,27 +170,52 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     expect(screen.queryByTestId('service-chip-svc_ac_repair')).not.toBeInTheDocument();
     fireEvent.keyDown(input, { key: 'Enter' });
 
-    await waitFor(() => expect(m.getCityBusinesses).toHaveBeenCalledWith('sample-city', 200, 'svc_cabinet_maker'));
+    await waitFor(() => expect(m.getCityServiceListings).toHaveBeenCalledWith('sample-city', 200, 'svc_cabinet_maker'));
   });
 
-  it('says so when nobody registered the picked service yet', async () => {
-    m.getCityBusinesses.mockResolvedValue([]);
+  it('shows the exact empty state and lets a visitor register that service', async () => {
+    m.getCityServiceListings.mockResolvedValue([]);
     render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
     fireEvent.click(screen.getByTestId('service-tile-find'));
     await screen.findByTestId('service-find');
     fireEvent.click(await screen.findByTestId('service-chip-svc_ac_repair'));
 
-    expect(await screen.findByTestId('service-results')).toHaveTextContent('هنوز کسی این خدمت را در شهر ثبت نکرده است');
+    expect(await screen.findByTestId('service-results-empty')).toHaveTextContent('شغلی ثبت نشده است');
+    fireEvent.click(screen.getByTestId('service-empty-register'));
+    expect(await screen.findByTestId('service-register')).toBeInTheDocument();
+    expect(screen.getByTestId('service-category')).toHaveValue('90');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('closes the results dialog when the dimmed background is clicked', async () => {
+    render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
+    fireEvent.click(screen.getByTestId('service-tile-find'));
+    await screen.findByTestId('service-find');
+    fireEvent.click(await screen.findByTestId('service-chip-svc_cabinet_maker'));
+    await screen.findByTestId('service-result-501');
+    fireEvent.click(screen.getByTestId('service-results-overlay'));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByTestId('service-find')).toBeInTheDocument();
+  });
+
+  it('closes the results dialog with Escape', async () => {
+    render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
+    fireEvent.click(screen.getByTestId('service-tile-find'));
+    await screen.findByTestId('service-find');
+    fireEvent.click(await screen.findByTestId('service-chip-svc_cabinet_maker'));
+    await screen.findByTestId('service-results-dialog');
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
   it('closes a panel when its tile is clicked again', async () => {
     render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
     const tile = screen.getByTestId('service-tile-register');
-
     fireEvent.click(tile);
     await screen.findByTestId('service-register');
     expect(tile).toHaveAttribute('aria-expanded', 'true');
-
     fireEvent.click(tile);
     await waitFor(() => expect(screen.queryByTestId('service-register')).not.toBeInTheDocument());
     expect(tile).toHaveAttribute('aria-expanded', 'false');
