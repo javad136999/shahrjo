@@ -217,13 +217,28 @@ for (const marker of [
   if (!css.includes(marker)) { console.error(`CSS: missing ${marker}`); fail++; }
 }
 
-// Composer: WhatsApp-style bar with photo · input · mic · send, ad icon beside.
+// Composer: WhatsApp-style bar with attach · sticker + input · mic/send flip,
+// and the ad entry as a text row *under* the bar (not an icon inside it).
 const wallView = read('apps/web/src/components/wall-view.tsx');
-for (const marker of ['className="wall-bar"', 'wall-bar__input', 'wall-tool--ad', 'wall-tool--inline']) {
+for (const marker of [
+  'className="wall-bar"',
+  'wall-bar__input',
+  'wall-bar__emoji',
+  'wall-stickers',
+  'wall-tool--inline',
+  'className="wall-adbtn"',
+  'ثبت آگهی فروش',
+]) {
   if (!wallView.includes(marker)) { console.error(`WEB wall: missing ${marker}`); fail++; }
 }
 if (wallView.includes('wall-home-bottom') || wallView.includes('wall-quick__item--home')) {
   console.error('WEB wall: the city-home icon must be gone from the composer dock');
+  fail++;
+}
+// the ad action must sit after the bar's closing tag, i.e. outside the send row
+const barBlock = wallView.slice(wallView.indexOf('className="wall-bar"'), wallView.indexOf('className="wall-adbtn"'));
+if (!barBlock.includes('</div>\n        )}')) {
+  console.error('WEB wall: «ثبت آگهی فروش» must live under the composer bar');
   fail++;
 }
 
