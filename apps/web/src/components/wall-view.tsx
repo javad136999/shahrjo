@@ -18,6 +18,7 @@ import {
 } from '@/lib/api';
 import { UserProfileModal } from '@/components/user-profile-modal';
 import { formatPrice, thumbFallback, thumbUrlFor, timeAgo } from '@/lib/format';
+import { asWallSticker, WALL_STICKER_PACKS } from '@/lib/stickers';
 import type { AdCategoryOption, WallAdRef, WallFeed, WallPost } from '@/lib/types';
 
 export interface WallViewProps {
@@ -26,6 +27,19 @@ export interface WallViewProps {
 
 /** Chat cadence: a light poll keeps the room lively without a WS stack. */
 const POLL_MS = 5_000;
+
+/**
+ * Send chevron as inline SVG rather than the «➤» character: dingbat glyphs are
+ * missing from some Android system fonts, which left the round send button (and
+ * the stop button of the recorder) looking completely empty.
+ */
+function SendGlyph() {
+  return (
+    <svg className="wall-sendglyph" viewBox="0 0 24 24" fill="currentColor" aria-hidden focusable="false">
+      <path d="M21 3 2.6 10.4a.7.7 0 0 0 .04 1.32L9 14l2.3 6.3a.7.7 0 0 0 1.3.05L21 3Z" />
+    </svg>
+  );
+}
 
 function WallAdCardContent({ ad }: { ad: WallAdRef }) {
   return (
@@ -100,6 +114,9 @@ export function WallView({ city }: WallViewProps) {
   const [replyTo, setReplyTo] = useState<WallPost | null>(null);
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // sticker tray: which pack is open in the composer
+  const [stickerOpen, setStickerOpen] = useState(false);
+  const [stickerPack, setStickerPack] = useState(WALL_STICKER_PACKS[0].id);
   const [editing, setEditing] = useState<{ id: number; text: string } | null>(null);
   // hold-to-edit on your own ad card → inline ad editor
   const [adEdit, setAdEdit] = useState<AdEditState | null>(null);
@@ -322,6 +339,27 @@ export function WallView({ city }: WallViewProps) {
     }
   };
 
+  /**
+   * A sticker is a one-tap message: it is sent immediately (like WhatsApp),
+   * as a normal wall post whose whole content is the sticker emoji.
+   */
+  const sendSticker = async (emoji: string) => {
+    if (sending) return;
+    setSending(true);
+    setError(null);
+    try {
+      await createWallPost({ cityId: city.id, content: emoji, replyToId: replyTo?.id });
+      setStickerOpen(false);
+      setReplyTo(null);
+      await load();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) setGate(true);
+      else setError(err instanceof Error ? err.message : 'ارسال استیکر ناموفق بود');
+    } finally {
+      setSending(false);
+    }
+  };
+
   const patchPost = (id: number, patch: Partial<WallPost>) => {
     setFeed((f) =>
       f
@@ -493,6 +531,12 @@ export function WallView({ city }: WallViewProps) {
     if (el.scrollTop < 80) void loadOlder();
   };
 
+  // WhatsApp flip: the round action is a mic while the composer is empty and
+  // turns into the send button as soon as there is text/photo/voice.
+  const hasContent = Boolean(text.trim() || image || voice);
+  const activeStickerPack =
+    WALL_STICKER_PACKS.find((pack) => pack.id === stickerPack) ?? WALL_STICKER_PACKS[0];
+
   if (gate) {
     return (
       <div className="wall-gate" data-testid="wall-gate">
@@ -548,6 +592,8 @@ export function WallView({ city }: WallViewProps) {
   const renderPost = (post: WallPost, pinnedBanner = false) => {
     const isEditing = editing?.id === post.id;
     const isAdEditing = adEdit?.postId === post.id;
+    // a message that is just one catalogue sticker renders big, like WhatsApp
+    const sticker = asWallSticker(post.content);
     return (
       <article
         key={post.id}
@@ -740,7 +786,15 @@ export function WallView({ city }: WallViewProps) {
             </div>
           ) : (
             <>
-              {post.content && <p className="wall-post__text">{post.content}</p>}
+              {sticker ? (
+                <p className="wall-sticker" data-testid={`wall-sticker-post-${post.id}`}>
+                  <span role="img" aria-label={`استیکر ${sticker}`}>
+                    {sticker}
+                  </span>
+                </p>
+              ) : (
+                post.content && <p className="wall-post__text">{post.content}</p>
+              )}
 
               {post.imageUrl && (
                 // feed shows the 400px thumbnail; the full copy lives in storage
@@ -1033,25 +1087,76 @@ export function WallView({ city }: WallViewProps) {
           </div>
         )}
 
+        {stickerOpen && (
+          <div className="wall-stickers" data-testid="wall-sticker-panel" role="dialog" aria-label="استیکرها">
+            <div className="wall-stickers__head">
+              <b>استیکرها</b>
+              <span className="wall-stickers__hint">با یک لمس ارسال می‌شود</span>
+              <button
+                type="button"
+                className="wall-stickers__close"
+                aria-label="بستن استیکرها"
+                data-testid="wall-sticker-close"
+                onClick={() => setStickerOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="wall-stickers__packs" role="tablist" aria-label="بسته‌های استیکر">
+              {WALL_STICKER_PACKS.map((pack) => (
+                <button
+                  key={pack.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={pack.id === activeStickerPack.id}
+                  className={`wall-stickers__pack${pack.id === activeStickerPack.id ? ' is-active' : ''}`}
+                  data-testid={`wall-sticker-pack-${pack.id}`}
+                  onClick={() => setStickerPack(pack.id)}
+                >
+                  {pack.name}
+                </button>
+              ))}
+            </div>
+            <div className="wall-stickers__grid" data-testid="wall-sticker-grid">
+              {activeStickerPack.stickers.map((sticker) => (
+                <button
+                  key={sticker.id}
+                  type="button"
+                  className="wall-stickers__item"
+                  aria-label={`ارسال استیکر ${sticker.emoji}`}
+                  data-testid={`wall-sticker-${sticker.id}`}
+                  disabled={sending}
+                  onClick={() => void sendSticker(sticker.emoji)}
+                >
+                  <span aria-hidden>{sticker.emoji}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {recording ? (
           <div className="wall-rec" data-testid="wall-recording">
-            <span className="wall-rec__pulse" aria-hidden />
-            <span className="wall-rec__time">در حال ضبط… {clock(recSeconds)}</span>
-            <button type="button" className="wall-iconbtn" onClick={() => stopRecorder(false)}>
-              انصراف
+            <button type="button" className="wall-rec__trash" aria-label="لغو ضبط" onClick={() => stopRecorder(false)}>
+              <span aria-hidden>🗑</span>
             </button>
+            <span className="wall-rec__pulse" aria-hidden />
+            <span className="wall-rec__time">{clock(recSeconds)}</span>
+            <span className="wall-rec__hint">در حال ضبط…</span>
             <button
               type="button"
-              className="pill pill--accent"
+              className="wall-rec__stop"
               data-testid="wall-rec-stop"
+              aria-label="پایان ضبط و ارسال"
+              title="ارسال ویس"
               onClick={() => stopRecorder(true)}
             >
-              پایان ضبط
+              <SendGlyph />
             </button>
           </div>
         ) : (
-          /* WhatsApp-style bar: attach · input · mic · round send, then the one
-             extra action of this room — posting an ad (📝), divider-separated. */
+          /* WhatsApp bar: attach 📎 · [sticker 🙂 + input] · mic/send flip. The
+             «ثبت آگهی فروش» action sits under the bar (not inside it). */
           <div className="wall-bar">
             <input
               ref={fileRef}
@@ -1064,39 +1169,57 @@ export function WallView({ city }: WallViewProps) {
             />
             <button
               type="button"
-              className={`wall-tool wall-tool--inline${image ? ' wall-tool--on' : ''}`}
+              className={`wall-tool wall-tool--inline wall-tool--attach${image ? ' wall-tool--on' : ''}`}
               data-testid="wall-photo-btn"
               aria-label={image ? 'تغییر عکس پیام' : 'افزودن عکس به پیام'}
-              title="افزودن عکس"
-              onClick={() => fileRef.current?.click()}
+              title="پیوست عکس"
+              onClick={() => {
+                setStickerOpen(false);
+                fileRef.current?.click();
+              }}
             >
-              <span aria-hidden>🖼</span>
+              <span aria-hidden>📎</span>
             </button>
 
-            <textarea
-              ref={inputRef}
-              className="wall-bar__input"
-              rows={1}
-              maxLength={1000}
-              placeholder={`پیام به شهر ${city.name}…`}
-              aria-label="متن پیام"
-              data-testid="wall-input"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  void send();
-                }
-              }}
-            />
+            <div className="wall-bar__field">
+              <button
+                type="button"
+                className={`wall-bar__emoji${stickerOpen ? ' is-open' : ''}`}
+                data-testid="wall-sticker-btn"
+                aria-label="استیکرها"
+                aria-expanded={stickerOpen}
+                title="استیکرها"
+                onClick={() => setStickerOpen((open) => !open)}
+              >
+                <span aria-hidden>🙂</span>
+              </button>
+
+              <textarea
+                ref={inputRef}
+                className="wall-bar__input"
+                rows={1}
+                maxLength={1000}
+                placeholder={`پیام به شهر ${city.name}…`}
+                aria-label="متن پیام"
+                data-testid="wall-input"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    void send();
+                  }
+                }}
+              />
+            </div>
 
             <button
               type="button"
-              className="wall-tool wall-tool--inline"
+              className={`wall-bar__mic${hasContent ? ' wall-bar__mic--hidden' : ''}`}
               data-testid="wall-voice-btn"
               aria-label="ضبط پیام صوتی"
               title="ضبط ویس"
+              disabled={sending}
               onClick={() => void startRecording()}
             >
               <span aria-hidden>🎤</span>
@@ -1104,29 +1227,29 @@ export function WallView({ city }: WallViewProps) {
 
             <button
               type="button"
-              className={`wall-sendbtn${!text.trim() && !image && !voice ? '' : ' wall-sendbtn--ready'}`}
+              className={`wall-sendbtn${hasContent ? ' wall-sendbtn--ready' : ''}`}
               data-testid="wall-send"
               aria-label="ارسال پیام"
               title="ارسال پیام"
               disabled={sending || (!text.trim() && !image && !voice)}
               onClick={() => void send()}
             >
-              <span aria-hidden className="wall-sendbtn__arrow">{sending ? '⏳' : '➤'}</span>
+              <span aria-hidden className="wall-sendbtn__arrow">
+                {sending ? '⏳' : <SendGlyph />}
+              </span>
             </button>
 
-            <span className="wall-bar__sep" aria-hidden />
-
-            <Link
-              href="/ads/new"
-              className="wall-tool wall-tool--ad"
-              data-testid="wall-ad-btn"
-              title="ثبت آگهی در دیوار شهر"
-              aria-label="ثبت آگهی"
-            >
-              <span aria-hidden>📝</span>
-            </Link>
           </div>
         )}
+
+        <Link
+          href="/ads/new"
+          className="wall-adbtn"
+          data-testid="wall-ad-btn"
+          title="ثبت آگهی در دیوار شهر"
+        >
+          ثبت آگهی فروش
+        </Link>
       </div>
 
       {profileUserId !== null && (

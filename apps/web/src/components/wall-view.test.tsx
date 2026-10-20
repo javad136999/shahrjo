@@ -215,26 +215,66 @@ describe('WallView', () => {
     expect(card).not.toHaveAttribute('href');
   });
 
-  it('lays the composer out like WhatsApp with the ad-post icon beside it', async () => {
+  it('lays the composer out like WhatsApp and puts «ثبت آگهی فروش» under the bar', async () => {
     render(<WallView city={city} />);
     await screen.findByTestId('wall-input');
 
-    // one bar: attach · input · mic · round send
+    // one bar: attach · [sticker + input] · mic/send flip
     const bar = document.querySelector('.wall-bar');
     expect(bar).toBeTruthy();
-    for (const id of ['wall-photo-btn', 'wall-input', 'wall-voice-btn', 'wall-send']) {
+    for (const id of ['wall-photo-btn', 'wall-input', 'wall-sticker-btn', 'wall-voice-btn', 'wall-send']) {
       expect(bar).toContainElement(screen.getByTestId(id));
     }
-    // the single extra action of the room — posting an ad — sits next to it
+    // the sticker button lives inside the rounded input pill, WhatsApp-style
+    expect(screen.getByTestId('wall-input').closest('.wall-bar__field')).not.toBeNull();
+    expect(screen.getByTestId('wall-sticker-btn')).toHaveAttribute('aria-label', 'استیکرها');
+
+    // the ad entry left the bar: it is a text row under the send box now
     const adBtn = screen.getByTestId('wall-ad-btn');
     expect(adBtn).toHaveAttribute('href', '/ads/new');
-    expect(adBtn).toHaveAttribute('aria-label', 'ثبت آگهی');
-    expect(adBtn.className).toContain('wall-tool--ad');
-    expect(bar).toContainElement(adBtn);
+    expect(adBtn).toHaveTextContent('ثبت آگهی فروش');
+    expect(adBtn.className).toContain('wall-adbtn');
+    expect(bar).not.toContainElement(adBtn);
+    expect(screen.getByTestId('wall-composer')).toContainElement(adBtn);
     // the old two-row dock and its city-home button are gone
     expect(document.querySelector('.wall-composer__bridge')).toBeNull();
     expect(document.querySelector('.wall-quick')).toBeNull();
     expect(screen.queryByTestId('wall-home-bottom')).toBeNull();
+  });
+
+  it('opens the sticker tray, switches packs and sends a sticker in one tap', async () => {
+    mockCreate.mockResolvedValue(makePost({ id: 21, content: '🐱' }));
+    render(<WallView city={city} />);
+    fireEvent.click(await screen.findByTestId('wall-sticker-btn'));
+    expect(await screen.findByTestId('wall-sticker-panel')).toBeInTheDocument();
+
+    // the default pack shows its stickers
+    expect(screen.getByTestId('wall-sticker-grin')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('wall-sticker-pack-animals'));
+    expect(screen.getByTestId('wall-sticker-cat')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('wall-sticker-cat'));
+    await waitFor(() =>
+      expect(mockCreate).toHaveBeenCalledWith({ cityId: 1, content: '🐱', replyToId: undefined }),
+    );
+    // the tray closes and the feed refreshes after sending
+    await waitFor(() => expect(screen.queryByTestId('wall-sticker-panel')).toBeNull());
+    await waitFor(() => expect(mockGetWall).toHaveBeenCalledTimes(2));
+  });
+
+  it('renders a sticker message as a big sticker instead of a text bubble', async () => {
+    mockGetWall.mockResolvedValue({
+      ...feed,
+      posts: [makePost({ id: 22, content: '🔥' })],
+      pinned: null,
+    });
+    render(<WallView city={city} />);
+
+    const sticker = await screen.findByTestId('wall-sticker-post-22');
+    expect(sticker).toHaveTextContent('🔥');
+    expect(sticker.className).toContain('wall-sticker');
+    // ordinary messages still use the text/bubble styling
+    expect(document.querySelector('.wall-post__text')).toBeNull();
   });
 
   it('paints own messages as bubbles and leaves other people\'s as room posts', async () => {

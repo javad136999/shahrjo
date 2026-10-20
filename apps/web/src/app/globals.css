@@ -6102,10 +6102,10 @@ button.pill {
 }
 .wall--jam-theme .wall-adbtn,
 .wall--jam-theme .wall-tool--ad {
-  background: linear-gradient(135deg, #e94767, #bd284d);
-  border-color: rgb(189 40 77 / 25%);
+  background: linear-gradient(135deg, #16865a, #0d6945);
+  border-color: rgb(13 105 69 / 25%);
   color: #fff;
-  box-shadow: 0 5px 13px rgb(189 40 77 / 18%);
+  box-shadow: 0 5px 13px rgb(13 105 69 / 17%);
 }
 .wall--jam-theme .wall-empty {
   border-color: rgb(21 126 87 / 12%);
@@ -6842,5 +6842,394 @@ button.pill {
   .service-results-dialog,
   .service-results-loading__spinner {
     animation-duration: 0.01ms;
+  }
+}
+
+/* ============ City wall composer — WhatsApp v2 ============
+   Attach 📎 · [sticker 🙂 + growing input] · mic→send flip, seated on the
+   chat's beige strip. The mic is the round action while nothing is composed
+   and becomes the send button as soon as there is text/photo/voice. The ad
+   entry is no longer an icon inside the bar: it is a full-width text action
+   under the composer («ثبت آگهی فروش»). */
+
+.wall--jam-theme .wall-composer {
+  padding: 9px 10px 10px;
+  border: 0;
+  border-top: 1px solid rgb(21 126 87 / 10%);
+  border-radius: 18px 18px 0 0;
+  background: #f2f6f3;
+  box-shadow: 0 -6px 18px rgb(24 75 52 / 5%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.wall-bar {
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.wall-bar__field {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 3px 4px;
+  border: 1px solid rgb(21 126 87 / 14%);
+  border-radius: 24px;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.wall-bar__field:focus-within {
+  border-color: #21976a;
+  box-shadow: 0 0 0 3px rgb(33 151 106 / 10%);
+}
+
+.wall--jam-theme .wall-bar__field .wall-bar__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 40px;
+  max-height: 132px;
+  padding: 8px 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.wall-bar__field .wall-bar__input:focus {
+  border: 0;
+  box-shadow: none;
+  outline: none;
+}
+
+.wall-bar__emoji {
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  margin: 1px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #546b5e;
+  font-size: 21px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.wall-bar__emoji:hover,
+.wall-bar__emoji.is-open {
+  background: #e9f4ee;
+}
+
+.wall--jam-theme .wall-composer .wall-tool--attach {
+  width: 40px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #43594c;
+  box-shadow: none;
+  font-size: 24px;
+}
+.wall--jam-theme .wall-composer .wall-tool--attach:hover {
+  background: #e4efe9;
+  transform: none;
+}
+
+.wall-bar__mic {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #16865a, #0d6945);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 6px 14px -7px rgb(13 105 69 / 65%);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.wall-bar__mic:hover {
+  transform: translateY(-1px);
+}
+.wall-bar__mic--hidden {
+  display: none;
+}
+/* the mic emoji carries its own colours — paint it white on the green circle */
+.wall-bar__mic span {
+  filter: brightness(0) invert(1);
+}
+
+.wall--jam-theme .wall-composer .wall-sendbtn {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  font-size: 17px;
+}
+/* WhatsApp flip: no send button until something is composed (the mic shows). */
+.wall--jam-theme .wall-composer .wall-sendbtn:not(.wall-sendbtn--ready) {
+  display: none;
+}
+
+/* inline send chevron (see SendGlyph) — mirrored so it points left in RTL */
+.wall-sendglyph {
+  width: 21px;
+  height: 21px;
+  transform: scaleX(-1);
+}
+.wall-rec__stop .wall-sendglyph {
+  width: 20px;
+  height: 20px;
+}
+
+/* the room's extra action — now a text row under the send box */
+.wall-adbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  min-height: 42px;
+  border-radius: 14px;
+  /* same brand paint the icon had inside the bar — only its place and label
+     changed, so the action still reads as the room's own primary entry */
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  color: #fff;
+  font-size: 13px;
+  font-weight: 850;
+  text-decoration: none;
+  box-shadow: 0 6px 16px -10px rgb(14 122 95 / 70%);
+}
+.wall-adbtn:hover {
+  text-decoration: none;
+  filter: brightness(1.05);
+}
+
+/* sticker tray above the bar */
+.wall-stickers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+  max-height: min(300px, 42vh);
+  margin-bottom: 8px;
+  padding: 8px;
+  border: 1px solid rgb(21 126 87 / 12%);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 28px -18px rgb(24 75 52 / 45%);
+}
+.wall-stickers__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px;
+}
+.wall-stickers__head b {
+  color: #174c37;
+  font-size: 13px;
+}
+.wall-stickers__hint {
+  flex: 1 1 auto;
+  color: #6b8174;
+  font-size: 11px;
+}
+.wall-stickers__close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: #f2f7f4;
+  color: #527363;
+  font-size: 13px;
+  cursor: pointer;
+}
+.wall-stickers__packs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.wall-stickers__packs::-webkit-scrollbar {
+  display: none;
+}
+.wall-stickers__pack {
+  flex: 0 0 auto;
+  padding: 5px 12px;
+  border: 1px solid rgb(21 126 87 / 14%);
+  border-radius: 999px;
+  background: #f6faf7;
+  color: #315746;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.wall-stickers__pack.is-active {
+  background: #16865a;
+  border-color: #16865a;
+  color: #fff;
+}
+.wall-stickers__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+  gap: 4px;
+  /* a flex child must be allowed to shrink for the tray to scroll inside its
+     max-height instead of spilling past the card on short screens */
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.wall-stickers__item {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  font-size: 27px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.12s ease;
+}
+.wall-stickers__item:hover {
+  background: #eef7f1;
+  transform: scale(1.08);
+}
+.wall-stickers__item:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+/* a sticker message: big, no bubble text */
+.wall-sticker {
+  margin: 2px 0;
+  font-size: clamp(76px, 20vw, 112px);
+  line-height: 1;
+}
+.wall-sticker span {
+  display: inline-block;
+}
+
+/* recording bar (WhatsApp voice note) */
+.wall-rec {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 6px 6px 8px;
+  border: 1px solid rgb(21 126 87 / 14%);
+  border-radius: 24px;
+  background: #fff;
+}
+.wall-rec__trash {
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: #fdecef;
+  color: #bd284d;
+  font-size: 16px;
+  cursor: pointer;
+}
+.wall-rec__pulse {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e53935;
+  animation: wall-rec-blink 1s steps(2, start) infinite;
+}
+.wall-rec__time {
+  min-width: 38px;
+  color: #183b2d;
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.wall-rec__hint {
+  flex: 1 1 auto;
+  color: #6b8174;
+  font-size: 12px;
+}
+.wall-rec__stop {
+  display: grid;
+  place-items: center;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #16865a, #0d6945);
+  color: #fff;
+  font-size: 17px;
+  cursor: pointer;
+}
+@keyframes wall-rec-blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+/* Wide screens: keep the tray and the ad action compact next to the input
+   instead of stretching them across the whole chat column. */
+@media (min-width: 640px) {
+  .wall-stickers {
+    width: min(100%, 520px);
+    align-self: flex-start;
+  }
+  .wall-adbtn {
+    width: min(100%, 420px);
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .wall-bar__mic,
+  .wall--jam-theme .wall-composer .wall-sendbtn {
+    width: 42px;
+    height: 42px;
+    font-size: 16px;
+  }
+  .wall--jam-theme .wall-composer .wall-tool--attach {
+    width: 34px;
+    font-size: 20px;
+  }
+  .wall-stickers__grid {
+    grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+  }
+  .wall-stickers__item {
+    font-size: 24px;
+  }
+  .wall-adbtn {
+    min-height: 40px;
+    font-size: 12.5px;
+  }
+  .wall-rec__stop {
+    width: 42px;
+    height: 42px;
+    flex-basis: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wall-rec__pulse {
+    animation: none;
   }
 }
