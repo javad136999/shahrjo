@@ -38,8 +38,8 @@ export function WebInstallButton() {
     };
   }, []);
 
-  // Keep the floating install action off the main landing and city home pages.
-  if (pathname === '/' || pathname.startsWith('/city/') || installed) return null;
+  // Keep the floating install action off the home, city, and plan-selection pages.
+  if (pathname === '/' || pathname.startsWith('/city/') || pathname === '/plans' || installed) return null;
 
   const install = async () => {
     if (!installEvent) {
