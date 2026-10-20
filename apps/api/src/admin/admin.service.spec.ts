@@ -209,7 +209,7 @@ describe('AdminService subscription approval (ZarinPal)', () => {
 describe('AdminService business approval', () => {
   it('accepts a complete map pin and rejects a half one', async () => {
     const { service, prisma } = makeService({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
-    prisma.business.findFirst.mockResolvedValue({ id: 3 });
+    prisma.business.findFirst.mockResolvedValue({ id: 3, city: { latitude: 27.83, longitude: 52.32, boundary: null } });
     prisma.business.update.mockResolvedValue({ id: 3, status: 'APPROVED' });
 
     await expect(service.approveBusiness(admin, 3, { latitude: 27.8 })).rejects.toThrow('مختصات باید کامل');
@@ -224,11 +224,21 @@ describe('AdminService business approval', () => {
 
   it('validates coordinate ranges', async () => {
     const { service, prisma } = makeService({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
-    prisma.business.findFirst.mockResolvedValue({ id: 3 });
+    prisma.business.findFirst.mockResolvedValue({ id: 3, city: { latitude: 27.83, longitude: 52.32, boundary: null } });
 
     await expect(
       service.approveBusiness(admin, 3, { latitude: 999, longitude: 0 }),
     ).rejects.toThrow('مختصات نامعتبر');
+  });
+
+  it('rejects a pin from another city before approving the business', async () => {
+    const { service, prisma } = makeService({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+    prisma.business.findFirst.mockResolvedValue({ id: 3, city: { latitude: 29.59, longitude: 52.58, boundary: null } });
+
+    await expect(service.approveBusiness(admin, 3, { latitude: 27.83, longitude: 52.32 })).rejects.toThrow(
+      'خارج از محدوده این شهر',
+    );
+    expect(prisma.business.update).not.toHaveBeenCalled();
   });
 });
 
@@ -352,7 +362,7 @@ describe('AdminService.createBusiness — manual signup (ثبت دستی)', () =
 
   it('attaches the business to an existing owner found by phone', async () => {
     const { service, prisma } = makeReady({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
-    prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: null, longitude: null, boundary: null });
+    prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: 29.59, longitude: 52.58, boundary: null });
     prisma.user.findFirst.mockResolvedValue({ id: 42 });
 
     await service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'مغازه', ownerPhone: '09121112233', latitude: 29.6, longitude: 52.5 });
@@ -363,7 +373,7 @@ describe('AdminService.createBusiness — manual signup (ثبت دستی)', () =
 
   it('publishes with the chosen tier for the chosen months (no payment path)', async () => {
     const { service, prisma } = makeReady({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
-    prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: null, longitude: null, boundary: null });
+    prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: 29.59, longitude: 52.58, boundary: null });
 
     await service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'کافه گلد', tier: 'GOLD', months: 6, latitude: 29.6, longitude: 52.5 });
 
@@ -380,7 +390,7 @@ describe('AdminService.createBusiness — manual signup (ثبت دستی)', () =
 
   it('refuses a paid tier without a duration (and an unknown tier)', async () => {
     const { service, prisma } = makeReady({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
-    prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: null, longitude: null, boundary: null });
+    prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: 29.59, longitude: 52.58, boundary: null });
 
     await expect(
       service.createBusiness(admin, { cityId: 5, categoryId: 3, name: 'x', tier: 'GOLD', latitude: 29.6, longitude: 52.5 } as never),

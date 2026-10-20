@@ -4043,6 +4043,30 @@ a.my-ads__item:hover {
   border: 1px solid var(--line, #e4e4e7);
   margin: 10px 0;
 }
+.biz-location-instructions {
+  padding: 10px 12px;
+  border: 1px solid var(--line, #e4e4e7);
+  border-radius: 12px;
+  background: var(--surface, #f8faf9);
+  line-height: 1.8;
+}
+.biz-map.is-unavailable,
+.admin-newbiz__map.is-unavailable {
+  pointer-events: none;
+  filter: grayscale(0.75);
+  opacity: 0.55;
+}
+.business-location-marker {
+  background: transparent;
+  border: 0;
+}
+.business-location-marker span {
+  display: block;
+  font-size: 34px;
+  line-height: 1;
+  transform: translateY(-3px);
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 55%));
+}
 @media (max-width: 480px) {
   .biz-map {
     height: 260px;

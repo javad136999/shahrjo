@@ -6,6 +6,8 @@ jest.mock('leaflet', () => {
     const layer: Record<string, unknown> = {};
     layer.addTo = jest.fn(() => layer);
     layer.setLatLng = jest.fn(() => layer);
+    layer.getLatLng = jest.fn(() => ({ lat: 29.6, lng: 52.5 }));
+    layer.on = jest.fn(() => layer);
     layer.getBounds = jest.fn(() => ({ isValid: () => false }));
     layer.remove = jest.fn(() => layer);
     return layer;
@@ -24,6 +26,7 @@ jest.mock('leaflet', () => {
     tileLayer: jest.fn(() => makeLayer()),
     geoJSON: jest.fn(() => makeLayer()),
     marker: jest.fn(() => makeLayer()),
+    divIcon: jest.fn((options: unknown) => options),
   };
 });
 
@@ -95,7 +98,7 @@ describe('AdminBusinessCreate (ثبت دستی کسب‌وکار — صفحهٔ 
     fireEvent.change(await screen.findByTestId('nb-city'), { target: { value: '5' } });
     expect(mockCityMap).toHaveBeenCalledWith('sample-city');
     expect(await screen.findByTestId('nb-map')).toBeInTheDocument();
-    expect(screen.getByTestId('nb-pin')).toHaveTextContent('روی نقشه کلیک کن');
+    expect(screen.getByTestId('nb-pin')).toHaveTextContent('روی محل دقیق کسب‌وکار');
   });
 
   it('keeps ONE Leaflet instance while the city framing data arrives (no grey re-init)', async () => {
@@ -118,6 +121,7 @@ describe('AdminBusinessCreate (ثبت دستی کسب‌وکار — صفحهٔ 
     render(<AdminBusinessCreate />);
     fireEvent.change(await screen.findByTestId('nb-city'), { target: { value: '5' } });
     await screen.findByTestId('nb-map');
+    await waitFor(() => expect(screen.getByTestId('nb-map')).toHaveAttribute('aria-disabled', 'false'));
 
     // the leaflet mock records the click handler on the last created map
     const leaflet = require('leaflet');
@@ -148,6 +152,7 @@ describe('AdminBusinessCreate (ثبت دستی کسب‌وکار — صفحهٔ 
 
     fireEvent.change(screen.getByTestId('nb-city'), { target: { value: '5' } });
     await screen.findByTestId('nb-map');
+    await waitFor(() => expect(screen.getByTestId('nb-map')).toHaveAttribute('aria-disabled', 'false'));
     const leaflet = require('leaflet');
     const instance = leaflet.map.mock.results[leaflet.map.mock.results.length - 1].value;
     const onClick = instance.on.mock.calls.find((call: unknown[]) => call[0] === 'click')?.[1];
@@ -192,6 +197,7 @@ describe('AdminBusinessCreate (ثبت دستی کسب‌وکار — صفحهٔ 
 
     fireEvent.change(screen.getByTestId('nb-city'), { target: { value: '5' } });
     await screen.findByTestId('nb-map');
+    await waitFor(() => expect(screen.getByTestId('nb-map')).toHaveAttribute('aria-disabled', 'false'));
     fireEvent.change(screen.getByTestId('nb-category'), { target: { value: '3' } });
     fireEvent.change(screen.getByTestId('nb-name'), { target: { value: 'نانوایی مرکزی' } });
     fireEvent.click(screen.getByTestId('nb-submit'));

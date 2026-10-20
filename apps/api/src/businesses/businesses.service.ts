@@ -93,54 +93,86 @@ type CityGeo = { latitude: number | null; longitude: number | null; boundary: un
 /** Shared with the admin manual signup — the pin must be in the chosen city. */
 export type BusinessCityGeo = CityGeo;
 
-/** Bounding box of a stored boundary (GeoJSON object or the seed's raw rings). */
-function boundaryBox(raw: unknown): { minLat: number; minLng: number; maxLat: number; maxLng: number } | null {
-  const points: number[][] = [];
-  const visit = (node: unknown): void => {
-    if (!Array.isArray(node)) return;
-    if (node.length >= 2 && typeof node[0] === 'number' && typeof node[1] === 'number') {
-      points.push([node[1], node[0]]); // stored as [lng, lat]
-      return;
+type PolygonRings = number[][][];
+
+/** Normalize GeoJSON and the raw Polygon/MultiPolygon arrays used by the seed. */
+function boundaryPolygons(raw: unknown): number[][][][] | null {
+  let candidate = raw;
+  if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+    const object = candidate as { type?: unknown; geometry?: unknown; coordinates?: unknown };
+    if (object.type === 'Feature') candidate = object.geometry;
+    if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+      const geometry = candidate as { type?: unknown; coordinates?: unknown };
+      if (geometry.type === 'Polygon' && Array.isArray(geometry.coordinates)) {
+        return [geometry.coordinates as PolygonRings];
+      }
+      if (geometry.type === 'MultiPolygon' && Array.isArray(geometry.coordinates)) {
+        return geometry.coordinates as number[][][][];
+      }
+      candidate = geometry.coordinates;
     }
-    for (const child of node) visit(child);
-  };
-  if (Array.isArray(raw)) visit(raw);
-  else if (raw && typeof raw === 'object') visit((raw as { coordinates?: unknown }).coordinates);
-  if (points.length === 0) return null;
-  const lats = points.map((pt) => pt[0]);
-  const lngs = points.map((pt) => pt[1]);
-  return {
-    minLat: Math.min(...lats),
-    maxLat: Math.max(...lats),
-    minLng: Math.min(...lngs),
-    maxLng: Math.max(...lngs),
-  };
+  }
+  if (!Array.isArray(candidate) || candidate.length === 0) return null;
+  const first = candidate[0] as unknown[] | undefined;
+  const second = first?.[0] as unknown[] | undefined;
+  const third = second?.[0];
+  if (typeof third === 'number') return [candidate as PolygonRings];
+  const fourth = Array.isArray(third) ? third[0] : undefined;
+  if (typeof fourth === 'number') return candidate as number[][][][];
+  return null;
+}
+
+function pointInRing(ring: number[][], lng: number, lat: number): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const a = ring[i];
+    const b = ring[j];
+    if (!a || !b || a.length < 2 || b.length < 2) continue;
+    const [x1, y1] = a;
+    const [x2, y2] = b;
+    const cross = (lng - x1) * (y2 - y1) - (lat - y1) * (x2 - x1);
+    if (Math.abs(cross) < 1e-10 && lng >= Math.min(x1, x2) && lng <= Math.max(x1, x2) && lat >= Math.min(y1, y2) && lat <= Math.max(y1, y2)) {
+      return true;
+    }
+    if ((y1 > lat) !== (y2 > lat) && lng < ((x2 - x1) * (lat - y1)) / (y2 - y1) + x1) inside = !inside;
+  }
+  return inside;
+}
+
+function pointInBoundary(polygons: number[][][][], lng: number, lat: number): boolean {
+  return polygons.some((rings) => {
+    const [outer, ...holes] = rings;
+    return Boolean(outer && pointInRing(outer, lng, lat) && !holes.some((hole) => pointInRing(hole, lng, lat)));
+  });
 }
 
 /**
- * Rough containment for owner-picked pins: inside the admin boundary
- * (bbox + ~5 km margin) or within ~0.35° of the city centre. Cities with no
- * geo data accept any pin — there is nothing to compare against.
- * Exported: the admin's manual signup validates its pin the same way.
+ * A pin must be a finite WGS84 point inside the configured city polygon. When
+ * only a centre exists, keep it within a town-scale ±0.15° window. Cities with
+ * no geographic data cannot safely accept a pinned business.
+ * Exported so moderation, registration and the public map share one rule.
  */
-export function assertInCity(city: CityGeo, lat: number, lng: number): void {
-  const bbox = boundaryBox(city.boundary);
-  if (bbox) {
-    const margin = 0.05;
-    if (
-      lat >= bbox.minLat - margin &&
-      lat <= bbox.maxLat + margin &&
-      lng >= bbox.minLng - margin &&
-      lng <= bbox.maxLng + margin
-    ) {
-      return;
-    }
+export function isCoordinateInCity(city: CityGeo, lat: number, lng: number): boolean {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return false;
+  const polygons = boundaryPolygons(city.boundary);
+  if (polygons) {
+    if (pointInBoundary(polygons, lng, lat)) return true;
+    // If the outline is imperfect, allow only a small centre-area fallback.
+    return city.latitude !== null && city.longitude !== null &&
+      Math.abs(lat - city.latitude) <= 0.05 && Math.abs(lng - city.longitude) <= 0.05;
   }
   if (city.latitude !== null && city.longitude !== null) {
-    if (Math.abs(lat - city.latitude) <= 0.35 && Math.abs(lng - city.longitude) <= 0.35) return;
+    return Math.abs(lat - city.latitude) <= 0.15 && Math.abs(lng - city.longitude) <= 0.15;
   }
-  if (!bbox && city.latitude === null) return;
-  throw new BadRequestException('موقعیت انتخاب‌شده خارج از محدوده این شهر است؛ دوباره روی نقشه انتخاب کنید');
+  return false;
+}
+
+export function assertInCity(city: CityGeo, lat: number, lng: number): void {
+  if (isCoordinateInCity(city, lat, lng)) return;
+  if (boundaryPolygons(city.boundary) || (city.latitude !== null && city.longitude !== null)) {
+    throw new BadRequestException('موقعیت انتخاب‌شده خارج از محدوده این شهر است؛ روی محدوده شهر دوباره انتخاب کنید');
+  }
+  throw new BadRequestException('محدوده جغرافیایی این شهر تنظیم نشده است؛ فعلاً موقعیت را ثبت نکنید');
 }
 
 /** URL-safe slug; Persian names keep their letters/numbers, plus a random suffix for uniqueness. */
@@ -199,6 +231,11 @@ export class BusinessesService {
     });
     if (!city) throw new NotFoundException('شهر انتخاب‌شده یافت نشد');
 
+    // Coordinates are optional, but a half-pin is never meaningful and used
+    // to leave rows that could not be consistently shown on the map.
+    const hasLatitude = dto.latitude !== undefined;
+    const hasLongitude = dto.longitude !== undefined;
+    if (hasLatitude !== hasLongitude) throw new BadRequestException('مختصات باید کامل وارد شود');
     // The pin must actually belong to this city — a map framed on another
     // city used to save coordinates 100+ km away (cross-city data corruption).
     if (dto.latitude !== undefined && dto.longitude !== undefined) {

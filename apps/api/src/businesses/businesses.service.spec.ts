@@ -69,10 +69,21 @@ describe('BusinessesService.create — profile city + pin containment', () => {
     );
   });
 
-  it('accepts a pin near the centre even outside the boundary box', async () => {
+  it('accepts a pin just outside an imperfect boundary when it remains near the city centre', async () => {
     prisma.city.findFirst.mockResolvedValue({ id: 5, ...bushehrGeo });
-    await service.create(owner, { ...dto, latitude: 28.7, longitude: 50.95 });
+    await service.create(owner, { ...dto, latitude: 28.97, longitude: 50.791 });
     expect(prisma.business.create).toHaveBeenCalled();
+  });
+
+  it('rejects a pin inside a concave boundary bounding box but outside the actual city polygon', async () => {
+    prisma.city.findFirst.mockResolvedValue({
+      id: 5,
+      latitude: null,
+      longitude: null,
+      boundary: { type: 'Polygon', coordinates: [[[0, 0], [2, 0], [2, 1], [1, 1], [1, 2], [0, 2], [0, 0]]] },
+    });
+    await expect(service.create(owner, { ...dto, latitude: 1.5, longitude: 1.5 })).rejects.toThrow('خارج از محدوده این شهر');
+    expect(prisma.business.create).not.toHaveBeenCalled();
   });
 
   it('rejects a pin from another city (the cross-city coordinate bug)', async () => {
@@ -84,10 +95,16 @@ describe('BusinessesService.create — profile city + pin containment', () => {
     expect(prisma.business.create).not.toHaveBeenCalled();
   });
 
-  it('accepts any pin when the city carries no geo data', async () => {
+  it('rejects a pin when the city carries no geo data', async () => {
     prisma.city.findFirst.mockResolvedValue({ id: 5, latitude: null, longitude: null, boundary: null });
-    await service.create(owner, { ...dto, latitude: 30.1, longitude: 50.2 });
-    expect(prisma.business.create).toHaveBeenCalled();
+    await expect(service.create(owner, { ...dto, latitude: 30.1, longitude: 50.2 })).rejects.toThrow('محدوده جغرافیایی');
+    expect(prisma.business.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects a half-specified pin instead of persisting one coordinate only', async () => {
+    prisma.city.findFirst.mockResolvedValue({ id: 5, ...bushehrGeo });
+    await expect(service.create(owner, { ...dto, latitude: 28.97 })).rejects.toThrow('مختصات باید کامل وارد شود');
+    expect(prisma.business.create).not.toHaveBeenCalled();
   });
 
   it('accepts a GeoJSON-object boundary too (admin-set outlines)', async () => {

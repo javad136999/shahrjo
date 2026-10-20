@@ -2,47 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CityMapData } from '@/lib/types';
+import { isMapCoordinateInCity, normalizeCityBoundary, type CityBoundary } from '@/lib/map-boundary';
 import 'leaflet/dist/leaflet.css';
 
 export interface CityMapProps {
   data: CityMapData;
-}
-
-/** Loose runtime check for admin-supplied GeoJSON city boundaries. */
-type CityBoundary =
-  | { type: 'Polygon'; coordinates: number[][][] }
-  | { type: 'MultiPolygon'; coordinates: number[][][][] };
-
-function asBoundary(value: unknown): CityBoundary | null {
-  // Raw coordinate rings (exactly what prisma/seed stores): [[[…lng,lat…]]]
-  // is a Polygon, one level deeper is a MultiPolygon — wrap into GeoJSON.
-  // Without this every seeded boundary was silently dropped and the view
-  // fell back to pin-based framing — foreign pins could win and drag the
-  // camera to a completely different city.
-  if (Array.isArray(value)) {
-    const ring = Array.isArray(value[0]) ? value[0] : null;
-    const cell = ring && Array.isArray(ring[0]) ? ring[0] : null;
-    if (cell && cell.length > 0) {
-      if (typeof cell[0] === 'number') return { type: 'Polygon', coordinates: value as number[][][] };
-      if (Array.isArray(cell[0]) && typeof (cell[0] as unknown[])[0] === 'number') {
-        return { type: 'MultiPolygon', coordinates: value as number[][][][] };
-      }
-    }
-    return null;
-  }
-  if (!value || typeof value !== 'object') return null;
-  const raw = value as { type?: unknown; coordinates?: unknown; geometry?: unknown };
-  const candidate = raw.type === 'Feature' ? raw.geometry : raw;
-  if (!candidate || typeof candidate !== 'object') return null;
-  const geometry = candidate as { type?: unknown; coordinates?: unknown };
-  if (!Array.isArray(geometry.coordinates) || geometry.coordinates.length === 0) return null;
-  if (geometry.type === 'Polygon') {
-    return { type: 'Polygon', coordinates: geometry.coordinates as number[][][] };
-  }
-  if (geometry.type === 'MultiPolygon') {
-    return { type: 'MultiPolygon', coordinates: geometry.coordinates as number[][][][] };
-  }
-  return null;
 }
 
 /** [[minLat, minLng], [maxLat, maxLng]] across every ring of a city boundary. */
@@ -144,9 +108,16 @@ export function CityMap({ data }: CityMapProps) {
   const [catOpen, setCatOpen] = useState(false);
   const [activeCat, setActiveCat] = useState<string | null>(null); // category slug
 
+  // Reject broken or out-of-city legacy pins before they can affect bounds,
+  // markers, category counts or the initial city frame.
+  const validBusinesses = useMemo(
+    () => data.businesses.filter((business) => isMapCoordinateInCity(data.city, business.latitude, business.longitude)),
+    [data.businesses, data.city],
+  );
+
   const categories = useMemo(() => {
     const bySlug = new Map<string, { slug: string; name: string; icon: string | null }>();
-    for (const b of data.businesses) {
+    for (const b of validBusinesses) {
       if (!bySlug.has(b.category.slug)) {
         bySlug.set(b.category.slug, {
           slug: b.category.slug,
@@ -156,7 +127,7 @@ export function CityMap({ data }: CityMapProps) {
       }
     }
     return [...bySlug.values()];
-  }, [data.businesses]);
+  }, [validBusinesses]);
 
   const activeMeta = categories.find((c) => c.slug === activeCat) ?? null;
 
@@ -194,13 +165,14 @@ export function CityMap({ data }: CityMapProps) {
       const L = await import('leaflet');
       if (disposed || !holder.current) return;
 
-      const { city, businesses } = data;
+      const { city } = data;
+      const businesses = validBusinesses;
       const shown = activeCat ? businesses.filter((b) => b.category.slug === activeCat) : businesses;
       const center: [number, number] | null =
         city.latitude !== null && city.longitude !== null ? [city.latitude, city.longitude] : null;
       if (!center && businesses.length === 0) return; // nowhere to look — handled by parent
 
-      const boundary = asBoundary(city.boundary);
+      const boundary = normalizeCityBoundary(city.boundary);
       // bounds of the admin outline, computed before the map exists
       const outline = boundary ? boundsOfBoundary(boundary) : null;
 
@@ -413,10 +385,10 @@ export function CityMap({ data }: CityMapProps) {
           // trust the pins then; otherwise stretch the centre window to include them.
           const centreNearPins =
             center !== null &&
-            center[0] > pinBox[0][0] - 0.15 &&
-            center[0] < pinBox[1][0] + 0.15 &&
-            center[1] > pinBox[0][1] - 0.15 &&
-            center[1] < pinBox[1][1] + 0.15;
+            center[0] >= pinBox[0][0] - 0.15 &&
+            center[0] <= pinBox[1][0] + 0.15 &&
+            center[1] >= pinBox[0][1] - 0.15 &&
+            center[1] <= pinBox[1][1] + 0.15;
           if (centreNearPins && urban) {
             for (const [lat, lng] of allPins) urban = growBox(urban, lat, lng);
           } else {
@@ -509,7 +481,7 @@ export function CityMap({ data }: CityMapProps) {
       map?.remove();
       map = null;
     };
-  }, [data, activeCat]);
+  }, [data, activeCat, validBusinesses]);
 
   return (
     <div className="city-map" data-testid="city-map">

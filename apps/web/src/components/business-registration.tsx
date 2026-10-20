@@ -10,7 +10,6 @@ import {
   getBusinessCategories,
   api,
   getCityMap,
-  getLocalCity,
   getPlans,
   getProfile,
   getTokens,
@@ -18,6 +17,7 @@ import {
   verifyBazaarPurchase,
 } from '@/lib/api';
 import { consumeBazaarPurchase, purchaseWithBazaar } from '@/lib/bazaar';
+import { isMapCoordinateInCity, normalizeCityBoundary } from '@/lib/map-boundary';
 import { thumbFallback, thumbUrlFor } from '@/lib/format';
 import type { BusinessCategoryOption, City, CityMapData, PlanItem } from '@/lib/types';
 
@@ -60,6 +60,8 @@ export function BusinessRegistration() {
   const [categories, setCategories] = useState<BusinessCategoryOption[] | null>(null);
   const [plans, setPlans] = useState<PlanItem[] | null>(null);
   const [mapData, setMapData] = useState<CityMapData | null>(null);
+  const [mapCityName, setMapCityName] = useState<string | null>(null);
+  const [mapStatus, setMapStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading');
 
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -72,6 +74,7 @@ export function BusinessRegistration() {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
 
   const [error, setError] = useState<string | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   // Leaflet refs kept out of React state so clicks don't re-init the map.
@@ -83,9 +86,10 @@ export function BusinessRegistration() {
   const Lref = useRef<typeof import('leaflet') | null>(null);
   const frameMapRef = useRef<(() => void) | null>(null);
   const mapDataRef = useRef<CityMapData | null>(null);
+  const locationRef = useRef<{ lat: number; lng: number } | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
-  // Auth gate + load categories/plans (+ city map framing data).
+  // Auth gate + load categories/plans and the exact city used by the API.
   useEffect(() => {
     if (!getTokens()) {
       router.replace('/login?next=/business/new');
@@ -98,30 +102,45 @@ export function BusinessRegistration() {
         if (!alive) return;
         setCategories(popularFirst(cats));
         setPlans(pls);
-        // The backend files the business under the PROFILE city — frame the
-        // map there. localStorage can differ from the profile and used to let
-        // a pin be dropped in a completely different city (cross-city coords).
-        let slug = getLocalCity()?.slug ?? null;
-        if (getTokens()) {
-          try {
-            const me = await getProfile();
-            if (me.cityId) {
-              const cities = await api.get<City[]>('/cities');
-              slug = cities.find((c) => c.id === me.cityId)?.slug ?? slug;
-            }
-          } catch {
-            // profile unavailable → keep the local fallback
-          }
-        }
-        if (slug) {
-          try {
-            setMapData(await getCityMap(slug));
-          } catch {
-            // picker still works, framed on a broad default
-          }
-        }
       } catch (e) {
         if (alive) setError(e instanceof ApiError ? e.message : 'خطا در بارگذاری اطلاعات');
+        return;
+      }
+
+      try {
+        // The API always writes under the authenticated PROFILE city. Never
+        // silently frame the map on localStorage, which can name another city.
+        const me = await getProfile();
+        if (!me.cityId) {
+          if (alive) {
+            setMapStatus('unavailable');
+            setLocationError('برای ثبت کسب‌وکار، ابتدا شهر حساب کاربری‌ات را در پروفایل انتخاب کن.');
+          }
+          return;
+        }
+        const cities = await api.get<City[]>('/cities');
+        const profileCity = cities.find((city) => city.id === me.cityId);
+        if (!profileCity) {
+          if (alive) {
+            setMapStatus('unavailable');
+            setLocationError('شهر ثبت‌شده در پروفایل پیدا نشد؛ شهر حساب را دوباره انتخاب کن.');
+          }
+          return;
+        }
+        setMapCityName(profileCity.name);
+        const data = await getCityMap(profileCity.slug);
+        if (!alive) return;
+        setMapData(data);
+        const hasGeo = normalizeCityBoundary(data.city.boundary) !== null ||
+          (data.city.latitude !== null && data.city.longitude !== null);
+        setMapStatus(hasGeo ? 'ready' : 'unavailable');
+        if (!hasGeo) setLocationError('محدودهٔ جغرافیایی این شهر هنوز تنظیم نشده است؛ موقعیت روی نقشه در دسترس نیست.');
+        else setLocationError(null);
+      } catch {
+        if (alive) {
+          setMapStatus('unavailable');
+          setLocationError('نقشهٔ شهر حساب بارگذاری نشد؛ دوباره صفحه را باز کن یا بدون موقعیت ادامه بده.');
+        }
       }
     })();
     return () => {
@@ -161,23 +180,29 @@ export function BusinessRegistration() {
       const city = mapDataRef.current?.city;
       const lat = city?.latitude;
       const lng = city?.longitude;
-      if (typeof lat !== 'number' || typeof lng !== 'number') {
-        map.setView([30, 52], 6);
-        return;
-      }
-
-      const boundary = city?.boundary as { type?: string } | null | undefined;
-      if (boundary && (boundary.type === 'Polygon' || boundary.type === 'MultiPolygon')) {
+      const boundary = normalizeCityBoundary(city?.boundary);
+      if (boundary) {
         try {
           const layer = L.geoJSON(boundary as never, {
             style: { color: '#c9971f', weight: 2, fillColor: '#f2c94c', fillOpacity: 0.08, dashArray: '6 5' },
           }).addTo(map);
           boundaryObj.current = layer;
-          map.fitBounds(layer.getBounds(), { padding: [20, 20] });
-          return;
+          const bounds = layer.getBounds();
+          if (bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [20, 20] });
+            if (typeof map.setMaxBounds === 'function') map.setMaxBounds(bounds.pad(0.08));
+            return;
+          }
         } catch {
           /* degenerate bounds — keep the centre view */
         }
+      }
+      if (typeof lat !== 'number' || typeof lng !== 'number') {
+        map.setView([30, 52], 6);
+        return;
+      }
+      if (typeof map.setMaxBounds === 'function') {
+        map.setMaxBounds([[lat - 0.15, lng - 0.15], [lat + 0.15, lng + 0.15]]);
       }
       map.setView([lat, lng], 13);
     };
@@ -196,14 +221,53 @@ export function BusinessRegistration() {
         attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map);
 
+      const rounded = (value: number) => Math.round(value * 1e6) / 1e6;
+      const makePin = (lat: number, lng: number) => {
+        const marker = L.marker([lat, lng], {
+          icon: L.divIcon({
+            className: 'business-location-marker',
+            html: '<span aria-hidden="true">📍</span>',
+            iconSize: [42, 42],
+            iconAnchor: [21, 38],
+          }),
+          draggable: true,
+          title: 'موقعیت کسب‌وکار؛ برای اصلاح نشانگر را بکشید',
+        }).addTo(map);
+        marker.on('dragend', () => {
+          const point = marker.getLatLng();
+          const next = { lat: rounded(point.lat), lng: rounded(point.lng) };
+          const city = mapDataRef.current?.city;
+          if (!city || !isMapCoordinateInCity(city, next.lat, next.lng)) {
+            setLocationError('نشانگر باید داخل محدودهٔ شهر باشد؛ موقعیت قبلی حفظ شد.');
+            const previous = locationRef.current;
+            if (previous) marker.setLatLng([previous.lat, previous.lng]);
+            return;
+          }
+          locationRef.current = next;
+          setLocation(next);
+          setLocationError(null);
+        });
+        return marker;
+      };
+
       map.on('click', (e: { latlng: { lat: number; lng: number } }) => {
-        const { lat, lng } = e.latlng;
-        setLocation({ lat, lng });
-        if (markerObj.current) markerObj.current.setLatLng([lat, lng]);
-        else markerObj.current = L.marker([lat, lng]).addTo(map);
+        const next = { lat: rounded(e.latlng.lat), lng: rounded(e.latlng.lng) };
+        const city = mapDataRef.current?.city;
+        if (!city || !isMapCoordinateInCity(city, next.lat, next.lng)) {
+          setLocationError('برای انتخاب موقعیت، داخل محدودهٔ مشخص‌شدهٔ شهر را لمس کن.');
+          return;
+        }
+        locationRef.current = next;
+        setLocation(next);
+        setLocationError(null);
+        if (markerObj.current) markerObj.current.setLatLng([next.lat, next.lng]);
+        else markerObj.current = makePin(next.lat, next.lng);
       });
 
-      if (location) markerObj.current = L.marker([location.lat, location.lng]).addTo(map);
+      if (location) {
+        locationRef.current = location;
+        markerObj.current = makePin(location.lat, location.lng);
+      }
       fitCity();
       setMapReady(true);
 
@@ -232,6 +296,7 @@ export function BusinessRegistration() {
 
   const clearLocation = () => {
     setLocation(null);
+    locationRef.current = null;
     markerObj.current?.remove();
     markerObj.current = null;
   };
@@ -260,6 +325,10 @@ export function BusinessRegistration() {
 
   const confirmAndPay = async () => {
     if (!selectedPlanId) return;
+    if (!mapCityName) {
+      setError(locationError ?? 'ابتدا شهر حساب کاربری‌ات را در پروفایل انتخاب کن.');
+      return;
+    }
     // Bazaar billing is provided by the Android APK bridge, not a normal browser.
     // Check before creating a business so a browser attempt cannot leave a duplicate PENDING row.
     if (typeof window === 'undefined' || !window.ShahrjoBazaar) {
@@ -463,16 +532,23 @@ export function BusinessRegistration() {
           <div className="biz-registration__section-heading">
             <span>۲</span><div><h2>موقعیت کسب‌وکار</h2><p>موقعیت روی نقشه اختیاری است و به مشتری‌ها کمک می‌کند راحت‌تر پیدایت کنند.</p></div>
           </div>
-          <div ref={mapEl} className="biz-map" data-testid="biz-map" />
+          <p className="muted small biz-location-instructions">
+            شهر ثبت: <strong>{mapCityName ?? 'شهر حساب کاربری'}</strong>. برای گذاشتن سنجاق، روی محل دقیق کسب‌وکار در نقشه لمس یا کلیک کن؛
+            برای اصلاح، سنجاق قرمز را بکش یا نقطهٔ جدیدی انتخاب کن. اگر موقعیت را نمی‌دانی، می‌توانی بدون سنجاق ادامه بدهی.
+          </p>
+          {mapStatus === 'loading' && <p className="muted small" aria-live="polite">در حال بارگذاری نقشهٔ شهر…</p>}
+          {mapStatus === 'unavailable' && locationError && <p className="banner banner--error" role="alert">{locationError}</p>}
+          <div ref={mapEl} className={`biz-map${mapStatus !== 'ready' ? ' is-unavailable' : ''}`} role="application" aria-label={`انتخاب موقعیت کسب‌وکار در ${mapCityName ?? 'شهر حساب کاربری'}`} aria-disabled={mapStatus !== 'ready'} data-testid="biz-map" />
+          {locationError && mapStatus === 'ready' && <p className="banner banner--error" role="alert">{locationError}</p>}
           {location ? (
             <p className="chip chip--ok">
-              موقعیت انتخاب شد: {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
+              سنجاق روی مختصات {location.lat.toFixed(5)}, {location.lng.toFixed(5)} قرار دارد؛ برای جابه‌جایی آن را بکش.
             </p>
           ) : (
-            <p className="chip chip--muted">هنوز موقعیتی انتخاب نشده</p>
+            <p className="chip chip--muted">هنوز موقعیتی انتخاب نشده؛ روی نقشه لمس کن.</p>
           )}
           <div className="auth-actions">
-            <button className="btn btn-primary" onClick={() => setStep(3)}>
+            <button className="btn btn-primary" onClick={() => setStep(3)} disabled={!mapCityName}>
               مرحله بعد: اشتراک
             </button>
             {location && (
