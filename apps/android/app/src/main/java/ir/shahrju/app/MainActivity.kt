@@ -1,4 +1,4 @@
-package ir.shahrjo
+package ir.shahrju.app
 
 import android.app.Activity
 import android.content.Intent
