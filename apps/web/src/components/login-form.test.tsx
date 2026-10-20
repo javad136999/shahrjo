@@ -2,10 +2,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 const push = jest.fn();
 const refresh = jest.fn();
+const mockSearchParams = new URLSearchParams('next=/city/dayer');
+const mockGetLocalCity = jest.fn((): { id: number; slug: string; name: string } | null => null);
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push, refresh }),
-  useSearchParams: () => new URLSearchParams('next=/city/dayer'),
+  useSearchParams: () => mockSearchParams,
 }));
 
 const sendOtp = jest.fn();
@@ -21,6 +23,7 @@ jest.mock('@/lib/api', () => ({
   },
   sendOtp: (...args: unknown[]) => sendOtp(...args),
   verifyOtp: (...args: unknown[]) => verifyOtp(...args),
+  getLocalCity: () => mockGetLocalCity(),
 }));
 
 import { LoginForm } from '@/components/login-form';
@@ -29,6 +32,8 @@ import { ApiError } from '@/lib/api';
 describe('LoginForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSearchParams.set('next', '/city/dayer');
+    mockGetLocalCity.mockReturnValue(null);
   });
 
   it('rejects an invalid Iranian mobile without calling the API', () => {
@@ -69,6 +74,21 @@ describe('LoginForm', () => {
       expect(verifyOtp).toHaveBeenCalledWith('09123456789', '123456'),
     );
     expect(push).toHaveBeenCalledWith('/city/dayer');
+  });
+
+  it('prefers the remembered city after login when there is no next target', async () => {
+    mockSearchParams.delete('next');
+    mockGetLocalCity.mockReturnValue({ id: 7, slug: 'test-city', name: 'شهر آزمایشی' });
+    sendOtp.mockResolvedValue({ sent: true, cooldownSeconds: 60 });
+    verifyOtp.mockResolvedValue({ accessToken: 'a', refreshToken: 'r', user: { id: 1 } });
+    render(<LoginForm />);
+
+    fireEvent.change(screen.getByLabelText('شماره موبایل'), { target: { value: '09123456789' } });
+    fireEvent.click(screen.getByRole('button', { name: /ارسال کد تأیید/ }));
+    await waitFor(() => expect(screen.getByLabelText('کد تأیید')).toBeInTheDocument());
+    fireEvent.change(screen.getByLabelText('کد تأیید'), { target: { value: '123456' } });
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/city/test-city'));
   });
 
   it('auto-fills the code and completes the login by itself (console SMS)', async () => {

@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ApiError, api, sendOtp, setLocalCity, verifyOtp } from '@/lib/api';
+import { ApiError, api, getLocalCity, sendOtp, setLocalCity, verifyOtp } from '@/lib/api';
 import type { City, MeResponse } from '@/lib/types';
 
 const IRANIAN_MOBILE = /^09\d{9}$/;
@@ -83,6 +83,10 @@ export function LoginForm() {
       else await verifyOtp(phone.trim(), c);
       // به محض ورود: اگر next نداریم، مستقیم به شهر خودِ کاربر برو (وگرنه انتخاب شهر)
       let target: string | null = next && next.startsWith('/') ? next : null;
+      if (!target) {
+        const rememberedCity = getLocalCity();
+        if (rememberedCity) target = `/city/${rememberedCity.slug}`;
+      }
       if (!target) {
         try {
           const me = await api.get<MeResponse>('/users/me');
