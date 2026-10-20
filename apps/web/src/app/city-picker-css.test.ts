@@ -13,6 +13,7 @@ import { join } from 'node:path';
  *   2. the picker overlay sits above the map's highest layer.
  */
 const css = readFileSync(join(__dirname, 'globals.css'), 'utf8');
+const mobileCss = readFileSync(join(__dirname, 'mobile-home-fixes.css'), 'utf8');
 
 /** All declarations for a selector, across every rule that uses it. */
 function rule(selector: string): string {
@@ -55,5 +56,12 @@ describe('city service search sizing', () => {
     expect(rule('.service-search__button')).toMatch(/width:\s*auto/);
     expect(rule('.service-search__button')).toMatch(/flex:\s*0\s+0\s+auto/);
     expect(rule('.service-search__row input')).toMatch(/flex:\s*1\s+1\s+auto/);
+  });
+});
+
+describe('mobile city wall entry sizing', () => {
+  it('allocates a little more mobile header width to the wall entry', () => {
+    expect(mobileCss).toMatch(/\.wall-cta\s*\{[^}]*flex:\s*0\s+0\s+54%/s);
+    expect(mobileCss).toMatch(/\.dash-welcome__greeting\s*\{[^}]*width:\s*auto/s);
   });
 });

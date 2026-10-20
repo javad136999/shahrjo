@@ -68,7 +68,7 @@
   }
   .dash-welcome__greeting {
     flex: 1 1 0;
-    width: 50%;
+    width: auto;
     min-width: 0;
   }
   .dash-welcome__eyebrow {
@@ -81,7 +81,7 @@
     overflow-wrap: anywhere;
   }
   .wall-cta {
-    flex: 0 1 48%;
+    flex: 0 0 54%;
     width: auto;
     min-width: 0;
     gap: 5px;
