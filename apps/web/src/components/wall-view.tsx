@@ -1268,8 +1268,14 @@ export function WallView({ city }: WallViewProps) {
           className="wall-adbtn"
           data-testid="wall-ad-btn"
           title="ثبت آگهی در دیوار شهر"
+          aria-label="ثبت آگهی در دیوار شهر؛ برای شروع اینجا بزن"
         >
-          ثبت آگهی فروش
+          <span className="wall-adbtn__icon" aria-hidden="true">＋</span>
+          <span className="wall-adbtn__copy">
+            <strong>ثبت آگهی در دیوار شهر</strong>
+            <small>برای شروع ثبت آگهی، اینجا بزن</small>
+          </span>
+          <span className="wall-adbtn__arrow" aria-hidden="true">←</span>
         </Link>
       </div>
 

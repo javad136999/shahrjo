@@ -215,7 +215,7 @@ describe('WallView', () => {
     expect(card).not.toHaveAttribute('href');
   });
 
-  it('lays the composer out like WhatsApp and puts «ثبت آگهی فروش» under the bar', async () => {
+  it('lays the composer out like WhatsApp and clearly highlights the ad action under the bar', async () => {
     render(<WallView city={city} />);
     await screen.findByTestId('wall-input');
 
@@ -232,7 +232,9 @@ describe('WallView', () => {
     // the ad entry left the bar: it is a text row under the send box now
     const adBtn = screen.getByTestId('wall-ad-btn');
     expect(adBtn).toHaveAttribute('href', '/ads/new');
-    expect(adBtn).toHaveTextContent('ثبت آگهی فروش');
+    expect(adBtn).toHaveTextContent('ثبت آگهی در دیوار شهر');
+    expect(adBtn).toHaveTextContent('برای شروع ثبت آگهی، اینجا بزن');
+    expect(adBtn).toHaveAttribute('aria-label', 'ثبت آگهی در دیوار شهر؛ برای شروع اینجا بزن');
     expect(adBtn.className).toContain('wall-adbtn');
     expect(bar).not.toContainElement(adBtn);
     expect(screen.getByTestId('wall-composer')).toContainElement(adBtn);

@@ -110,6 +110,7 @@ describe('AdForm', () => {
 
   it('requires a category before submitting', async () => {
     render(<AdForm />);
+    await screen.findByRole('option', { name: 'لوازم' });
     fireEvent.click(screen.getByRole('button', { name: 'ارسال' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('دسته‌بندی آگهی را انتخاب کنید');
@@ -134,6 +135,8 @@ describe('AdForm', () => {
 
     expect(await screen.findByRole('status')).toHaveTextContent('برای ثبت آگهی ابتدا شهر خودت را انتخاب کن');
     expect(screen.getByRole('link', { name: 'انتخاب شهر' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('button', { name: 'ارسال' })).toBeDisabled();
+    expect(mockCreateAd).not.toHaveBeenCalled();
   });
 
   it('uploads each image then creates the ad with Persian-digit price parsed', async () => {
@@ -169,7 +172,7 @@ describe('AdForm', () => {
     expect(await screen.findByTestId('ad-success')).toBeInTheDocument();
     expect(screen.getByTestId('ad-status')).toHaveTextContent('تأیید شده');
     expect(screen.getByRole('link', { name: 'مشاهده دیوار شهر' })).toHaveAttribute('href', '/wall');
-    expect(mockPush).toHaveBeenCalledWith('/wall');
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('sends no price field when the price is left empty (negotiated)', async () => {
@@ -185,6 +188,15 @@ describe('AdForm', () => {
     expect(mockCreateAd.mock.calls[0][0]).not.toHaveProperty('imageIds');
   });
 
+  it('normalizes Persian numerals in the contact phone before submitting', async () => {
+    render(<AdForm />);
+    await screen.findByRole('option', { name: 'لوازم' });
+    fillValidFields();
+    fireEvent.change(screen.getByLabelText(/شماره تماس/), { target: { value: '۰۹۱۲۳۴۵۶۷۸۹' } });
+    fireEvent.click(screen.getByRole('button', { name: 'ارسال' }));
+    await waitFor(() => expect(mockCreateAd).toHaveBeenCalledWith(expect.objectContaining({ phone: '09123456789' })));
+  });
+
   it('surfaces API errors from a rejected submission', async () => {
     mockCreateAd.mockRejectedValue(
       new ApiError(429, 'سقف ثبت آگهی در ساعت پر شده است؛ کمی بعد دوباره تلاش کنید'),
@@ -198,6 +210,15 @@ describe('AdForm', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('سقف ثبت آگهی در ساعت پر شده است');
     expect(screen.queryByTestId('ad-success')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'ارسال' })).toBeEnabled();
+  });
+
+  it('surfaces a useful network error instead of replacing it with a generic message', async () => {
+    mockCreateAd.mockRejectedValue(new TypeError('Failed to fetch'));
+    render(<AdForm />);
+    await screen.findByRole('option', { name: 'لوازم' });
+    fillValidFields();
+    fireEvent.click(screen.getByRole('button', { name: 'ارسال' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('ارتباط با سرور برقرار نشد: Failed to fetch');
   });
 
   it('lists the owner ads with their moderation status', async () => {
