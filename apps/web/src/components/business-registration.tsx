@@ -46,6 +46,82 @@ const popularFirst = (list: BusinessCategoryOption[]): BusinessCategoryOption[] 
 
 type Step = 1 | 2 | 3;
 
+function SearchableBusinessCategory({
+  categories,
+  value,
+  onChange,
+}: {
+  categories: BusinessCategoryOption[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const selected = categories.find((category) => String(category.id) === value);
+  const normalizedQuery = query.trim().toLocaleLowerCase('fa-IR').replace(/[يى]/g, 'ی').replace(/ك/g, 'ک');
+  const filtered = categories.filter((category) => {
+    const label = `${category.icon ?? ''} ${category.name}`.toLocaleLowerCase('fa-IR').replace(/[يى]/g, 'ی').replace(/ك/g, 'ک');
+    return label.includes(normalizedQuery);
+  });
+
+  return (
+    <div className="biz-category-picker" data-testid="biz-category-picker">
+      <button
+        id="biz-cat"
+        type="button"
+        className="biz-category-picker__trigger"
+        role="combobox"
+        aria-label="دسته‌بندی"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls="biz-category-options"
+        aria-required="true"
+        onClick={() => setOpen((wasOpen) => !wasOpen)}
+      >
+        <span>{selected ? `${selected.icon ? `${selected.icon} ` : ''}${selected.name}` : '— جستجو و انتخاب دسته‌بندی —'}</span>
+        <span aria-hidden="true" className="biz-category-picker__chevron">⌄</span>
+      </button>
+      {open && (
+        <div className="biz-category-picker__menu" data-testid="biz-category-menu">
+          <input
+            autoFocus
+            type="search"
+            className="biz-category-picker__search"
+            placeholder="نام دسته‌بندی را جستجو کن…"
+            aria-label="جستجوی دسته‌بندی کسب‌وکار"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') setOpen(false);
+            }}
+          />
+          <div id="biz-category-options" className="biz-category-picker__options" role="listbox" aria-label="دسته‌بندی‌های کسب‌وکار">
+            {filtered.length ? filtered.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                role="option"
+                aria-selected={String(category.id) === value}
+                data-category-id={category.id}
+                className="biz-category-picker__option"
+                onClick={() => {
+                  onChange(String(category.id));
+                  setQuery('');
+                  setOpen(false);
+                }}
+              >
+                <span aria-hidden="true">{category.icon || '🏪'}</span>
+                <span>{category.name}</span>
+                {String(category.id) === value && <span className="biz-category-picker__check" aria-hidden="true">✓</span>}
+              </button>
+            )) : <p className="biz-category-picker__empty">دسته‌بندی پیدا نشد.</p>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /**
  * Three-step business registration: details → pin location on the city map →
  * pick a Gold/Silver plan and pay. On confirm it creates the business (PENDING
@@ -435,15 +511,7 @@ export function BusinessRegistration() {
           </div>
           <div className="biz-registration__field">
           <label htmlFor="biz-cat">دسته‌بندی</label>
-          <select id="biz-cat" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
-            <option value="">— انتخاب دسته‌بندی —</option>
-            {(categories ?? []).map((c) => (
-              <option key={c.id} value={String(c.id)}>
-                {c.icon ? `${c.icon} ` : ''}
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <SearchableBusinessCategory categories={categories ?? []} value={categoryId} onChange={setCategoryId} />
 
           </div>
           <div className="biz-registration__field biz-registration__field--wide">

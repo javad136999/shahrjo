@@ -156,7 +156,7 @@ export function AdForm() {
     if (d.length < 10) return 'توضیحات باید حداقل ۱۰ حرف باشد';
     if (d.length > 4000) return 'توضیحات نباید بیشتر از ۴۰۰۰ حرف باشد';
     if (parsePrice(price).kind === 'invalid') return 'قیمت باید عدد صحیح باشد (به ریال)؛ یا خالی بگذارید (توافقی)';
-    const p = phone.trim();
+    const p = toLatinDigits(phone.trim()).replace(/[\s\-()]/g, '');
     if (p && !IRANIAN_MOBILE.test(p)) return 'شماره تماس معتبر نیست (مثال: 09123456789)';
     if (address.trim().length > 300) return 'آدرس نباید بیشتر از ۳۰۰ حرف باشد';
     return null;
@@ -186,7 +186,7 @@ export function AdForm() {
       };
       const parsedPrice = parsePrice(price);
       if (parsedPrice.kind === 'ok') body.price = parsedPrice.value;
-      const p = phone.trim();
+      const p = toLatinDigits(phone.trim()).replace(/[\s\-()]/g, '');
       if (p) body.phone = p;
       const a = address.trim();
       if (a) body.address = a;
@@ -194,7 +194,6 @@ export function AdForm() {
 
       const created = await createAd(body);
       setSubmitted(created);
-      router.push('/wall');
       // reset for the next ad
       setCategoryId('');
       setTitle('');
@@ -206,7 +205,13 @@ export function AdForm() {
         .then(setMyAds)
         .catch(() => {});
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'ثبت آگهی با خطا مواجه شد؛ دوباره تلاش کنید');
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error && err.message
+            ? `ارتباط با سرور برقرار نشد: ${err.message}`
+            : 'ثبت آگهی با خطا مواجه شد؛ دوباره تلاش کنید',
+      );
     } finally {
       setBusy(false);
       setProgress(null);
@@ -228,7 +233,7 @@ export function AdForm() {
             ✕
           </button>
         </div>
-        <p className="muted">«{submitted.title}» همین حالا در دیوار شهر و صفحهٔ آگهی‌ها دیده می‌شود.</p>
+        <p className="muted">«{submitted.title}» با موفقیت ثبت و در دیوار شهر منتشر شد.</p>
         <p>
           <span data-testid="ad-status">
             <StatusChip status={submitted.status} />
@@ -423,7 +428,7 @@ export function AdForm() {
           <button type="button" className="btn btn-ghost" data-testid="ad-cancel" onClick={closeForm}>
             بستن
           </button>
-          <button type="submit" className="btn btn-primary" disabled={busy}>
+          <button type="submit" className="btn btn-primary" disabled={busy || noCity || categories.length === 0 || Boolean(categoriesError)}>
             {busy ? 'در حال ارسال…' : 'ارسال'}
           </button>
         </div>

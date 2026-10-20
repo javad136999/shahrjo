@@ -2,6 +2,7 @@ package ir.shahrju.app
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.view.ViewGroup
@@ -20,6 +21,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.webkit.JavaScriptReplyProxy
 import androidx.webkit.WebMessageCompat
 import androidx.webkit.WebViewCompat
@@ -79,13 +81,16 @@ class MainActivity : ComponentActivity() {
             settings.setSupportMultipleWindows(false)
         }
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.rgb(11, 128, 100)
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
         val root = FrameLayout(this)
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, windowInsets ->
             val safeInsets = windowInsets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
             )
-            // A few dp of breathing room below the status bar: the site header is
-            // sticky and used to sit right against the system bar inside the app.
+            // Respect cut-outs/system bars exactly once; extra top padding had
+            // pushed the remote site's header row out of alignment on phones.
             val extraTop = (EXTRA_TOP_PADDING_DP * resources.displayMetrics.density).toInt()
             view.setPadding(safeInsets.left, safeInsets.top + extraTop, safeInsets.right, safeInsets.bottom)
             windowInsets
@@ -388,8 +393,8 @@ class MainActivity : ComponentActivity() {
     private companion object {
         const val HOME_URL = "https://shahrju.ir/"
 
-        /** Extra top inset inside the app so the sticky site header is not glued to the status bar. */
-        const val EXTRA_TOP_PADDING_DP = 10
+        /** System-bar insets already include safe spacing; do not double-pad the web header. */
+        const val EXTRA_TOP_PADDING_DP = 0
         const val NATIVE_MESSAGE_OBJECT = "ShahrjoBazaarNative"
         val TRUSTED_HOSTS = setOf("shahrju.ir", "www.shahrju.ir")
         val TRUSTED_ORIGINS = setOf("https://shahrju.ir", "https://www.shahrju.ir")

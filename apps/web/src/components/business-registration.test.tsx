@@ -63,6 +63,12 @@ const plans = [
   { id: 11, code: 'GOLD_1M', tier: 'GOLD', label: 'طلایی یک‌ماهه', badge: 'ویژه', durationDays: 30, price: 500_000, sortOrder: 2 },
 ];
 
+async function chooseBusinessCategory(id: number) {
+  fireEvent.click(screen.getByRole('combobox', { name: 'دسته‌بندی' }));
+  await waitFor(() => expect(document.querySelector(`[data-category-id="${id}"]`)).toBeTruthy());
+  fireEvent.click(document.querySelector(`[data-category-id="${id}"]`) as HTMLElement);
+}
+
 describe('BusinessRegistration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -93,7 +99,7 @@ describe('BusinessRegistration', () => {
     m.getProfile.mockResolvedValue({ cityId: null });
     render(<BusinessRegistration />);
     fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
-    fireEvent.change(screen.getByLabelText(/دسته‌بندی/), { target: { value: '3' } });
+    await chooseBusinessCategory(3);
     fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: موقعیت/ }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('ابتدا شهر حساب کاربری‌ات را');
@@ -120,20 +126,17 @@ describe('BusinessRegistration', () => {
     ]);
 
     render(<BusinessRegistration />);
-    const select = (await screen.findByLabelText(/دسته‌بندی/)) as HTMLSelectElement;
-    await waitFor(() => expect(select.options.length).toBe(9));
+    fireEvent.click(await screen.findByRole('combobox', { name: 'دسته‌بندی' }));
+    await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(8));
 
     // کافه، رستوران، نانوایی، املاک، اتوگالری، فروشگاه — then the server order
-    expect([...select.options].map((o) => o.value).slice(1)).toEqual([
-      '4', // کافه
-      '3', // رستوران
-      '7', // نانوایی و شیرینی
-      '5', // املاک
-      '6', // اتوگالری و خرید و فروش خودرو
-      '2', // فروشگاه
-      '1', // لوله‌کشی و تاسیسات (server order)
-      '8', // خدمات فنی (server order)
+    expect(screen.getAllByRole('option').map((option) => option.getAttribute('data-category-id'))).toEqual([
+      '4', '3', '7', '5', '6', '2', '1', '8',
     ]);
+    fireEvent.change(screen.getByRole('searchbox', { name: 'جستجوی دسته‌بندی کسب‌وکار' }), { target: { value: 'نانوایی' } });
+    await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(1));
+    expect(screen.getByRole('option')).toHaveTextContent('نانوایی و شیرینی');
+    expect(screen.getByTestId('biz-category-picker').querySelector('.biz-category-picker__options')).toBeInTheDocument();
   });
 
   it('gates the details step until name and category are chosen', async () => {
@@ -141,7 +144,7 @@ describe('BusinessRegistration', () => {
     const next = await screen.findByRole('button', { name: /مرحله بعد: موقعیت/ });
     expect(next).toBeDisabled();
     fireEvent.change(screen.getByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
-    fireEvent.change(screen.getByLabelText(/دسته‌بندی/), { target: { value: '3' } });
+    await chooseBusinessCategory(3);
     expect(next).toBeEnabled();
   });
 
@@ -152,7 +155,7 @@ describe('BusinessRegistration', () => {
 
     render(<BusinessRegistration />);
     fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
-    fireEvent.change(screen.getByLabelText(/دسته‌بندی/), { target: { value: '3' } });
+    await chooseBusinessCategory(3);
     fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: موقعیت/ }));
 
     // step 2: map picker shown
@@ -187,7 +190,7 @@ describe('BusinessRegistration', () => {
 
     render(<BusinessRegistration />);
     fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
-    fireEvent.change(screen.getByLabelText(/دسته‌بندی/), { target: { value: '3' } });
+    await chooseBusinessCategory(3);
 
     // the photo is picked through a real button, not a bare file input
     const input = screen.getByTestId('biz-logo-input') as HTMLInputElement;

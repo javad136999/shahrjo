@@ -7267,3 +7267,206 @@ button.pill {
     animation: none;
   }
 }
+
+
+/* Searchable, scrollable business-category chooser. */
+.biz-category-picker {
+  position: relative;
+  width: 100%;
+}
+.biz-category-picker__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 46px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #fff;
+  color: var(--text);
+  text-align: right;
+  font: inherit;
+  cursor: pointer;
+}
+.biz-category-picker__trigger:focus-visible,
+.biz-category-picker__trigger[aria-expanded='true'] {
+  border-color: var(--brand);
+  outline: 3px solid rgb(14 122 95 / 12%);
+}
+.biz-category-picker__trigger > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.biz-category-picker__chevron {
+  color: var(--brand);
+  font-size: 19px;
+  line-height: 1;
+}
+.biz-category-picker__menu {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 6px);
+  z-index: 40;
+  overflow: hidden;
+  padding: 8px;
+  border: 1px solid rgb(14 122 95 / 19%);
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgb(15 45 35 / 18%);
+}
+.biz-category-picker__search {
+  width: 100%;
+  min-height: 42px;
+  margin-bottom: 7px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #f8fbf9;
+  color: var(--text);
+  font: inherit;
+}
+.biz-category-picker__search:focus {
+  border-color: var(--brand);
+  outline: 2px solid rgb(14 122 95 / 12%);
+}
+.biz-category-picker__options {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 208px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.biz-category-picker__option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  text-align: right;
+  font: inherit;
+  cursor: pointer;
+}
+.biz-category-picker__option:hover,
+.biz-category-picker__option[aria-selected='true'] {
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+}
+.biz-category-picker__check {
+  margin-inline-start: auto;
+  color: var(--brand);
+  font-weight: 900;
+}
+.biz-category-picker__empty {
+  margin: 0;
+  padding: 12px 8px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 13px;
+}
+
+/* Compact phones in the installed WebView: stable vertical centering and
+   touch-sized header actions instead of a cramped/overlapping icon row. */
+@media (max-width: 420px) {
+  .site-header .header-inner {
+    min-height: 54px;
+    padding-block: 6px;
+    align-items: center;
+  }
+  .site-header .pill,
+  .site-header .header-user > .btn {
+    min-height: 36px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+  }
+  .site-header .header-pills .pill--icon {
+    min-width: 36px;
+    padding-inline: 8px;
+  }
+}
+
+/* Keep the chat composer calm and WhatsApp-like; make the ad action unmistakable. */
+.wall--jam-theme .wall-composer {
+  border-color: rgb(21 126 87 / 13%);
+  background: linear-gradient(180deg, #f7faf7, #eef5f0);
+  box-shadow: 0 -9px 26px rgb(24 75 52 / 9%);
+}
+.wall--jam-theme .wall-bar__field {
+  min-height: 46px;
+  box-shadow: inset 0 1px 2px rgb(24 75 52 / 4%);
+}
+.wall--jam-theme .wall-bar__input {
+  overflow-y: auto;
+}
+.wall-adbtn {
+  position: relative;
+  min-height: 52px;
+  margin-top: 10px;
+  padding: 7px 14px;
+  border: 1px solid #d99626;
+  border-radius: 15px;
+  background: linear-gradient(105deg, #fff2c9, #ffe4a0 52%, #ffedc1);
+  color: #68410b;
+  box-shadow: 0 5px 14px rgb(186 124 24 / 17%);
+  animation: wallAdNudge 2.8s ease-in-out 2;
+}
+.wall-adbtn:hover {
+  filter: brightness(1.02);
+  box-shadow: 0 8px 20px rgb(186 124 24 / 23%);
+}
+.wall-adbtn__icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: #d99016;
+  color: #fff;
+  font-size: 18px;
+  box-shadow: 0 3px 8px rgb(149 89 6 / 22%);
+}
+.wall-adbtn__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  line-height: 1.45;
+}
+.wall-adbtn__copy strong {
+  font-size: 13.5px;
+}
+.wall-adbtn__copy small {
+  color: #805512;
+  font-size: 11px;
+  font-weight: 650;
+}
+.wall-adbtn__arrow {
+  margin-inline-start: auto;
+  color: #9a6109;
+  font-size: 20px;
+}
+@keyframes wallAdNudge {
+  0%, 100% { transform: translateY(0); }
+  8% { transform: translateY(-2px); }
+  16% { transform: translateY(0); }
+  24% { transform: translateY(-2px); }
+  32% { transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wall-adbtn { animation: none; }
+}
+@media (max-width: 420px) {
+  .wall-adbtn { min-height: 50px; font-size: 13px; }
+}
