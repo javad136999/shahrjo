@@ -37,9 +37,6 @@ export function ShowcaseMarquee({ items, loading }: ShowcaseMarqueeProps) {
           <p>کسب‌وکارهای برتر شهر</p>
         </div>
         <div className="showcase__actions">
-          <Link href="/businesses" className="pill pill--gold showcase__cta" data-testid="showcase-products-cta">
-            📋 منو و محصولات
-          </Link>
           <Link href="/referrals" className="pill pill--gold showcase__cta" data-testid="showcase-cta">
             <span className="showcase__cta-icon" aria-hidden>↗</span> معرفی شهرجو
           </Link>
