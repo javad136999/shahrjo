@@ -10,6 +10,11 @@ const prisma = new PrismaClient();
 const provinces = [
   { name: 'بوشهر', slug: 'bushehr' },
   { name: 'فارس', slug: 'fars' },
+  { name: 'اصفهان', slug: 'isfahan' },
+  { name: 'یزد', slug: 'yazd' },
+  { name: 'کرمان', slug: 'kerman' },
+  { name: 'خوزستان', slug: 'khuzestan' },
+  { name: 'تهران', slug: 'tehran' },
 ];
 
 const cities = [
@@ -31,6 +36,33 @@ const cities = [
   { province: 'fars', name: 'کازرون', slug: 'kazerun', latitude: 29.6203, longitude: 51.6521, featured: false, boundary: [[[51.6129551, 29.5926109], [51.6129551, 29.6415886], [51.694292, 29.6415886], [51.694292, 29.5926109], [51.6129551, 29.5926109]]] },
   { province: 'fars', name: 'فسا', slug: 'fasa', latitude: 28.9366, longitude: 53.6511, featured: false, boundary: [[[53.587253, 28.9177436], [53.587253, 28.9867452], [53.6696769, 28.9867452], [53.6696769, 28.9177436], [53.587253, 28.9177436]]] },
   { province: 'fars', name: 'نیریز', slug: 'neyriz', latitude: 29.1973, longitude: 54.3268, featured: false, boundary: [[[54.284563, 29.1706744], [54.284563, 29.2154068], [54.3600511, 29.2154068], [54.3600511, 29.1706744], [54.284563, 29.1706744]]] },
+  // Sadra and major provincial population centres; population ranking uses the 2016 census.
+  { province: 'fars', name: 'صدرا', slug: 'sadra', latitude: 29.8153909, longitude: 52.4748633, featured: false },
+  { province: 'isfahan', name: 'اصفهان', slug: 'isfahan', latitude: 32.670788, longitude: 51.665, featured: true },
+  { province: 'isfahan', name: 'کاشان', slug: 'kashan', latitude: 33.987653, longitude: 51.442886, featured: false },
+  { province: 'isfahan', name: 'خمینی‌شهر', slug: 'khomeyni-shahr', latitude: 32.69382, longitude: 51.525489, featured: false },
+  { province: 'isfahan', name: 'نجف‌آباد', slug: 'najaf-abad', latitude: 32.635074, longitude: 51.36368, featured: false },
+  { province: 'isfahan', name: 'شاهین‌شهر', slug: 'shahin-shahr', latitude: 32.855617, longitude: 51.558376, featured: false },
+  { province: 'yazd', name: 'یزد', slug: 'yazd', latitude: 31.89722, longitude: 54.3675, featured: true },
+  { province: 'yazd', name: 'میبد', slug: 'meybod', latitude: 32.27208, longitude: 54.02776, featured: false },
+  { province: 'yazd', name: 'اردکان', slug: 'ardakan', latitude: 32.31001, longitude: 54.01747, featured: false },
+  { province: 'yazd', name: 'حمیدیا', slug: 'hamidiya', latitude: 31.82248, longitude: 54.39284, featured: false },
+  { province: 'yazd', name: 'بافق', slug: 'bafq', latitude: 31.6035, longitude: 55.40249, featured: false },
+  { province: 'kerman', name: 'کرمان', slug: 'kerman', latitude: 30.28321, longitude: 57.07879, featured: true },
+  { province: 'kerman', name: 'سیرجان', slug: 'sirjan', latitude: 29.45137, longitude: 55.6809, featured: false },
+  { province: 'kerman', name: 'رفسنجان', slug: 'rafsanjan', latitude: 30.4067, longitude: 55.9939, featured: false },
+  { province: 'kerman', name: 'جیرفت', slug: 'jiroft', latitude: 28.67806, longitude: 57.74056, featured: false },
+  { province: 'kerman', name: 'بم', slug: 'bam', latitude: 29.106, longitude: 58.357, featured: false },
+  { province: 'khuzestan', name: 'اهواز', slug: 'ahvaz', latitude: 31.31901, longitude: 48.6842, featured: true },
+  { province: 'khuzestan', name: 'دزفول', slug: 'dezful', latitude: 32.38114, longitude: 48.40581, featured: false },
+  { province: 'khuzestan', name: 'آبادان', slug: 'abadan', latitude: 30.3392, longitude: 48.3043, featured: false },
+  { province: 'khuzestan', name: 'بندر ماهشهر', slug: 'bandar-mahshahr', latitude: 30.55655, longitude: 49.18852, featured: false },
+  { province: 'khuzestan', name: 'اندیمشک', slug: 'andimeshk', latitude: 32.4615, longitude: 48.35368, featured: false },
+  { province: 'tehran', name: 'تهران', slug: 'tehran', latitude: 35.6892523, longitude: 51.3896004, featured: true },
+  { province: 'tehran', name: 'اسلام‌شهر', slug: 'eslamshahr', latitude: 35.5478513, longitude: 51.2318676, featured: false },
+  { province: 'tehran', name: 'شهریار', slug: 'shahriar', latitude: 35.6589015, longitude: 51.0586022, featured: false },
+  { province: 'tehran', name: 'قدس', slug: 'qods', latitude: 35.7204271, longitude: 51.1100769, featured: false },
+  { province: 'tehran', name: 'ملارد', slug: 'malard', latitude: 35.666763, longitude: 50.9790423, featured: false },
 ];
 
 const roles = [
