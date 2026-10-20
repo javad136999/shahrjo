@@ -45,6 +45,30 @@ describe('BusinessesService.create — profile city + pin containment', () => {
     expect(prisma.business.create).not.toHaveBeenCalled();
   });
 
+  it('allows regular business registration without a daily count limit', async () => {
+    prisma.city.findFirst.mockResolvedValue({ id: 5, ...bushehrGeo });
+    prisma.business.count.mockResolvedValue(100);
+
+    await service.create(owner, dto);
+
+    expect(prisma.business.create).toHaveBeenCalled();
+  });
+
+  it('allows quick service registration without a daily count limit', async () => {
+    prisma.city.findFirst.mockResolvedValue({ id: 5 });
+    prisma.businessCategory.findFirst.mockResolvedValue({ id: 3 });
+    prisma.business.count.mockResolvedValue(100);
+
+    await service.createQuick(owner, {
+      citySlug: 'jam',
+      name: 'کابینت‌کار آزمون',
+      categoryId: 3,
+      phone: '09120000000',
+    });
+
+    expect(prisma.business.create).toHaveBeenCalled();
+  });
+
   it('404s an unknown/inactive city', async () => {
     prisma.city.findFirst.mockResolvedValue(null);
     await expect(service.create(owner, dto)).rejects.toBeInstanceOf(NotFoundException);

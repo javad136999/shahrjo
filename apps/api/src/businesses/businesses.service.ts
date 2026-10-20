@@ -9,9 +9,6 @@ import {
   UpdateProductDto,
 } from './businesses.dto';
 
-/** Per-user cap on newly registered businesses per day (anti-flood). */
-const MAX_NEW_PER_DAY = 5;
-
 export interface BusinessCategoryOption {
   id: number;
   name: string;
@@ -215,7 +212,6 @@ export class BusinessesService {
     });
     if (!category) throw new NotFoundException('دسته‌بندی یافت نشد');
 
-    await this.assertDailyCap(user.id);
     const slug = await this.uniqueSlug(dto.name);
 
     const created = await this.prisma.business.create({
@@ -251,7 +247,7 @@ export class BusinessesService {
    * Deliberate difference from `create`: no payment, no admin step, so the
    * abuse surface is trimmed elsewhere instead — only `isService` categories
    * are accepted, the contact phone is mandatory (it is the point of the
-   * listing), the same per-day cap applies, and the slug is still unique. The
+   * listing), and the slug is still unique. The
    * requested active city slug is validated server-side so the new row appears
    * in the same city's service search. An operator can suspend or delete any
    * row from the admin queue.
@@ -271,7 +267,6 @@ export class BusinessesService {
     });
     if (!category) throw new NotFoundException('این دسته‌بندی در فهرست خدمات شهر نیست');
 
-    await this.assertDailyCap(user.id);
     const slug = await this.uniqueSlug(dto.name);
 
     const created = await this.prisma.business.create({
@@ -293,20 +288,6 @@ export class BusinessesService {
     });
 
     return { ...created, status: String(created.status), subscriptionTier: String(created.subscriptionTier) };
-  }
-
-  /** Shared anti-flood cap for both signup paths (per owner, per rolling day). */
-  private async assertDailyCap(ownerId: number): Promise<void> {
-    const dayAgo = new Date(Date.now() - 86_400_000);
-    const recent = await this.prisma.business.count({
-      where: { ownerId, createdAt: { gte: dayAgo } },
-    });
-    if (recent >= MAX_NEW_PER_DAY) {
-      throw new HttpException(
-        'سقف ثبت کسب‌وکار در روز پر شده است؛ فردا دوباره تلاش کنید',
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
   }
 
   /** Unique slug: base + short random suffix, verified against the table. */
