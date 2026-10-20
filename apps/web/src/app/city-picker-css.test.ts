@@ -49,3 +49,11 @@ describe('city picker layering', () => {
     expect(Number(width![1])).toBeLessThanOrEqual(400);
   });
 });
+
+describe('city service search sizing', () => {
+  it('keeps the search button intrinsic so it cannot squeeze the input to its 8px minimum', () => {
+    expect(rule('.service-search__button')).toMatch(/width:\s*auto/);
+    expect(rule('.service-search__button')).toMatch(/flex:\s*0\s+0\s+auto/);
+    expect(rule('.service-search__row input')).toMatch(/flex:\s*1\s+1\s+auto/);
+  });
+});

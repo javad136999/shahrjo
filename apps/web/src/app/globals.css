@@ -858,6 +858,8 @@ a:hover {
 }
 .service-search__button {
   flex: 0 0 auto;
+  width: auto;
+  margin-top: 0;
   min-width: 78px;
   white-space: nowrap;
 }
