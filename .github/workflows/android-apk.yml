@@ -1,4 +1,5 @@
 name: Android APK
+# Rebuild requested: produce a fresh Bazaar APK with the official ShahrJo launcher icon.
 
 on:
   workflow_dispatch:
