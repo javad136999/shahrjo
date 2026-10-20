@@ -335,7 +335,7 @@ class MainActivity : ComponentActivity() {
             "SILVER_12M",
         )
 
-        const val BRIDGE_BOOTSTRAP = """
+        val BRIDGE_BOOTSTRAP = """
             (function () {
               const native = window.ShahrjoBazaarNative;
               if (!native) return;
