@@ -66,8 +66,9 @@ describe('PlansView', () => {
 
     expect(await screen.findByTestId('plans-group-gold')).toBeInTheDocument();
     expect(screen.getByTestId('plans-group-silver')).toBeInTheDocument();
-    expect(screen.getByTestId('benefits-gold')).toHaveTextContent('درج در ویترین طلایی کسب‌وکار');
-    expect(screen.getByTestId('benefits-gold')).toHaveTextContent('انتشار تبلیغ ویژه در دیوار عمومی شهر');
+    expect(screen.getByTestId('benefits-gold')).toHaveTextContent('ثبت در ویترین طلایی');
+    expect(screen.getByTestId('benefits-gold')).toHaveTextContent('آگهی تبلیغاتی رایگان در دیوار شهر');
+    expect(screen.getByTestId('benefits-gold')).toHaveTextContent('ساخت کلیپ از کسب‌وکار');
     expect(screen.getByTestId('benefits-gold')).toHaveTextContent('@shahrju.ir');
     expect(screen.getByTestId('benefits-silver')).toHaveTextContent('درج روی نقشه');
     expect(screen.getByTestId('benefits-silver')).toHaveTextContent('منو محصولات');

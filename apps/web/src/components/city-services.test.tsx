@@ -165,6 +165,21 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     expect(await screen.findByTestId('service-result-501')).toBeInTheDocument();
   });
 
+  it('supports typing Persian search text with Arabic letter variants and Enter', async () => {
+    render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
+    fireEvent.click(screen.getByTestId('service-tile-find'));
+    await screen.findByTestId('service-find');
+
+    const input = await screen.findByTestId('service-search-input');
+    expect(input).toHaveAttribute('type', 'text');
+    fireEvent.change(input, { target: { value: 'كابینت ساز' } });
+    expect(screen.getByTestId('service-chip-svc_cabinet_maker')).toBeInTheDocument();
+    expect(screen.queryByTestId('service-chip-svc_ac_repair')).not.toBeInTheDocument();
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => expect(m.getCityBusinesses).toHaveBeenCalledWith('sample-city', 200, 'svc_cabinet_maker'));
+  });
+
   it('says so when nobody registered the picked service yet', async () => {
     m.getCityBusinesses.mockResolvedValue([]);
     render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);

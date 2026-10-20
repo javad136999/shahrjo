@@ -42,6 +42,16 @@ export interface CityServicesProps {
 
 const emptyForm = { name: '', categoryId: '', phone: '', description: '' };
 
+const normalizePersianSearch = (value: string) =>
+  value
+    .normalize('NFKC')
+    .replace(/[يى]/g, 'ی')
+    .replace(/ك/g, 'ک')
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+    .replace(/[\u200c\u200d\s]+/g, '')
+    .trim()
+    .toLocaleLowerCase('fa-IR');
+
 export function CityServices({ cityName, citySlug, onRegistered }: CityServicesProps) {
   const router = useRouter();
   const [panel, setPanel] = useState<Panel>(null);
@@ -81,10 +91,15 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
   const valid = form.name.trim().length >= 2 && form.categoryId !== '' && form.phone.trim().length >= 4;
 
   const filteredCategories = (categories ?? []).filter((category) => {
-    const query = serviceQuery.trim().toLocaleLowerCase();
+    const query = normalizePersianSearch(serviceQuery);
     if (!query) return true;
-    return `${category.name} ${category.slug}`.toLocaleLowerCase().includes(query);
+    return normalizePersianSearch(`${category.name} ${category.slug}`).includes(query);
   });
+
+  const searchService = () => {
+    const match = filteredCategories.find((category) => category.slug === activeSlug) ?? filteredCategories[0];
+    void pickService(match?.slug ?? null);
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -271,14 +286,23 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
                     value={serviceQuery}
                     onChange={(e) => setServiceQuery(e.target.value)}
                     placeholder="مثلاً کابینت‌کار یا تعمیرکار"
-                    type="search"
+                    type="text"
+                    inputMode="search"
+                    autoComplete="off"
+                    dir="auto"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        searchService();
+                      }
+                    }}
                     data-testid="service-search-input"
                   />
                   <button
                     type="button"
                     className="btn btn-primary service-search__button"
                     disabled={filteredCategories.length === 0}
-                    onClick={() => void pickService(filteredCategories.find((category) => category.slug === activeSlug)?.slug ?? filteredCategories[0]?.slug ?? null)}
+                    onClick={searchService}
                     data-testid="service-search-button"
                   >
                     جستجو

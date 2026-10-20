@@ -6403,3 +6403,22 @@ button.pill {
   opacity: 0.55;
   box-shadow: none;
 }
+
+/* Slightly narrower home service cards, a more prominent wall entry, and
+   aligned subscription choices on wider screens. */
+.city-services__tiles,
+.city-services > .service-panel {
+  width: min(100%, 920px);
+  margin-inline: auto;
+}
+.wall-cta {
+  min-width: 250px;
+}
+@media (min-width: 760px) {
+  .plans-tier-group--gold .plans-tier-group__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .plans-tier-group--silver .plans-tier-group__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
