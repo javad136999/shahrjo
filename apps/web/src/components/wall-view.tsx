@@ -41,6 +41,27 @@ function SendGlyph() {
   );
 }
 
+/** Microphone for the round record action (same reason as SendGlyph). */
+function MicGlyph() {
+  return (
+    <svg className="wall-micglyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
+      <rect x="9" y="2.5" width="6" height="11" rx="3" fill="currentColor" stroke="none" />
+      <path d="M5.5 11a6.5 6.5 0 0 0 13 0" />
+      <path d="M12 17.5V21" />
+    </svg>
+  );
+}
+
+/** Small ✕ for the composer chips / sticker tray — an SVG, because the site
+ *  font has no U+2715 and the fallback often leaves the button blank. */
+function CloseGlyph() {
+  return (
+    <svg className="wall-closeglyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden focusable="false">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
 function WallAdCardContent({ ad }: { ad: WallAdRef }) {
   return (
     <>
@@ -1048,7 +1069,7 @@ export function WallView({ city }: WallViewProps) {
               پاسخ به <b>{replyTo.user.name}</b>: {replyTo.content.slice(0, 60)}
             </span>
             <button type="button" className="wall-iconbtn" aria-label="لغو پاسخ" onClick={() => setReplyTo(null)}>
-              ✕
+              <CloseGlyph />
             </button>
           </div>
         )}
@@ -1073,7 +1094,7 @@ export function WallView({ city }: WallViewProps) {
                 if (fileRef.current) fileRef.current.value = '';
               }}
             >
-              ✕
+              <CloseGlyph />
             </button>
           </div>
         )}
@@ -1082,7 +1103,7 @@ export function WallView({ city }: WallViewProps) {
           <div className="wall-composer__chip" data-testid="wall-voice-chip">
             <span>🎤 ویس {clock(voice.seconds)}</span>
             <button type="button" className="wall-iconbtn" aria-label="حذف ویس" onClick={discardVoice}>
-              ✕
+              <CloseGlyph />
             </button>
           </div>
         )}
@@ -1099,7 +1120,7 @@ export function WallView({ city }: WallViewProps) {
                 data-testid="wall-sticker-close"
                 onClick={() => setStickerOpen(false)}
               >
-                ✕
+                <CloseGlyph />
               </button>
             </div>
             <div className="wall-stickers__packs" role="tablist" aria-label="بسته‌های استیکر">
@@ -1222,7 +1243,7 @@ export function WallView({ city }: WallViewProps) {
               disabled={sending}
               onClick={() => void startRecording()}
             >
-              <span aria-hidden>🎤</span>
+              <MicGlyph />
             </button>
 
             <button

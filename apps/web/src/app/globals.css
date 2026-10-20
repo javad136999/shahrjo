@@ -6961,9 +6961,10 @@ button.pill {
 .wall-bar__mic--hidden {
   display: none;
 }
-/* the mic emoji carries its own colours — paint it white on the green circle */
-.wall-bar__mic span {
-  filter: brightness(0) invert(1);
+/* the recorder mic is an inline SVG — crisp on every font stack */
+.wall-bar__mic .wall-micglyph {
+  width: 23px;
+  height: 23px;
 }
 
 .wall--jam-theme .wall-composer .wall-sendbtn {
@@ -6986,6 +6987,15 @@ button.pill {
   width: 21px;
   height: 21px;
   transform: scaleX(-1);
+}
+/* composer chip / tray close marks — SVG, so they never fall back to a blank */
+.wall-closeglyph {
+  width: 12px;
+  height: 12px;
+}
+.wall-stickers__close .wall-closeglyph {
+  width: 13px;
+  height: 13px;
 }
 .wall-rec__stop .wall-sendglyph {
   width: 20px;
