@@ -148,7 +148,7 @@ describe('CityDashboard', () => {
     expect(panel).toHaveTextContent('ویترین طلایی');
     expect(screen.getByTestId('showcase-40')).toHaveTextContent('رستوران ویترین');
     expect(screen.getByTestId('showcase-cta')).toHaveAttribute('href', '/referrals');
-    expect(screen.getByTestId('showcase-products-cta')).toHaveAttribute('href', '/businesses');
+    expect(screen.queryByTestId('showcase-products-cta')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'رستوران ویترین' })).toHaveAttribute('href', '/business/40');
     // the list is rendered twice for the seamless loop; the copy is aria-hidden
     const hidden = panel.querySelectorAll('[aria-hidden="true"]');

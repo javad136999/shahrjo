@@ -28,11 +28,11 @@ const items: ShowcaseItem[] = [
 ];
 
 describe('ShowcaseMarquee', () => {
-  it('renders the golden panel with title and CTA', () => {
+  it('renders the golden panel without the menu/products shortcut', () => {
     render(<ShowcaseMarquee items={items} loading={false} />);
     expect(screen.getByTestId('showcase')).toHaveTextContent('ویترین طلایی');
     expect(screen.getByTestId('showcase-cta')).toHaveAttribute('href', '/referrals');
-    expect(screen.getByTestId('showcase-products-cta')).toHaveAttribute('href', '/businesses');
+    expect(screen.queryByTestId('showcase-products-cta')).not.toBeInTheDocument();
     expect(screen.getByTestId('showcase-40')).toHaveTextContent('رستوران ویترین');
     expect(screen.getByTestId('showcase-41')).toHaveTextContent('فروشگاه نقره‌ای');
   });
