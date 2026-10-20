@@ -38,8 +38,18 @@ export function WebInstallButton() {
     };
   }, []);
 
-  // Keep the floating install action off the home, city, and plan-selection pages.
-  if (pathname === '/' || pathname.startsWith('/city/') || pathname === '/plans' || installed) return null;
+  // Keep the floating install action off the home, city, wall (full-screen
+  // chat room) and plan-selection pages — it used to float over the public
+  // city wall and cover part of the composer.
+  if (
+    pathname === '/' ||
+    pathname.startsWith('/city/') ||
+    pathname === '/wall' ||
+    pathname.startsWith('/wall/') ||
+    pathname === '/plans' ||
+    installed
+  )
+    return null;
 
   const install = async () => {
     if (!installEvent) {

@@ -1,9 +1,12 @@
 package ir.shahrjo
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.ViewGroup
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -12,6 +15,8 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -33,6 +38,27 @@ class MainActivity : ComponentActivity() {
     private var payment: Payment? = null
     private var paymentConnection: Connection? = null
     private var paymentReady = false
+
+    /** Pending <input type="file"> request; the WebView is the one that posts it. */
+    private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
+    private val fileChooserLauncher: ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val callback = fileChooserCallback
+            fileChooserCallback = null
+            if (callback == null) return@registerForActivityResult
+            if (result.resultCode != Activity.RESULT_OK) {
+                callback.onReceiveValue(null)
+                return@registerForActivityResult
+            }
+            val data = result.data
+            val clip = data?.clipData
+            val uris: Array<Uri>? = when {
+                clip != null -> Array(clip.itemCount) { index -> clip.getItemAt(index).uri }
+                data?.data != null -> arrayOf(data.data!!)
+                else -> null
+            }
+            callback.onReceiveValue(uris)
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,12 +84,16 @@ class MainActivity : ComponentActivity() {
             val safeInsets = windowInsets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
             )
-            view.setPadding(safeInsets.left, safeInsets.top, safeInsets.right, safeInsets.bottom)
+            // A few dp of breathing room below the status bar: the site header is
+            // sticky and used to sit right against the system bar inside the app.
+            val extraTop = (EXTRA_TOP_PADDING_DP * resources.displayMetrics.density).toInt()
+            view.setPadding(safeInsets.left, safeInsets.top + extraTop, safeInsets.right, safeInsets.bottom)
             windowInsets
         }
         root.addView(webView)
         setContentView(root)
         ViewCompat.requestApplyInsets(root)
+        configureFileChooser()
         installSecureWebBridge()
         configureWebNavigation()
         initializePoolakey()
@@ -82,6 +112,38 @@ class MainActivity : ComponentActivity() {
                 }
             }
         })
+    }
+
+    /**
+     * Without a WebChromeClient the WebView silently ignores every
+     * `<input type="file">` tap, so the owner could never pick a business photo
+     * inside the installed app. This opens the system document picker and hands
+     * the chosen image back to the page.
+     */
+    private fun configureFileChooser() {
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onShowFileChooser(
+                view: WebView?,
+                filePathCallback: ValueCallback<Array<Uri>>?,
+                fileChooserParams: WebChromeClient.FileChooserParams?,
+            ): Boolean {
+                // A second request while one is open would leak the first callback.
+                fileChooserCallback?.onReceiveValue(null)
+                fileChooserCallback = filePathCallback
+                val intent = runCatching { fileChooserParams?.createIntent() }.getOrNull()
+                    ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        type = "image/*"
+                    }
+                return runCatching {
+                    fileChooserLauncher.launch(intent)
+                    true
+                }.getOrElse {
+                    fileChooserCallback = null
+                    false
+                }
+            }
+        }
     }
 
     private fun configureWebNavigation() {
@@ -310,6 +372,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        fileChooserCallback?.onReceiveValue(null)
+        fileChooserCallback = null
         paymentConnection?.disconnect()
         paymentConnection = null
         payment = null
@@ -323,6 +387,9 @@ class MainActivity : ComponentActivity() {
 
     private companion object {
         const val HOME_URL = "https://shahrju.ir/"
+
+        /** Extra top inset inside the app so the sticky site header is not glued to the status bar. */
+        const val EXTRA_TOP_PADDING_DP = 10
         const val NATIVE_MESSAGE_OBJECT = "ShahrjoBazaarNative"
         val TRUSTED_HOSTS = setOf("shahrju.ir", "www.shahrju.ir")
         val TRUSTED_ORIGINS = setOf("https://shahrju.ir", "https://www.shahrju.ir")

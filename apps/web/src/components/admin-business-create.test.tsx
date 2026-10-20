@@ -10,7 +10,13 @@ jest.mock('leaflet', () => {
     layer.remove = jest.fn(() => layer);
     return layer;
   };
-  const mapInstance = { setView: jest.fn(), fitBounds: jest.fn(), remove: jest.fn(), on: jest.fn() };
+  const mapInstance = {
+    setView: jest.fn(),
+    fitBounds: jest.fn(),
+    invalidateSize: jest.fn(),
+    remove: jest.fn(),
+    on: jest.fn(),
+  };
   return {
     __esModule: true,
     default: { map: jest.fn(() => mapInstance), tileLayer: jest.fn(() => makeLayer()), geoJSON: jest.fn(() => makeLayer()), marker: jest.fn(() => makeLayer()) },
@@ -92,6 +98,22 @@ describe('AdminBusinessCreate (ثبت دستی کسب‌وکار — صفحهٔ 
     expect(screen.getByTestId('nb-pin')).toHaveTextContent('روی نقشه کلیک کن');
   });
 
+  it('keeps ONE Leaflet instance while the city framing data arrives (no grey re-init)', async () => {
+    render(<AdminBusinessCreate />);
+    await screen.findByTestId('admin-create-page');
+    fireEvent.change(screen.getByTestId('nb-city'), { target: { value: '5' } });
+    await waitFor(() => expect(mockCityMap).toHaveBeenCalledWith('sample-city'));
+    await screen.findByTestId('nb-map');
+
+    const leaflet = require('leaflet');
+    await waitFor(() => expect(leaflet.map).toHaveBeenCalledTimes(1));
+    // the map data arrived after the canvas was mounted — it must be applied to
+    // the same map instead of tearing it down and rebuilding it
+    await waitFor(() => expect(leaflet.map.mock.results[0].value.setView).toHaveBeenCalled());
+    expect(leaflet.map).toHaveBeenCalledTimes(1);
+    expect(leaflet.map.mock.results[0].value.invalidateSize).toHaveBeenCalled();
+  });
+
   it('takes the pin from a map click and sends it with the signup', async () => {
     render(<AdminBusinessCreate />);
     fireEvent.change(await screen.findByTestId('nb-city'), { target: { value: '5' } });
@@ -147,6 +169,21 @@ describe('AdminBusinessCreate (ثبت دستی کسب‌وکار — صفحهٔ 
     expect(await screen.findByTestId('admin-create-done')).toHaveTextContent('کسب‌وکار منتشر شد');
     expect(screen.getByRole('link', { name: 'مشاهده روی نقشهٔ شهر' })).toHaveAttribute('href', '/city/sample-city#map');
     expect(screen.getByRole('link', { name: /بازگشت به پنل مدیریت/ })).toHaveAttribute('href', '/admin');
+  });
+
+  it('opens the photo picker from a real button (browsers and the Android app)', async () => {
+    render(<AdminBusinessCreate />);
+    await screen.findByTestId('admin-create-page');
+
+    const input = screen.getByTestId('nb-logo') as HTMLInputElement;
+    const click = jest.spyOn(input, 'click');
+    fireEvent.click(screen.getByTestId('nb-logo-pick'));
+    expect(click).toHaveBeenCalled();
+
+    const file = new File(['x'], 'logo.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(await screen.findByTestId('nb-logo-preview')).toBeInTheDocument();
+    expect(mockUpload).toHaveBeenCalledWith(file);
   });
 
   it('requires a map pin before publishing so the business cannot be invisible on the city map', async () => {

@@ -9,9 +9,16 @@ jest.mock('leaflet', () => {
     layer.addTo = jest.fn(() => layer);
     layer.setLatLng = jest.fn(() => layer);
     layer.getBounds = jest.fn(() => ({ isValid: () => false }));
+    layer.remove = jest.fn(() => layer);
     return layer;
   };
-  const mapInstance = { setView: jest.fn(), fitBounds: jest.fn(), remove: jest.fn(), on: jest.fn() };
+  const mapInstance = {
+    setView: jest.fn(),
+    fitBounds: jest.fn(),
+    invalidateSize: jest.fn(),
+    remove: jest.fn(),
+    on: jest.fn(),
+  };
   return {
     map: jest.fn(() => mapInstance),
     tileLayer: jest.fn(() => makeLayer()),
@@ -166,8 +173,14 @@ describe('BusinessRegistration', () => {
     fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
     fireEvent.change(screen.getByLabelText(/دسته‌بندی/), { target: { value: '3' } });
 
+    // the photo is picked through a real button, not a bare file input
+    const input = screen.getByTestId('biz-logo-input') as HTMLInputElement;
+    const click = jest.spyOn(input, 'click');
+    fireEvent.click(screen.getByTestId('biz-logo-pick'));
+    expect(click).toHaveBeenCalled();
+
     const file = new File(['x'], 'logo.jpg', { type: 'image/jpeg' });
-    fireEvent.change(screen.getByTestId('biz-logo-input'), { target: { files: [file] } });
+    fireEvent.change(input, { target: { files: [file] } });
 
     expect(await screen.findByTestId('biz-logo-preview')).toBeInTheDocument();
     expect(m.uploadBusinessImage).toHaveBeenCalledWith(file);

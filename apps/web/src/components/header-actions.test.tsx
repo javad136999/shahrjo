@@ -5,7 +5,6 @@ const mockPathname = { current: '/' };
 const mockTokens = jest.fn();
 const mockGet = jest.fn();
 const mockLogout = jest.fn();
-const mockGetUnread = jest.fn();
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mockReplace, push: jest.fn(), refresh: jest.fn() }),
@@ -15,8 +14,6 @@ jest.mock('next/navigation', () => ({
 jest.mock('@/lib/api', () => ({
   ApiError: class ApiError extends Error {},
   getTokens: () => mockTokens(),
-  getNotificationUnreadCount: () => mockGetUnread(),
-  NOTIFICATIONS_CHANGED_EVENT: 'shahrjo:notifications-changed',
   api: { get: (path: string) => mockGet(path) },
   logoutServer: () => mockLogout(),
 }));
@@ -41,7 +38,6 @@ describe('HeaderActions (سمت چپ هدر)', () => {
     mockPathname.current = '/';
     mockTokens.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
     mockGet.mockResolvedValue(profile);
-    mockGetUnread.mockResolvedValue({ total: 0 });
   });
 
   it('shows the plain login button to guests', () => {
@@ -61,6 +57,9 @@ describe('HeaderActions (سمت چپ هدر)', () => {
     expect(screen.getByTestId('header-logout')).toBeInTheDocument();
     // no login button while signed in
     expect(screen.queryByRole('link', { name: 'ورود' })).not.toBeInTheDocument();
+    // the notification bell no longer sits in the header
+    expect(screen.queryByTestId('header-notifications')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /اعلان/ })).not.toBeInTheDocument();
   });
 
   it('falls back to the phone when no display name is set', async () => {

@@ -136,7 +136,12 @@ export function ProfileView() {
 
         <div className="auth-actions">
           {/* ثبت آگهی/لیست آگهی‌های من اینجا نیست — آگهی از دیوار شهر ثبت
-              می‌شود و مدیریتِ آن همان‌جاست. پنل مدیریت فقط برای اپراتور. */}
+              می‌شود و مدیریتِ آن همان‌جاست. پنل مدیریت فقط برای اپراتور.
+              اعلان‌ها هم اینجا هستند: زنگولهٔ هدر برداشته شد تا هدر گوشی
+              شلوغ نشود. */}
+          <Link href="/notifications" className="btn btn-ghost" data-testid="profile-notifications">
+            🔔 اعلان‌ها
+          </Link>
           {me.roles.some((r) => r !== 'USER') && (
             <Link href="/admin" className="btn btn-ghost" data-testid="profile-admin">
               🛡️ پنل مدیریت

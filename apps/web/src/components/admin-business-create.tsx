@@ -19,6 +19,11 @@ import type { BusinessCategoryOption, City, CityMapData } from '@/lib/types';
 /** Activation presets offered to the operator (months of the chosen tier). */
 const MONTH_OPTIONS = [1, 3, 6, 12, 24];
 
+/** Neutral view before a city is framed; city zoom is the town-level overview. */
+const DEFAULT_CENTER: [number, number] = [30, 52];
+const DEFAULT_ZOOM = 6;
+const CITY_ZOOM = 12;
+
 const TIER_OPTIONS: { value: '' | 'GOLD' | 'SILVER'; icon: string; label: string; hint: string }[] = [
   { value: '', icon: '🆓', label: 'رایگان', hint: 'بدون اشتراک؛ فقط انتشار' },
   { value: 'GOLD', icon: '👑', label: 'طلایی', hint: 'ویترین طلایی + اولویت نمایش' },
@@ -60,7 +65,12 @@ export function AdminBusinessCreate() {
   const mapEl = useRef<HTMLDivElement | null>(null);
   const mapObj = useRef<import('leaflet').Map | null>(null);
   const markerObj = useRef<import('leaflet').Marker | null>(null);
+  const boundaryObj = useRef<import('leaflet').GeoJSON | null>(null);
+  const leafletRef = useRef<typeof import('leaflet') | null>(null);
+  const frameMapRef = useRef<(() => void) | null>(null);
+  const mapDataRef = useRef<CityMapData | null>(null);
   const [mapData, setMapData] = useState<CityMapData | null>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   // login gate + pickers
   useEffect(() => {
@@ -105,35 +115,76 @@ export function AdminBusinessCreate() {
     };
   }, [ready, cityId, cities]);
 
-  // The picker: framed on the selected city, click = drop/move the pin.
+  // Latest framing data for the selected city, read by the one-time picker.
   useEffect(() => {
-    if (!cityId || mapObj.current) return;
+    mapDataRef.current = mapData;
+    if (mapReady) frameMapRef.current?.();
+  }, [mapData, mapReady]);
+
+  /**
+   * The picker: ONE Leaflet instance per selected city, created when the card
+   * mounts and framed again in place when the city's map data arrives. Tearing
+   * the instance down on every data change (the old behaviour) flashed a grey
+   * canvas and left the panes/zoom control misaligned — «نقشه محو می‌شود و
+   * به‌هم می‌ریزد» while an operator was registering a business by hand.
+   */
+  useEffect(() => {
+    if (!cityId || created) return;
+    const container = mapEl.current;
+    if (!container) return;
     let disposed = false;
+    let resizeObserver: ResizeObserver | null = null;
+    // Even without the map payload the picker can open on the chosen town.
+    const selectedCity = cities.find((c) => c.id === Number(cityId));
+
+    const fitCity = () => {
+      const map = mapObj.current;
+      const L = leafletRef.current;
+      if (!map || !L) return;
+      // Measure the canvas before framing: the card settles after first paint,
+      // and a stale size is what leaves the tiles grey and half-loaded.
+      map.invalidateSize({ animate: false });
+      boundaryObj.current?.remove();
+      boundaryObj.current = null;
+
+      const city = mapDataRef.current?.city;
+      const lat = city?.latitude ?? selectedCity?.latitude;
+      const lng = city?.longitude ?? selectedCity?.longitude;
+      if (typeof lat !== 'number' || typeof lng !== 'number') {
+        map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+        return;
+      }
+
+      const boundary = city?.boundary as { type?: string } | null | undefined;
+      if (boundary && (boundary.type === 'Polygon' || boundary.type === 'MultiPolygon')) {
+        try {
+          const layer = L.geoJSON(boundary as never, { style: () => ({ color: '#0e7a5f', weight: 1 }) }).addTo(map);
+          boundaryObj.current = layer;
+          const bounds = layer.getBounds();
+          if (bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [16, 16] });
+            return;
+          }
+        } catch {
+          // unparseable outline → fall back to the city centre
+        }
+      }
+      map.setView([lat, lng], CITY_ZOOM);
+    };
+    frameMapRef.current = fitCity;
+
     (async () => {
       const L = await import('leaflet');
       if (disposed || !mapEl.current || mapObj.current) return;
+      leafletRef.current = L;
 
-      const center: [number, number] =
-        mapData && mapData.city.latitude !== null && mapData.city.longitude !== null
-          ? [mapData.city.latitude, mapData.city.longitude]
-          : [30, 52];
       const map = L.map(mapEl.current);
-      map.setView(center, mapData ? 12 : 6);
       mapObj.current = map;
+      map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 18,
         attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map);
-
-      if (mapData?.city.boundary) {
-        try {
-          const layer = L.geoJSON(mapData.city.boundary as never, { style: () => ({ color: '#0e7a5f', weight: 1 }) }).addTo(map);
-          const bounds = layer.getBounds();
-          if (bounds.isValid()) map.fitBounds(bounds, { padding: [16, 16] });
-        } catch {
-          // unparseable outline → stay on the centre view
-        }
-      }
 
       map.on('click', (e: { latlng: { lat: number; lng: number } }) => {
         const lat = Math.round(e.latlng.lat * 1e6) / 1e6;
@@ -142,24 +193,38 @@ export function AdminBusinessCreate() {
         if (markerObj.current) markerObj.current.setLatLng([lat, lng]);
         else markerObj.current = L.marker([lat, lng]).addTo(map);
       });
+
+      fitCity();
+      setMapReady(true);
+
+      if (typeof ResizeObserver !== 'undefined') {
+        resizeObserver = new ResizeObserver(() => mapObj.current?.invalidateSize({ animate: false }));
+        resizeObserver.observe(mapEl.current);
+      }
     })();
+
     return () => {
       disposed = true;
+      resizeObserver?.disconnect();
+      resizeObserver = null;
       markerObj.current?.remove();
       markerObj.current = null;
+      boundaryObj.current?.remove();
+      boundaryObj.current = null;
+      frameMapRef.current = null;
       mapObj.current?.remove();
       mapObj.current = null;
+      setMapReady(false);
     };
-  }, [cityId, mapData]);
+    // `created` re-mounts the form after «ثبت کسب‌وکار بعدی», so the picker has
+    // to come back with it; the framing data is applied by the effect above.
+  }, [cityId, created, cities]);
 
   /** Changing the city invalidates the old pin — it belonged to the old map. */
   const chooseCity = (value: string) => {
     setCityId(value);
     setPin(null);
-    markerObj.current?.remove();
-    markerObj.current = null;
-    mapObj.current?.remove();
-    mapObj.current = null;
+    mapDataRef.current = null;
     setMapData(null);
   };
 
@@ -380,19 +445,32 @@ export function AdminBusinessCreate() {
             <span aria-hidden>🖼</span> عکس کسب‌وکار
           </h2>
           <div className="biz-image">
-            {logoUrl ? (
-              <span className="biz-image__picked" data-testid="nb-logo-preview">
-                {/* eslint-disable-next-line @next/next/no-img-element -- owner-uploaded media */}
-                <img src={thumbUrlFor(logoUrl) ?? logoUrl} onError={thumbFallback(logoUrl)} alt="" />
-              </span>
-            ) : (
-              <span className="biz-image__picked biz-image__picked--empty" aria-hidden>
-                🏪
-              </span>
-            )}
+            {/* The thumbnail IS the upload button: a bare <input type="file">
+                was easy to miss and does nothing in the Android WebView. */}
+            <button
+              type="button"
+              className="biz-image__picker"
+              data-testid="nb-logo-pick"
+              aria-label={logoUrl ? 'تغییر عکس کسب‌وکار' : 'انتخاب عکس کسب‌وکار'}
+              disabled={logoBusy}
+              onClick={() => logoInput.current?.click()}
+            >
+              {logoUrl ? (
+                <span className="biz-image__picked" data-testid="nb-logo-preview">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- owner-uploaded media */}
+                  <img src={thumbUrlFor(logoUrl) ?? logoUrl} onError={thumbFallback(logoUrl)} alt="" />
+                </span>
+              ) : (
+                <span className="biz-image__picked biz-image__picked--empty" aria-hidden>
+                  🏪
+                </span>
+              )}
+              <span className="biz-image__cta">{logoBusy ? 'در حال بارگذاری…' : logoUrl ? 'تغییر عکس' : 'انتخاب عکس'}</span>
+            </button>
             <input
               id="nb-logo"
               ref={logoInput}
+              className="biz-image__input"
               type="file"
               accept="image/png,image/jpeg,image/webp"
               data-testid="nb-logo"

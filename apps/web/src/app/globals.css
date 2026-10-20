@@ -230,6 +230,49 @@ a:hover {
   font-size: 12.5px;
 }
 
+/* Narrow phones (and the installed app on them): one tight, unbreakable row.
+   The header used to overflow here and its icons/labels bled into each other.
+   Declared after the base header rules so it actually wins. */
+@media (max-width: 420px) {
+  .header-inner {
+    gap: 4px;
+    min-height: 48px;
+  }
+  .brand {
+    gap: 4px;
+    font-size: 15px;
+  }
+  .brand-cityname {
+    max-width: 26vw;
+  }
+  .header-pills,
+  .header-user {
+    gap: 4px;
+  }
+  .site-header .pill {
+    padding: 4px 8px;
+    font-size: 11.5px;
+    gap: 4px;
+  }
+  .site-header .btn {
+    padding: 4px 9px;
+    font-size: 11.5px;
+  }
+}
+
+/* 320–360px phones: the two short labels no longer fit next to the city and
+   the session action — icons only (the pill titles still name them). */
+@media (max-width: 360px) {
+  .site-header [data-testid='header-news-pill'] .pill__label,
+  .site-header [data-testid='header-city-pill'] .pill__label {
+    display: none;
+  }
+  .site-header .pill {
+    min-width: 36px;
+    justify-content: center;
+  }
+}
+
 .page {
   flex: 1;
   padding-top: 18px;
@@ -5611,6 +5654,66 @@ button.pill {
   border-radius: 14px;
   border: 1px solid var(--line);
 }
+
+/* Business-photo picker: the thumbnail is a real button that opens the file
+   dialog. A bare <input type="file"> looked broken (and does nothing inside
+   the Android WebView), so owners could not upload their photo at all. */
+.biz-image__picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 7px 14px 7px 7px;
+  border: 1.5px dashed #cbdccf;
+  border-radius: 15px;
+  background: var(--surface);
+  color: var(--brand-dark);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.biz-image__picker:hover {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+.biz-image__picker:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+.biz-image__picked {
+  display: block;
+  width: 54px;
+  height: 54px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--brand-soft);
+}
+.biz-image__picked img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.biz-image__picked--empty {
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+}
+/* Kept rendered (opacity 0, 1px) rather than display:none: some WebViews
+   refuse to open the chooser for a hidden file input. */
+.biz-image .biz-image__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  opacity: 0;
+}
 .biz-check {
   display: flex !important;
   align-items: center;
@@ -6063,8 +6166,9 @@ button.pill {
 .biz-registration--jam-style .biz-registration__form input:focus,.biz-registration--jam-style .biz-registration__form select:focus,.biz-registration--jam-style .biz-registration__form textarea:focus { outline:none; border-color:#168052; box-shadow:0 0 0 3px rgb(22 128 82 / 10%); }
 .biz-registration--jam-style .biz-registration__form textarea { min-height:105px; }
 .biz-registration--jam-style .biz-image { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:12px; border:1px dashed #cbded1; border-radius:15px; background:#f9fcfa; }
-.biz-registration--jam-style .biz-image input[type='file'] { flex:1 1 180px; min-width:0; border:0; padding:4px; background:transparent; }
-.biz-registration--jam-style .biz-image__picked { overflow:hidden; border-radius:12px; }
+.biz-registration--jam-style .biz-image__picker { border-color:#cbded1; background:#fff; }
+.biz-registration--jam-style .biz-image__picker:hover { border-color:#168052; background:#f3faf6; }
+.biz-registration--jam-style .biz-image__picked { border-radius:12px; }
 .biz-registration__next { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; margin-top:22px; min-height:49px; border-radius:15px; background:#168052; box-shadow:0 8px 18px rgb(22 128 82 / 18%); font-weight:850; }
 .biz-registration__step-panel { padding:18px; border:1px solid #e4eee7; border-radius:20px; background:#fff; }
 .biz-registration--jam-style .biz-map { border:1px solid #e1ebe4; border-radius:17px; box-shadow:0 8px 22px rgb(35 68 48 / 7%); }
@@ -6151,29 +6255,9 @@ button.pill {
 
 
 /* ---------- personal notifications ---------- */
-.header-notifications-link {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  min-width: 42px;
-}
-
-.header-notification-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 19px;
-  height: 19px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: #c62828;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1;
-}
+/* The unread badge used to sit in the site header; the bell was removed by
+   request (it crowded the header, especially inside the installed app), so the
+   counter is shown on the inbox page itself. */
 
 .notifications-page {
   width: min(900px, 100%);

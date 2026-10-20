@@ -79,7 +79,11 @@ export function BusinessRegistration() {
   const mapEl = useRef<HTMLDivElement | null>(null);
   const mapObj = useRef<import('leaflet').Map | null>(null);
   const markerObj = useRef<import('leaflet').Marker | null>(null);
+  const boundaryObj = useRef<import('leaflet').GeoJSON | null>(null);
   const Lref = useRef<typeof import('leaflet') | null>(null);
+  const frameMapRef = useRef<(() => void) | null>(null);
+  const mapDataRef = useRef<CityMapData | null>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   // Auth gate + load categories/plans (+ city map framing data).
   useEffect(() => {
@@ -125,53 +129,106 @@ export function BusinessRegistration() {
     };
   }, [router]);
 
-  // Leaflet picker — initialised once when the user reaches the location step.
+  // Latest framing data for the picker (read by the one-time map instance).
+  useEffect(() => {
+    mapDataRef.current = mapData;
+    if (mapReady) frameMapRef.current?.();
+  }, [mapData, mapReady]);
+
+  /**
+   * Leaflet picker — initialised once when the user reaches the location step
+   * and re-framed in place when the profile-city map data arrives. Re-creating
+   * the instance on that data change used to flash a grey canvas and misplace
+   * the tiles/zoom control while the owner was filling the form.
+   */
   useEffect(() => {
     if (step !== 2) return;
+    const container = mapEl.current;
+    if (!container) return;
     let disposed = false;
+    let resizeObserver: ResizeObserver | null = null;
+
+    const fitCity = () => {
+      const map = mapObj.current;
+      const L = Lref.current;
+      if (!map || !L) return;
+      // The step panel's final size settles after first paint — measure first,
+      // otherwise the canvas keeps a stale size and its tiles stay grey.
+      map.invalidateSize({ animate: false });
+      boundaryObj.current?.remove();
+      boundaryObj.current = null;
+
+      const city = mapDataRef.current?.city;
+      const lat = city?.latitude;
+      const lng = city?.longitude;
+      if (typeof lat !== 'number' || typeof lng !== 'number') {
+        map.setView([30, 52], 6);
+        return;
+      }
+
+      const boundary = city?.boundary as { type?: string } | null | undefined;
+      if (boundary && (boundary.type === 'Polygon' || boundary.type === 'MultiPolygon')) {
+        try {
+          const layer = L.geoJSON(boundary as never, {
+            style: { color: '#c9971f', weight: 2, fillColor: '#f2c94c', fillOpacity: 0.08, dashArray: '6 5' },
+          }).addTo(map);
+          boundaryObj.current = layer;
+          map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+          return;
+        } catch {
+          /* degenerate bounds — keep the centre view */
+        }
+      }
+      map.setView([lat, lng], 13);
+    };
+    frameMapRef.current = fitCity;
+
     (async () => {
       const L = await import('leaflet');
       if (disposed || !mapEl.current || mapObj.current) return;
       Lref.current = L;
-      const city = mapData?.city;
-      const center: [number, number] =
-        city && city.latitude != null && city.longitude != null ? [city.latitude, city.longitude] : [30, 52];
+
       const map = L.map(mapEl.current);
-      map.setView(center, 13);
       mapObj.current = map;
+      map.setView([30, 52], 6);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 18,
         attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map);
 
-      const b = city?.boundary as { type?: string; coordinates?: unknown } | null;
-      if (b && (b.type === 'Polygon' || b.type === 'MultiPolygon')) {
-        const layer = L.geoJSON(b as never, {
-          style: { color: '#c9971f', weight: 2, fillColor: '#f2c94c', fillOpacity: 0.08, dashArray: '6 5' },
-        }).addTo(map);
-        try {
-          map.fitBounds(layer.getBounds(), { padding: [20, 20] });
-        } catch {
-          /* degenerate bounds — keep the centre view */
-        }
-      }
-
-      if (location) markerObj.current = L.marker([location.lat, location.lng]).addTo(map);
       map.on('click', (e: { latlng: { lat: number; lng: number } }) => {
         const { lat, lng } = e.latlng;
         setLocation({ lat, lng });
         if (markerObj.current) markerObj.current.setLatLng([lat, lng]);
         else markerObj.current = L.marker([lat, lng]).addTo(map);
       });
+
+      if (location) markerObj.current = L.marker([location.lat, location.lng]).addTo(map);
+      fitCity();
+      setMapReady(true);
+
+      if (typeof ResizeObserver !== 'undefined') {
+        resizeObserver = new ResizeObserver(() => mapObj.current?.invalidateSize({ animate: false }));
+        resizeObserver.observe(mapEl.current);
+      }
     })();
+
     return () => {
       disposed = true;
+      resizeObserver?.disconnect();
+      resizeObserver = null;
+      markerObj.current?.remove();
+      markerObj.current = null;
+      boundaryObj.current?.remove();
+      boundaryObj.current = null;
+      frameMapRef.current = null;
       mapObj.current?.remove();
       mapObj.current = null;
-      markerObj.current = null;
+      setMapReady(false);
     };
+    // `location` is read once when the picker opens; the click handler owns it after.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- init only on entering step 2
-  }, [step, mapData]);
+  }, [step]);
 
   const clearLocation = () => {
     setLocation(null);
@@ -323,19 +380,33 @@ export function BusinessRegistration() {
           <div className="biz-registration__field biz-registration__field--wide">
           <label htmlFor="biz-logo">عکس کسب‌وکار — اختیاری</label>
           <div className="biz-image">
-            {logoUrl ? (
-              <span className="biz-image__picked" data-testid="biz-logo-preview">
-                {/* eslint-disable-next-line @next/next/no-img-element -- owner-uploaded media */}
-                <img src={thumbUrlFor(logoUrl) ?? logoUrl} onError={thumbFallback(logoUrl)} alt="" />
-              </span>
-            ) : (
-              <span className="biz-image__picked biz-image__picked--empty" aria-hidden>
-                🏪
-              </span>
-            )}
+            {/* A real button opens the picker. The bare <input type="file"> it
+                replaced looked like a broken control (and did nothing inside
+                the Android WebView), so the photo could not be uploaded. */}
+            <button
+              type="button"
+              className="biz-image__picker"
+              data-testid="biz-logo-pick"
+              aria-label={logoUrl ? 'تغییر عکس کسب‌وکار' : 'انتخاب عکس کسب‌وکار'}
+              disabled={logoBusy}
+              onClick={() => logoInput.current?.click()}
+            >
+              {logoUrl ? (
+                <span className="biz-image__picked" data-testid="biz-logo-preview">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- owner-uploaded media */}
+                  <img src={thumbUrlFor(logoUrl) ?? logoUrl} onError={thumbFallback(logoUrl)} alt="" />
+                </span>
+              ) : (
+                <span className="biz-image__picked biz-image__picked--empty" aria-hidden>
+                  🏪
+                </span>
+              )}
+              <span className="biz-image__cta">{logoBusy ? 'در حال بارگذاری…' : logoUrl ? 'تغییر عکس' : 'انتخاب عکس'}</span>
+            </button>
             <input
               id="biz-logo"
               ref={logoInput}
+              className="biz-image__input"
               type="file"
               accept="image/png,image/jpeg,image/webp"
               data-testid="biz-logo-input"
