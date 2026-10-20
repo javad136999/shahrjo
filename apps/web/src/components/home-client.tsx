@@ -25,32 +25,73 @@ export function HomeClient({ initialCities }: HomeClientProps) {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [restoringCity, setRestoringCity] = useState(true);
 
   const load = useCallback(async () => {
     setError(null);
     setCities(null);
+    setRestoringCity(true);
     try {
       const list = await api.get<City[]>('/cities');
       setCities(list);
-      if (getTokens()) {
-        // profile sync is optional here; never block city browsing on it
-        api.get<MeResponse>('/users/me').then(setMe).catch(() => setMe(null));
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'دریافت فهرست شهرها ناموفق بود');
+      setRestoringCity(false);
     }
   }, []);
 
   useEffect(() => {
-    if (initialCities) {
-      // list is already on screen; only the profile city is worth re-reading
-      if (getTokens()) {
-        api.get<MeResponse>('/users/me').then(setMe).catch(() => setMe(null));
-      }
-      return;
-    }
-    void load();
+    if (!initialCities) void load();
   }, [initialCities, load]);
+
+  useEffect(() => {
+    if (!cities) return;
+    let alive = true;
+
+    // The locally remembered choice is the visitor's latest explicit choice
+    // (including while logged out), so it takes precedence over an older
+    // profile value. Match by slug too, in case a city's numeric ID changed.
+    const remembered = getLocalCity();
+    const savedCity = remembered
+      ? cities.find((city) => city.id === remembered.id || city.slug === remembered.slug)
+      : undefined;
+    if (savedCity) {
+      setLocalCity({ id: savedCity.id, slug: savedCity.slug, name: savedCity.name });
+      router.replace(`/city/${savedCity.slug}`);
+      return () => {
+        alive = false;
+      };
+    }
+
+    // Older signed-in users may have a profile city but no local preference.
+    // Restore it once, then remember it locally for future visits.
+    if (getTokens()) {
+      api
+        .get<MeResponse>('/users/me')
+        .then((profile) => {
+          if (!alive) return;
+          setMe(profile);
+          const profileCity = profile.cityId ? cities.find((city) => city.id === profile.cityId) : undefined;
+          if (profileCity) {
+            setLocalCity({ id: profileCity.id, slug: profileCity.slug, name: profileCity.name });
+            router.replace(`/city/${profileCity.slug}`);
+            return;
+          }
+          setRestoringCity(false);
+        })
+        .catch(() => {
+          if (!alive) return;
+          setMe(null);
+          setRestoringCity(false);
+        });
+    } else {
+      setRestoringCity(false);
+    }
+
+    return () => {
+      alive = false;
+    };
+  }, [cities, router]);
 
   const handleSelect = async (city: City) => {
     setLocalCity({ id: city.id, slug: city.slug, name: city.name });
@@ -106,7 +147,13 @@ export function HomeClient({ initialCities }: HomeClientProps) {
         </p>
       )}
 
-      {cities && (
+      {cities && restoringCity && (
+        <p className="muted loading" aria-busy>
+          در حال بازگرداندن شهر انتخاب‌شده…
+        </p>
+      )}
+
+      {cities && !restoringCity && (
         <CityGrid cities={cities} onSelect={handleSelect} selectedCityId={me?.cityId ?? null} disabled={syncing} />
       )}
     </>
