@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { isCoordinateInCity } from '../businesses/businesses.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 export const DEFAULT_CONTENT_LIMIT = 12;
@@ -319,11 +320,16 @@ export class ContentService {
 
     return {
       city,
-      businesses: businesses.map((b) => ({
+      // Legacy rows can predate city pin validation, and direct DB/imported
+      // data can bypass DTO checks. Never let such a row move another city's
+      // map frame or create an invalid Leaflet marker.
+      businesses: businesses
+        .filter((b) => b.latitude !== null && b.longitude !== null && isCoordinateInCity(city, b.latitude, b.longitude))
+        .map((b) => ({
         ...b,
         latitude: b.latitude as number,
         longitude: b.longitude as number,
-      })),
+        })),
     };
   }
 

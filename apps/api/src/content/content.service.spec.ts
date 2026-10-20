@@ -307,6 +307,8 @@ describe('ContentService.map (Phase 9)', () => {
     });
     prisma.business.findMany.mockResolvedValue([
       { id: 40, name: 'رستوران ویترین', slug: 'rest', latitude: 27.831, longitude: 52.321, subscriptionTier: 'GOLD', category: { name: 'رستوران', icon: '🍽', color: '#0e7a5f' } },
+      { id: 41, name: 'پین شهر دیگر', slug: 'foreign-pin', latitude: 29.59, longitude: 52.58, subscriptionTier: 'FREE', category: { name: 'فروشگاه', icon: '🛍', color: null } },
+      { id: 42, name: 'مختصات خراب', slug: 'invalid-pin', latitude: Number.NaN, longitude: 52.32, subscriptionTier: 'FREE', category: { name: 'فروشگاه', icon: '🛍', color: null } },
     ]);
 
     const data = await service.map('sample-city');
@@ -321,6 +323,7 @@ describe('ContentService.map (Phase 9)', () => {
     });
     expect(args.orderBy).toEqual([{ showcasePriority: 'asc' }, { rating: 'desc' }]);
     expect(data.city).toMatchObject({ id: 7, slug: 'sample-city', latitude: 27.83, boundary });
+    expect(data.businesses).toHaveLength(1);
     expect(data.businesses[0]).toMatchObject({ id: 40, latitude: 27.831, longitude: 52.321, subscriptionTier: 'GOLD' });
     expect(() => JSON.stringify(data)).not.toThrow();
   });

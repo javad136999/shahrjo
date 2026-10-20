@@ -13,6 +13,7 @@ import {
   getTokens,
   uploadBusinessImage,
 } from '@/lib/api';
+import { isMapCoordinateInCity, normalizeCityBoundary } from '@/lib/map-boundary';
 import { thumbFallback, thumbUrlFor } from '@/lib/format';
 import type { BusinessCategoryOption, City, CityMapData } from '@/lib/types';
 
@@ -59,6 +60,7 @@ export function AdminBusinessCreate() {
   const [tier, setTier] = useState<'' | 'GOLD' | 'SILVER'>('');
   const [months, setMonths] = useState(3);
   const [pin, setPin] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapLoading, setMapLoading] = useState(false);
 
   // Leaflet lives in refs so a click never re-initialises the map.
   const logoInput = useRef<HTMLInputElement | null>(null);
@@ -69,8 +71,14 @@ export function AdminBusinessCreate() {
   const leafletRef = useRef<typeof import('leaflet') | null>(null);
   const frameMapRef = useRef<(() => void) | null>(null);
   const mapDataRef = useRef<CityMapData | null>(null);
+  const pinRef = useRef<{ lat: number; lng: number } | null>(null);
   const [mapData, setMapData] = useState<CityMapData | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const selectedCityForForm = cities.find((city) => city.id === Number(cityId));
+  const mapCanSelect = Boolean(mapData && (
+    normalizeCityBoundary(mapData.city.boundary) ||
+    (mapData.city.latitude !== null && mapData.city.longitude !== null)
+  ));
 
   // login gate + pickers
   useEffect(() => {
@@ -101,13 +109,15 @@ export function AdminBusinessCreate() {
     const city = cities.find((c) => c.id === Number(cityId));
     if (!city) return;
     let alive = true;
+    setMapLoading(true);
     (async () => {
       try {
         const data = await getCityMap(city.slug);
         if (alive) setMapData(data);
       } catch {
-        // no framing data → the picker still opens on the default view
         if (alive) setMapData(null);
+      } finally {
+        if (alive) setMapLoading(false);
       }
     })();
     return () => {
@@ -150,24 +160,27 @@ export function AdminBusinessCreate() {
       const city = mapDataRef.current?.city;
       const lat = city?.latitude ?? selectedCity?.latitude;
       const lng = city?.longitude ?? selectedCity?.longitude;
-      if (typeof lat !== 'number' || typeof lng !== 'number') {
-        map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
-        return;
-      }
-
-      const boundary = city?.boundary as { type?: string } | null | undefined;
-      if (boundary && (boundary.type === 'Polygon' || boundary.type === 'MultiPolygon')) {
+      const boundary = normalizeCityBoundary(city?.boundary);
+      if (boundary) {
         try {
           const layer = L.geoJSON(boundary as never, { style: () => ({ color: '#0e7a5f', weight: 1 }) }).addTo(map);
           boundaryObj.current = layer;
           const bounds = layer.getBounds();
           if (bounds.isValid()) {
             map.fitBounds(bounds, { padding: [16, 16] });
+            if (typeof map.setMaxBounds === 'function') map.setMaxBounds(bounds.pad(0.08));
             return;
           }
         } catch {
           // unparseable outline → fall back to the city centre
         }
+      }
+      if (typeof lat !== 'number' || typeof lng !== 'number') {
+        map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+        return;
+      }
+      if (typeof map.setMaxBounds === 'function') {
+        map.setMaxBounds([[lat - 0.15, lng - 0.15], [lat + 0.15, lng + 0.15]]);
       }
       map.setView([lat, lng], CITY_ZOOM);
     };
@@ -186,12 +199,47 @@ export function AdminBusinessCreate() {
         attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map);
 
+      const rounded = (value: number) => Math.round(value * 1e6) / 1e6;
+      const makePin = (lat: number, lng: number) => {
+        const marker = L.marker([lat, lng], {
+          icon: L.divIcon({
+            className: 'business-location-marker',
+            html: '<span aria-hidden="true">📍</span>',
+            iconSize: [42, 42],
+            iconAnchor: [21, 38],
+          }),
+          draggable: true,
+          title: 'موقعیت کسب‌وکار؛ برای اصلاح نشانگر را بکشید',
+        }).addTo(map);
+        marker.on('dragend', () => {
+          const point = marker.getLatLng();
+          const next = { lat: rounded(point.lat), lng: rounded(point.lng) };
+          const city = mapDataRef.current?.city;
+          if (!city || !isMapCoordinateInCity(city, next.lat, next.lng)) {
+            setError('نشانگر باید داخل محدودهٔ شهر باشد؛ موقعیت قبلی حفظ شد.');
+            const previous = pinRef.current;
+            if (previous) marker.setLatLng([previous.lat, previous.lng]);
+            return;
+          }
+          pinRef.current = next;
+          setPin(next);
+          setError(null);
+        });
+        return marker;
+      };
+
       map.on('click', (e: { latlng: { lat: number; lng: number } }) => {
-        const lat = Math.round(e.latlng.lat * 1e6) / 1e6;
-        const lng = Math.round(e.latlng.lng * 1e6) / 1e6;
-        setPin({ lat, lng });
-        if (markerObj.current) markerObj.current.setLatLng([lat, lng]);
-        else markerObj.current = L.marker([lat, lng]).addTo(map);
+        const next = { lat: rounded(e.latlng.lat), lng: rounded(e.latlng.lng) };
+        const city = mapDataRef.current?.city;
+        if (!city || !isMapCoordinateInCity(city, next.lat, next.lng)) {
+          setError(mapLoading ? 'نقشهٔ شهر هنوز آماده نیست؛ پس از بارگذاری دوباره انتخاب کن.' : 'موقعیت باید داخل محدودهٔ شهر انتخاب‌شده باشد.');
+          return;
+        }
+        pinRef.current = next;
+        setPin(next);
+        setError(null);
+        if (markerObj.current) markerObj.current.setLatLng([next.lat, next.lng]);
+        else markerObj.current = makePin(next.lat, next.lng);
       });
 
       fitCity();
@@ -224,6 +272,7 @@ export function AdminBusinessCreate() {
   const chooseCity = (value: string) => {
     setCityId(value);
     setPin(null);
+    pinRef.current = null;
     mapDataRef.current = null;
     setMapData(null);
   };
@@ -252,6 +301,10 @@ export function AdminBusinessCreate() {
     }
     if (!pin) {
       setError('موقعیت کسب‌وکار را روی نقشه انتخاب کن تا روی نقشهٔ شهر نمایش داده شود');
+      return;
+    }
+    if (!mapCanSelect) {
+      setError('نقشهٔ معتبر این شهر در دسترس نیست؛ ثبت دستی را پس از بارگذاری نقشه دوباره انجام بده');
       return;
     }
     const selectedCity = cities.find((city) => city.id === Number(cityId));
@@ -295,6 +348,7 @@ export function AdminBusinessCreate() {
     setTier('');
     setMonths(3);
     setPin(null);
+    pinRef.current = null;
     markerObj.current?.remove();
     markerObj.current = null;
     setError(null);
@@ -496,9 +550,24 @@ export function AdminBusinessCreate() {
             <p className="muted small">اول شهر را انتخاب کن تا نقشهٔ همان شهر بیاید.</p>
           ) : (
             <>
-              <div className="admin-newbiz__map" ref={mapEl} data-testid="nb-map" />
+              <p className="muted small biz-location-instructions">
+                شهر هدف: <strong>{mapData?.city.name ?? selectedCityForForm?.name ?? 'شهر انتخاب‌شده'}</strong>. برای گذاشتن سنجاق، روی محل دقیق کسب‌وکار لمس یا کلیک کن؛
+                برای اصلاح، سنجاق قرمز را بکش یا نقطهٔ جدیدی انتخاب کن. موقعیت باید داخل محدودهٔ همین شهر باشد.
+              </p>
+              {mapLoading && <p className="muted small" aria-live="polite">در حال بارگذاری نقشهٔ شهر…</p>}
+              {!mapLoading && !mapCanSelect && <p className="banner banner--error" role="alert">نقشه یا محدودهٔ جغرافیایی این شهر در دسترس نیست؛ پیش از ثبت دستی باید دادهٔ شهر تنظیم شود.</p>}
+              <div
+                className={`admin-newbiz__map${mapCanSelect ? '' : ' is-unavailable'}`}
+                ref={mapEl}
+                role="application"
+                aria-label={`انتخاب موقعیت کسب‌وکار در ${mapData?.city.name ?? selectedCityForForm?.name ?? 'شهر انتخاب‌شده'}`}
+                aria-disabled={!mapCanSelect}
+                data-testid="nb-map"
+              />
               <p className="muted small" data-testid="nb-pin">
-                {pin ? `منتظر: ${pin.lat}، ${pin.lng} — با کلیک روی نقشه جابه‌جا می‌شود.` : 'روی نقشه کلیک کن تا موقعیت کسب‌وکار ثبت شود؛ برای نمایش روی نقشه الزامی است.'}
+                {pin
+                  ? `سنجاق انتخاب شد: ${pin.lat}، ${pin.lng} — برای اصلاح آن را بکش یا روی نقطهٔ دیگری لمس کن.`
+                  : `روی محل دقیق کسب‌وکار در نقشهٔ ${mapData?.city.name ?? selectedCityForForm?.name ?? 'شهر انتخاب‌شده'} لمس/کلیک کن؛ انتخاب موقعیت برای ثبت دستی الزامی است.`}
               </p>
             </>
           )}

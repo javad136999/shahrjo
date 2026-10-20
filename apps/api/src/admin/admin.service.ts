@@ -421,7 +421,12 @@ export class AdminService {
     const adminId = await this.adminRowId(user.id);
     const business = await this.prisma.business.findFirst({
       where: { id, ...this.cityFilter(scope) },
-      select: { id: true, ownerId: true, name: true },
+      select: {
+        id: true,
+        ownerId: true,
+        name: true,
+        city: { select: { latitude: true, longitude: true, boundary: true } },
+      },
     });
     if (!business) throw new NotFoundException('کسب‌وکار یافت نشد');
 
@@ -433,6 +438,9 @@ export class AdminService {
       if (dto.latitude! < -90 || dto.latitude! > 90 || dto.longitude! < -180 || dto.longitude! > 180) {
         throw new BadRequestException('مختصات نامعتبر است');
       }
+      // Moderation may replace a user's pin, but it must stay within the
+      // business's own city just like both registration paths.
+      assertInCity(business.city, dto.latitude!, dto.longitude!);
     }
 
     const updated = await this.prisma.business.update({

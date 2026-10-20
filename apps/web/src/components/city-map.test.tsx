@@ -107,6 +107,35 @@ describe('CityMap', () => {
     expect(leaflet.map.mock.results[0].value.remove).toHaveBeenCalled();
   });
 
+  it('ignores a legacy pin outside the configured city so it cannot distort the frame', async () => {
+    const leaflet = require('leaflet');
+    const withForeignPin: CityMapData = {
+      ...data,
+      businesses: [
+        ...data.businesses,
+        {
+          id: 99,
+          name: 'pin خارج شهر',
+          slug: 'foreign-pin',
+          latitude: 35.7,
+          longitude: 51.4,
+          subscriptionTier: 'FREE',
+          logoUrl: null,
+          category: { name: 'فروشگاه', slug: 'shop', icon: '🛍️', color: null },
+        },
+      ],
+    };
+    render(<CityMap data={withForeignPin} />);
+
+    await waitFor(() => expect(leaflet.marker).toHaveBeenCalledTimes(2));
+    const instance = leaflet.map.mock.results[0].value;
+    const [frame] = instance.fitBounds.mock.calls[0];
+    expect(frame[0][0]).toBeGreaterThan(27);
+    expect(frame[1][0]).toBeLessThan(28);
+    expect(frame[0][1]).toBeGreaterThan(52);
+    expect(frame[1][1]).toBeLessThan(53);
+  });
+
   it('uses the admin boundary for framing but never draws it on the canvas', async () => {
     const leaflet = require('leaflet');
     const bounded: CityMapData = {
@@ -304,13 +333,15 @@ describe('CityMap', () => {
     expect(box[1][0]).toBeGreaterThan(27.83);
   });
 
-  it('ignores a stored centre that is far from every business (bad data) and frames the pins', async () => {
+  it('ignores pins outside the configured city window when a centre is bad, keeping the frame local', async () => {
     const leaflet = require('leaflet');
     const badCentre = { ...data, city: { ...data.city, latitude: 27.89, longitude: 52.49 } }; // ~17 km from the pins
     render(<CityMap data={badCentre} />);
     await waitFor(() => expect(leaflet.map).toHaveBeenCalledTimes(1));
     const [box] = leaflet.map.mock.results[0].value.fitBounds.mock.calls[0];
-    expect(box[1][1]).toBeLessThan(52.4); // the empty countryside around the bad centre is not framed
+    expect(box[0][1]).toBeGreaterThan(52.3);
+    expect(box[1][1]).toBeLessThan(52.7);
+    expect(leaflet.marker).not.toHaveBeenCalled();
   });
 
   it('pads a tiny city outline up to a readable urban extent', async () => {

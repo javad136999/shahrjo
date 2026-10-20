@@ -8,6 +8,8 @@ jest.mock('leaflet', () => {
     const layer: Record<string, unknown> = {};
     layer.addTo = jest.fn(() => layer);
     layer.setLatLng = jest.fn(() => layer);
+    layer.getLatLng = jest.fn(() => ({ lat: 27.8, lng: 52.3 }));
+    layer.on = jest.fn(() => layer);
     layer.getBounds = jest.fn(() => ({ isValid: () => false }));
     layer.remove = jest.fn(() => layer);
     return layer;
@@ -69,9 +71,10 @@ describe('BusinessRegistration', () => {
     m.getBusinessCategories.mockResolvedValue(cats);
     m.getPlans.mockResolvedValue(plans);
     m.getCityMap.mockResolvedValue({ city: { id: 1, name: 'شهر نمونه', slug: 'sample-city', latitude: 27.8, longitude: 52.3, boundary: null }, businesses: [] });
-    m.getLocalCity.mockReturnValue({ id: 1, slug: 'sample-city', name: 'شهر نمونه' });
-    // no profile city by default → the map falls back to the local city
-    m.getProfile.mockResolvedValue({ cityId: null });
+    m.getProfile.mockResolvedValue({ cityId: 1 });
+    (api as unknown as { api: { get: jest.Mock } }).api.get.mockResolvedValue([
+      { id: 1, slug: 'sample-city', name: 'شهر نمونه', latitude: 27.8, longitude: 52.3 },
+    ]);
   });
 
   it('frames the map on the PROFILE city (the city the backend files under)', async () => {
@@ -84,6 +87,18 @@ describe('BusinessRegistration', () => {
     render(<BusinessRegistration />);
     await waitFor(() => expect(m.getCityMap).toHaveBeenCalledWith('profile-city'));
     expect(m.getCityMap).not.toHaveBeenCalledWith('sample-city');
+  });
+
+  it('does not fall back to a possibly different local city when profile city is missing', async () => {
+    m.getProfile.mockResolvedValue({ cityId: null });
+    render(<BusinessRegistration />);
+    fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
+    fireEvent.change(screen.getByLabelText(/دسته‌بندی/), { target: { value: '3' } });
+    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: موقعیت/ }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('ابتدا شهر حساب کاربری‌ات را');
+    expect(screen.getByRole('button', { name: /مرحله بعد: اشتراک/ })).toBeDisabled();
+    expect(m.getCityMap).not.toHaveBeenCalled();
   });
 
   it('redirects logged-out visitors to login', async () => {
@@ -142,6 +157,7 @@ describe('BusinessRegistration', () => {
 
     // step 2: map picker shown
     await screen.findByTestId('biz-map');
+    await waitFor(() => expect(screen.getByTestId('biz-map')).toHaveAttribute('aria-disabled', 'false'));
     fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: اشتراک/ }));
 
     // step 3: pick GOLD plan then confirm
@@ -187,6 +203,7 @@ describe('BusinessRegistration', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: موقعیت/ }));
     await screen.findByTestId('biz-map');
+    await waitFor(() => expect(screen.getByTestId('biz-map')).toHaveAttribute('aria-disabled', 'false'));
     fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: اشتراک/ }));
     await screen.findByTestId('biz-plans');
     fireEvent.click(screen.getByTestId('biz-plan-11'));
