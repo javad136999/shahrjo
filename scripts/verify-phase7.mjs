@@ -7,6 +7,7 @@ const mustExist = [
   'apps/api/src/payments/payments.service.ts',
   'apps/api/src/payments/payments.dto.ts',
   'apps/api/src/payments/bazaar.service.ts',
+  'apps/android/app/src/main/java/ir/shahrju/app/MainActivity.kt',
   'apps/web/src/components/plans-view.tsx',
   'apps/web/src/components/plans-view.test.tsx',
   'apps/web/src/app/plans/page.tsx',
@@ -42,6 +43,8 @@ const service = read('apps/api/src/payments/payments.service.ts');
 for (const marker of [
   'this.bazaar.isConfigured',
   'this.bazaar.verifyPurchase(dto.productId, dto.purchaseToken)',
+  'validUntilTimestampMsec',
+  'bazaarDeveloperPayload',
   "payment.provider !== 'BAZAAR'",
   "status: 'SUCCESS'",
   "status: 'ACTIVE'",
@@ -51,8 +54,15 @@ for (const marker of [
   if (!service.includes(marker)) { console.error('PAYMENTS: missing', marker); fail++; }
 }
 const gateway = read('apps/api/src/payments/bazaar.service.ts');
-for (const marker of ['BAZAAR_ACCESS_TOKEN', 'BAZAAR_PACKAGE_NAME', 'pardakht.cafebazaar.ir', 'validate/']) {
+for (const marker of ['BAZAAR_ACCESS_TOKEN', 'BAZAAR_PACKAGE_NAME', 'pardakht.cafebazaar.ir', 'subscriptions/']) {
   if (!gateway.includes(marker)) { console.error('BAZAAR: missing', marker); fail++; }
+}
+const androidBilling = read('apps/android/app/src/main/java/ir/shahrju/app/MainActivity.kt');
+for (const marker of ['subscribeProduct', 'shouldSupportSubscription', 'developerPayload']) {
+  if (!androidBilling.includes(marker)) { console.error('ANDROID BILLING: missing', marker); fail++; }
+}
+if (androidBilling.includes('purchaseProduct') || androidBilling.includes('consumeProduct')) {
+  console.error('ANDROID BILLING: subscription flow must not use one-time purchase or consume APIs'); fail++;
 }
 const envExample = read('.env.example');
 for (const key of ['BAZAAR_ACCESS_TOKEN', 'BAZAAR_PACKAGE_NAME']) {
@@ -129,4 +139,4 @@ for (const endpoint of ['POST `/payments/checkout`', 'POST `/payments/bazaar/ver
 }
 
 if (fail) { console.error(`\nPhase 7 FAILED (${fail} problem${fail > 1 ? 's' : ''})`); process.exit(1); }
-console.log('Phase 7 OK: Cafe Bazaar checkout + server-side token verification, authenticated routes, owned subscriptions, docs/CI in sync');
+console.log('Phase 7 OK: Cafe Bazaar subscription checkout + server validation/expiry, authenticated routes, owned subscriptions, docs/CI in sync');

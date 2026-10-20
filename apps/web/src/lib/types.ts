@@ -138,6 +138,7 @@ export interface CheckoutSession {
   paymentId: number;
   productId: string;
   packageName: string;
+  developerPayload: string;
   amount: number;
 }
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ApiError, checkoutPlan, getMySubscriptions, getPlans, getTokens, verifyBazaarPurchase } from '@/lib/api';
-import { consumeBazaarPurchase, purchaseWithBazaar } from '@/lib/bazaar';
+import { purchaseWithBazaar } from '@/lib/bazaar';
 import type { MySubscription, PlanItem } from '@/lib/types';
 
 const TIER_META: Record<string, { icon: string; label: string }> = {
@@ -106,15 +106,9 @@ export function PlansView() {
     setLoading(plan.id);
     try {
       const session = await checkoutPlan({ planId: plan.id, ...(reactivateId ? { businessId: reactivateId } : {}) });
-      const purchaseToken = await purchaseWithBazaar(session.productId, session.packageName);
+      const purchaseToken = await purchaseWithBazaar(session.productId, session.packageName, session.developerPayload);
       const result = await verifyBazaarPurchase({ paymentId: session.paymentId, productId: session.productId, purchaseToken });
       if (result !== 'SUCCESS' && result !== 'ALREADY_PAID') throw new Error('پرداخت بازار تأیید نشد.');
-      try {
-        await consumeBazaarPurchase(purchaseToken);
-      } catch (consumeError) {
-        // The server has already granted the subscription; never prompt a second payment for a consume retry.
-        console.warn('Bazaar purchase was verified but could not be consumed.', consumeError);
-      }
       router.replace(`/plans/result?status=${encodeURIComponent(result)}`);
     } catch (err) {
       setLoading(null);

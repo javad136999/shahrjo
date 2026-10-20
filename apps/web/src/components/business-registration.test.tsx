@@ -21,7 +21,6 @@ jest.mock('leaflet', () => {
 });
 
 const replace = jest.fn();
-const mockConsumeBazaarPurchase = jest.fn().mockResolvedValue(undefined);
 jest.mock('next/navigation', () => ({ useRouter: () => ({ replace }) }));
 
 jest.mock('@/lib/api', () => ({
@@ -42,7 +41,6 @@ jest.mock('@/lib/api', () => ({
 
 jest.mock('@/lib/bazaar', () => ({
   purchaseWithBazaar: jest.fn().mockResolvedValue('bazaar-token'),
-  consumeBazaarPurchase: (purchaseToken: string) => mockConsumeBazaarPurchase(purchaseToken),
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -125,7 +123,7 @@ describe('BusinessRegistration', () => {
 
   it('walks details → location → plan and opens Bazaar billing on confirm', async () => {
     m.createBusiness.mockResolvedValue({ id: 77, name: 'قهوه‌خانه', slug: 'biz-77', status: 'PENDING', subscriptionTier: 'FREE' });
-    m.checkoutPlan.mockResolvedValue({ paymentId: 1, productId: 'GOLD_1M', packageName: 'ir.shahrjo', amount: 500_000 });
+    m.checkoutPlan.mockResolvedValue({ paymentId: 1, productId: 'GOLD_1M', packageName: 'ir.shahrju.app', developerPayload: 'shahrjo:payload-1', amount: 500_000 });
     m.verifyBazaarPurchase.mockResolvedValue('SUCCESS');
 
     render(<BusinessRegistration />);
@@ -150,7 +148,7 @@ describe('BusinessRegistration', () => {
     await waitFor(() =>
       expect(m.checkoutPlan).toHaveBeenCalledWith({ planId: 11, businessId: 77 }),
     );
-    await waitFor(() => expect(mockConsumeBazaarPurchase).toHaveBeenCalledWith('bazaar-token'));
+    await waitFor(() => expect(m.verifyBazaarPurchase).toHaveBeenCalledWith({ paymentId: 1, productId: 'GOLD_1M', purchaseToken: 'bazaar-token' }));
   });
 
   it('uploads the business photo (compressed route) and sends it with the registration', async () => {
@@ -159,7 +157,7 @@ describe('BusinessRegistration', () => {
       url: '/api/v1/files/media/2026/10/logo.webp',
     });
     m.createBusiness.mockResolvedValue({ id: 77, name: 'قهوه‌خانه', slug: 'biz-77', status: 'PENDING', subscriptionTier: 'FREE' });
-    m.checkoutPlan.mockResolvedValue({ paymentId: 1, productId: 'GOLD_1M', packageName: 'ir.shahrjo', amount: 500_000 });
+    m.checkoutPlan.mockResolvedValue({ paymentId: 1, productId: 'GOLD_1M', packageName: 'ir.shahrju.app', developerPayload: 'shahrjo:payload-1', amount: 500_000 });
     m.verifyBazaarPurchase.mockResolvedValue('SUCCESS');
 
     render(<BusinessRegistration />);

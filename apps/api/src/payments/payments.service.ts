@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Prisma, User } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { BazaarVerifyDto, CheckoutDto } from './payments.dto';
 import { BazaarService } from './bazaar.service';
@@ -28,6 +29,7 @@ export interface CheckoutResult {
   paymentId: number;
   productId: string;
   packageName: string;
+  developerPayload: string;
   amount: number;
 }
 
@@ -82,7 +84,7 @@ export class PaymentsService {
     // Fail before creating a pending payment if Bazaar credentials/package are absent.
     if (!this.bazaar.isConfigured) {
       throw new HttpException(
-        'پرداخت بازار روی سرور پیکربندی نشده است؛ BAZAAR_ACCESS_TOKEN و BAZAAR_PACKAGE_NAME را تنظیم کنید.',
+        'پرداخت بازار روی سرور پیکربندی نشده است؛ BAZAAR_ACCESS_TOKEN و BAZAAR_PACKAGE_NAME=ir.shahrju.app را تنظیم کنید.',
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
@@ -105,6 +107,7 @@ export class PaymentsService {
     if (recent >= MAX_CHECKOUTS_PER_HOUR) {
       throw new HttpException('سقف پرداخت در ساعت پر شده است؛ کمی بعد دوباره تلاش کنید', HttpStatus.TOO_MANY_REQUESTS);
     }
+    const developerPayload = `shahrjo:${randomUUID()}`;
     const payment = await this.prisma.payment.create({
       data: {
         userId: user.id,
@@ -113,6 +116,7 @@ export class PaymentsService {
         amount: plan.price,
         status: 'CREATED',
         provider: 'BAZAAR',
+        bazaarDeveloperPayload: developerPayload,
       },
       select: { id: true, amount: true },
     });
@@ -120,6 +124,7 @@ export class PaymentsService {
       paymentId: payment.id,
       productId: plan.code,
       packageName: this.bazaar.packageName,
+      developerPayload,
       amount: Number(payment.amount),
     };
   }
@@ -127,7 +132,7 @@ export class PaymentsService {
   async verifyBazaar(user: User, dto: BazaarVerifyDto): Promise<PaymentResultStatus> {
     const payment = await this.prisma.payment.findFirst({
       where: { id: dto.paymentId, userId: user.id },
-      select: { id: true, userId: true, businessId: true, planId: true, amount: true, status: true, provider: true },
+      select: { id: true, userId: true, businessId: true, planId: true, amount: true, status: true, provider: true, bazaarDeveloperPayload: true },
     });
     if (!payment) throw new NotFoundException('تراکنش یافت نشد');
     if (payment.status === 'SUCCESS') return 'ALREADY_PAID';
@@ -138,10 +143,14 @@ export class PaymentsService {
     });
     if (plan.code !== dto.productId) throw new BadRequestException('محصول پرداخت با پلن انتخاب‌شده یکسان نیست');
     const purchase = await this.bazaar.verifyPurchase(dto.productId, dto.purchaseToken);
-    if (purchase.purchaseState !== 0) {
+    if (!payment.bazaarDeveloperPayload || purchase.developerPayload !== payment.bazaarDeveloperPayload) {
+      throw new BadRequestException('شناسهٔ درخواست خرید بازار با تراکنش یکسان نیست');
+    }
+    const validUntilTimestampMsec = purchase.validUntilTimestampMsec;
+    if (!validUntilTimestampMsec || validUntilTimestampMsec <= Date.now()) {
       await this.prisma.payment.updateMany({
         where: { id: payment.id, status: { in: ['CREATED', 'STARTED'] } },
-        data: { status: 'FAILED', errorDescription: 'خرید بازار تکمیل نشده است' },
+        data: { status: 'FAILED', errorDescription: 'اشتراک بازار فعال نیست یا منقضی شده است' },
       });
       return 'FAILED';
     }
@@ -152,7 +161,7 @@ export class PaymentsService {
           status: 'SUCCESS',
           authority: dto.purchaseToken,
           refId: purchase.orderId ?? null,
-          resultCode: 0,
+          resultCode: purchase.purchaseState,
           callbackPayload: purchase.raw as Prisma.InputJsonValue,
           verifiedAt: new Date(),
           paidAt: new Date(),
@@ -161,9 +170,9 @@ export class PaymentsService {
       if (claimed.count === 0) return 'ALREADY_PAID' as const;
       const fullPlan = await tx.subscriptionPlan.findUniqueOrThrow({
         where: { id: payment.planId },
-        select: { tier: true, durationDays: true },
+        select: { tier: true },
       });
-      return this.activateVerifiedPayment(tx, payment, fullPlan);
+      return this.activateVerifiedPayment(tx, payment, fullPlan, new Date(validUntilTimestampMsec));
     });
     if (outcome === 'SUCCESS') {
       try {
@@ -174,9 +183,8 @@ export class PaymentsService {
     }
     return outcome;
   }
-  private async activateVerifiedPayment(tx: any, payment: any, plan: { tier: any; durationDays: number }): Promise<'SUCCESS'> {
+  private async activateVerifiedPayment(tx: any, payment: any, plan: { tier: any }, expiresAt: Date): Promise<'SUCCESS'> {
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + plan.durationDays * 86_400_000);
     await tx.subscription.create({
       data: { userId: payment.userId, businessId: payment.businessId, planId: payment.planId, tier: plan.tier, status: 'ACTIVE', startsAt: now, expiresAt },
     });

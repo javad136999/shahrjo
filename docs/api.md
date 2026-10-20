@@ -65,12 +65,12 @@
 | Endpoint | Auth | توضیح |
 |---|---|---|
 | GET `/subscription-plans` | @Public | پلن‌های فعال (`GOLD`/`SILVER`، قیمت BigInt → عدد) برای صفحه /plans |
-| POST `/payments/checkout` | Bearer | `{ planId, businessId? }` → ایجاد پرداخت `CREATED` با `provider=BAZAAR` و بازگشت `{ paymentId, productId, packageName, amount }`؛ سقف ۱۰ checkout در ساعت |
-| POST `/payments/bazaar/verify` | Bearer | `{ paymentId, productId, purchaseToken }` → اعتبارسنجی server-to-server با Bazaar؛ فقط خرید محصول متناظر و تراکنش متعلق به همان کاربر پذیرفته می‌شود؛ فعال‌سازی در تراکنش اتمیک و تکرار امن (`ALREADY_PAID`) |
+| POST `/payments/checkout` | Bearer | `{ planId, businessId? }` → ایجاد پرداخت `CREATED` با `provider=BAZAAR` و بازگشت `{ paymentId, productId, packageName, developerPayload, amount }`؛ payload یکتا برای تطبیق پاسخ بازار ذخیره می‌شود؛ سقف ۱۰ checkout در ساعت |
+| POST `/payments/bazaar/verify` | Bearer | `{ paymentId, productId, purchaseToken }` → اعتبارسنجی با endpoint اشتراک بازار؛ payload باید با سفارش ذخیره‌شده یکی باشد و `validUntilTimestampMsec` آینده باشد؛ فقط همان محصول و تراکنش متعلق به همان کاربر پذیرفته می‌شود؛ فعال‌سازی اتمیک و تکرار امن (`ALREADY_PAID`) |
 | GET `/payments/mine` | Bearer | تاریخچه پرداخت‌های کاربر |
 | GET `/subscriptions/mine` | Bearer | اشتراک‌های کاربر و کسب‌وکار مرتبط |
 
-کلیدهای بازار فقط در env سرور (`BAZAAR_PACKAGE_NAME` و `BAZAAR_ACCESS_TOKEN`) هستند. کلید RSA عمومی در اپ اندروید و کلید JWT تخفیف پویا مطابق پنل بازار مدیریت می‌شوند و هیچ‌کدام نباید در مخزن commit شوند.
+شناسهٔ برنامه در build اندروید و سرور باید `ir.shahrju.app` باشد. توکن API بازار (`BAZAAR_ACCESS_TOKEN`) فقط در env سرور می‌ماند؛ RSA public key برنامه در اپ اندروید قرار می‌گیرد و هیچ secretای نباید در مخزن commit شود.
 
 ## Content (همه City-scoped)
 

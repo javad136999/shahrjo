@@ -1,28 +1,28 @@
-# اتصال اپ اندروید شهرجو به پرداخت درون‌برنامه‌ای بازار
+# اتصال اپ اندروید شهرجو به اشتراک درون‌برنامه‌ای بازار
 
-سورس native در `apps/android` قرار دارد. اپ با شناسهٔ `ir.shahrjo` سایت `https://shahrju.ir` را در WebView باز می‌کند و کتابخانهٔ رسمی Poolakey نسخهٔ `2.3.0` را به کار می‌برد. روش ساخت و تنظیم کلید RSA در `apps/android/README.md` آمده است.
+سورس native در `apps/android` قرار دارد. اپ با شناسهٔ `ir.shahrju.app` وب‌سایت `https://shahrju.ir` را در WebView باز می‌کند و از Poolakey `2.3.0` استفاده می‌کند. خرید پلن‌های GOLD و SILVER باید با `subscribeProduct` انجام شود؛ این شناسه‌ها SKU اشتراک بازار هستند، نه محصول یک‌باره. روش ساخت و تنظیم RSA public key در `apps/android/README.md` آمده است.
 
 ## امنیت پل وب
 
-اپ با AndroidX `WebMessageListener` یک پل محدود به originهای `https://shahrju.ir` و `https://www.shahrju.ir` می‌سازد. برای frameهای دیگر یا دامنه‌های دیگر interface پرداخت تزریق نمی‌شود. وب‌اپ قرارداد زیر را استفاده می‌کند:
+پل با AndroidX `WebMessageListener` فقط برای originهای امن `https://shahrju.ir` و `https://www.shahrju.ir` فعال می‌شود. frame یا دامنهٔ دیگر به خرید دسترسی ندارد. قرارداد وب چنین است:
 
 ```ts
 window.ShahrjoBazaar = {
-  purchase: async ({ productId, packageName }) => ({
+  purchase: async ({ productId, packageName, developerPayload }) => ({
     purchaseToken: 'TOKEN_FROM_POOLAKEY',
     productId,
   }),
-  consume: async ({ purchaseToken }) => undefined,
 };
 ```
 
-عملیات native فقط روی محصول‌های تعریف‌شدهٔ `GOLD_1M`, `GOLD_6M`, `GOLD_12M`, `SILVER_1M`, `SILVER_6M` و `SILVER_12M` اجازه داده می‌شود. RSA public key بازار در build به `BuildConfig` تزریق می‌شود؛ access token بازار در اپ وجود ندارد و فقط سمت سرور استفاده می‌شود.
+فقط شناسه‌های `GOLD_1M`, `GOLD_6M`, `GOLD_12M`, `SILVER_1M`, `SILVER_6M` و `SILVER_12M` مجازند. payload یکتای خرید را سرور تولید و در رکورد همان پرداخت ذخیره می‌کند. توکن API بازار فقط روی سرور می‌ماند؛ RSA public key برنامه در build اندروید قرار می‌گیرد.
 
-## جریان خرید
+## جریان خرید اشتراک
 
-1. وب‌اپ `POST /api/v1/payments/checkout` را با `{ planId, businessId? }` صدا می‌زند و `paymentId`, `productId`, `packageName` می‌گیرد.
-2. وب‌اپ `ShahrjoBazaar.purchase` را صدا می‌زند. Poolakey درخواست خرید محصول را در برنامهٔ بازار باز می‌کند و پس از موفقیت، توکن خرید را به وب‌اپ برمی‌گرداند.
-3. وب‌اپ `POST /api/v1/payments/bazaar/verify` را با `{ paymentId, productId, purchaseToken }` می‌فرستد. سرور با `BAZAAR_ACCESS_TOKEN` خرید را اعتبارسنجی می‌کند و اشتراک را فعال می‌کند.
-4. فقط پس از پاسخ `SUCCESS` یا `ALREADY_PAID` از API، وب‌اپ `ShahrjoBazaar.consume` را صدا می‌زند تا خرید یک‌بارمصرف Poolakey برای تمدید آینده قابل خرید مجدد باشد. اگر consume ناموفق باشد، نتیجهٔ موفق سرور حفظ می‌شود و وب‌اپ خرید دوم را درخواست نمی‌کند.
+1. وب‌اپ `POST /api/v1/payments/checkout` را با `{ planId, businessId? }` صدا می‌زند و `paymentId`, `productId`, `packageName`, `developerPayload` می‌گیرد.
+2. وب‌اپ bridge را صدا می‌زند؛ Poolakey با `shouldSupportSubscription=true` و `subscribeProduct(PurchaseRequest(productId, payload))` صفحهٔ خرید اشتراک بازار را باز می‌کند.
+3. پس از callback موفق، وب‌اپ `purchaseToken` را به `POST /api/v1/payments/bazaar/verify` می‌دهد.
+4. سرور از endpoint اشتراک بازار `applications/<package>/subscriptions/<subscription_id>/purchases/<purchase_token>` استعلام می‌گیرد؛ payload برگشتی باید با payload پرداخت ذخیره‌شده برابر باشد و `validUntilTimestampMsec` باید از زمان فعلی جلوتر باشد. سرور تاریخ پایان entitlement را از همین timestamp می‌گیرد، نه از ادعای کلاینت.
+5. اشتراک consume نمی‌شود. طبق راهنمای بازار، consume فقط برای محصول فروشیِ یک‌بارمصرف است و endpoint آن برای اشتراک مناسب نیست.
 
-قیمت یا وضعیت پرداخت از سمت کلاینت معتبر نیست. مرجع فعال‌سازی اشتراک همواره پاسخ اعتبارسنجی سرور است. برای تنظیم RSA public key، package name، محصولات بازار و امضای APK راهنمای `apps/android/README.md` را دنبال کنید.
+قیمت/وضعیت ارسالی کلاینت مبنای فعال‌سازی نیست. قیمت نمایشی اپ و SKUهای ساخته‌شده در پیشخوان باید با هم منطبق باشند. منابع رسمی: [پیاده‌سازی Poolakey](https://developers.cafebazaar.ir/en/guidelines/in-app-billing/implementation/kotlin)، [بررسی وضعیت اشتراک](https://developers.cafebazaar.ir/fa/guidelines/in-app-billing/api/subscription)، [امنیت پرداخت](https://developers.cafebazaar.ir/fa/guidelines/in-app-billing/security)، و [قوانین انتشار پرداخت](https://developers.cafebazaar.ir/fa/app-publish-guidelines/rules/payment).

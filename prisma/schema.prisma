@@ -818,6 +818,7 @@ model Payment {
   amount           BigInt // Rial
   status           PaymentStatus   @default(CREATED)
   authority        String?         @unique @db.VarChar(512) // Bazaar purchase token
+  bazaarDeveloperPayload String?    @unique @map("bazaar_developer_payload") @db.VarChar(64)
   refId            String?         @map("ref_id") @db.VarChar(64) // Bazaar order id
   resultCode       Int?            @map("result_code") // Bazaar purchase state (0 = purchased)
   errorDescription String?         @map("error_description")

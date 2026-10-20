@@ -87,5 +87,5 @@ docker compose -f docker-compose.prod.yml exec -w /repo api npx prisma migrate s
 - Nginx تنها درگاه 80 (و 443 بعد از SSL) را باز می‌کند.
 - `.env` سرور هرگز commit/push نمی‌شود (`.gitignore` + `.dockerignore`).
 - کلید API بازار (`BAZAAR_ACCESS_TOKEN`) و API Key پیامک فقط در `.env` سرور.
-- `BAZAAR_PACKAGE_NAME` باید دقیقاً با package name برنامهٔ منتشرشده در بازار یکی باشد.
+- `BAZAAR_PACKAGE_NAME` باید دقیقاً `ir.shahrju.app` (شناسهٔ ثبت‌شدهٔ برنامه در بازار) باشد.
 - `BAZAAR_ACCESS_TOKEN` فقط روی سرور تنظیم شود؛ توکن خرید از اپ دریافت و دوباره با API بازار اعتبارسنجی می‌شود.

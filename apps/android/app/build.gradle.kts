@@ -12,16 +12,16 @@ val escapedRsaPublicKey = bazaarRsaPublicKey
     .replace("\"", "\\\"")
 
 android {
-    namespace = "ir.shahrjo"
+    namespace = "ir.shahrju.app"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "ir.shahrjo"
+        applicationId = "ir.shahrju.app"
         minSdk = 21
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
-        buildConfigField("String", "BAZAAR_PACKAGE_NAME", "\"ir.shahrjo\"")
+        versionCode = 2
+        versionName = "1.1.0"
+        buildConfigField("String", "BAZAAR_PACKAGE_NAME", "\"ir.shahrju.app\"")
         buildConfigField("String", "BAZAAR_RSA_PUBLIC_KEY", "\"$escapedRsaPublicKey\"")
     }
 

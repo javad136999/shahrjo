@@ -1,4 +1,4 @@
-package ir.shahrjo
+package ir.shahrju.app
 
 import android.content.Intent
 import android.net.Uri
@@ -26,7 +26,6 @@ import ir.cafebazaar.poolakey.config.PaymentConfiguration
 import ir.cafebazaar.poolakey.config.SecurityCheck
 import ir.cafebazaar.poolakey.request.PurchaseRequest
 import org.json.JSONObject
-import java.util.UUID
 
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
@@ -132,6 +131,7 @@ class MainActivity : ComponentActivity() {
                 context = this,
                 config = PaymentConfiguration(
                     localSecurityCheck = SecurityCheck.Enable(rsaPublicKey = rsaPublicKey),
+                    shouldSupportSubscription = true,
                 ),
             )
             payment = client
@@ -183,11 +183,7 @@ class MainActivity : ComponentActivity() {
                 requestId = requestId,
                 productId = message.optString("productId"),
                 requestedPackageName = message.optString("packageName"),
-                replyProxy = replyProxy,
-            )
-            "consume" -> consumePurchase(
-                requestId = requestId,
-                purchaseToken = message.optString("purchaseToken"),
+                developerPayload = message.optString("developerPayload"),
                 replyProxy = replyProxy,
             )
             else -> sendError(replyProxy, requestId, "درخواست پرداخت نامعتبر است.")
@@ -198,6 +194,7 @@ class MainActivity : ComponentActivity() {
         requestId: String,
         productId: String,
         requestedPackageName: String,
+        developerPayload: String,
         replyProxy: JavaScriptReplyProxy,
     ) {
         val client = payment
@@ -214,13 +211,17 @@ class MainActivity : ComponentActivity() {
             sendError(replyProxy, requestId, "شناسهٔ پلن اشتراک معتبر نیست.")
             return
         }
+        if (developerPayload.isBlank()) {
+            sendError(replyProxy, requestId, "شناسهٔ امن خرید بازار دریافت نشد.")
+            return
+        }
 
         runCatching {
-            client.purchaseProduct(
+            client.subscribeProduct(
                 registry = activityResultRegistry,
                 request = PurchaseRequest(
                     productId = productId,
-                    payload = "shahrjo:${UUID.randomUUID()}",
+                    payload = developerPayload,
                 ),
             ) {
                 purchaseSucceed { purchase ->
@@ -244,31 +245,6 @@ class MainActivity : ComponentActivity() {
             }
         }.onFailure {
             sendError(replyProxy, requestId, safeError("شروع پرداخت بازار ناموفق بود.", it))
-        }
-    }
-
-    private fun consumePurchase(
-        requestId: String,
-        purchaseToken: String,
-        replyProxy: JavaScriptReplyProxy,
-    ) {
-        val client = payment
-        if (!paymentReady || client == null || purchaseToken.isBlank()) {
-            sendError(replyProxy, requestId, "تأیید نهایی خرید بازار ممکن نشد.")
-            return
-        }
-
-        runCatching {
-            client.consumeProduct(purchaseToken = purchaseToken) {
-                consumeSucceed {
-                    sendSuccess(replyProxy, requestId, JSONObject())
-                }
-                consumeFailed { throwable ->
-                    sendError(replyProxy, requestId, safeError("نهایی‌سازی خرید در بازار ناموفق بود.", throwable))
-                }
-            }
-        }.onFailure {
-            sendError(replyProxy, requestId, safeError("نهایی‌سازی خرید در بازار ناموفق بود.", it))
         }
     }
 
@@ -359,10 +335,7 @@ class MainActivity : ComponentActivity() {
               }
               window.ShahrjoBazaar = Object.freeze({
                 purchase: function (input) {
-                  return call('purchase', { productId: input.productId, packageName: input.packageName });
-                },
-                consume: function (input) {
-                  return call('consume', { purchaseToken: input.purchaseToken });
+                  return call('purchase', { productId: input.productId, packageName: input.packageName, developerPayload: input.developerPayload });
                 }
               });
             })();
