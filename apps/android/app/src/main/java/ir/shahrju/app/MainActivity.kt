@@ -86,6 +86,11 @@ class MainActivity : ComponentActivity() {
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
         val root = FrameLayout(this)
+        // Small, deliberate visual breathing room: lower the top header a
+        // little and lift the fixed bottom navigation without reintroducing
+        // the large system-bar inset that previously moved it too far up.
+        val chromeSpacing = (6 * resources.displayMetrics.density).toInt()
+        root.setPadding(0, chromeSpacing, 0, chromeSpacing)
         root.addView(webView)
         setContentView(root)
         configureFileChooser()
