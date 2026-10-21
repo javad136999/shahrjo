@@ -18,9 +18,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.webkit.JavaScriptReplyProxy
 import androidx.webkit.WebMessageCompat
@@ -80,24 +78,16 @@ class MainActivity : ComponentActivity() {
             settings.javaScriptCanOpenWindowsAutomatically = false
             settings.setSupportMultipleWindows(false)
         }
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        // Let Android place the WebView between the system bars. The web app
+        // already handles its own safe-area CSS; applying navigation-bar
+        // padding here as well pushed its fixed bottom navigation upward.
+        WindowCompat.setDecorFitsSystemWindows(window, true)
         window.statusBarColor = Color.rgb(11, 128, 100)
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
         val root = FrameLayout(this)
-        ViewCompat.setOnApplyWindowInsetsListener(root) { view, windowInsets ->
-            val safeInsets = windowInsets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
-            )
-            // Respect cut-outs/system bars exactly once; extra top padding had
-            // pushed the remote site's header row out of alignment on phones.
-            val extraTop = (EXTRA_TOP_PADDING_DP * resources.displayMetrics.density).toInt()
-            view.setPadding(safeInsets.left, safeInsets.top + extraTop, safeInsets.right, safeInsets.bottom)
-            windowInsets
-        }
         root.addView(webView)
         setContentView(root)
-        ViewCompat.requestApplyInsets(root)
         configureFileChooser()
         installSecureWebBridge()
         configureWebNavigation()
@@ -393,8 +383,6 @@ class MainActivity : ComponentActivity() {
     private companion object {
         const val HOME_URL = "https://shahrju.ir/"
 
-        /** System-bar insets already include safe spacing; do not double-pad the web header. */
-        const val EXTRA_TOP_PADDING_DP = 0
         const val NATIVE_MESSAGE_OBJECT = "ShahrjoBazaarNative"
         val TRUSTED_HOSTS = setOf("shahrju.ir", "www.shahrju.ir")
         val TRUSTED_ORIGINS = setOf("https://shahrju.ir", "https://www.shahrju.ir")

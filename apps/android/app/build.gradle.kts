@@ -19,8 +19,8 @@ android {
         applicationId = "ir.shahrju.app"
         minSdk = 21
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.0.2"
         buildConfigField("String", "BAZAAR_PACKAGE_NAME", "\"ir.shahrju.app\"")
         buildConfigField("String", "BAZAAR_RSA_PUBLIC_KEY", "\"$escapedRsaPublicKey\"")
     }
