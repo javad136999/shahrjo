@@ -60,18 +60,26 @@ export function CityTourismView({ city }: CityTourismViewProps) {
                 <span className="tourism-card__emoji" aria-hidden>{spot.icon}</span>
                 <span className="tourism-card__category">{spot.category}</span>
               </div>
-              <div className="tourism-card__body">
-                <h3>{spot.name}</h3>
-                <p>{spot.description}</p>
-                <div className="tourism-card__meta"><span>⏱ {spot.duration}</span><span>📍 {spot.locationLabel}</span></div>
-                <details className="tourism-card__details">
-                  <summary>مشاهدهٔ جزئیات سفر</summary>
-                  <p className="tourism-card__tip"><b>نکته:</b> {spot.tip}</p>
-                  <p className="tourism-card__coordinates">مختصات: {spot.latitude.toFixed(4)}، {spot.longitude.toFixed(4)}</p>
-                  <a className="tourism-card__source" href={spot.sourceUrl} target="_blank" rel="noreferrer">منبع: {spot.sourceLabel} ↗</a>
-                </details>
-                <a className="tourism-card__map" href={mapsUrl(spot.latitude, spot.longitude, spot.name)} target="_blank" rel="noreferrer"><span>مشاهده لوکیشن روی نقشه</span><span aria-hidden>↗</span></a>
-              </div>
+              <details className="tourism-card__expand" data-testid={`tourism-details-${spot.id}`}>
+                <summary className="tourism-card__summary">
+                  <span className="tourism-card__summary-title">{spot.name}</span>
+                  <span className="tourism-card__meta"><span>⏱ {spot.duration}</span><span>📍 {spot.locationLabel}</span></span>
+                  <span className="tourism-card__toggle"><span className="tourism-card__toggle-open">مشاهدهٔ توضیحات و مشخصات</span><span className="tourism-card__toggle-close">بستن جزئیات</span><span className="tourism-card__chevron" aria-hidden>⌄</span></span>
+                </summary>
+                <div className="tourism-card__expanded-body">
+                  <h3>دربارهٔ مکان</h3>
+                  <p className="tourism-card__description">{spot.description}</p>
+                  <p className="tourism-card__tip"><b>نکتهٔ بازدید:</b> {spot.tip}</p>
+                  <dl className="tourism-card__specs">
+                    <div><dt>دسته‌بندی</dt><dd>{spot.category}</dd></div>
+                    <div><dt>زمان پیشنهادی</dt><dd>{spot.duration}</dd></div>
+                    <div><dt>محدوده</dt><dd>{spot.locationLabel}</dd></div>
+                    <div><dt>مختصات</dt><dd>{spot.latitude.toFixed(4)}، {spot.longitude.toFixed(4)}</dd></div>
+                  </dl>
+                  <a className="tourism-card__source" href={spot.sourceUrl} target="_blank" rel="noreferrer">منبع اطلاعات: {spot.sourceLabel} ↗</a>
+                  <a className="tourism-card__map" href={mapsUrl(spot.latitude, spot.longitude, spot.name)} target="_blank" rel="noreferrer"><span>مشاهدهٔ مکان روی نقشه</span><span aria-hidden>↗</span></a>
+                </div>
+              </details>
             </li>
           ))}
         </ul>
