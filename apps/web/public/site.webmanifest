@@ -1,7 +1,7 @@
 {
   "name": "شهرجو | همه‌چیز شهر شما",
   "short_name": "شهرجو",
-  "description": "شهرجو؛ اخبار، آگهی‌ها و کسب‌وکارهای شهر شما — پلتفرم چندشهری ایرانی",
+  "description": "شهرجو؛ گردشگری، آگهی‌ها و کسب‌وکارهای شهر شما — پلتفرم چندشهری ایرانی",
   "lang": "fa",
   "dir": "rtl",
   "id": "/",
@@ -12,7 +12,7 @@
   "orientation": "portrait",
   "background_color": "#014934",
   "theme_color": "#014934",
-  "categories": ["business", "shopping", "news"],
+  "categories": ["travel", "business", "shopping"],
   "icons": [
     {
       "src": "/icon-192x192.png?v=3",
