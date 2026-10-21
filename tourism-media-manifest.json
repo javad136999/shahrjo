@@ -662,14 +662,20 @@
       "width": 632,
       "height": 420,
       "bytes": 31916
+    },
+    "jam-pardis": {
+      "imageUrl": "/tourism/jam-pardis.webp",
+      "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:%DA%A9%D9%88%D9%87_%D9%BE%D8%AF%D8%B1%DB%8C-_%D8%AC%D9%85.JPG",
+      "imageCredit": "Hamedvahid",
+      "imageLicense": "CC BY-SA 4.0",
+      "fileTitle": "File:کوه پدری- جم.JPG",
+      "query": "Wikimedia Commons Category: Mount Padri; verified file page",
+      "width": 640,
+      "height": 480,
+      "bytes": 20878
     }
   },
   "missing": [
-    {
-      "id": "jam-pardis",
-      "name": "کوه پدری (پردیس)",
-      "city": "jam"
-    },
     {
       "id": "jam-galubardakan",
       "name": "جنگل گلوبردکان",

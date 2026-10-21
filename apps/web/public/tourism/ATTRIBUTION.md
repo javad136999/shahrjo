@@ -2,6 +2,7 @@
 
 Tourism thumbnails are optimized WebP derivatives of the files linked below. Their author and license are also shown from each attraction's detail panel. Modifications are resizing/re-encoding for web delivery.
 
+- `jam-pardis.webp` — [کوه پدری- جم.JPG](https://commons.wikimedia.org/wiki/File:%DA%A9%D9%88%D9%87_%D9%BE%D8%AF%D8%B1%DB%8C-_%D8%AC%D9%85.JPG), Hamedvahid, CC BY-SA 4.0.
 - `abadan-karapet.webp` — [Holy carapt church.jpg](https://commons.wikimedia.org/wiki/File:Holy_carapt_church.jpg), Sharonadashti, CC BY-SA 4.0.
 - `abadan-rangooniha.webp` — [Rangonihai Mosque of Abadan.jpg](https://commons.wikimedia.org/wiki/File:Rangonihai_Mosque_of_Abadan.jpg), Dr.anahidashti, CC BY-SA 4.0.
 - `abadeh-izadkhast-bridge.webp` — [Izadkhast Old town Fars Province Iran.jpg](https://commons.wikimedia.org/wiki/File:Izadkhast_Old_town_Fars_Province_Iran.jpg), Alireza Javaheri, CC BY 3.0.
