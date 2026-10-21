@@ -185,6 +185,8 @@ model User {
   media         Media[]
   payments      Payment[]
   subscriptions Subscription[]
+  referralCreditGrants      ReferralCreditGrant[]
+  referralCreditRedemptions ReferralCreditRedemption[]
   wallPosts     WallPost[]
   wallLikes     WallPostLike[]
   dmConvosA     PrivateConversation[] @relation("DmConvUserA")
@@ -451,6 +453,7 @@ model Business {
   mapLocations  MapLocation[]
   payments      Payment[]
   subscriptions Subscription[]
+  referralCreditRedemptions ReferralCreditRedemption[]
   products      BusinessProduct[]
   wallPosts     WallPost[] // daily promo posts (2 GOLD businesses per day)
 
@@ -773,6 +776,7 @@ model SubscriptionPlan {
 
   payments      Payment[]
   subscriptions Subscription[]
+  referralCreditRedemptions ReferralCreditRedemption[]
 
   @@index([tier, isActive])
   @@map("subscription_plans")
@@ -800,6 +804,7 @@ model Subscription {
   user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   business Business?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
   plan     SubscriptionPlan @relation(fields: [planId], references: [id])
+  referralCreditRedemption ReferralCreditRedemption?
 
   @@index([userId, status])
   @@index([businessId, status])
@@ -834,6 +839,40 @@ model Payment {
   @@index([businessId, createdAt])
   @@index([status, createdAt])
   @@map("payments")
+}
+
+// Non-cash referral rewards. Amounts are Rial and can only be redeemed for
+// a subscription on a business owned by the user; no cash withdrawal path exists.
+model ReferralCreditGrant {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @map("user_id")
+  milestoneCount Int      @map("milestone_count")
+  amount         BigInt
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, milestoneCount])
+  @@index([userId, createdAt])
+  @@map("referral_credit_grants")
+}
+
+model ReferralCreditRedemption {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @map("user_id")
+  businessId     Int      @map("business_id")
+  planId         Int      @map("plan_id")
+  subscriptionId Int      @unique @map("subscription_id")
+  amount         BigInt
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business     Business         @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  plan         SubscriptionPlan @relation(fields: [planId], references: [id])
+  subscription Subscription     @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@map("referral_credit_redemptions")
 }
 
 // ================= Media / file storage metadata =================

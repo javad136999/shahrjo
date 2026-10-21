@@ -570,18 +570,30 @@ export interface ReferralMilestone {
   months: number;
   title: string;
   valueToman: number;
+  incrementalToman: number;
   achieved: boolean;
   remaining: number;
-  cashToman?: number;
-  cashStatus?: 'NEEDS_ADMIN_REVIEW';
 }
 export interface ReferralSummary {
   code: string;
   successfulSignups: number;
+  balanceRial: number;
+  balanceToman: number;
+  cashWithdrawalAllowed: false;
   milestones: ReferralMilestone[];
 }
 export async function getReferralSummary(): Promise<ReferralSummary> {
   return api.get<ReferralSummary>('/referrals/me');
+}
+export interface ReferralCreditRedemptionResult {
+  subscriptionId: number;
+  businessId: number;
+  planId: number;
+  redeemedRial: number;
+  balanceRial: number;
+}
+export async function redeemReferralCredit(body: { businessId: number; planId: number }): Promise<ReferralCreditRedemptionResult> {
+  return api.post<ReferralCreditRedemptionResult>('/referrals/redeem', body);
 }
 
 export async function logoutServer(): Promise<void> {
