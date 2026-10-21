@@ -101,10 +101,14 @@ describe('CityMap', () => {
     const { unmount } = render(<CityMap data={data} />);
     await waitFor(() => expect(leaflet.map).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(leaflet.marker).toHaveBeenCalledTimes(2));
+    const instance = leaflet.map.mock.results[0].value;
+    expect(instance.setView).toHaveBeenCalledWith([27.83, 52.32], 10, { animate: false });
+    expect(instance.setView.mock.invocationCallOrder[0]).toBeLessThan(leaflet.tileLayer.mock.invocationCallOrder[0]);
+    expect(leaflet.tileLayer.mock.invocationCallOrder[0]).toBeLessThan(leaflet.marker.mock.invocationCallOrder[0]);
     // no decorative circle without a boundary — the pins define the view
     expect(leaflet.circle).not.toHaveBeenCalled();
     unmount();
-    expect(leaflet.map.mock.results[0].value.remove).toHaveBeenCalled();
+    expect(instance.remove).toHaveBeenCalled();
   });
 
   it('ignores a legacy pin outside the configured city so it cannot distort the frame', async () => {
@@ -202,7 +206,7 @@ describe('CityMap', () => {
     render(<CityMap data={{ ...data, businesses: [] }} />);
     await waitFor(() => expect(leaflet.map).toHaveBeenCalledTimes(1));
     expect(leaflet.map.mock.results[0].value.fitBounds).toHaveBeenCalled();
-    expect(leaflet.map.mock.results[0].value.setView).not.toHaveBeenCalled();
+    expect(leaflet.map.mock.results[0].value.setView).toHaveBeenCalledWith([27.83, 52.32], 10, { animate: false });
   });
 
   it('escapes HTML in popup content', async () => {
@@ -318,7 +322,7 @@ describe('CityMap', () => {
       // at least ~4.5 km across so the neighbourhood stays visible
       expect(box[1][0] - box[0][0]).toBeGreaterThanOrEqual(0.039);
       expect(box[1][1] - box[0][1]).toBeGreaterThanOrEqual(0.049);
-      expect(last.setView).not.toHaveBeenCalled();
+      expect(last.setView).toHaveBeenCalledWith([27.83, 52.32], 10, { animate: false });
     });
   });
 
