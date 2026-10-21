@@ -2279,11 +2279,11 @@ a.my-ads__item:hover {
 
 .showcase {
   position: relative;
-  margin-top: 12px;
+  margin-top: 6px;
   border: 1px solid var(--gold-line);
   border-radius: 18px;
   overflow: hidden;
-  padding: 11px 0 13px;
+  padding: 7px 0 8px;
   background:
     radial-gradient(900px 180px at 25% -60%, rgb(217 143 43 / 16%), transparent 65%),
     linear-gradient(180deg, #fffdf4, var(--surface) 70%);
@@ -2312,8 +2312,8 @@ a.my-ads__item:hover {
 .showcase__head {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 2px 14px 9px;
+  gap: 8px;
+  padding: 1px 12px 5px;
   flex-wrap: wrap;
 }
 
@@ -2362,25 +2362,27 @@ a.my-ads__item:hover {
 
 .showcase__cta {
   flex-shrink: 0;
-  padding: 4px 9px;
-  font-size: 11.5px;
-  gap: 4px;
+  padding: 5px 10px;
+  font-size: 11px;
+  gap: 5px;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgb(166 107 25 / 12%);
 }
 .showcase__cta-icon {
-  font-size: 10px;
+  font-size: 14px;
   line-height: 1;
 }
 
 .showcase__viewport {
   overflow: hidden;
-  padding: 4px 2px 6px;
+  padding: 3px 2px 4px;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
 }
 
 .showcase__track {
   display: flex;
-  gap: 12px;
+  gap: 9px;
   width: max-content;
   margin: 0;
   padding: 0;
@@ -2407,10 +2409,10 @@ a.my-ads__item:hover {
 .showcase-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-width: 235px;
-  max-width: 275px;
-  padding: 10px 12px;
+  gap: 9px;
+  min-width: 218px;
+  max-width: 250px;
+  padding: 7px 9px;
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -2436,9 +2438,10 @@ a.my-ads__item:hover {
 .showcase-card__logo {
   position: relative;
   flex-shrink: 0;
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
+  width: 58px;
+  height: 58px;
+  aspect-ratio: 1;
+  border-radius: 14px;
   overflow: visible;
   background: var(--gold-soft);
   border: 1px solid var(--gold-line);
@@ -2451,7 +2454,7 @@ a.my-ads__item:hover {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 50%;
+  border-radius: 13px;
 }
 
 .showcase-card__crown {
@@ -2515,7 +2518,7 @@ a.my-ads__item:hover {
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 16px;
+  padding: 10px 12px;
   border: 2px dashed var(--gold-line);
   border-radius: 14px;
   background: rgb(255 247 223 / 55%);
@@ -2728,10 +2731,10 @@ a.my-ads__item:hover {
     height: 320px;
   }
   .showcase__head {
-    padding: 2px 12px 10px;
+    padding: 1px 10px 4px;
   }
   .showcase-card {
-    min-width: 215px;
+    min-width: 205px;
   }
 }
 
@@ -5643,7 +5646,7 @@ button.pill {
 }
 @media (max-width: 560px) {
   .showcase__actions {
-    width: 100%;
+    width: auto;
   }
   .referral-reward {
     align-items: flex-start;

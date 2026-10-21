@@ -29,17 +29,17 @@ export function ShowcaseMarquee({ items, loading }: ShowcaseMarqueeProps) {
   return (
     <section className="showcase" aria-label="ویترین طلایی" data-testid="showcase">
       <div className="showcase__head">
+        <div className="showcase__actions">
+          <Link href="/referrals" className="pill pill--gold showcase__cta" data-testid="showcase-cta">
+            <span className="showcase__cta-icon" aria-hidden>🎁</span> معرفی کن، جایزه ببر
+          </Link>
+        </div>
         <span className="showcase__crown" aria-hidden>
           👑
         </span>
         <div className="showcase__titles">
           <h2>ویترین طلایی</h2>
           <p>کسب‌وکارهای برتر شهر</p>
-        </div>
-        <div className="showcase__actions">
-          <Link href="/referrals" className="pill pill--gold showcase__cta" data-testid="showcase-cta">
-            <span className="showcase__cta-icon" aria-hidden>↗</span> معرفی شهرجو
-          </Link>
         </div>
       </div>
 
