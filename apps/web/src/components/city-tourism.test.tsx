@@ -42,4 +42,15 @@ describe('CityTourismView place details', () => {
     fireEvent.click(details.querySelector('summary')!);
     expect(details).not.toHaveAttribute('open');
   });
+
+  it('shows the full-view licensed photo for Jam’s Mount Padri without an emoji overlay', () => {
+    const jam: City = { ...city, name: 'جم', slug: 'jam' };
+    render(<CityTourismView city={jam} />);
+
+    const card = screen.getByTestId('tourism-jam-pardis');
+    expect(within(card).getByRole('img', { name: 'عکس کوه پدری (پردیس)' })).toHaveAttribute('src', '/tourism/jam-pardis.webp');
+    expect(card).not.toHaveTextContent('⛰️');
+    fireEvent.click(screen.getByTestId('tourism-details-jam-pardis').querySelector('summary')!);
+    expect(within(card).getByRole('link', { name: /عکس: Hamedvahid · CC BY-SA 4.0/ })).toHaveAttribute('href', expect.stringContaining('commons.wikimedia.org/wiki/File:'));
+  });
 });
