@@ -13,7 +13,16 @@ const ACCESS_SECRET = 'access-secret';
 const PHONE = '09123456789';
 
 function makePrisma() {
+  const tx = {
+    $queryRaw: jest.fn(),
+    user: { count: jest.fn().mockResolvedValue(0) },
+    referralCreditGrant: {
+      findMany: jest.fn().mockResolvedValue([]),
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
+    },
+  };
   return {
+    $transaction: jest.fn((callback: (client: typeof tx) => unknown) => callback(tx)),
     otpCode: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
     user: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
     userSession: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
@@ -276,7 +285,7 @@ describe('AuthService.verifyOtp', () => {
     prisma.otpCode.findFirst.mockResolvedValue(activeOtpRow('12345'));
     prisma.otpCode.updateMany.mockResolvedValue({ count: 1 });
     prisma.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 22 });
-    prisma.user.create.mockResolvedValue({ ...activeUser, id: 23 });
+    prisma.user.create.mockResolvedValue({ ...activeUser, id: 23, referredByUserId: 22 });
     prisma.userSession.create.mockResolvedValue({});
 
     await service.verifyOtp({ phone: PHONE, code: '12345', ip: 'ip1', referralCode: 'sj-ref-22' });
@@ -286,6 +295,7 @@ describe('AuthService.verifyOtp', () => {
       select: { id: true },
     });
     expect(prisma.user.create.mock.calls[0][0].data).toMatchObject({ referredByUserId: 22 });
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
   });
 
   it('rejects an unknown referral code instead of silently losing attribution', async () => {

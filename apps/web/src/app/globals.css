@@ -5637,6 +5637,30 @@ button.pill {
   color: #166534;
   background: #dcfce7;
 }
+.referral-wallet {
+  border-color: var(--gold-line);
+  background: linear-gradient(145deg, #fffdf4, var(--surface) 62%);
+}
+.referral-wallet__balance {
+  margin: 0 0 4px;
+  color: var(--gold-dark);
+  font-size: clamp(28px, 6vw, 40px);
+  font-weight: 900;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+.referral-wallet .form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  align-items: end;
+  gap: 8px 14px;
+}
+.referral-wallet .form-grid label {
+  margin-top: 10px;
+}
+.referral-wallet .form-grid p {
+  margin: 8px 0;
+}
 .form-card progress {
   display: block;
   width: 100%;

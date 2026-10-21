@@ -5,6 +5,7 @@ import type { User } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { hmacOtp, hmacToken, normalizePhone, parseTtlMs, safeEqualHex, generateOtpCode } from '../common/utils';
 import { PrismaService } from '../prisma/prisma.service';
+import { grantReferralMilestones } from '../referrals/referrals.module';
 import { RateLimiterService } from '../redis/rate-limiter.service';
 import { SMS_PROVIDER, type SmsProvider } from '../sms/sms.types';
 
@@ -180,6 +181,10 @@ export class AuthService {
         data: { lastLoginAt: new Date(), status: 'ACTIVE' },
       });
     }
+
+    // OTP verification both completes signup and signs the referred member in.
+    // Re-evaluating on later sign-ins also safely repairs an interrupted grant.
+    if (user.referredByUserId) await grantReferralMilestones(this.prisma, user.referredByUserId);
 
     return this.issueTokens(user, input.ip, input.userAgent);
   }
