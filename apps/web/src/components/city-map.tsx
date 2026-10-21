@@ -175,6 +175,15 @@ export function CityMap({ data }: CityMapProps) {
       const boundary = normalizeCityBoundary(city.boundary);
       // bounds of the admin outline, computed before the map exists
       const outline = boundary ? boundsOfBoundary(boundary) : null;
+      const initialCenter: [number, number] | null =
+        center && isMapCoordinateInCity(city, center[0], center[1])
+          ? center
+          : businesses.length > 0
+            ? [businesses[0].latitude, businesses[0].longitude]
+            : outline
+              ? [(outline[0][0] + outline[1][0]) / 2, (outline[0][1] + outline[1][1]) / 2]
+              : null;
+      if (!initialCenter) return;
 
       // stay inside the city — no endless empty countryside (but every pin stays
       // reachable). The slack around the outline is thin on purpose: the frame
@@ -207,6 +216,10 @@ export function CityMap({ data }: CityMapProps) {
         maxBoundsViscosity: 1.0,
         ...(maxBounds ? { maxBounds } : {}),
       });
+      // Leaflet requires a valid center/zoom before any tile or marker layer is
+      // added. Without this, the first newly approved pin can leave a blank map
+      // because tileLayer throws "Set map center and zoom first" before fitBounds.
+      map.setView(initialCenter, 10, { animate: false });
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 18,
