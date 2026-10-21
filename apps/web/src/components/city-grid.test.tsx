@@ -33,30 +33,51 @@ const cities: City[] = [
 ];
 
 describe('CityGrid', () => {
-  it('groups cities under their province headings', () => {
-    render(<CityGrid cities={cities} onSelect={jest.fn()} />);
+  it('sorts city cards alphabetically and shows the province under each city', () => {
+    const { container } = render(<CityGrid cities={[cities[2], cities[1], cities[0]]} onSelect={jest.fn()} />);
 
-    expect(screen.getByRole('heading', { name: 'استان نمونه' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'استان دیگر' })).toBeInTheDocument();
-    expect(screen.getByTestId('city-city-one')).toBeInTheDocument();
-    expect(screen.getByTestId('city-city-two')).toBeInTheDocument();
+    const links = Array.from(container.querySelectorAll<HTMLAnchorElement>('.city-card'));
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
+      '/city/city-one',
+      '/city/city-two',
+      '/city/city-three',
+    ]);
+    expect(screen.getByTestId('city-city-three')).toHaveTextContent('استان دیگر');
   });
 
-  it('filters by Persian name and by slug', () => {
+  it('filters by Persian city/province name and by city slug', () => {
     render(<CityGrid cities={cities} onSelect={jest.fn()} />);
+    const search = screen.getByLabelText('جستجوی شهر');
 
-    fireEvent.change(screen.getByLabelText('جستجوی شهر'), { target: { value: 'شهر ب' } });
+    fireEvent.change(search, { target: { value: 'شهر ب' } });
     expect(screen.getByTestId('city-city-two')).toBeInTheDocument();
     expect(screen.queryByTestId('city-city-one')).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('جستجوی شهر'), { target: { value: 'city-three' } });
+    fireEvent.change(search, { target: { value: 'استان دیگر' } });
+    expect(screen.getByTestId('city-city-three')).toBeInTheDocument();
+    expect(screen.queryByTestId('city-city-two')).not.toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: 'city-three' } });
     expect(screen.getByTestId('city-city-three')).toBeInTheDocument();
   });
 
-  it('shows an empty state when nothing matches', () => {
+  it('shows a helpful empty state when nothing matches', () => {
     render(<CityGrid cities={cities} onSelect={jest.fn()} />);
     fireEvent.change(screen.getByLabelText('جستجوی شهر'), { target: { value: 'ایستگاه' } });
+
     expect(screen.getByText('شهری با این نام یافت نشد.')).toBeInTheDocument();
+    expect(screen.getByTestId('city-results-count')).toHaveTextContent('۰ شهر');
+  });
+
+  it('clears the search and restores the full list', () => {
+    render(<CityGrid cities={cities} onSelect={jest.fn()} />);
+    fireEvent.change(screen.getByLabelText('جستجوی شهر'), { target: { value: 'شهر ب' } });
+    fireEvent.click(screen.getByRole('button', { name: 'پاک‌کردن جستجو' }));
+
+    expect(screen.getByTestId('city-city-one')).toBeInTheDocument();
+    expect(screen.getByTestId('city-city-two')).toBeInTheDocument();
+    expect(screen.getByTestId('city-city-three')).toBeInTheDocument();
+    expect(screen.getByTestId('city-results-count')).toHaveTextContent('۳ شهر');
   });
 
   it('reports selection and marks the current city', () => {
@@ -74,8 +95,7 @@ describe('CityGrid', () => {
     const onSelect = jest.fn();
     render(<CityGrid cities={cities} onSelect={onSelect} disabled />);
     const card = screen.getByTestId('city-city-one');
-    // cards are real links now: the syncing state is expressed with
-    // aria-disabled and a click that changes nothing
+
     expect(card).toHaveAttribute('aria-disabled', 'true');
     fireEvent.click(card);
     expect(onSelect).not.toHaveBeenCalled();
