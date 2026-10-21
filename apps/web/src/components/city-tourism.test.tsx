@@ -9,7 +9,7 @@ jest.mock('next/link', () => ({
 
 const city: City = {
   id: 1,
-  name: 'شیراز',
+  name: 'شهر نمونه',
   slug: 'shiraz',
   isFeatured: true,
   latitude: 29.59,

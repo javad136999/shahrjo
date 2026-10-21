@@ -116,7 +116,7 @@ for (const marker of ['GOLD business promos', 'WALL_REPOST_SLOTS.filter((s) => s
   if (!schedSpec.includes(marker)) { console.error(`SCHEDULER SPEC: missing ${marker}`); fail++; }
 }
 
-// --- News: one-week window + cover sweep + header pill ---
+// --- News: one-week window + cover sweep; the former news pill now opens tourism ---
 const content = read('apps/api/src/content/content.service.ts');
 for (const marker of ['NEWS_MAX_AGE_MS', 'newsCutoff', 'newsWindow()', '...this.newsWindow()']) {
   if (!content.includes(marker)) { console.error(`CONTENT: missing ${marker}`); fail++; }
@@ -126,8 +126,8 @@ for (const marker of ['newsCutoff()', 'data: { coverUrl: null }', '(2b)']) {
   if (!uploads.includes(marker)) { console.error(`UPLOADS: news-cover sweep missing ${marker}`); fail++; }
 }
 const headerPills = read('apps/web/src/components/header-pills.tsx');
-if (!headerPills.includes('اخبار شهر')) {
-  console.error('HEADER: the news pill must read «اخبار شهر»');
+if (!headerPills.includes('گردشگری شهر') || !headerPills.includes('/tourism')) {
+  console.error('HEADER: the former news pill must link to «گردشگری شهر»');
   fail++;
 }
 const cityNews = read('apps/web/src/components/city-news.tsx');
@@ -164,5 +164,5 @@ if (fail > 0) {
 }
 console.log(
   'Phase 11c OK: admin suspend/delete (scoped + audited), wall ad removal, ' +
-    '2 daily GOLD-business promos, one-week news window + cover sweep, «اخبار شهر» pill',
+    '2 daily GOLD-business promos, one-week news window + cover sweep, «گردشگری شهر» header pill',
 );
