@@ -7684,6 +7684,13 @@ button.pill {
 .tourism-card__meta { display: flex; flex-wrap: wrap; gap: 7px; color: var(--muted); font-size: 10px; font-weight: 700; }
 .tourism-card__tip { padding: 7px 9px; color: #80672d !important; background: #fff9e9; border-radius: 10px; font-size: 10px !important; }
 .tourism-card__tip b { color: var(--gold-dark); }
+.tourism-card__details { margin-top: 1px; color: var(--muted); font-size: 10.5px; }
+.tourism-card__details summary { display: inline-flex; cursor: pointer; color: var(--brand-dark); font-weight: 900; }
+.tourism-card__details summary:hover { color: var(--brand); }
+.tourism-card__details[open] summary { margin-bottom: 5px; }
+.tourism-card__coordinates { margin: 0 0 6px; color: var(--muted); font-size: 10px; direction: rtl; }
+.tourism-card__source { display: inline-block; color: var(--brand-dark); font-size: 10px; font-weight: 800; }
+.tourism-card__source:hover { color: var(--brand); }
 .tourism-card__map { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; padding: 9px 11px; color: #fff; background: linear-gradient(135deg, var(--brand), #168967); border-radius: 12px; font-size: 10.5px; font-weight: 900; }
 .tourism-card__map:hover { color: #fff; text-decoration: none; background: var(--brand-dark); }
 .tourism-empty { padding: 28px 16px; border: 1px dashed var(--line); border-radius: 18px; background: rgb(255 255 255 / 70%); }
