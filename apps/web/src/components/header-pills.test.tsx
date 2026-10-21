@@ -53,14 +53,14 @@ describe('HeaderPills', () => {
     expect(pill).toHaveTextContent('انتخاب شهر');
   });
 
-  it('links the news button to the remembered city news page', async () => {
+  it('links the tourism button to the remembered city tourism page', async () => {
     render(<HeaderPills />);
-    const news = await screen.findByTestId('header-news-pill');
-    expect(news).toHaveAttribute('href', '/city/sample-city/news');
-    expect(news).toHaveTextContent('اخبار');
+    const tourism = await screen.findByTestId('header-news-pill');
+    expect(tourism).toHaveAttribute('href', '/city/sample-city/tourism');
+    expect(tourism).toHaveTextContent('گردشگری');
   });
 
-  it('sends the news button to the city picker when no city is remembered', async () => {
+  it('sends the tourism button to the city picker when no city is remembered', async () => {
     mockGetLocalCity.mockReturnValue(null);
     render(<HeaderPills />);
     expect(await screen.findByTestId('header-news-pill')).toHaveAttribute('href', '/');
@@ -73,20 +73,20 @@ describe('HeaderPills', () => {
     expect(screen.queryByRole('link', { name: /ثبت آگهی/ })).not.toBeInTheDocument();
   });
 
-  it('keeps the news link on the remembered city after another part stores a new one', async () => {
+  it('keeps the tourism link on the remembered city after another part stores a new one', async () => {
     render(<HeaderPills />);
     await screen.findByTestId('header-city-pill');
-    expect(screen.getByTestId('header-news-pill')).toHaveAttribute('href', '/city/sample-city/news');
+    expect(screen.getByTestId('header-news-pill')).toHaveAttribute('href', '/city/sample-city/tourism');
 
     mockGetLocalCity.mockReturnValue({ id: 7, slug: 'new-city', name: 'شهر جدید' });
     window.dispatchEvent(new CustomEvent('shahrjo:city-changed'));
 
-    expect(await screen.findByTestId('header-news-pill')).toHaveAttribute('href', '/city/new-city/news');
+    expect(await screen.findByTestId('header-news-pill')).toHaveAttribute('href', '/city/new-city/tourism');
     // the pill label never changes — it is «انتخاب شهر», not a readout
     expect(screen.getByTestId('header-city-pill')).toHaveTextContent('انتخاب شهر');
   });
 
-  it('keeps the header to news + city (no subscription, no submit pill)', async () => {
+  it('keeps the header to tourism + city (no subscription, no submit pill)', async () => {
     render(<HeaderPills />);
     await screen.findByTestId('header-news-pill');
     expect(screen.getByTestId('header-city-pill')).toBeInTheDocument();

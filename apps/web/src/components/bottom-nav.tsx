@@ -94,7 +94,7 @@ export function BottomNav() {
 
   /** /city/<slug> exactly — the city home page keeps the bar on screen. */
   const isCityHome = /^\/city\/[^/]+\/?$/.test(pathname);
-  const isNewsPage = pathname.startsWith('/city/') && pathname.endsWith('/news');
+  const isTourismPage = pathname.startsWith('/city/') && pathname.endsWith('/tourism');
   const items: NavItem[] = [
     // 🏠 returns to the city the visitor already picked — only someone who has
     // never chosen a city is sent to the city-selection page (`/`).
@@ -112,7 +112,7 @@ export function BottomNav() {
     if (item.id === 'businesses') return pathname.startsWith('/businesses') || /^\/business\/\d+\/manage/.test(pathname);
     if (item.id === 'messages') return pathname.startsWith('/messages');
     if (item.id === 'wall') return pathname.startsWith('/wall');
-    if (item.id === 'home') return (pathname === '/' || pathname.startsWith('/city/')) && !isNewsPage && !hash;
+    if (item.id === 'home') return (pathname === '/' || pathname.startsWith('/city/')) && !isTourismPage && !hash;
     return false;
   };
 

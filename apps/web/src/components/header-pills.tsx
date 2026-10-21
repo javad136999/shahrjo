@@ -8,7 +8,7 @@ import { CityPicker } from '@/components/city-picker';
 import type { LocalCity } from '@/lib/types';
 
 /**
- * Header quick actions: the city's news page and the «انتخاب شهر» pill.
+ * Header quick actions: the city's tourism guide and the «انتخاب شهر» pill.
  * The pill opens the in-place city picker (search + suggestions) instead of
  * navigating — it is the single entry point for changing city, since the
  * header's first slot only displays where you are. The «ثبت آگهی» entry no
@@ -33,14 +33,14 @@ export function HeaderPills() {
   return (
     <div className="header-pills">
       <Link
-        href={city ? `/city/${city.slug}/news` : '/'}
+        href={city ? `/city/${city.slug}/tourism` : '/'}
         className="pill"
-        title="اخبار شهر"
-        aria-label="اخبار شهر"
+        title="گردشگری شهر"
+        aria-label="گردشگری شهر"
         data-testid="header-news-pill"
       >
-        <span aria-hidden>📰</span>
-        <span className="pill__label">اخبار شهر</span>
+        <span aria-hidden>🧭</span>
+        <span className="pill__label">گردشگری شهر</span>
       </Link>
       {/* This is the ONLY way to change the city: it opens the picker with
           search in place — no page jump. It always reads «انتخاب شهر» rather
