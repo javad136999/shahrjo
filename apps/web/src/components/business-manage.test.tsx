@@ -86,6 +86,13 @@ describe('BusinessManage (ویرایش + منو و محصولات)', () => {
     expect(await screen.findByTestId('biz-notice')).toHaveTextContent('ذخیره شد');
   });
 
+  it('opens the menu tab directly when the owner chooses the products shortcut', async () => {
+    render(<BusinessManage id={4} initialTab="menu" />);
+    expect(await screen.findByTestId('biz-menu')).toBeInTheDocument();
+    expect(screen.getByTestId('biz-tab-menu')).toHaveClass('is-active');
+    expect(screen.queryByTestId('biz-info-form')).not.toBeInTheDocument();
+  });
+
   it('groups the menu by section and adds a product with a Rial price', async () => {
     mockCreateProduct.mockResolvedValue({
       id: 12,
@@ -176,6 +183,15 @@ describe('BusinessManage (ویرایش + منو و محصولات)', () => {
         expect.objectContaining({ logoUrl: '/api/v1/files/media/2026/10/logo.webp' }),
       ),
     );
+  });
+
+  it('rejects an oversized business photo before sending it to the server', async () => {
+    render(<BusinessManage id={4} />);
+    await screen.findByTestId('biz-name');
+    const oversized = new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'large.jpg', { type: 'image/jpeg' });
+    fireEvent.change(screen.getByTestId('biz-logo-input'), { target: { files: [oversized] } });
+    expect(await screen.findByRole('alert')).toHaveTextContent('حداکثر ۱۰ مگابایت');
+    expect(mockUpload).not.toHaveBeenCalled();
   });
 
   it('clears the photo by sending an empty logoUrl', async () => {

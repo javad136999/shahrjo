@@ -67,11 +67,11 @@ function parsePrice(raw: string): number | undefined {
  * when a visitor arrives by tapping the business pin on the city map.
  * Login-gated and owner-scoped server-side (`/my-businesses/:id` 404s others).
  */
-export function BusinessManage({ id }: { id: number }) {
+export function BusinessManage({ id, initialTab = 'info' }: { id: number; initialTab?: Tab }) {
   const router = useRouter();
   const [data, setData] = useState<ManagedBusiness | null>(null);
   const [categories, setCategories] = useState<BusinessCategoryOption[]>([]);
-  const [tab, setTab] = useState<Tab>('info');
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -174,6 +174,11 @@ export function BusinessManage({ id }: { id: number }) {
    */
   const pickImage = async (file: File | null) => {
     if (!file || !draft) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setError('حجم هر عکس باید حداکثر ۱۰ مگابایت باشد. یک عکس کوچک‌تر انتخاب کن.');
+      if (fileRef.current) fileRef.current.value = '';
+      return;
+    }
     setUploading(true);
     setError(null);
     try {
@@ -189,6 +194,11 @@ export function BusinessManage({ id }: { id: number }) {
 
   const pickLogo = async (file: File | null) => {
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setError('حجم هر عکس باید حداکثر ۱۰ مگابایت باشد. یک عکس کوچک‌تر انتخاب کن.');
+      if (logoRef.current) logoRef.current.value = '';
+      return;
+    }
     setLogoBusy(true);
     setError(null);
     try {
@@ -277,7 +287,7 @@ export function BusinessManage({ id }: { id: number }) {
 
   const productForm = draft && (
     <form
-      className="ad-form biz-product-form"
+      className="biz-product-form"
       data-testid="product-form"
       onSubmit={(e) => {
         e.preventDefault();
@@ -285,108 +295,61 @@ export function BusinessManage({ id }: { id: number }) {
       }}
       noValidate
     >
-      <h3 className="biz-panel__title">{draft.id === null ? 'افزودن محصول' : 'ویرایش محصول'}</h3>
-
-      <label htmlFor="p-name">نام محصول *</label>
-      <input
-        id="p-name"
-        value={draft.name}
-        onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-        maxLength={160}
-        placeholder="مثلاً لاته"
-        required
-        data-testid="product-name"
-      />
-
-      <div className="biz-form__row">
+      <header className="biz-editor__head">
+        <span className="biz-editor__icon" aria-hidden>🍽️</span>
         <div>
-          <label htmlFor="p-section">دستهٔ منو</label>
-          <input
-            id="p-section"
-            list="biz-sections"
-            value={draft.section}
-            onChange={(e) => setDraft({ ...draft, section: e.target.value })}
-            maxLength={80}
-            placeholder="مثلاً نوشیدنی"
-            data-testid="product-section"
-          />
-          <datalist id="biz-sections">
-            {sections.filter(Boolean).map((section) => (
-              <option key={section} value={section} />
-            ))}
-          </datalist>
+          <h3>{draft.id === null ? 'افزودن محصول جدید' : 'ویرایش محصول'}</h3>
+          <p>اطلاعات را وارد کن؛ عکس، گروه و قیمت در صفحهٔ عمومی کسب‌وکارت نمایش داده می‌شوند.</p>
         </div>
-        <div>
-          <label htmlFor="p-price">قیمت (ریال) — خالی = توافقی</label>
-          <input
-            id="p-price"
-            value={draft.price}
-            onChange={(e) => setDraft({ ...draft, price: e.target.value })}
-            inputMode="numeric"
-            dir="ltr"
-            placeholder="250000"
-            data-testid="product-price"
-          />
+      </header>
+
+      <div className="biz-product-form__grid">
+        <label className="biz-field biz-field--wide" htmlFor="p-name">
+          <span>نام محصول <b>*</b></span>
+          <input id="p-name" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} maxLength={160} placeholder="مثلاً لاته" required data-testid="product-name" />
+        </label>
+        <label className="biz-field" htmlFor="p-section">
+          <span>گروه منو <small>برای مرتب‌سازی محصولات</small></span>
+          <input id="p-section" list="biz-sections" value={draft.section} onChange={(e) => setDraft({ ...draft, section: e.target.value })} maxLength={80} placeholder="مثلاً نوشیدنی" data-testid="product-section" />
+          <datalist id="biz-sections">{sections.filter(Boolean).map((section) => <option key={section} value={section} />)}</datalist>
+        </label>
+        <label className="biz-field" htmlFor="p-price">
+          <span>قیمت <small>خالی بماند = توافقی</small></span>
+          <span className="biz-price-input">
+            <input id="p-price" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} inputMode="numeric" dir="ltr" placeholder="۲۵۰٬۰۰۰" data-testid="product-price" />
+            <b>ریال</b>
+          </span>
+        </label>
+        <label className="biz-field biz-field--wide" htmlFor="p-desc">
+          <span>توضیحات <small>اختیاری</small></span>
+          <textarea id="p-desc" rows={3} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} maxLength={1000} placeholder="مواد تشکیل‌دهنده یا توضیح کوتاه محصول" data-testid="product-description" />
+        </label>
+        <div className="biz-field biz-field--wide">
+          <span className="biz-field__label">عکس محصول <small>اختیاری</small></span>
+          <div className="biz-product-photo">
+            {draft.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- owner-uploaded media
+              <img className="biz-product-photo__preview" src={thumbUrlFor(draft.imageUrl) ?? draft.imageUrl} onError={thumbFallback(draft.imageUrl)} alt={`پیش‌نمایش ${draft.name || 'محصول'}`} />
+            ) : <span className="biz-product-photo__preview biz-product-photo__preview--empty" aria-hidden>📷</span>}
+            <div className="biz-product-photo__controls">
+              <input id="p-image" ref={fileRef} className="biz-upload-input" type="file" accept="image/png,image/jpeg,image/webp" data-testid="product-image" aria-describedby="p-image-hint" onChange={(e) => void pickImage(e.target.files?.[0] ?? null)} />
+              <label className="biz-photo-trigger" htmlFor="p-image">
+                <b>{uploading ? 'در حال بارگذاری…' : draft.imageUrl ? 'تغییر عکس' : 'انتخاب عکس محصول'}</b>
+                <small>JPG، PNG یا WebP · حداکثر ۱۰ مگابایت</small>
+              </label>
+              {draft.imageUrl && <button type="button" className="btn btn-ghost" onClick={() => setDraft({ ...draft, imageUrl: '' })} data-testid="product-image-remove">حذف عکس</button>}
+              <small id="p-image-hint" className="biz-photo-hint">تصویر در سرور به WebP با ضلع حداکثر ۱۰۰۰ پیکسل و بندانگشتی ۳۲۰ پیکسلی فشرده می‌شود؛ فایل اصلی نگهداری نمی‌شود. سقف کل تصاویر هر حساب ۱۰۰ مگابایت است.</small>
+            </div>
+          </div>
+          {uploading && <p className="biz-upload-status" aria-busy="true">در حال فشرده‌سازی و بارگذاری امن تصویر…</p>}
         </div>
+        <label className="biz-availability" htmlFor="product-available">
+          <input id="product-available" type="checkbox" checked={draft.isAvailable} onChange={(e) => setDraft({ ...draft, isAvailable: e.target.checked })} data-testid="product-available" />
+          <span><b>محصول موجود است</b><small>اگر خاموش باشد، در صفحهٔ عمومی ناموجود نمایش داده می‌شود.</small></span>
+        </label>
       </div>
 
-      <label htmlFor="p-desc">توضیحات — اختیاری</label>
-      <textarea
-        id="p-desc"
-        rows={2}
-        value={draft.description}
-        onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-        maxLength={1000}
-        data-testid="product-description"
-      />
-
-      <label htmlFor="p-image">عکس محصول — اختیاری</label>
-      <div className="biz-image">
-        {draft.imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element -- owner-uploaded media
-          <img
-            className="biz-image__thumb"
-            src={thumbUrlFor(draft.imageUrl) ?? draft.imageUrl}
-            onError={thumbFallback(draft.imageUrl)}
-            alt=""
-          />
-        )}
-        <input
-          id="p-image"
-          ref={fileRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          data-testid="product-image"
-          onChange={(e) => void pickImage(e.target.files?.[0] ?? null)}
-        />
-        {draft.imageUrl && (
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => setDraft({ ...draft, imageUrl: '' })}
-            data-testid="product-image-remove"
-          >
-            حذف عکس
-          </button>
-        )}
-      </div>
-      {uploading && (
-        <p className="muted small" aria-busy>
-          در حال بارگذاری تصویر…
-        </p>
-      )}
-
-      <label className="biz-check">
-        <input
-          type="checkbox"
-          checked={draft.isAvailable}
-          onChange={(e) => setDraft({ ...draft, isAvailable: e.target.checked })}
-          data-testid="product-available"
-        />
-        موجود است
-      </label>
-
-      <div className="auth-actions">
+      <div className="biz-editor__actions">
         <button className="btn btn-primary" type="submit" disabled={busy || uploading} data-testid="product-save">
           {busy ? 'در حال ذخیره…' : 'ذخیرهٔ محصول'}
         </button>
@@ -404,10 +367,11 @@ export function BusinessManage({ id }: { id: number }) {
       </Link>
 
       <header className="biz-manage__head">
-        <h1>{data.name}</h1>
-        <Link href={`/business/${data.id}`} className="pill">
-          👁 صفحهٔ عمومی
-        </Link>
+        <div className="biz-manage__title">
+          <span className="biz-manage__mark" aria-hidden>🏪</span>
+          <div><span className="muted small">مدیریت کسب‌وکار</span><h1>{data.name}</h1></div>
+        </div>
+        <Link href={`/business/${data.id}`} className="pill">👁 مشاهدهٔ صفحهٔ عمومی</Link>
       </header>
 
       <nav className="biz-tabs" aria-label="بخش‌های مدیریت">
@@ -417,7 +381,7 @@ export function BusinessManage({ id }: { id: number }) {
           onClick={() => setTab('info')}
           data-testid="biz-tab-info"
         >
-          مشخصات
+          ✎ ویرایش مشخصات
         </button>
         <button
           type="button"
@@ -425,7 +389,7 @@ export function BusinessManage({ id }: { id: number }) {
           onClick={() => setTab('menu')}
           data-testid="biz-tab-menu"
         >
-          منو و محصولات ({data.products.length.toLocaleString('fa-IR')})
+          ▤ منو و محصولات ({data.products.length.toLocaleString('fa-IR')})
         </button>
       </nav>
 
@@ -442,7 +406,7 @@ export function BusinessManage({ id }: { id: number }) {
 
       {tab === 'info' ? (
         <form
-          className="ad-form biz-panel"
+          className="biz-panel biz-info-panel"
           data-testid="biz-info-form"
           onSubmit={(e) => {
             e.preventDefault();
@@ -450,122 +414,87 @@ export function BusinessManage({ id }: { id: number }) {
           }}
           noValidate
         >
-          <label htmlFor="b-name">نام کسب‌وکار *</label>
-          <input
-            id="b-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={160}
-            minLength={2}
-            required
-            data-testid="biz-name"
-          />
-
-          <label htmlFor="b-cat">دسته‌بندی</label>
-          <select id="b-cat" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} data-testid="biz-category">
-            <option value="">— انتخاب دسته‌بندی —</option>
-            {categories.map((category) => (
-              <option key={category.id} value={String(category.id)}>
-                {category.icon ? `${category.icon} ` : ''}
-                {category.name}
-              </option>
-            ))}
-          </select>
-
-          <label htmlFor="b-logo">عکس کسب‌وکار — اختیاری</label>
-          <div className="biz-image">
-            {logoUrl ? (
-              <span className="biz-image__picked" data-testid="biz-logo-preview">
-                {/* eslint-disable-next-line @next/next/no-img-element -- owner-uploaded media */}
-                <img src={thumbUrlFor(logoUrl) ?? logoUrl} onError={thumbFallback(logoUrl)} alt="" />
-              </span>
-            ) : (
-              <span className="biz-image__picked biz-image__picked--empty" aria-hidden>
-                🏪
-              </span>
-            )}
-            <input
-              id="b-logo"
-              ref={logoRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              data-testid="biz-logo-input"
-              onChange={(e) => void pickLogo(e.target.files?.[0] ?? null)}
-            />
-            {logoUrl && (
-              <button
-                type="button"
-                className="btn btn-ghost"
-                data-testid="biz-logo-remove"
-                onClick={() => setLogoUrl('')}
-              >
-                حذف عکس
-              </button>
-            )}
+          <header className="biz-editor__head">
+            <span className="biz-editor__icon" aria-hidden>🏪</span>
+            <div><h2>اطلاعات کسب‌وکار</h2><p>مشخصات و راه‌های تماس را مرتب کن تا مشتری‌ها راحت‌تر پیدایت کنند.</p></div>
+          </header>
+          <div className="biz-info-grid">
+            <label className="biz-field" htmlFor="b-name">
+              <span>نام کسب‌وکار <b>*</b></span>
+              <input id="b-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={160} minLength={2} required data-testid="biz-name" />
+            </label>
+            <label className="biz-field" htmlFor="b-cat">
+              <span>دسته‌بندی</span>
+              <select id="b-cat" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} data-testid="biz-category">
+                <option value="">— انتخاب دسته‌بندی —</option>
+                {categories.map((category) => <option key={category.id} value={String(category.id)}>{category.icon ? `${category.icon} ` : ''}{category.name}</option>)}
+              </select>
+            </label>
+            <div className="biz-field biz-field--wide">
+              <span className="biz-field__label">عکس کسب‌وکار <small>اختیاری</small></span>
+              <div className="biz-product-photo biz-logo-photo">
+                {logoUrl ? (
+                  <span className="biz-product-photo__preview" data-testid="biz-logo-preview">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- owner-uploaded media */}
+                    <img src={thumbUrlFor(logoUrl) ?? logoUrl} onError={thumbFallback(logoUrl)} alt={`تصویر ${name}`} />
+                  </span>
+                ) : <span className="biz-product-photo__preview biz-product-photo__preview--empty" aria-hidden>🏪</span>}
+                <div className="biz-product-photo__controls">
+                  <input id="b-logo" ref={logoRef} className="biz-upload-input" type="file" accept="image/png,image/jpeg,image/webp" data-testid="biz-logo-input" aria-describedby="b-logo-hint" onChange={(e) => void pickLogo(e.target.files?.[0] ?? null)} />
+                  <label className="biz-photo-trigger" htmlFor="b-logo">
+                    <b>{logoBusy ? 'در حال بارگذاری…' : logoUrl ? 'تغییر عکس کسب‌وکار' : 'انتخاب عکس کسب‌وکار'}</b>
+                    <small>JPG، PNG یا WebP · حداکثر ۱۰ مگابایت</small>
+                  </label>
+                  {logoUrl && <button type="button" className="btn btn-ghost" data-testid="biz-logo-remove" onClick={() => setLogoUrl('')}>حذف عکس</button>}
+                  <small id="b-logo-hint" className="biz-photo-hint">فایل اصلی ذخیره نمی‌شود؛ تصویر به WebP کم‌حجم و بندانگشتی تبدیل می‌شود. سقف کل تصاویر هر حساب ۱۰۰ مگابایت است.</small>
+                </div>
+              </div>
+              {logoBusy && <p className="biz-upload-status" aria-busy="true">در حال فشرده‌سازی و بارگذاری امن تصویر…</p>}
+            </div>
+            <label className="biz-field biz-field--wide" htmlFor="b-desc">
+              <span>دربارهٔ کسب‌وکار <small>اختیاری</small></span>
+              <textarea id="b-desc" rows={4} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={2000} placeholder="خدمات، ویژگی‌ها یا توضیح کوتاهی دربارهٔ کسب‌وکار" data-testid="biz-description" />
+            </label>
+            <label className="biz-field" htmlFor="b-phone">
+              <span>شماره تماس <small>اختیاری</small></span>
+              <input id="b-phone" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={15} inputMode="tel" placeholder="شماره‌ای که مشتری با آن تماس بگیرد" data-testid="biz-phone" />
+            </label>
+            <label className="biz-field" htmlFor="b-addr">
+              <span>نشانی <small>اختیاری</small></span>
+              <input id="b-addr" value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} placeholder="خیابان، کوچه یا نشانی کوتاه" data-testid="biz-address" />
+            </label>
           </div>
-          <p className="muted small">
-            {logoBusy
-              ? 'در حال بارگذاری و فشرده‌سازی عکس…'
-              : 'عکس‌ها فشرده ذخیره می‌شوند (WebP ≤۱۰۰۰px) تا فضای سایت پر نشود.'}
+          <p className="biz-location-note">
+            <span aria-hidden>📍</span>
+            {data.pinned ? 'موقعیت کسب‌وکار روی نقشه ثبت شده است.' : 'موقعیت روی نقشه ثبت نشده؛ برای نمایش در نقشه، محل کسب‌وکار را هنگام ثبت انتخاب کن.'}
           </p>
-
-          <label htmlFor="b-desc">توضیحات — اختیاری</label>
-          <textarea
-            id="b-desc"
-            rows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            maxLength={2000}
-            data-testid="biz-description"
-          />
-
-          <label htmlFor="b-phone">شماره تماس — اختیاری</label>
-          <input
-            id="b-phone"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            maxLength={15}
-            inputMode="tel"
-            data-testid="biz-phone"
-          />
-
-          <label htmlFor="b-addr">آدرس — اختیاری</label>
-          <input
-            id="b-addr"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            maxLength={300}
-            data-testid="biz-address"
-          />
-
-          <p className="muted small">
-            {data.pinned
-              ? '📍 موقعیت روی نقشه ثبت شده است.'
-              : 'برای نمایش روی نقشهٔ شهر، موقعیت را هنگام ثبت کسب‌وکار انتخاب کن.'}
-          </p>
-
-          <button className="btn btn-primary" type="submit" disabled={busy} data-testid="biz-save">
-            {busy ? 'در حال ذخیره…' : 'ذخیرهٔ مشخصات'}
-          </button>
+          <div className="biz-editor__actions">
+            <button className="btn btn-primary" type="submit" disabled={busy || logoBusy} data-testid="biz-save">
+              {busy ? 'در حال ذخیره…' : 'ذخیرهٔ تغییرات'}
+            </button>
+          </div>
         </form>
       ) : (
-        <div className="biz-panel" data-testid="biz-menu">
+        <div className="biz-panel biz-menu" data-testid="biz-menu">
           <div className="biz-menu__head">
-            <h2 className="biz-panel__title">منو و محصولات</h2>
+            <div><h2 className="biz-panel__title">منو و محصولات</h2><p>محصول‌ها را با عکس، گروه و قیمت بچین تا در صفحهٔ کسب‌وکارت مرتب دیده شوند.</p></div>
             <button type="button" className="btn btn-primary" onClick={() => setDraft(emptyDraft())} data-testid="product-new">
-              ＋ افزودن محصول
+              ＋ افزودن محصول جدید
             </button>
           </div>
 
           {data.products.length === 0 && !draft && (
             <div className="empty-state" data-testid="biz-menu-empty">
-              <p>هنوز محصولی ثبت نکرده‌ای. منوی کسب‌وکارت را بساز تا مشتری‌ها در صفحهٔ عمومی ببینند.</p>
+              <span className="empty-state__icon" aria-hidden>🍽️</span>
+              <p>هنوز محصولی ثبت نکرده‌ای.</p>
+              <small>با افزودن عکس و توضیح کوتاه، منوی کسب‌وکارت را برای مشتری‌ها آماده کن.</small>
+              <button type="button" className="btn btn-primary" onClick={() => setDraft(emptyDraft())}>＋ افزودن اولین محصول</button>
             </div>
           )}
 
           {sections.map((section) => (
             <section key={section || 'none'} className="biz-menu__group" data-testid={`biz-menu-group-${section || 'none'}`}>
-              <h3 className="biz-menu__section">{section || 'بدون دسته'}</h3>
+              <h3 className="biz-menu__section">{section || 'بدون گروه'} <span>{data.products.filter((product) => (product.section ?? '') === section).length.toLocaleString('fa-IR')} محصول</span></h3>
               <ul className="biz-menu__list">
                 {data.products
                   .filter((product) => (product.section ?? '') === section)
@@ -597,7 +526,7 @@ export function BusinessManage({ id }: { id: number }) {
                           onClick={() => setDraft(toDraft(product))}
                           data-testid={`product-edit-${product.id}`}
                         >
-                          ویرایش
+                          ✎ ویرایش
                         </button>
                         <button
                           type="button"

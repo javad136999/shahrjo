@@ -53,7 +53,7 @@ describe('MyBusinesses («کسب‌وکارهای من»)', () => {
     mockTokens.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
   });
 
-  it('lists the owner businesses with status, product count and manage links', async () => {
+  it('lists the owner businesses with separate edit and menu/product actions', async () => {
     mockList.mockResolvedValue(BUSINESSES);
     render(<MyBusinesses />);
 
@@ -62,7 +62,9 @@ describe('MyBusinesses («کسب‌وکارهای من»)', () => {
     expect(screen.getByTestId('my-business-4')).toHaveTextContent('در انتظار تأیید');
     expect(screen.getByTestId('my-business-4')).toHaveTextContent('۳ محصول');
     expect(screen.getByTestId('my-business-4')).toHaveTextContent('📍 روی نقشه');
-    expect(screen.getByTestId('my-business-manage-4')).toHaveAttribute('href', '/business/4/manage');
+    expect(screen.getByTestId('my-business-edit-4')).toHaveAttribute('href', '/business/4/manage?tab=info');
+    expect(screen.getByTestId('my-business-menu-4')).toHaveAttribute('href', '/business/4/manage?tab=menu');
+    expect(screen.getByTestId('my-business-menu-4')).toHaveTextContent('منو و محصولات');
     expect(screen.getByTestId('my-business-9')).toHaveTextContent('👑 طلایی');
     expect(screen.getByTestId('my-business-9')).toHaveTextContent('بدون موقعیت روی نقشه');
     expect(screen.getByTestId('my-businesses-new')).toHaveAttribute('href', '/business/new');
@@ -96,7 +98,8 @@ describe('MyBusinesses («کسب‌وکارهای من»)', () => {
     // the way back: a purchase reactivates it for exactly the bought period
     expect(screen.getByTestId('my-business-reactivate-77')).toHaveAttribute('href', '/plans?business=77');
     // and it can still edit its menu while suspended
-    expect(screen.getByTestId('my-business-manage-77')).toHaveAttribute('href', '/business/77/manage');
+    expect(screen.getByTestId('my-business-edit-77')).toHaveAttribute('href', '/business/77/manage?tab=info');
+    expect(screen.getByTestId('my-business-menu-77')).toHaveAttribute('href', '/business/77/manage?tab=menu');
   });
 
   it('shows an empty state when the owner registered nothing', async () => {
