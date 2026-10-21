@@ -9,6 +9,13 @@
   gap: 8px;
   font-family: inherit;
 }
+
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .web-install {
+    bottom: 72px;
+  }
+}
+
 .web-install__button {
   display: inline-flex;
   align-items: center;

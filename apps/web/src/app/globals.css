@@ -1746,6 +1746,21 @@ a.my-ads__item:hover {
     padding-bottom: 96px;
   }
 }
+
+/* An installed Android WebView already owns the system-navigation area. Do
+   not add the browser safe-area inset a second time: it makes this bar float
+   visibly above the bottom edge compared with the web version. */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .bottom-nav {
+    padding-bottom: 0;
+  }
+
+  body.nav-pinned .page,
+  .page {
+    padding-bottom: 76px;
+  }
+}
+
 @media (min-width: 768px) {
   .bottom-nav {
     display: none;
@@ -7401,17 +7416,18 @@ button.pill {
   font-size: 13px;
 }
 
-/* Compact phones in the installed WebView: stable vertical centering and
-   touch-sized header actions instead of a cramped/overlapping icon row. */
+/* Keep the installed WebView on the same compact scale as the web app. The
+   previous 54px override made the header and every following section feel
+   oversized only after installation. */
 @media (max-width: 420px) {
   .site-header .header-inner {
-    min-height: 54px;
-    padding-block: 6px;
+    min-height: 46px;
+    padding-block: 5px;
     align-items: center;
   }
   .site-header .pill,
   .site-header .header-user > .btn {
-    min-height: 36px;
+    min-height: 32px;
     box-sizing: border-box;
     align-items: center;
     justify-content: center;
@@ -7420,6 +7436,13 @@ button.pill {
   .site-header .header-pills .pill--icon {
     min-width: 36px;
     padding-inline: 8px;
+  }
+}
+
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .site-header .header-inner {
+    min-height: 46px;
+    padding-block: 5px;
   }
 }
 
