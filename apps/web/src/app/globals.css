@@ -82,6 +82,7 @@ a:hover {
 /* ---------- header / footer ---------- */
 
 .site-header {
+  margin-top: 8px;
   background: rgb(255 255 255 / 85%);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);

@@ -44,7 +44,7 @@ describe('CityTourismView place details', () => {
   });
 
   it('shows the full-view licensed photo for Jam’s Mount Padri without an emoji overlay', () => {
-    const jam: City = { ...city, name: 'جم', slug: 'jam' };
+    const jam: City = { ...city, name: 'شهر نمونه', slug: 'jam' };
     render(<CityTourismView city={jam} />);
 
     const card = screen.getByTestId('tourism-jam-pardis');
