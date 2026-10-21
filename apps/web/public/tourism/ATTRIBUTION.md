@@ -1,0 +1,61 @@
+# Tourism photo credits
+
+Tourism thumbnails are optimized WebP derivatives of the files linked below. Their author and license are also shown from each attraction's detail panel. Modifications are resizing/re-encoding for web delivery.
+
+- `abadan-karapet.webp` — [Holy carapt church.jpg](https://commons.wikimedia.org/wiki/File:Holy_carapt_church.jpg), Sharonadashti, CC BY-SA 4.0.
+- `abadan-rangooniha.webp` — [Rangonihai Mosque of Abadan.jpg](https://commons.wikimedia.org/wiki/File:Rangonihai_Mosque_of_Abadan.jpg), Dr.anahidashti, CC BY-SA 4.0.
+- `abadeh-izadkhast-bridge.webp` — [Izadkhast Old town Fars Province Iran.jpg](https://commons.wikimedia.org/wiki/File:Izadkhast_Old_town_Fars_Province_Iran.jpg), Alireza Javaheri, CC BY 3.0.
+- `abadeh-izadkhast-caravanserai.webp` — [Izadkhast Old Caravanserai Iran.jpg](https://commons.wikimedia.org/wiki/File:Izadkhast_Old_Caravanserai_Iran.jpg), Alireza Javaheri, CC BY 3.0.
+- `abadeh-izadkhast-castle.webp` — [Izadkhast Castle by Hadi Karimi.jpg](https://commons.wikimedia.org/wiki/File:Izadkhast_Castle_by_Hadi_Karimi.jpg), Hadi Karimi, CC BY-SA 4.0.
+- `ahvaz-karun.webp` — [Masbuta by Mandaean in Karun River, Ahvaz, Iran - 16 July 2018 (01).jpg](https://commons.wikimedia.org/wiki/File:Masbuta_by_Mandaean_in_Karun_River,_Ahvaz,_Iran_-_16_July_2018_(01).jpg), Mehdi Pedramkhoo, CC BY 4.0.
+- `ahvaz-maapar.webp` — [Adel(Hassan) Bazmeh, Mapar House Photography.jpg](https://commons.wikimedia.org/wiki/File:Adel(Hassan)_Bazmeh,_Mapar_House_Photography.jpg), Adel(Hassan) Bazmeh, CC BY-SA 4.0.
+- `ahvaz-white-bridge.webp` — [Iran - Khuzestan - Ahvaz - White Bridge & Karoon River.jpg](https://commons.wikimedia.org/wiki/File:Iran_-_Khuzestan_-_Ahvaz_-_White_Bridge_%26_Karoon_River.jpg), Alireza Javaheri, CC BY 3.0.
+- `ardakan-chakchak.webp` — [Zoroastrian Persian Shrine chak-chak Republic Ardakan.jpg](https://commons.wikimedia.org/wiki/File:Zoroastrian_Persian_Shrine_chak-chak_Republic_Ardakan.jpg), Abolfazl Ahmadi, CC BY-SA 4.0.
+- `asaluyeh-nayband.webp` — [Nayband National Marine Park 20190109 10.jpg](https://commons.wikimedia.org/wiki/File:Nayband_National_Marine_Park_20190109_10.jpg), Milad Rafat, CC BY 4.0.
+- `bushehr-coast.webp` — [Persian Gulf coast - panoramio.jpg](https://commons.wikimedia.org/wiki/File:Persian_Gulf_coast_-_panoramio.jpg), m.saberi, CC BY-SA 3.0.
+- `bushehr-malek.webp` — [Malek Mansion.jpg](https://commons.wikimedia.org/wiki/File:Malek_Mansion.jpg), Nariman9782, CC BY-SA 4.0.
+- `bushehr-raisali.webp` — [052 - ورودی خانه ریس علی دلواری.jpg](https://commons.wikimedia.org/wiki/File:052_-_%D9%88%D8%B1%D9%88%D8%AF%DB%8C_%D8%AE%D8%A7%D9%86%D9%87_%D8%B1%DB%8C%D8%B3_%D8%B9%D9%84%DB%8C_%D8%AF%D9%84%D9%88%D8%A7%D8%B1%DB%8C.jpg), نادر مظلومی, CC BY-SA 4.0.
+- `eslamshahr-imamzadeh-aqil.webp` — [Emamzade aghil1.jpg](https://commons.wikimedia.org/wiki/File:Emamzade_aghil1.jpg), درپیت, CC BY-SA 4.0.
+- `eslamshahr-mafinabad-mound.webp` — [Hamid pic10.jpg](https://commons.wikimedia.org/wiki/File:Hamid_pic10.jpg), Hamidabdolali, CC BY-SA 4.0.
+- `isfahan-chehel.webp` — [Fresco at Chehel Sotoun Palace, Isfahan, Iran.jpg](https://commons.wikimedia.org/wiki/File:Fresco_at_Chehel_Sotoun_Palace,_Isfahan,_Iran.jpg), Unnamed painter from 17th century Persian, in reign and palace of Abbas II of Persia , Safavid dynasty. Photographer user:Aliarjmandi, CC BY-SA 4.0.
+- `isfahan-jame.webp` — [Isfahan Jame Mosque By Arian (2023).jpg](https://commons.wikimedia.org/wiki/File:Isfahan_Jame_Mosque_By_Arian_(2023).jpg), Arian, CC BY-SA 4.0.
+- `isfahan-naqshejahan.webp` — [Panorama of Naqsh-i Jahan Square, Isfahan at blue hour (2019, edited).jpg](https://commons.wikimedia.org/wiki/File:Panorama_of_Naqsh-i_Jahan_Square,_Isfahan_at_blue_hour_(2019,_edited).jpg), Original: Zahra gharaati Derivative work: Aristeas, CC BY-SA 4.0.
+- `isfahan-siosepol.webp` — [Si-o-se Pol, Isfahan, Irán, 2016-09-19, DD 01-03 HDR.jpg](https://commons.wikimedia.org/wiki/File:Si-o-se_Pol,_Isfahan,_Ir%C3%A1n,_2016-09-19,_DD_01-03_HDR.jpg), Diego Delso, CC BY-SA 4.0.
+- `kerman-fathabad.webp` — [010215-Kerman-IMG 0692-2.jpg](https://commons.wikimedia.org/wiki/File:010215-Kerman-IMG_0692-2.jpg), Safa.daneshvar, CC BY-SA 4.0.
+- `kerman-ganjali.webp` — [Ganjali Khan Complex, Kerman 03.jpg](https://commons.wikimedia.org/wiki/File:Ganjali_Khan_Complex,_Kerman_03.jpg), Bernard Gagnon, CC BY-SA 4.0.
+- `kerman-jeblieh.webp` — [Jabaliyeh Dome, Kerman by Hadi Karimi.jpg](https://commons.wikimedia.org/wiki/File:Jabaliyeh_Dome,_Kerman_by_Hadi_Karimi.jpg), HADI, CC BY-SA 4.0.
+- `kerman-shazdeh.webp` — [Shazdeh Mahan Garden, Kerman, Iran (27983138787).jpg](https://commons.wikimedia.org/wiki/File:Shazdeh_Mahan_Garden,_Kerman,_Iran_(27983138787).jpg), Ninara from Helsinki, Finland, CC BY 2.0.
+- `mashhad-ferdowsi.webp` — [Tomb of Ferdowsi, Tus, Mashhad, Iran (126).jpg](https://commons.wikimedia.org/wiki/File:Tomb_of_Ferdowsi,_Tus,_Mashhad,_Iran_(126).jpg), AR VLD, CC BY-SA 4.0.
+- `mashhad-goharshad.webp` — [Goharshad-mosque-mashhad-IRAN.jpg](https://commons.wikimedia.org/wiki/File:Goharshad-mosque-mashhad-IRAN.jpg), Dr.rezaei 13, CC BY-SA 4.0.
+- `mashhad-nader.webp` — [Tomb of Nader Shah - Mashhad 3.jpg](https://commons.wikimedia.org/wiki/File:Tomb_of_Nader_Shah_-_Mashhad_3.jpg), Mohammad Taaghi, CC BY 4.0.
+- `mashhad-reza.webp` — [Ali Khamenei in Mashhad, Imam Reza shrine (Nowruz 1385) (002).jpg](https://commons.wikimedia.org/wiki/File:Ali_Khamenei_in_Mashhad,_Imam_Reza_shrine_(Nowruz_1385)_(002).jpg), khamenei.ir/, CC BY 4.0.
+- `sanandaj-bazaar.webp` — [Sanandaj Bazaar.jpg](https://commons.wikimedia.org/wiki/File:Sanandaj_Bazaar.jpg), Γεωργός, CC BY-SA 4.0.
+- `sanandaj-khosroabad.webp` — [Sanandaj, KhosroAbad 02.jpg](https://commons.wikimedia.org/wiki/File:Sanandaj,_KhosroAbad_02.jpg), Γεωργός, CC BY-SA 4.0.
+- `semnan-abrs.webp` — [Shahroud - Clouds Forest (Jangal Abr) - panoramio.jpg](https://commons.wikimedia.org/wiki/File:Shahroud_-_Clouds_Forest_(Jangal_Abr)_-_panoramio.jpg), Alireza Javaheri, CC BY 3.0.
+- `semnan-damghan-chshmeh.webp` — [چشمه علی و نمای کاخ فتحعلی شاه، دامغان Cheshmeh Ali ^ Fat'h ali Shah's palace, Damghan - panoramio.jpg](https://commons.wikimedia.org/wiki/File:%DA%86%D8%B4%D9%85%D9%87_%D8%B9%D9%84%DB%8C_%D9%88_%D9%86%D9%85%D8%A7%DB%8C_%DA%A9%D8%A7%D8%AE_%D9%81%D8%AA%D8%AD%D8%B9%D9%84%DB%8C_%D8%B4%D8%A7%D9%87%D8%8C_%D8%AF%D8%A7%D9%85%D8%BA%D8%A7%D9%86_Cheshmeh_Ali_%5E_Fat%27h_ali_Shah%27s_palace,_Damghan_-_panoramio.jpg), Mahdi Kalhor, CC BY 3.0.
+- `semnan-jame.webp` — [Masjed jame semnan4.jpg](https://commons.wikimedia.org/wiki/File:Masjed_jame_semnan4.jpg), Fateme.khalily, CC BY-SA 4.0.
+- `shahrekord-chaleshtar.webp` — [20211022 124135قلعه ستوده چالشتر.jpg](https://commons.wikimedia.org/wiki/File:20211022_124135%D9%82%D9%84%D8%B9%D9%87_%D8%B3%D8%AA%D9%88%D8%AF%D9%87_%DA%86%D8%A7%D9%84%D8%B4%D8%AA%D8%B1.jpg), Leilaalibeigi, CC BY-SA 4.0.
+- `shahrekord-dimeh.webp` — [Dimeh Spring 2019-08-19 01.jpg](https://commons.wikimedia.org/wiki/File:Dimeh_Spring_2019-08-19_01.jpg), Pantea Nikzad, CC BY 4.0.
+- `shahrekord-jame.webp` — [Jam'e Mosque of Shahrekord 13970529 06.jpg](https://commons.wikimedia.org/wiki/File:Jam%27e_Mosque_of_Shahrekord_13970529_06.jpg), Niloofar Rakhshan نیلوفر رخشان, CC BY 4.0.
+- `shahrekord-saman.webp` — [Zaman Khan Bridge-Saman- Shahr-e Kord-ID1744- پل زمان‌خان-سامان-شهرکرد.jpg](https://commons.wikimedia.org/wiki/File:Zaman_Khan_Bridge-Saman-_Shahr-e_Kord-ID1744-_%D9%BE%D9%84_%D8%B2%D9%85%D8%A7%D9%86%E2%80%8C%D8%AE%D8%A7%D9%86-%D8%B3%D8%A7%D9%85%D8%A7%D9%86-%D8%B4%D9%87%D8%B1%DA%A9%D8%B1%D8%AF.jpg), Mhsheikholeslami, CC BY-SA 4.0.
+- `shiraz-aram.webp` — [باغ ارم شیراز ایران-Eram Garden shiraz iran 04.jpg](https://commons.wikimedia.org/wiki/File:%D8%A8%D8%A7%D8%BA_%D8%A7%D8%B1%D9%85_%D8%B4%DB%8C%D8%B1%D8%A7%D8%B2_%D8%A7%DB%8C%D8%B1%D8%A7%D9%86-Eram_Garden_shiraz_iran_04.jpg), Mahdikarimi70, CC BY-SA 4.0.
+- `shiraz-hafez.webp` — [Mausoleo de Hafez, Shiraz, Irán, 2016-09-24, DD 08-10 PAN.jpg](https://commons.wikimedia.org/wiki/File:Mausoleo_de_Hafez,_Shiraz,_Ir%C3%A1n,_2016-09-24,_DD_08-10_PAN.jpg), Diego Delso, CC BY-SA 4.0.
+- `shiraz-nasir.webp` — [2018-09-22 Iran, Shiraz, Nasir al-Mulk Mosque (winter prayer hall) (3).jpg](https://commons.wikimedia.org/wiki/File:2018-09-22_Iran,_Shiraz,_Nasir_al-Mulk_Mosque_(winter_prayer_hall)_(3).jpg), Laurens R. Krol, CC BY 4.0.
+- `shiraz-persepolis.webp` — [Persepolis Panorama 360 Virtual Reality Tachar castle.jpg](https://commons.wikimedia.org/wiki/File:Persepolis_Panorama_360_Virtual_Reality_Tachar_castle.jpg), Mshayati, CC BY-SA 4.0.
+- `shiraz-saadi.webp` — [Saadi Tomb.jpg](https://commons.wikimedia.org/wiki/File:Saadi_Tomb.jpg), Omid Hatami, CC BY-SA 4.0.
+- `tabriz-bazaar.webp` — [Mozaffariyeh Timcheh in the Tabriz Grand Bazaar.jpg](https://commons.wikimedia.org/wiki/File:Mozaffariyeh_Timcheh_in_the_Tabriz_Grand_Bazaar.jpg), Sana taba, CC BY-SA 4.0.
+- `tabriz-blue-mosque.webp` — [Kabood (Blue) mosque, Tabriz, Iran.jpg](https://commons.wikimedia.org/wiki/File:Kabood_(Blue)_mosque,_Tabriz,_Iran.jpg), Hameddaeipic, CC BY-SA 4.0.
+- `tabriz-constitution.webp` — [House-of-Constitutional-Revolution.jpg](https://commons.wikimedia.org/wiki/File:House-of-Constitutional-Revolution.jpg), Shervinafshar, CC BY-SA 3.0.
+- `tabriz-elongoli.webp` — [Eil Goli(SHAH GOLI) nights in Tabriz.jpg](https://commons.wikimedia.org/wiki/File:Eil_Goli(SHAH_GOLI)_nights_in_Tabriz.jpg), Yare zaman2000, CC BY-SA 4.0.
+- `tehran-golestan.webp` — [Golestan door.JPG](https://commons.wikimedia.org/wiki/File:Golestan_door.JPG), Photo:مانفی, CC BY-SA 3.0.
+- `tehran-grandbazaar.webp` — [Roof of the qom grand bazaar, qom, iran.jpg](https://commons.wikimedia.org/wiki/File:Roof_of_the_qom_grand_bazaar,_qom,_iran.jpg), Amir Pashaei, CC BY-SA 4.0.
+- `tehran-milad.webp` — [Vista de Teherán desde la Torre Milad, Irán, 2016-09-17, DD 78.jpg](https://commons.wikimedia.org/wiki/File:Vista_de_Teher%C3%A1n_desde_la_Torre_Milad,_Ir%C3%A1n,_2016-09-17,_DD_78.jpg), Diego Delso, CC BY-SA 4.0.
+- `tehran-tabiat.webp` — [Modares highway view from Tabiat Bridge in Ab-o-Atash Park-facing North.jpg](https://commons.wikimedia.org/wiki/File:Modares_highway_view_from_Tabiat_Bridge_in_Ab-o-Atash_Park-facing_North.jpg), Iranairlover, CC BY-SA 4.0.
+- `urmia-jame.webp` — [Jame Mosque of Urmia-1.JPG](https://commons.wikimedia.org/wiki/File:Jame_Mosque_of_Urmia-1.JPG), Toni Afshar, CC BY-SA 4.0.
+- `urmia-lake.webp` — [Lake Urmia, Iran (ASTER).jpg](https://commons.wikimedia.org/wiki/File:Lake_Urmia,_Iran_(ASTER).jpg), NASA/METI/AIST/Japan Space Systems, and U.S./Japan ASTER Science Team, Public domain.
+- `urmia-marmisho.webp` — [Marmisho lake-دریاچه مارمیشو - panoramio.jpg](https://commons.wikimedia.org/wiki/File:Marmisho_lake-%D8%AF%D8%B1%DB%8C%D8%A7%DA%86%D9%87_%D9%85%D8%A7%D8%B1%D9%85%DB%8C%D8%B4%D9%88_-_panoramio.jpg), amin iroony, CC BY 3.0.
+- `urmia-three-domes.webp` — [2022-05-19 ScheWo Urmia Seh Gonbad-Mausoleum innen.jpg](https://commons.wikimedia.org/wiki/File:2022-05-19_ScheWo_Urmia_Seh_Gonbad-Mausoleum_innen.jpg), Carola Schelle-Wolff, CC BY-SA 4.0.
+- `yasuj-waterfall.webp` — [بالای آبشار یاسوج High Waterfall Yasuj - panoramio.jpg](https://commons.wikimedia.org/wiki/File:%D8%A8%D8%A7%D9%84%D8%A7%DB%8C_%D8%A2%D8%A8%D8%B4%D8%A7%D8%B1_%DB%8C%D8%A7%D8%B3%D9%88%D8%AC_High_Waterfall_Yasuj_-_panoramio.jpg), Milad Gerami, CC BY-SA 3.0.
+- `yazd-dolatabad.webp` — [Dowlat Abad Garden, Yazd, Iran.jpg](https://commons.wikimedia.org/wiki/File:Dowlat_Abad_Garden,_Yazd,_Iran.jpg), David Stanley, CC BY 2.0.
+- `yazd-firetemple.webp` — [Zoroastrian Fire Temple, Yazd 02.jpg](https://commons.wikimedia.org/wiki/File:Zoroastrian_Fire_Temple,_Yazd_02.jpg), Bernard Gagnon, CC BY-SA 4.0.
+- `yazd-jame.webp` — [20110103 Jame-e Kabir and Roknedin Mauseleum Yazd Iran.jpg](https://commons.wikimedia.org/wiki/File:20110103_Jame-e_Kabir_and_Roknedin_Mauseleum_Yazd_Iran.jpg), User:Ggia, CC BY-SA 3.0.

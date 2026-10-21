@@ -18,7 +18,7 @@ const city: City = {
 };
 
 describe('CityTourismView place details', () => {
-  it('opens a place description and travel specifications below its card when tapped', () => {
+  it('opens a place description and linked map below its card when tapped', () => {
     render(<CityTourismView city={city} />);
 
     const details = screen.getByTestId('tourism-details-shiraz-hafez');
@@ -29,8 +29,13 @@ describe('CityTourismView place details', () => {
 
     expect(details).toHaveAttribute('open');
     expect(within(details).getByText(/آرامگاه حافظ در باغی شاعرانه/)).toBeInTheDocument();
-    expect(within(details).getByText('دسته‌بندی')).toBeInTheDocument();
-    expect(within(details).getByText('مختصات')).toBeInTheDocument();
+    expect(within(details).queryByText('دسته‌بندی')).not.toBeInTheDocument();
+    expect(within(details).queryByText('زمان پیشنهادی')).not.toBeInTheDocument();
+    expect(within(details).queryByText('محدوده')).not.toBeInTheDocument();
+    expect(within(details).queryByText('مختصات')).not.toBeInTheDocument();
+    const card = details.closest('li')!;
+    expect(within(card).getByRole('img', { name: 'عکس حافظیه' })).toHaveAttribute('loading', 'lazy');
+    expect(within(details).getByRole('link', { name: /عکس: Diego Delso/ })).toHaveAttribute('href', expect.stringContaining('commons.wikimedia.org/wiki/File:Mausoleo_de_Hafez'));
     expect(within(details).getByRole('link', { name: /مشاهدهٔ مکان روی نقشه/ })).toHaveAttribute('target', '_blank');
     expect(within(details).getByRole('link', { name: /منبع اطلاعات/ })).toHaveAttribute('href', expect.stringContaining('eghamat24'));
 

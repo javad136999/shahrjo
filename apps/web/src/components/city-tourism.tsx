@@ -56,8 +56,9 @@ export function CityTourismView({ city }: CityTourismViewProps) {
           {visibleSpots.map((spot, index) => (
             <li key={spot.id} className="tourism-card" data-testid={`tourism-${spot.id}`}>
               <div className="tourism-card__visual" style={{ '--tourism-accent': spot.accent } as React.CSSProperties}>
+                {spot.imageUrl ? <img className="tourism-card__image" src={spot.imageUrl} alt={`عکس ${spot.name}`} loading="lazy" decoding="async" width="640" height="420" /> : null}
                 <span className="tourism-card__number">{new Intl.NumberFormat('fa-IR', { minimumIntegerDigits: 2 }).format(index + 1)}</span>
-                <span className="tourism-card__emoji" aria-hidden>{spot.icon}</span>
+                {!spot.imageUrl ? <span className="tourism-card__emoji" aria-hidden>{spot.icon}</span> : null}
                 <span className="tourism-card__category">{spot.category}</span>
               </div>
               <details className="tourism-card__expand" data-testid={`tourism-details-${spot.id}`}>
@@ -70,12 +71,7 @@ export function CityTourismView({ city }: CityTourismViewProps) {
                   <h3>دربارهٔ مکان</h3>
                   <p className="tourism-card__description">{spot.description}</p>
                   <p className="tourism-card__tip"><b>نکتهٔ بازدید:</b> {spot.tip}</p>
-                  <dl className="tourism-card__specs">
-                    <div><dt>دسته‌بندی</dt><dd>{spot.category}</dd></div>
-                    <div><dt>زمان پیشنهادی</dt><dd>{spot.duration}</dd></div>
-                    <div><dt>محدوده</dt><dd>{spot.locationLabel}</dd></div>
-                    <div><dt>مختصات</dt><dd>{spot.latitude.toFixed(4)}، {spot.longitude.toFixed(4)}</dd></div>
-                  </dl>
+                  {spot.imageUrl && spot.imageSourceUrl ? <a className="tourism-card__image-credit" href={spot.imageSourceUrl} target="_blank" rel="noreferrer">عکس: {spot.imageCredit} · {spot.imageLicense} ↗</a> : null}
                   <a className="tourism-card__source" href={spot.sourceUrl} target="_blank" rel="noreferrer">منبع اطلاعات: {spot.sourceLabel} ↗</a>
                   <a className="tourism-card__map" href={mapsUrl(spot.latitude, spot.longitude, spot.name)} target="_blank" rel="noreferrer"><span>مشاهدهٔ مکان روی نقشه</span><span aria-hidden>↗</span></a>
                 </div>
@@ -85,7 +81,7 @@ export function CityTourismView({ city }: CityTourismViewProps) {
         </ul>
       )}
 
-      <aside className="tourism-note"><span className="tourism-note__icon" aria-hidden>💚</span><div><strong>راهنمای سبک و کم‌حجم</strong><p>برای جلوگیری از پرشدن سرور، در این مرحله عکس محلی ذخیره نمی‌شود؛ هر مکان فقط دادهٔ متنی، مختصات و لینک منبع دارد و کاربر می‌تواند جزئیات و نقشه را باز کند.</p></div></aside>
+      <aside className="tourism-note"><span className="tourism-note__icon" aria-hidden>💚</span><div><strong>تصاویر بهینه و کم‌حجم</strong><p>عکس‌ها با اندازهٔ نمایشی کوچک و فشرده‌سازی WebP آماده شده‌اند؛ اعتبار و مجوز هر تصویر در بخش جزئیات همان مکان درج شده است.</p></div></aside>
     </div>
   );
 }
