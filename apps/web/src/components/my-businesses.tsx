@@ -25,7 +25,8 @@ function isSuspended(business: MyBusiness): boolean {
 
 /**
  * «کسب‌وکارهای من» — the owner's businesses in every moderation status, each
- * with the entry to edit its profile and to register its menu & products.
+ * with two explicit entries: edit the business profile, or manage its menu
+ * and products. Each action opens the relevant workspace directly.
  * Reached from the bottom navigation (the news icon it replaced still lives in
  * the header pill). Login-gated: guests are sent to /login with a `next`.
  */
@@ -122,34 +123,37 @@ export function MyBusinesses() {
                       این کسب‌وکار تعلیق است {business.subscriptionStatus === 'EXPIRED' ? '(پایان مهلت اشتراک)' : ''} و از نقشه و جستجو خارج شده. با خرید اشتراک، به همان مدتی که انتخاب می‌کنی دوباره فعال می‌شود.
                     </p>
                   )}
-                  <div className="mybiz__actions">
-                    {suspended ? (
+                  <div className="mybiz__actions" aria-label={`گزینه‌های ${business.name}`}>
+                    <Link
+                      href={`/business/${business.id}/manage?tab=info`}
+                      className="mybiz-action mybiz-action--edit"
+                      data-testid={`my-business-edit-${business.id}`}
+                    >
+                      <span className="mybiz-action__icon" aria-hidden>✎</span>
+                      <span><b>ویرایش کسب‌وکار</b><small>مشخصات، تصویر و راه‌های تماس</small></span>
+                      <span className="mybiz-action__arrow" aria-hidden>←</span>
+                    </Link>
+                    <Link
+                      href={`/business/${business.id}/manage?tab=menu`}
+                      className="mybiz-action mybiz-action--menu"
+                      data-testid={`my-business-menu-${business.id}`}
+                    >
+                      <span className="mybiz-action__icon" aria-hidden>▤</span>
+                      <span><b>منو و محصولات</b><small>{business.productCount.toLocaleString('fa-IR')} محصول · افزودن عکس و قیمت</small></span>
+                      <span className="mybiz-action__arrow" aria-hidden>←</span>
+                    </Link>
+                  </div>
+                  <div className="mybiz__footer-actions">
+                    <Link href={`/business/${business.id}`} className="btn btn-ghost">
+                      مشاهدهٔ صفحهٔ عمومی
+                    </Link>
+                    {suspended && (
                       <Link
                         href={`/plans?business=${business.id}`}
                         className="btn btn-primary"
                         data-testid={`my-business-reactivate-${business.id}`}
                       >
                         🔄 فعال‌سازی با خرید اشتراک
-                      </Link>
-                    ) : (
-                      <Link
-                        href={`/business/${business.id}/manage`}
-                        className="btn btn-primary"
-                        data-testid={`my-business-manage-${business.id}`}
-                      >
-                        ویرایش و منو
-                      </Link>
-                    )}
-                    <Link href={`/business/${business.id}`} className="btn btn-ghost">
-                      مشاهدهٔ صفحهٔ عمومی
-                    </Link>
-                    {suspended && (
-                      <Link
-                        href={`/business/${business.id}/manage`}
-                        className="btn btn-ghost"
-                        data-testid={`my-business-manage-${business.id}`}
-                      >
-                        ویرایش منو
                       </Link>
                     )}
                   </div>
