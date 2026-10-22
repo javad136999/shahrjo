@@ -24,6 +24,19 @@ import type { BusinessCategoryOption, City, CityMapData, PlanItem } from '@/lib/
 const formatRial = (rial: number) => `${new Intl.NumberFormat('fa-IR').format(rial)} ریال`;
 const formatPlanDuration = (days: number) => days >= 30 && days % 30 === 0 ? `${(days / 30).toLocaleString('fa-IR')} ماهه` : `${days.toLocaleString('fa-IR')} روزه`;
 const TIER_ICON: Record<string, string> = { GOLD: '👑', SILVER: '🥈', FREE: '⭐' };
+const TIER_LABEL: Record<PlanItem['tier'], string> = { GOLD: 'اشتراک طلایی', SILVER: 'اشتراک نقره‌ای', FREE: 'اشتراک رایگان' };
+const TIER_BENEFITS: Partial<Record<PlanItem['tier'], { icon: string; text: string }[]>> = {
+  GOLD: [
+    { icon: '✨', text: 'ثبت کسب‌وکار در ویترین طلایی' },
+    { icon: '📣', text: 'پیام تبلیغاتی ویژه در دیوار شهر به‌صورت روزانه' },
+    { icon: '🎬', text: 'ساخت کلیپ تبلیغاتی از کسب‌وکار و انتشار در صفحهٔ شهرجو به آدرس shahrju.ir' },
+  ],
+  SILVER: [
+    { icon: '📍', text: 'ثبت کسب‌وکار روی نقشه' },
+    { icon: '🛍️', text: 'منو و محصولات کسب‌وکار' },
+    { icon: '🎬', text: 'ساخت کلیپ تبلیغاتی و انتشار در پیج اینستاگرام شهرجو (@shahrju.ir)' },
+  ],
+};
 
 /**
  * The signup list leads with the trades people actually look for in a city —
@@ -646,43 +659,70 @@ export function BusinessRegistration() {
           )}
           {plans && (
             <section className="biz-registration__subscription-card" data-testid="biz-plans" aria-label="انتخاب پلن کسب‌وکار">
-              <div className="plans-grid biz-registration__plans-grid">
-                {plans.map((plan) => (
-                  <article
-                    key={plan.id}
-                    className={`plan-card plan-card--${plan.tier.toLowerCase()} biz-registration__plan${selectedPlanId === plan.id ? ' is-selected' : ''}`}
-                    role="button"
-                    tabIndex={0}
-                    aria-pressed={selectedPlanId === plan.id}
-                    onClick={() => setSelectedPlanId(plan.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setSelectedPlanId(plan.id);
-                      }
-                    }}
-                    data-testid={`biz-plan-${plan.id}`}
+              {(['GOLD', 'SILVER', 'FREE'] as const).map((tier) => {
+                const tierPlans = plans.filter((plan) => plan.tier === tier);
+                if (tierPlans.length === 0) return null;
+                const benefits = TIER_BENEFITS[tier];
+                const titleId = `biz-tier-title-${tier.toLowerCase()}`;
+                return (
+                  <section
+                    key={tier}
+                    className={`biz-registration__tier-section biz-registration__tier-section--${tier.toLowerCase()}`}
+                    data-testid={`biz-tier-${tier.toLowerCase()}`}
+                    aria-labelledby={titleId}
                   >
-                    <div className="plan-card__tier">
-                      <span aria-hidden>{TIER_ICON[plan.tier] ?? '⭐'}</span> {plan.label}
+                    <header className="biz-registration__tier-heading">
+                      <span className="biz-registration__tier-icon" aria-hidden>{TIER_ICON[tier]}</span>
+                      <div>
+                        <h3 id={titleId}>{TIER_LABEL[tier]}</h3>
+                        <p>{tier === 'GOLD' ? 'بیشترین دیده‌شدن برای کسب‌وکارت' : tier === 'SILVER' ? 'حضور حرفه‌ای روی نقشه و معرفی محصولات' : 'شروع رایگان برای معرفی کسب‌وکار'}</p>
+                      </div>
+                    </header>
+                    <div className="plans-grid biz-registration__plans-grid">
+                      {tierPlans.map((plan) => (
+                        <article
+                          key={plan.id}
+                          className={`plan-card plan-card--${plan.tier.toLowerCase()} biz-registration__plan${selectedPlanId === plan.id ? ' is-selected' : ''}`}
+                          role="button"
+                          tabIndex={0}
+                          aria-pressed={selectedPlanId === plan.id}
+                          onClick={() => setSelectedPlanId(plan.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setSelectedPlanId(plan.id);
+                            }
+                          }}
+                          data-testid={`biz-plan-${plan.id}`}
+                        >
+                          <div className="plan-card__tier">
+                            <span aria-hidden>{TIER_ICON[plan.tier] ?? '⭐'}</span> {plan.label}
+                          </div>
+                          <div className="plan-card__duration">{formatPlanDuration(plan.durationDays)}</div>
+                          <div className="plan-card__price">{formatRial(plan.price)}</div>
+                          <p className="biz-registration__plan-note">
+                            {plan.tier === 'GOLD' ? 'بالاترین سطح اشتراک' : plan.tier === 'SILVER' ? 'اشتراک ویژه کسب‌وکار' : 'طرح رایگان'}
+                          </p>
+                          {selectedPlanId === plan.id && <span className="biz-registration__selected">✓ انتخاب شما</span>}
+                        </article>
+                      ))}
                     </div>
-                    <div className="plan-card__duration">{formatPlanDuration(plan.durationDays)}</div>
-                    <div className="plan-card__price">{formatRial(plan.price)}</div>
-                    <p className="biz-registration__plan-note">
-                      {plan.tier === 'GOLD' ? 'بالاترین سطح اشتراک' : plan.tier === 'SILVER' ? 'اشتراک ویژه کسب‌وکار' : 'طرح رایگان'}
-                    </p>
-                    {selectedPlanId === plan.id && <span className="biz-registration__selected">✓ انتخاب شما</span>}
-                  </article>
-                ))}
-              </div>
-              <section className="biz-registration__gold-benefits" aria-labelledby="biz-gold-benefits-title">
-                <h3 id="biz-gold-benefits-title"><span aria-hidden>👑</span> مزیت‌های انتخاب اشتراک طلایی</h3>
-                <ul>
-                  <li><span className="biz-registration__benefit-icon" aria-hidden>✨</span><span>ثبت کسب‌وکار در ویترین طلایی</span></li>
-                  <li><span className="biz-registration__benefit-icon" aria-hidden>📣</span><span>پیام تبلیغاتی ویژه در دیوار شهر به‌صورت روزانه</span></li>
-                  <li><span className="biz-registration__benefit-icon" aria-hidden>🎬</span><span>ساخت کلیپ تبلیغاتی از کسب‌وکار و انتشار در صفحهٔ شهرجو به آدرس shahrju.ir</span></li>
-                </ul>
-              </section>
+                    {benefits && (
+                      <div className="biz-registration__tier-benefits" data-testid={`biz-benefits-${tier.toLowerCase()}`}>
+                        <h4>مزایای اشتراک {tier === 'GOLD' ? 'طلایی' : 'نقره‌ای'}</h4>
+                        <ul>
+                          {benefits.map((benefit) => (
+                            <li key={benefit.text}>
+                              <span className="biz-registration__benefit-icon" aria-hidden>{benefit.icon}</span>
+                              <span>{benefit.text}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
             </section>
           )}
           <div className="auth-actions">

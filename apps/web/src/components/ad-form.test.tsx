@@ -247,6 +247,7 @@ describe('AdForm', () => {
       },
     ]);
     render(<AdForm />);
+    fireEvent.click(screen.getByText('آگهی‌های من'));
 
     expect(await screen.findByTestId('my-ad-77')).toHaveTextContent('در انتظار تأیید');
     expect(screen.getByTestId('my-ad-78')).toHaveTextContent('رد شده');

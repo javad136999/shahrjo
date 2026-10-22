@@ -8126,3 +8126,292 @@ button.pill {
   background: linear-gradient(145deg, #ffe8a5, #e1b54d);
   transform: translateY(-2px);
 }
+
+
+/* Business plan picker: one self-contained card per tier, with tier-specific
+   plan durations side by side and matching benefits immediately below. */
+.biz-registration__subscription-card {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.biz-registration__subscription-card::before { display: none; }
+.biz-registration__tier-section {
+  position: relative;
+  overflow: hidden;
+  padding: 15px;
+  border: 1px solid #dce7e0;
+  border-radius: 21px;
+  background: linear-gradient(155deg, #fff, #f6faf7);
+  box-shadow: 0 10px 25px rgb(24 75 52 / 7%);
+}
+.biz-registration__tier-section::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  content: '';
+  background: linear-gradient(90deg, #718078, #d4ddd8, #eef3f0);
+}
+.biz-registration__tier-section--gold {
+  border-color: #ead49a;
+  background: linear-gradient(155deg, #fffdf6, #fff8e5 42%, #fff);
+  box-shadow: 0 12px 30px rgb(166 107 25 / 9%);
+}
+.biz-registration__tier-section--gold::before {
+  background: linear-gradient(90deg, #b77717, #f0c75e, #fff1ad);
+}
+.biz-registration__tier-section--silver {
+  border-color: #cfdad6;
+  background: linear-gradient(155deg, #fbfdfc, #f0f4f2 44%, #fff);
+}
+.biz-registration__tier-section--silver::before {
+  background: linear-gradient(90deg, #718078, #cbd5d1, #f1f4f2);
+}
+.biz-registration__tier-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 2px 0 11px;
+}
+.biz-registration__tier-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border: 1px solid #d8e2dc;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #f7faf8, #dfe7e2);
+  font-size: 21px;
+  box-shadow: 0 5px 12px rgb(31 72 51 / 8%);
+}
+.biz-registration__tier-section--gold .biz-registration__tier-icon {
+  border-color: #efd99f;
+  background: linear-gradient(145deg, #fff0af, #e3ae3d);
+  box-shadow: 0 6px 14px rgb(166 107 25 / 16%);
+}
+.biz-registration__tier-heading h3 {
+  margin: 0;
+  color: #273c31;
+  font-size: 15px;
+  font-weight: 900;
+}
+.biz-registration__tier-heading p {
+  margin: 3px 0 0;
+  color: #77857c;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.biz-registration--jam-style .biz-registration__tier-section .biz-registration__plans-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 0;
+}
+.biz-registration__tier-section .biz-registration__plan {
+  min-width: 0;
+  min-height: 156px;
+  padding: 13px 11px 11px;
+  border-radius: 16px;
+  cursor: pointer;
+}
+.biz-registration__tier-section .biz-registration__plan:focus-visible {
+  outline: 3px solid rgb(22 128 82 / 30%);
+  outline-offset: 2px;
+}
+.biz-registration__tier-section--gold .biz-registration__plan.is-selected {
+  border-color: #bd861e;
+  box-shadow: 0 0 0 3px rgb(240 199 94 / 24%), 0 10px 23px rgb(166 107 25 / 12%);
+}
+.biz-registration__tier-section--silver .biz-registration__plan.is-selected {
+  border-color: #718078;
+  box-shadow: 0 0 0 3px rgb(113 128 120 / 14%), 0 10px 23px rgb(31 72 51 / 9%);
+}
+.biz-registration__tier-benefits {
+  margin-top: 13px;
+  padding-top: 12px;
+  border-top: 1px dashed #d5ded8;
+}
+.biz-registration__tier-benefits h4 {
+  margin: 0 0 9px;
+  color: #394b40;
+  font-size: 12px;
+  font-weight: 900;
+}
+.biz-registration__tier-section--gold .biz-registration__tier-benefits h4 { color: #81550f; }
+.biz-registration__tier-benefits ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.biz-registration__tier-benefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #e5ece7;
+  border-radius: 13px;
+  background: rgb(255 255 255 / 80%);
+  color: #4f5f55;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.75;
+}
+.biz-registration__tier-section--gold .biz-registration__tier-benefits li { border-color: rgb(183 119 23 / 14%); color: #594b31; }
+.biz-registration__benefit-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  place-items: center;
+  border: 1px solid #d8e2dc;
+  border-radius: 9px;
+  background: linear-gradient(145deg, #f4f7f5, #e1e8e4);
+  font-size: 15px;
+}
+.biz-registration__tier-section--gold .biz-registration__benefit-icon {
+  border-color: #f0d99e;
+  background: linear-gradient(145deg, #fff5d7, #f7e4b2);
+}
+@media (max-width: 600px) {
+  .biz-registration__tier-section { padding: 12px 10px; border-radius: 18px; }
+  .biz-registration__tier-section .biz-registration__plan { min-height: 148px; padding: 11px 8px 9px; gap: 7px; }
+  .biz-registration__tier-section .biz-registration__plan .plan-card__tier { font-size: 12.5px; }
+  .biz-registration__tier-section .biz-registration__plan .plan-card__duration { font-size: 11px; }
+  .biz-registration__tier-section .biz-registration__plan .plan-card__price { font-size: 16px; }
+  .biz-registration__tier-benefits ul { grid-template-columns: 1fr; gap: 6px; }
+  .biz-registration__tier-benefits li { align-items: center; padding: 7px 8px; }
+}
+
+/* Short, focused mobile-first ad submission panel. */
+.ad-page {
+  display: grid;
+  gap: 12px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding-bottom: 18px;
+}
+.ad-page .ad-form {
+  padding: clamp(17px, 3.5vw, 25px);
+  border-color: #d9e8df;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #fbfefc, #fff 230px);
+  box-shadow: 0 16px 40px rgb(24 75 52 / 8%);
+}
+.ad-form__head { margin-bottom: 7px; }
+.ad-form__title { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.ad-form__mark {
+  display: grid;
+  width: 45px;
+  height: 45px;
+  flex: 0 0 45px;
+  place-items: center;
+  border: 1px solid #efd99f;
+  border-radius: 15px;
+  background: linear-gradient(145deg, #fff5d7, #f2dfa9);
+  box-shadow: 0 5px 13px rgb(166 107 25 / 12%);
+  font-size: 22px;
+}
+.ad-form__eyebrow { margin: 0 0 2px; color: #168052; font-size: 10.5px; font-weight: 850; }
+.ad-form__title h1 { margin: 0; color: #20372c; font-size: 20px; font-weight: 900; }
+.ad-form__intro { margin: 8px 0 12px; color: #718078; font-size: 12px; line-height: 1.8; }
+.ad-form__grid { gap: 10px 12px; margin-top: 11px; }
+.ad-form__field { gap: 6px; }
+.ad-form__field label { color: #52645a; font-size: 12px; font-weight: 850; }
+.ad-form__field input:not([type='file']),
+.ad-form__field select,
+.ad-form__field textarea {
+  min-height: 43px;
+  padding: 9px 11px;
+  border-color: #dce8e0;
+  border-radius: 12px;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.ad-form__field textarea { min-height: 94px; }
+.ad-form__field input:focus-visible,
+.ad-form__field select:focus-visible,
+.ad-form__field textarea:focus-visible {
+  outline: 0;
+  border-color: #168052;
+  box-shadow: 0 0 0 3px rgb(22 128 82 / 10%);
+}
+.ad-form__file-label { display: flex; align-items: center; gap: 7px; }
+.ad-form__file-label > span:first-child { font-size: 16px; }
+.ad-form__field input[type='file'] {
+  width: 100%;
+  min-height: 48px;
+  padding: 7px;
+  border: 1px dashed #bdd2c4;
+  border-radius: 13px;
+  background: #f7fbf8;
+  color: #5b6b61;
+  font: inherit;
+  font-size: 12px;
+}
+.ad-form__field input[type='file']::file-selector-button {
+  margin-inline-end: 9px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: #168052;
+  color: white;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.ad-form__actions { gap: 9px; margin-top: 14px; }
+.ad-form__actions .btn { min-height: 45px; border-radius: 13px; font-weight: 850; }
+.ad-form__actions .btn-primary { background: #168052; box-shadow: 0 7px 16px rgb(22 128 82 / 17%); }
+.ad-form__history {
+  padding: 0;
+  overflow: hidden;
+  border-color: #e2ebe5;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgb(24 75 52 / 5%);
+}
+.ad-form__history > summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 16px;
+  color: #34483b;
+  cursor: pointer;
+  list-style: none;
+}
+.ad-form__history > summary::-webkit-details-marker { display: none; }
+.ad-form__history > summary::after { margin-inline-start: auto; content: '⌄'; color: #168052; font-size: 18px; }
+.ad-form__history[open] > summary { border-bottom: 1px solid #e7eee9; }
+.ad-form__history[open] > summary::after { content: '⌃'; }
+.ad-form__history > summary > span:first-child { font-size: 17px; }
+.ad-form__history > summary strong { font-size: 13px; }
+.ad-form__history > summary small { margin-inline-start: auto; color: #87948c; font-size: 11px; }
+.ad-form__history[open] > summary small { margin-inline-start: 0; }
+.ad-form__history > .my-ads__list,
+.ad-form__history > .empty-state { margin: 0; padding: 12px 15px 15px; }
+.ad-success { max-width: 620px; margin-inline: auto; padding: 22px; border-color: #d9e8df; border-radius: 22px; background: linear-gradient(180deg, #f8fcf9, #fff); }
+.wall-adbtn { text-decoration: none; transition: transform .16s ease, box-shadow .16s ease, filter .16s ease; }
+.wall-adbtn:focus-visible { outline: 3px solid rgb(22 128 82 / 45%); outline-offset: 3px; }
+.wall-adbtn:hover { transform: translateY(-1px); }
+.wall-adbtn__icon { background: linear-gradient(145deg, #d99016, #bc780b); }
+.wall-adbtn__glyph { display: block; width: 19px; height: 19px; }
+@media (max-width: 560px) {
+  .ad-page .ad-form { padding: 16px 13px; border-radius: 18px; }
+  .ad-form__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .ad-form__field--wide { grid-column: 1 / -1; }
+  .ad-form__title h1 { font-size: 18px; }
+  .ad-form__intro { margin-bottom: 9px; font-size: 11.5px; }
+  .ad-form__actions .btn { min-height: 43px; padding-inline: 10px; }
+  .ad-form__history > summary { padding: 11px 13px; }
+}
+@media (max-width: 360px) {
+  .ad-form__grid { grid-template-columns: 1fr; }
+  .ad-form__field--wide { grid-column: auto; }
+}

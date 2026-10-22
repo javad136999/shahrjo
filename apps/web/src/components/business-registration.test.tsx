@@ -170,6 +170,11 @@ describe('BusinessRegistration', () => {
     expect(plansCard).toHaveTextContent('ثبت کسب‌وکار در ویترین طلایی');
     expect(plansCard).toHaveTextContent('پیام تبلیغاتی ویژه در دیوار شهر به‌صورت روزانه');
     expect(plansCard).toHaveTextContent('ساخت کلیپ تبلیغاتی از کسب‌وکار و انتشار در صفحهٔ شهرجو به آدرس shahrju.ir');
+    expect(screen.getByTestId('biz-tier-gold')).toContainElement(screen.getByTestId('biz-plan-11'));
+    expect(screen.getByTestId('biz-tier-silver')).toContainElement(screen.getByTestId('biz-plan-10'));
+    expect(screen.getByTestId('biz-benefits-silver')).toHaveTextContent('ثبت کسب‌وکار روی نقشه');
+    expect(screen.getByTestId('biz-benefits-silver')).toHaveTextContent('منو و محصولات کسب‌وکار');
+    expect(screen.getByTestId('biz-benefits-silver')).toHaveTextContent('@shahrju.ir');
     fireEvent.click(screen.getByTestId('biz-plan-11'));
     fireEvent.click(screen.getByRole('button', { name: /تأیید و پرداخت/ }));
 

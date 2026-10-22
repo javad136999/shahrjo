@@ -219,10 +219,14 @@ export function AdForm() {
   };
 
   if (submitted) {
+    const pendingModeration = submitted.status === 'PENDING';
     return (
       <div className="form-card ad-success" data-testid="ad-success">
         <div className="ad-form__head">
-          <h1>آگهی شما منتشر شد</h1>
+          <div className="ad-form__title">
+            <span className="ad-form__mark" aria-hidden>✓</span>
+            <div><p className="ad-form__eyebrow">دیوار شهرجو</p><h1>ثبت آگهی انجام شد</h1></div>
+          </div>
           <button
             type="button"
             className="ad-form__close"
@@ -233,7 +237,11 @@ export function AdForm() {
             ✕
           </button>
         </div>
-        <p className="muted">«{submitted.title}» با موفقیت ثبت و در دیوار شهر منتشر شد.</p>
+        <p className="muted ad-form__intro">
+          {pendingModeration
+            ? `«${submitted.title}» ثبت شد و پس از بررسی مدیر در دیوار شهر نمایش داده می‌شود.`
+            : `«${submitted.title}» ثبت شد؛ وضعیت فعلی آن را از برچسب زیر دنبال کنید.`}
+        </p>
         <p>
           <span data-testid="ad-status">
             <StatusChip status={submitted.status} />
@@ -257,7 +265,10 @@ export function AdForm() {
     <div className="ad-page">
       <form className="form-card ad-form" onSubmit={submit} noValidate>
         <div className="ad-form__head">
-          <h1>ثبت آگهی</h1>
+          <div className="ad-form__title">
+            <span className="ad-form__mark" aria-hidden>📝</span>
+            <div><p className="ad-form__eyebrow">معرفی به همشهری‌ها</p><h1>ثبت آگهی</h1></div>
+          </div>
           <button
             type="button"
             className="ad-form__close"
@@ -268,7 +279,7 @@ export function AdForm() {
             ✕
           </button>
         </div>
-        <p className="muted">آگهی بلافاصله منتشر می‌شود و در دیوار شهر دیده خواهد شد.</p>
+        <p className="muted ad-form__intro">عنوان و توضیحات را بنویس؛ عکس و قیمت اختیاری‌اند. پس از بررسی مدیر، آگهی در دیوار شهر نمایش داده می‌شود.</p>
 
         {noCity && (
           <div className="banner banner--warn" role="status">
@@ -378,13 +389,14 @@ export function AdForm() {
           </div>
 
           <div className="ad-form__field ad-form__field--wide">
-            <label htmlFor="images">تصاویر (حداکثر {MAX_IMAGES.toLocaleString('fa-IR')} — هر کدام تا ۵ مگابایت)</label>
+            <label className="ad-form__file-label" htmlFor="images"><span aria-hidden>🖼️</span><span>تصاویر (حداکثر {MAX_IMAGES.toLocaleString('fa-IR')} — هر کدام تا ۵ مگابایت)</span></label>
             <p className="muted field-hint" data-testid="ad-image-policy">
               عکس‌ها ۴ روز روی سایت می‌مانند و بعد پاک می‌شوند؛ متن آگهی همیشه باقی می‌ماند.
             </p>
             <input
               id="images"
               name="images"
+              aria-describedby="ad-image-policy"
               type="file"
               accept={ACCEPTED_TYPES.join(',')}
               multiple
@@ -434,10 +446,10 @@ export function AdForm() {
         </div>
       </form>
 
-      <section className="form-card my-ads" aria-label="آگهی‌های من" id="mine">
-        <h2>آگهی‌های من</h2>
+      <details className="form-card my-ads ad-form__history" aria-label="آگهی‌های من" id="mine">
+        <summary><span aria-hidden>📋</span><strong>آگهی‌های من</strong><small>{myAds.length.toLocaleString('fa-IR')} آگهی</small></summary>
         <MyAdsList items={myAds} />
-      </section>
+      </details>
     </div>
   );
 }

@@ -236,6 +236,7 @@ describe('WallView', () => {
     expect(adBtn).toHaveTextContent('برای شروع ثبت آگهی، اینجا بزن');
     expect(adBtn).toHaveAttribute('aria-label', 'ثبت آگهی در دیوار شهر؛ برای شروع اینجا بزن');
     expect(adBtn.className).toContain('wall-adbtn');
+    expect(adBtn.querySelector('.wall-adbtn__glyph')).toBeInTheDocument();
     expect(bar).not.toContainElement(adBtn);
     expect(screen.getByTestId('wall-composer')).toContainElement(adBtn);
     // the old two-row dock and its city-home button are gone
