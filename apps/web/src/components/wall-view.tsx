@@ -995,6 +995,7 @@ export function WallView({ city }: WallViewProps) {
               key={c.slug}
               href={`/ads?category=${encodeURIComponent(c.slug)}`}
               className="wall-cat"
+              aria-label={`آگهی‌های ${c.name}`}
               data-testid={`wall-cat-${c.slug}`}
               title={`آگهی‌های ${c.name}`}
             >

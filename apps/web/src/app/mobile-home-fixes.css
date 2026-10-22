@@ -287,3 +287,275 @@
     font-size: 9px;
   }
 }
+
+
+/* City wall: breathing room for the conversation, with a compact two-row
+   room header and thumb-friendly actions on narrow screens. */
+@media (max-width: 640px) {
+  body.wall-screen .page {
+    width: 100%;
+    max-width: none;
+    padding: max(5px, env(safe-area-inset-top)) 7px 0;
+  }
+
+  body.wall-screen .wall {
+    height: calc(100dvh - max(9px, env(safe-area-inset-top)));
+    min-height: 0;
+  }
+
+  .wall--jam-theme .wall-room {
+    flex-wrap: wrap;
+    gap: 7px 8px;
+    margin-bottom: 6px;
+    padding: 8px 9px 7px;
+    border-radius: 15px;
+  }
+
+  .wall-homebtn {
+    width: 40px;
+    height: 40px;
+    font-size: 17px;
+  }
+
+  .wall--jam-theme .wall-room__avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .wall-room__copy {
+    flex: 1 1 100px;
+  }
+
+  .wall--jam-theme .wall-room__name {
+    font-size: 14px;
+  }
+
+  .wall--jam-theme .wall-room__meta {
+    font-size: 10.5px;
+  }
+
+  .wall-cats {
+    flex: 0 0 100%;
+    width: 100%;
+    margin-inline-start: 0;
+    gap: 6px;
+    padding: 1px 1px 3px;
+  }
+
+  .wall-cat {
+    display: grid;
+    place-items: center;
+    flex: 0 0 42px;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 4px;
+    border-radius: 14px;
+    font-size: 17px;
+  }
+
+  .wall-cat > span {
+    line-height: 1;
+  }
+
+  .wall-pinnedbar {
+    min-height: 46px;
+    margin-bottom: 6px;
+    padding: 6px 9px;
+    border-radius: 13px;
+  }
+
+  .wall-pinnedbar__copy small {
+    max-width: 62vw;
+  }
+
+  .wall-feed {
+    min-height: 0;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 15px;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .wall-post,
+  .wall-post--own {
+    width: 100%;
+    max-width: 100%;
+    gap: 8px;
+    padding: 9px;
+    border-radius: 14px;
+  }
+
+  .wall-post__avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .wall-post__body {
+    gap: 6px;
+  }
+
+  .wall-post__head {
+    flex-wrap: wrap;
+    gap: 4px 7px;
+  }
+
+  .wall-post__name {
+    font-size: 13.5px;
+  }
+
+  .wall-post__text {
+    font-size: 14px;
+    line-height: 1.85;
+  }
+
+  .wall-post__image {
+    display: block;
+    width: min(100%, 420px);
+    max-height: min(42vh, 360px);
+    object-fit: cover;
+    border-radius: 13px;
+  }
+
+  .wall-post__voice {
+    width: min(100%, 360px);
+    min-height: 42px;
+  }
+
+  .wall-post__foot {
+    flex-wrap: wrap;
+    gap: 5px;
+    min-height: 40px;
+  }
+
+  .wall-likebtn,
+  .wall-post__foot .wall-iconbtn,
+  .wall-post__actions .wall-iconbtn {
+    min-width: 40px;
+    min-height: 38px;
+    padding: 6px 10px;
+    border-radius: 12px;
+  }
+
+  .wall-reply {
+    padding: 7px 9px;
+    border-radius: 10px;
+    line-height: 1.65;
+  }
+
+  .wall-pinned {
+    margin-bottom: 7px;
+    padding: 6px;
+    border-radius: 15px;
+  }
+
+  body.wall-screen .wall-composer {
+    padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+  }
+
+  .wall-composer__reply {
+    margin-bottom: 7px;
+    padding: 7px 9px;
+    border-inline-start: 3px solid #16865a;
+    line-height: 1.6;
+  }
+
+  .wall-composer__chip {
+    min-height: 48px;
+    margin-bottom: 7px;
+    padding: 6px 8px;
+    border-radius: 14px;
+  }
+
+  .wall-composer__preview {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+  }
+
+  .wall--jam-theme .wall-composer .wall-tool--attach {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 14px;
+    font-size: 22px;
+  }
+
+  .wall-bar {
+    gap: 5px;
+  }
+
+  .wall--jam-theme .wall-bar__field {
+    min-height: 48px;
+    padding: 3px;
+    border-radius: 20px;
+  }
+
+  .wall-bar__emoji {
+    flex-basis: 36px;
+    width: 36px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .wall--jam-theme .wall-bar__field .wall-bar__input {
+    min-height: 42px;
+    max-height: 112px;
+    padding: 8px 5px;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .wall-bar__mic,
+  .wall--jam-theme .wall-composer .wall-sendbtn {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    min-height: 46px;
+  }
+
+  .wall-adbtn {
+    min-height: 46px;
+    margin-top: 7px;
+    border-radius: 13px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 380px) {
+  body.wall-screen .page {
+    padding-inline: 5px;
+  }
+
+  .wall--jam-theme .wall-room {
+    gap: 6px;
+    padding-inline: 7px;
+  }
+
+  .wall-feed {
+    padding: 6px;
+  }
+
+  .wall-post,
+  .wall-post--own {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .wall-post__avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .wall--jam-theme .wall-composer {
+    padding-inline: 6px;
+  }
+
+  .wall--jam-theme .wall-composer .wall-tool--attach {
+    flex-basis: 40px;
+    width: 40px;
+    min-width: 40px;
+  }
+}

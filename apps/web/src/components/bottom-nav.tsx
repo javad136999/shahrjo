@@ -100,7 +100,7 @@ export function BottomNav() {
     // never chosen a city is sent to the city-selection page (`/`).
     { id: 'home', href: city ? `/city/${city.slug}` : '/', icon: '🏠', label: 'خانه' },
     { id: 'wall', href: '/wall', icon: '🧱', label: 'دیوار' },
-    { id: 'businesses', href: '/businesses', icon: '🏬', label: 'کسب‌وکارها' },
+    { id: 'businesses', href: '/businesses', icon: '🏪', label: 'کسب‌وکارها' },
     { id: 'messages', href: '/messages', icon: '💬', label: 'پیام‌ها' },
     { id: 'register-business', href: '/business/new', icon: '🏪', label: 'ثبت کسب‌وکار' },
     { id: 'profile', href: '/profile', icon: '👤', label: 'پروفایل' },
