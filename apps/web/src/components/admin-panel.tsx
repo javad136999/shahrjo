@@ -229,6 +229,11 @@ export function AdminPanel() {
             <strong>{overview.pendingSubscriptions.toLocaleString('fa-IR')}</strong>
             <span className="muted small">اشتراک در انتظار</span>
           </div>
+          <div className="stat-card">
+            <span aria-hidden>📱</span>
+            <strong>{overview.verifiedUsers.toLocaleString('fa-IR')}</strong>
+            <span className="muted small">کاربر واقعی با ورود موبایلی</span>
+          </div>
         </div>
       )}
 

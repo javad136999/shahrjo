@@ -10,7 +10,7 @@ import { WebInstallButton } from '@/components/web-install-button';
 
 describe('WebInstallButton', () => {
   beforeEach(() => {
-    mockPathname.mockReturnValue('/profile');
+    mockPathname.mockReturnValue('/dashboard');
     // jsdom has no matchMedia — the component reads the standalone display mode.
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
@@ -36,5 +36,11 @@ describe('WebInstallButton', () => {
       expect(screen.queryByRole('button', { name: /نصب نسخه وب/ })).not.toBeInTheDocument();
       unmount();
     }
+  });
+
+  it('stays off the profile page', () => {
+    mockPathname.mockReturnValue('/profile');
+    render(<WebInstallButton />);
+    expect(screen.queryByRole('button', { name: /نصب نسخه وب/ })).not.toBeInTheDocument();
   });
 });

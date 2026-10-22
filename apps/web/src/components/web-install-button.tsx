@@ -46,6 +46,7 @@ export function WebInstallButton() {
     pathname.startsWith('/city/') ||
     pathname === '/wall' ||
     pathname.startsWith('/wall/') ||
+    pathname === '/profile' ||
     pathname === '/plans' ||
     installed
   )

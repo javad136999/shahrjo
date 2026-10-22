@@ -9,6 +9,7 @@ function makePrisma() {
     ad: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     business: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     subscription: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
+    user: { count: jest.fn() },
     city: { findFirst: jest.fn(), update: jest.fn() },
     adminUser: { findUnique: jest.fn() },
     auditLog: { create: jest.fn() },
@@ -28,6 +29,7 @@ function makeService(scope: { role: string; provinceId: number | null; cityId: n
     uploads as unknown as UploadsService,
   );
   prisma.adminUser.findUnique.mockResolvedValue({ id: 77, isActive: true });
+  prisma.user.count.mockResolvedValue(42);
   prisma.auditLog.create.mockResolvedValue({});
   return { service, prisma, uploads };
 }
@@ -325,7 +327,7 @@ describe('AdminService.createBusiness — manual signup (ثبت دستی)', () =
       business: { create: jest.Mock; findUnique: jest.Mock };
     };
     prisma.businessCategory = { findFirst: jest.fn().mockResolvedValue({ id: 3 }) };
-    prisma.user = { findFirst: jest.fn() };
+    prisma.user = { count: jest.fn(), findFirst: jest.fn() };
     prisma.business.create = jest.fn().mockResolvedValue({ id: 50, name: 'نانوایی تست', status: 'APPROVED' });
     prisma.business.findUnique = jest.fn().mockResolvedValue(null);
     return { ...ctx, prisma };

@@ -169,6 +169,7 @@ export interface AdminOverview {
   approvedAds: number;
   approvedBusinesses: number;
   activeSubscriptions: number;
+  verifiedUsers: number;
 }
 
 /** Site visits (Phase 13): one point per day / month / year bucket. */

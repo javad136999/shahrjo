@@ -170,6 +170,7 @@ export interface AdminOverview {
   approvedAds: number;
   approvedBusinesses: number;
   activeSubscriptions: number;
+  verifiedUsers: number;
 }
 
 export interface QueueAd {
@@ -294,7 +295,7 @@ export class AdminService {
     // Personal subscriptions (no business) are only visible to unscoped admins.
     const subFilter =
       scope.cityId || scope.provinceId ? { business: this.cityFilter(scope) } : {};
-    const [pendingAds, pendingBusinesses, pendingSubscriptions, approvedAds, approvedBusinesses, activeSubscriptions] =
+    const [pendingAds, pendingBusinesses, pendingSubscriptions, approvedAds, approvedBusinesses, activeSubscriptions, verifiedUsers] =
       await Promise.all([
         this.prisma.ad.count({ where: { status: 'PENDING', ...filter } }),
         this.prisma.business.count({ where: { status: 'PENDING', ...filter } }),
@@ -302,6 +303,7 @@ export class AdminService {
         this.prisma.ad.count({ where: { status: 'APPROVED', ...filter } }),
         this.prisma.business.count({ where: { status: 'APPROVED', ...filter } }),
         this.prisma.subscription.count({ where: { status: 'ACTIVE', ...subFilter } }),
+        this.prisma.user.count({ where: { status: 'ACTIVE' } }),
       ]);
     return {
       pendingAds,
@@ -310,6 +312,7 @@ export class AdminService {
       approvedAds,
       approvedBusinesses,
       activeSubscriptions,
+      verifiedUsers,
     };
   }
 

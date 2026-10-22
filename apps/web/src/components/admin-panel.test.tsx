@@ -116,6 +116,7 @@ const overview = {
   approvedAds: 3,
   approvedBusinesses: 3,
   activeSubscriptions: 0,
+  verifiedUsers: 42,
 };
 
 const visitStats = {
@@ -167,6 +168,8 @@ describe('AdminPanel', () => {
 
     expect(await screen.findByTestId('admin-panel')).toBeInTheDocument();
     expect(screen.getByTestId('admin-stats')).toHaveTextContent('آگهی در انتظار');
+    expect(screen.getByTestId('admin-stats')).toHaveTextContent('کاربر واقعی با ورود موبایلی');
+    expect(screen.getByTestId('admin-stats')).toHaveTextContent('۴۲');
     expect(screen.getByTestId('row-7')).toHaveTextContent('آگهی در انتظار');
     expect(screen.getByTestId('row-7')).toHaveTextContent('شهر نمونه');
     expect(mockGetAdminAds).toHaveBeenCalledWith('PENDING');
