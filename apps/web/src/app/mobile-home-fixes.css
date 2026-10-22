@@ -122,3 +122,168 @@
   .wall-cta__icon { width: 26px; height: 26px; flex-basis: 26px; }
   .wall-cta__copy b { font-size: 10px; }
 }
+
+
+/* Mobile-first polish: bring the city map into view sooner while keeping
+   comfortable touch targets and a calm, uncluttered rhythm. */
+@media (max-width: 640px) {
+  .page {
+    padding-top: 8px;
+    padding-bottom: 88px;
+  }
+
+  .site-header {
+    margin-top: 0;
+  }
+
+  .site-header .header-inner {
+    min-height: 48px;
+    padding: 4px 12px;
+    gap: 5px;
+  }
+
+  .site-header .pill,
+  .site-header .header-user > .btn {
+    min-width: 38px;
+    min-height: 38px;
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+
+  .site-header .pill > span[aria-hidden] {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .dash-welcome {
+    margin-bottom: 9px;
+    padding: 10px;
+    border-radius: 17px;
+  }
+
+  .dash-welcome__head {
+    margin-bottom: 8px;
+  }
+
+  .city-services__tiles {
+    gap: 7px;
+  }
+
+  .service-tile {
+    min-height: 58px;
+    gap: 8px;
+    padding: 8px 9px;
+    border-radius: 15px;
+  }
+
+  .service-tile__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    font-size: 17px;
+  }
+
+  .showcase {
+    margin-top: 0;
+    margin-bottom: 9px;
+    padding: 6px 0 7px;
+    border-radius: 16px;
+  }
+
+  .showcase__head {
+    gap: 7px;
+    padding: 0 9px 4px;
+  }
+
+  .showcase__crown {
+    width: 30px;
+    height: 30px;
+    border-radius: 11px;
+    font-size: 16px;
+  }
+
+  .showcase__titles h2 {
+    font-size: 15px;
+  }
+
+  .showcase__titles p {
+    font-size: 11px;
+  }
+
+  .showcase__cta {
+    min-height: 34px;
+    padding: 5px 8px;
+    font-size: 10.5px;
+  }
+
+  .showcase-card {
+    min-width: min(218px, calc(100vw - 52px));
+    padding: 6px 8px;
+    border-radius: 13px;
+  }
+
+  .showcase-card__logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+  }
+
+  .dash-map {
+    margin-top: 0;
+    margin-bottom: 10px;
+    scroll-margin-top: 56px;
+  }
+
+  .city-map {
+    gap: 7px;
+  }
+
+  .city-map__canvas {
+    height: clamp(290px, 48vh, 410px);
+    border-radius: 15px;
+  }
+
+  .bottom-nav.bottom-nav--always {
+    min-height: 62px;
+    padding-top: 3px;
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
+  }
+
+  .bottom-nav__item {
+    min-width: 0;
+    min-height: 54px;
+    gap: 4px;
+    padding: 5px 2px 4px;
+    font-size: clamp(9px, 2.7vw, 10.5px);
+    line-height: 1.25;
+    white-space: nowrap;
+  }
+
+  .bottom-nav__icon {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 380px) {
+  .site-header .header-inner {
+    padding-inline: 9px;
+    gap: 3px;
+  }
+
+  .site-header .pill,
+  .site-header .header-user > .btn {
+    min-width: 36px;
+    min-height: 36px;
+    padding-inline: 6px;
+  }
+
+  .showcase__cta {
+    gap: 3px;
+    padding-inline: 6px;
+    font-size: 10px;
+  }
+
+  .bottom-nav__item {
+    font-size: 9px;
+  }
+}
