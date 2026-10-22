@@ -88,3 +88,26 @@ Tourism thumbnails are optimized WebP derivatives of the files linked below. The
 - **File:Arg of Murcheh Khvort2015.jpg** — Hamid Reza Nikomaram; CC BY 4.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Arg_of_Murcheh_Khvort2015.jpg)
 - **File:Ciudadela de Meybod, Irán, 2016-09-20, DD 02.jpg** — Diego Delso; CC BY-SA 4.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Ciudadela_de_Meybod,_Ir%C3%A1n,_2016-09-20,_DD_02.jpg)
 - **File:پارک فجر - panoramio.jpg** — rohollah; CC BY 3.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:%D9%BE%D8%A7%D8%B1%DA%A9_%D9%81%D8%AC%D8%B1_-_panoramio.jpg)
+
+## تصاویر مرحلهٔ سوم؛ ۲۰ شهر تکمیل‌شده
+
+- `bafq-irir-60-2032-yazd-bafq-iran-jpg.webp` — [IRIR 60-2032 Yazd - Bafq, Iran.jpg](https://commons.wikimedia.org/wiki/File:IRIR_60-2032_Yazd_-_Bafq,_Iran.jpg), Kabelleger / David Gubler, CC BY-SA 4.0; بهینه‌شده با WebP (18,970 bytes).
+- `sirjan-stone-garden-sirjan-iran-jpg.webp` — [Stone Garden Sirjan, Iran.jpg](https://commons.wikimedia.org/wiki/File:Stone_Garden_Sirjan,_Iran.jpg), Morteza salehi70, CC BY-SA 4.0; بهینه‌شده با WebP (35,762 bytes).
+- `rafsanjan-guest-house-of-rafsanjan-jpg.webp` — [Guest house of Rafsanjan.jpg](https://commons.wikimedia.org/wiki/File:Guest_house_of_Rafsanjan.jpg), Non Identifiable Author, Public domain; بهینه‌شده با WebP (55,846 bytes).
+- `jiroft-old-jiroft-daqyanoos-jiroft-kerman-.webp` — [Old Jiroft- Daqyanoos-Jiroft-Kerman-ID 52- شهر قدیم جیرفت -دقیانوس.jpg](https://commons.wikimedia.org/wiki/File:Old_Jiroft-_Daqyanoos-Jiroft-Kerman-ID_52-_%D8%B4%D9%87%D8%B1_%D9%82%D8%AF%DB%8C%D9%85_%D8%AC%DB%8C%D8%B1%D9%81%D8%AA_-%D8%AF%D9%82%DB%8C%D8%A7%D9%86%D9%88%D8%B3.jpg), Mhsheikholeslami, CC BY-SA 4.0; بهینه‌شده با WebP (49,910 bytes).
+- `bam-arg-bam-hg7-3559-2-jpg.webp` — [Arg-é Bam (HG7 3559-2).jpg](https://commons.wikimedia.org/wiki/File:Arg-%C3%A9_Bam_(HG7_3559-2).jpg), Herbert karim masihi, CC BY-SA 4.0; بهینه‌شده با WebP (31,684 bytes).
+- `dezful-diving-in-iran-dezful-city-07-jpg.webp` — [Diving in Iran-Dezful City عکس شیرجه 07.jpg](https://commons.wikimedia.org/wiki/File:Diving_in_Iran-Dezful_City_%D8%B9%DA%A9%D8%B3_%D8%B4%DB%8C%D8%B1%D8%AC%D9%87_07.jpg), Mostafameraji, CC BY-SA 4.0; بهینه‌شده با WebP (21,746 bytes).
+- `bandar-mahshahr-musa-bay-iran-esa372739-jpg.webp` — [Musa Bay, Iran ESA372739.jpg](https://commons.wikimedia.org/wiki/File:Musa_Bay,_Iran_ESA372739.jpg), European Space Agency, CC BY-SA 3.0 igo; بهینه‌شده با WebP (45,938 bytes).
+- `andimeshk-andimeshk-khuzestan-province-iran-p.webp` — [Andimeshk, Khuzestan Province, Iran - panoramio.jpg](https://commons.wikimedia.org/wiki/File:Andimeshk,_Khuzestan_Province,_Iran_-_panoramio.jpg), ‫سید محمود جوادی‬‎, CC BY 3.0; بهینه‌شده با WebP (11,014 bytes).
+- `shahriar-imam-descendent-ishmael-tomb-1-jpg.webp` — [Imam-descendent Ishmael tomb 1.jpg](https://commons.wikimedia.org/wiki/File:Imam-descendent_Ishmael_tomb_1.jpg), IranianNationalist, CC BY-SA 4.0; بهینه‌شده با WebP (35,858 bytes).
+- `qods-ghods-citi-4-jpg.webp` — [Ghods-Citi (4).jpg](https://commons.wikimedia.org/wiki/File:Ghods-Citi_(4).jpg), Manart, CC BY-SA 3.0; بهینه‌شده با WebP (40,474 bytes).
+- `malard-shahid-eghtedar-malard-4-jpg.webp` — [Shahid eghtedar malard 4.jpg](https://commons.wikimedia.org/wiki/File:Shahid_eghtedar_malard_4.jpg), Aghiltohidian, CC BY-SA 4.0; بهینه‌شده با WebP (35,160 bytes).
+- `neyshabur-baghrud-road-of-nishapur-gardens-jp.webp` — [Baghrud Road of Nishapur, Gardens.jpg](https://commons.wikimedia.org/wiki/File:Baghrud_Road_of_Nishapur,_Gardens.jpg), Ehsanbasafa, CC BY-SA 4.0; بهینه‌شده با WebP (13,708 bytes).
+- `sabzevar-jameh-mosque-of-sabzevar-01-jpg.webp` — [Jameh Mosque of Sabzevar 01.jpg](https://commons.wikimedia.org/wiki/File:Jameh_Mosque_of_Sabzevar_01.jpg), Ariaamiri, CC BY-SA 4.0; بهینه‌شده با WebP (32,440 bytes).
+- `torbat-heydariyeh-saffronfarm-860808-jpg.webp` — [Saffronfarm-860808.jpg](https://commons.wikimedia.org/wiki/File:Saffronfarm-860808.jpg), Safa.daneshvar, CC BY-SA 3.0; بهینه‌شده با WebP (52,854 bytes).
+- `kashmar-atashgah-castle2021-jpg.webp` — [Atashgah Castle2021.jpg](https://commons.wikimedia.org/wiki/File:Atashgah_Castle2021.jpg), POS78, CC BY-SA 4.0; بهینه‌شده با WebP (30,372 bytes).
+- `maragheh-sunset-over-maragheh-iran-2-jpg.webp` — [Sunset over Maragheh, Iran (غروب) 2.jpg](https://commons.wikimedia.org/wiki/File:Sunset_over_Maragheh,_Iran_(%D8%BA%D8%B1%D9%88%D8%A8)_2.jpg), auoob farabi, CC BY-SA 3.0; بهینه‌شده با WebP (9,576 bytes).
+- `marand-apricot-harvest-in-marand-iran-jpg.webp` — [Apricot Harvest in Marand, Iran.jpg](https://commons.wikimedia.org/wiki/File:Apricot_Harvest_in_Marand,_Iran.jpg), Mina Noei, CC BY 4.0; بهینه‌شده با WebP (46,930 bytes).
+- `ahar-sheikh-shahab-tomb-2-jpg.webp` — [Sheikh-shahab tomb 2.JPG](https://commons.wikimedia.org/wiki/File:Sheikh-shahab_tomb_2.JPG), Elmju, CC BY-SA 3.0; بهینه‌شده با WebP (13,526 bytes).
+- `mianeh-qal-e-dokhtar-of-mianeh-iran-jpg.webp` — [Qal-e-Dokhtar of Mianeh, Iran.jpg](https://commons.wikimedia.org/wiki/File:Qal-e-Dokhtar_of_Mianeh,_Iran.jpg), Armin Abbasi, CC BY-SA 4.0; بهینه‌شده با WebP (41,514 bytes).
+- `khoy-khoy-city-iran-jpg.webp` — [Khoy city.iran.jpg](https://commons.wikimedia.org/wiki/File:Khoy_city.iran.jpg), Aminadrin, CC BY-SA 3.0; بهینه‌شده با WebP (20,582 bytes).
