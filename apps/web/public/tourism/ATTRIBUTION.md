@@ -66,3 +66,25 @@ Tourism thumbnails are optimized WebP derivatives of the files linked below. The
 - `sanandaj-asif.webp` — [Asef Vaziri House 3.jpg](https://commons.wikimedia.org/wiki/File:Asef_Vaziri_House_3.jpg), LilyOfTheWest, CC BY-SA 4.0.
 - `semnan-arg.webp` — [Arg Gate. Semnan 1.jpg](https://commons.wikimedia.org/wiki/File:Arg_Gate._Semnan_1.jpg), Arosha-photo (Reza Sobhani), CC BY-SA 4.0.
 - `asaluyeh-coast.webp` — [ساحل هاله 01.jpg](https://commons.wikimedia.org/wiki/File:%D8%B3%D8%A7%D8%AD%D9%84_%D9%87%D8%A7%D9%84%D9%87_01.jpg), Ahmadrknowledge, CC BY-SA 4.0.
+
+## تصاویر مرحلهٔ دوم؛ ۲۰ شهر
+
+- **File:Persian Gulf, Heat of the Day, Bandar Ganaveh خلیج فارس، بایددل رو به دریازد،بندرگناوه - panoramio.jpg** — Mahdi Kalhor; CC BY 3.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Persian_Gulf,_Heat_of_the_Day,_Bandar_Ganaveh_%D8%AE%D9%84%DB%8C%D8%AC_%D9%81%D8%A7%D8%B1%D8%B3%D8%8C_%D8%A8%D8%A7%DB%8C%D8%AF%D8%AF%D9%84_%D8%B1%D9%88_%D8%A8%D9%87_%D8%AF%D8%B1%DB%8C%D8%A7%D8%B2%D8%AF%D8%8C%D8%A8%D9%86%D8%AF%D8%B1%DA%AF%D9%86%D8%A7%D9%88%D9%87_-_panoramio.jpg)
+- **File:Borazjan castel.jpg** — Masoud Barzideh; CC BY-SA 4.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Borazjan_castel.jpg)
+- **File:مسجد جامع بردستان.jpg** — نسترن باش افشار; CC BY-SA 4.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:%D9%85%D8%B3%D8%AC%D8%AF_%D8%AC%D8%A7%D9%85%D8%B9_%D8%A8%D8%B1%D8%AF%D8%B3%D8%AA%D8%A7%D9%86.jpg)
+- **File:Sangshekan.JPG** — مجتبی امیرزاده; Public domain. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Sangshekan.JPG)
+- **File:بازار قیصریه لار.jpg** — Hesam khandan; CC BY-SA 4.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:%D8%A8%D8%A7%D8%B2%D8%A7%D8%B1_%D9%82%DB%8C%D8%B5%D8%B1%DB%8C%D9%87_%D9%84%D8%A7%D8%B1.jpg)
+- **File:Eqlid - Sedeh - Tangeh Boragh - panoramio.jpg** — Alireza Javaheri; CC BY 3.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Eqlid_-_Sedeh_-_Tangeh_Boragh_-_panoramio.jpg)
+- **File:کاروانسرای دهبید3.jpg** — Hadighorbaniyan; CC BY-SA 4.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:%DA%A9%D8%A7%D8%B1%D9%88%D8%A7%D9%86%D8%B3%D8%B1%D8%A7%DB%8C_%D8%AF%D9%87%D8%A8%DB%8C%D8%AF3.jpg)
+- **File:Persepolis, Iran 15.jpg** — Bernard Gagnon; CC BY-SA 4.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Persepolis,_Iran_15.jpg)
+- **File:Pooladkaf Ski Track پیست اسکی پولادکف - panoramio.jpg** — H-Karimi هادی کریمی; CC BY 3.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Pooladkaf_Ski_Track_%D9%BE%DB%8C%D8%B3%D8%AA_%D8%A7%D8%B3%DA%A9%DB%8C_%D9%BE%D9%88%D9%84%D8%A7%D8%AF%DA%A9%D9%81_-_panoramio.jpg)
+- **File:Mount Tange Tikab of Kazerun 4.jpg** — Behnam9395; CC0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Mount_Tange_Tikab_of_Kazerun_4.jpg)
+- **File:Tole Zahhak.jpg** — AmirHosein; CC BY-SA 4.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Tole_Zahhak.jpg)
+- **File:Jame-nyriz1.jpg** — Vahidzar; CC BY-SA 4.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Jame-nyriz1.jpg)
+- **File:Derak park, Shiraz.jpg** — Amir Sadeghian; CC BY 4.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Derak_park,_Shiraz.jpg)
+- **File:Fin Garden, Kashan, Iran.jpg** — Amirpashaei; CC BY-SA 4.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Fin_Garden,_Kashan,_Iran.jpg)
+- **File:چشمه لادر.jpg** — Erfanrhm; CC BY-SA 4.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:%DA%86%D8%B4%D9%85%D9%87_%D9%84%D8%A7%D8%AF%D8%B1.jpg)
+- **File:Sheikhbahaei fort.jpg** — Mehdi kazemi; CC BY-SA 4.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Sheikhbahaei_fort.jpg)
+- **File:Arg of Murcheh Khvort2015.jpg** — Hamid Reza Nikomaram; CC BY 4.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Arg_of_Murcheh_Khvort2015.jpg)
+- **File:Ciudadela de Meybod, Irán, 2016-09-20, DD 02.jpg** — Diego Delso; CC BY-SA 4.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Ciudadela_de_Meybod,_Ir%C3%A1n,_2016-09-20,_DD_02.jpg)
+- **File:پارک فجر - panoramio.jpg** — rohollah; CC BY 3.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:%D9%BE%D8%A7%D8%B1%DA%A9_%D9%81%D8%AC%D8%B1_-_panoramio.jpg)

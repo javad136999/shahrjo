@@ -1,4 +1,5 @@
 import type { City } from '@/lib/types';
+import { additionalCitySpots } from './tourism-next20';
 
 export type TourismCategory = 'طبیعت' | 'تاریخی' | 'فرهنگی' | 'تفریحی' | 'غذا و بازار';
 
@@ -164,7 +165,7 @@ const fallback = (city: City): TourismSpot[] => [
 ];
 
 export function getTourismSpots(city: City): TourismSpot[] {
-  return (citySpots[city.slug] ?? fallback(city)).map((spot) => ({ ...spot }));
+  return (citySpots[city.slug] ?? additionalCitySpots[city.slug] ?? fallback(city)).map((spot) => ({ ...spot }));
 }
 
 export const tourismCategories: Array<{ label: TourismCategory | 'همه'; icon: string }> = [
