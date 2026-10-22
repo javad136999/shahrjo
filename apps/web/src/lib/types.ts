@@ -242,6 +242,25 @@ export interface ShowcaseItem {
   category: { name: string; slug: string; icon: string | null; color: string | null };
 }
 
+/** Compact product preview used by the city-home menu storefront. */
+export interface MenuShowcaseProduct {
+  id: number;
+  name: string;
+  price: number | null;
+  imageUrl: string | null;
+  isAvailable: boolean;
+}
+
+export interface MenuShowcaseItem {
+  id: number;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  subscriptionTier: string;
+  category: { name: string; slug: string; icon: string | null; color: string | null };
+  products: MenuShowcaseProduct[];
+}
+
 export interface CityMapBusiness {
   id: number;
   name: string;

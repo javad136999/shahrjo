@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CityDashboard } from '@/components/dashboard';
 import { api, getCityMap, getTokens, setLocalCity } from '@/lib/api';
-import type { City, CityMapData, MeResponse, ShowcaseItem } from '@/lib/types';
+import type { City, CityMapData, MeResponse, MenuShowcaseItem, ShowcaseItem } from '@/lib/types';
 
 /**
  * Browser half of the city home page. The initial dashboard is server-rendered
@@ -15,11 +15,12 @@ export interface CityHomeClientProps {
   city: City;
   showcase: ShowcaseItem[];
   mapData: CityMapData | null;
+  menuShowcase?: MenuShowcaseItem[] | null;
   /** non-fatal feed error (banner), when showcase/map could not be read */
   feedError: string | null;
 }
 
-export function CityHomeClient({ city, showcase, mapData, feedError }: CityHomeClientProps) {
+export function CityHomeClient({ city, showcase, mapData, menuShowcase, feedError }: CityHomeClientProps) {
   const [freshMapData, setFreshMapData] = useState(mapData);
   const [mapLoading, setMapLoading] = useState(mapData === null);
 
@@ -72,6 +73,7 @@ export function CityHomeClient({ city, showcase, mapData, feedError }: CityHomeC
       city={city}
       showcase={showcase}
       mapData={freshMapData}
+      menuShowcase={menuShowcase}
       loading={mapLoading}
       feedError={feedError}
     />

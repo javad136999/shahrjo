@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { CityHomeClient } from '@/components/city-home-client';
 import { serverApi } from '@/lib/server-data';
 import { absoluteUrl, openGraphFor } from '@/lib/site';
-import type { City, CityMapData, ShowcaseItem } from '@/lib/types';
+import type { City, CityMapData, MenuShowcaseItem, ShowcaseItem } from '@/lib/types';
 
 interface CityPageProps {
   params: Promise<{ slug: string }>;
@@ -64,13 +64,16 @@ export default async function CityPage({ params }: CityPageProps) {
   }
   if (city === null) notFound();
 
-  const [showcase, mapData] = await Promise.all([
+  const [showcase, mapData, menuShowcase] = await Promise.all([
     serverApi<ShowcaseItem[]>(`/showcase?city=${encodeURIComponent(city.slug)}&limit=12`, 60),
     serverApi<CityMapData>(`/map?city=${encodeURIComponent(city.slug)}`, 60),
+    serverApi<MenuShowcaseItem[]>(`/menu-showcase?city=${encodeURIComponent(city.slug)}&limit=200`, 60),
   ]);
 
   const feedError =
-    showcase === null && mapData === null ? 'دریافت محتوای شهر ناموفق بود؛ چند لحظه دیگر دوباره تلاش کنید.' : null;
+    showcase === null && mapData === null && menuShowcase === null
+      ? 'دریافت محتوای شهر ناموفق بود؛ چند لحظه دیگر دوباره تلاش کنید.'
+      : null;
 
   return (
     <>
@@ -83,6 +86,7 @@ export default async function CityPage({ params }: CityPageProps) {
         city={city}
         showcase={showcase ?? []}
         mapData={mapData}
+        menuShowcase={menuShowcase}
         feedError={feedError}
       />
     </>

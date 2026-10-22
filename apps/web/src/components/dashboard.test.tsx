@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { CityDashboard } from '@/components/dashboard';
-import type { City, CityMapData, ShowcaseItem } from '@/lib/types';
+import type { City, CityMapData, MenuShowcaseItem, ShowcaseItem } from '@/lib/types';
 
 // The map is a Leaflet canvas (covered by city-map.test.tsx) — stub it here so
 // dashboard tests stay DOM-only.
@@ -102,7 +102,7 @@ describe('CityDashboard', () => {
     expect(order).toEqual(['dash-welcome', 'showcase', 'city-map']);
   });
 
-  it('keeps news, ads and businesses off the home page', () => {
+  it('keeps news, ads and the full business directory off the home page', () => {
     renderDashboard();
     // no feed sections, no stat tiles — they live on their own pages now
     expect(screen.queryByRole('heading', { name: 'اخبار شهر' })).not.toBeInTheDocument();
@@ -172,5 +172,27 @@ describe('CityDashboard', () => {
     const showcaseEl = screen.getByTestId('showcase');
     expect(map).not.toBeNull();
     expect(showcaseEl.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('shows businesses with menu products directly beneath the city map', () => {
+    const menuShowcase: MenuShowcaseItem[] = [
+      {
+        id: 88,
+        name: 'کافه نمونه',
+        slug: 'sample-cafe',
+        logoUrl: null,
+        subscriptionTier: 'SILVER',
+        category: { name: 'کافه', slug: 'cafe', icon: '☕', color: null },
+        products: [{ id: 9, name: 'موکا', price: 250_000, imageUrl: null, isAvailable: true }],
+      },
+    ];
+    renderDashboard({ mapData, menuShowcase });
+
+    const map = document.querySelector('.dash-map') as HTMLElement;
+    const panel = screen.getByTestId('menu-showcase');
+    expect(map.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByTestId('menu-showcase-business-88')).toHaveAttribute('href', '/business/88');
+    expect(panel).toHaveTextContent('کافه نمونه');
+    expect(panel).toHaveTextContent('موکا');
   });
 });

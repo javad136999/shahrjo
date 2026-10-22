@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { CityMap } from '@/components/city-map';
 import { CityServices } from '@/components/city-services';
+import { MenuProductShowcase } from '@/components/menu-product-showcase';
 import { ShowcaseMarquee } from '@/components/showcase-marquee';
-import type { City, CityMapData, ShowcaseItem } from '@/lib/types';
+import type { City, CityMapData, MenuShowcaseItem, ShowcaseItem } from '@/lib/types';
 
 export interface CityDashboardProps {
   city: City;
@@ -10,6 +11,8 @@ export interface CityDashboardProps {
   showcase: ShowcaseItem[];
   /** boundary + pinned businesses for the city map (Phase 9) */
   mapData: CityMapData | null;
+  /** Businesses with registered menus and product previews, loaded server-side. */
+  menuShowcase?: MenuShowcaseItem[] | null;
   /** true while feeds are still loading */
   loading: boolean;
   /** non-fatal feed error (banner) */
@@ -19,11 +22,11 @@ export interface CityDashboardProps {
 /**
  * City home page: one welcome card with the city wall and service actions,
  * then the golden showcase and the city map.
- * News, ads and businesses live on their own pages now — the home page
- * deliberately stays light.
+ * News, ads and the full business directory remain on their own pages; a
+ * compact menu preview follows the map so the home page stays light.
  * City names always come from the data — never from the code.
  */
-export function CityDashboard({ city, showcase, mapData, loading, feedError }: CityDashboardProps) {
+export function CityDashboard({ city, showcase, mapData, menuShowcase, loading, feedError }: CityDashboardProps) {
   return (
     <div className="dashboard">
       <section className="dash-welcome" data-testid="dash-welcome" aria-label={`خوش‌آمدگویی شهر ${city.name}`}>
@@ -62,6 +65,7 @@ export function CityDashboard({ city, showcase, mapData, loading, feedError }: C
           )}
         </section>
       )}
+      {menuShowcase != null && <MenuProductShowcase items={menuShowcase} cityName={city.name} />}
 
     </div>
   );

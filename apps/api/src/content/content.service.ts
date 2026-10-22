@@ -52,6 +52,17 @@ export interface BusinessItem {
   category: { name: string; slug: string; icon: string | null; color: string | null };
 }
 
+/** Compact public preview of one approved business that has menu products. */
+export interface MenuShowcaseItem {
+  id: number;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  subscriptionTier: string;
+  category: { name: string; slug: string; icon: string | null; color: string | null };
+  products: { id: number; name: string; price: number | null; imageUrl: string | null; isAvailable: boolean }[];
+}
+
 /** One paid-tier business card of the golden showcase. */
 export interface ShowcaseItem {
   id: number;
@@ -250,6 +261,36 @@ export class ContentService {
         category: { select: { name: true, slug: true, icon: true, color: true } },
       },
     });
+  }
+
+  /** Approved businesses with registered menus and two lightweight product previews. */
+  async menuShowcase(citySlug: string, limit: number = DEFAULT_CONTENT_LIMIT): Promise<MenuShowcaseItem[]> {
+    const cityId = await this.resolveCity(citySlug);
+    const rows = await this.prisma.business.findMany({
+      where: { cityId, status: 'APPROVED', products: { some: {} } },
+      orderBy: [{ showcasePriority: 'asc' }, { rating: 'desc' }, { id: 'asc' }],
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        logoUrl: true,
+        subscriptionTier: true,
+        category: { select: { name: true, slug: true, icon: true, color: true } },
+        products: {
+          orderBy: [{ isAvailable: 'desc' }, { sortOrder: 'asc' }, { id: 'asc' }],
+          take: 2,
+          select: { id: true, name: true, price: true, imageUrl: true, isAvailable: true },
+        },
+      },
+    });
+    return rows.map(({ products, ...business }) => ({
+      ...business,
+      products: products.map(({ price, ...product }) => ({
+        ...product,
+        price: price === null ? null : Number(price),
+      })),
+    }));
   }
 
   /**

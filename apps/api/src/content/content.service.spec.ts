@@ -259,6 +259,33 @@ describe('ContentService.businesses', () => {
   });
 });
 
+describe('ContentService.menuShowcase', () => {
+  it('returns approved menu businesses with two compact product previews and JSON-safe prices', async () => {
+    const { service, prisma } = makeService();
+    prisma.city.findFirst.mockResolvedValue({ id: 7 });
+    prisma.business.findMany.mockResolvedValue([
+      {
+        id: 18,
+        name: 'کافه نمونه',
+        slug: 'sample-cafe',
+        logoUrl: null,
+        subscriptionTier: 'SILVER',
+        category: { name: 'کافه', slug: 'cafe', icon: '☕', color: '#167b5c' },
+        products: [{ id: 9, name: 'لاته', price: 250_000n, imageUrl: '/media/latte.webp', isAvailable: true }],
+      },
+    ]);
+
+    const result = await service.menuShowcase('sample-city', 200);
+    const args = prisma.business.findMany.mock.calls[0][0];
+    expect(args.where).toMatchObject({ cityId: 7, status: 'APPROVED', products: { some: {} } });
+    expect(args.take).toBe(200);
+    expect(args.select.products).toMatchObject({ take: 2, select: { id: true, name: true, price: true, imageUrl: true } });
+    expect(result[0].products[0].price).toBe(250_000);
+    expect(() => JSON.stringify(result)).not.toThrow();
+    expect(args.select.phone).toBeUndefined();
+  });
+});
+
 describe('ContentService.showcase (Phase 9)', () => {
   it('returns only paid-tier, enabled, APPROVED businesses in showcase order', async () => {
     const { service, prisma } = makeService();

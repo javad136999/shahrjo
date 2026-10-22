@@ -28,6 +28,13 @@ export class ContentController {
     return this.content.businesses(query.city, query.limit, query.category);
   }
 
+  /** Approved businesses with registered menu products for the city-home storefront. */
+  @Public()
+  @Get('menu-showcase')
+  menuShowcase(@Query() query: CityContentQueryDto): ReturnType<ContentService['menuShowcase']> {
+    return this.content.menuShowcase(query.city, query.limit);
+  }
+
   /** Golden showcase: paid-tier businesses for the animated marquee (Phase 9). */
   @Public()
   @Get('showcase')
