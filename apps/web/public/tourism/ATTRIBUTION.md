@@ -111,3 +111,25 @@ Tourism thumbnails are optimized WebP derivatives of the files linked below. The
 - `ahar-sheikh-shahab-tomb-2-jpg.webp` — [Sheikh-shahab tomb 2.JPG](https://commons.wikimedia.org/wiki/File:Sheikh-shahab_tomb_2.JPG), Elmju, CC BY-SA 3.0; بهینه‌شده با WebP (13,526 bytes).
 - `mianeh-qal-e-dokhtar-of-mianeh-iran-jpg.webp` — [Qal-e-Dokhtar of Mianeh, Iran.jpg](https://commons.wikimedia.org/wiki/File:Qal-e-Dokhtar_of_Mianeh,_Iran.jpg), Armin Abbasi, CC BY-SA 4.0; بهینه‌شده با WebP (41,514 bytes).
 - `khoy-khoy-city-iran-jpg.webp` — [Khoy city.iran.jpg](https://commons.wikimedia.org/wiki/File:Khoy_city.iran.jpg), Aminadrin, CC BY-SA 3.0; بهینه‌شده با WebP (20,582 bytes).
+
+## تصاویر مرحلهٔ چهارم؛ شهرهای باقی‌مانده
+
+- `bukan-iran-bukan-qajar-jpg.webp` — [Iran Bukan Qajar.jpg](https://commons.wikimedia.org/wiki/File:Iran_Bukan_Qajar.jpg), Ali Khan Vali, Public domain; بهینه‌شده با WebP (41,412 bytes).
+- `mahabad-mahabad-dam-png.webp` — [سد مهاباد - Mahabad dam.png](https://commons.wikimedia.org/wiki/File:%D8%B3%D8%AF_%D9%85%D9%87%D8%A7%D8%A8%D8%A7%D8%AF_-_Mahabad_dam.png), Unknown authorUnknown author, CC BY 4.0; بهینه‌شده با WebP (40,560 bytes).
+- `miandoab-panoramio-1-jpg.webp` — [(((منصور اباد ))) - panoramio (1).jpg](https://commons.wikimedia.org/wiki/File:(((%D9%85%D9%86%D8%B5%D9%88%D8%B1_%D8%A7%D8%A8%D8%A7%D8%AF_)))_-_panoramio_(1).jpg), auoob farabi, CC BY-SA 3.0; بهینه‌شده با WebP (17,338 bytes).
+- `saqqez-jpg.webp` — [کارونسرای تاجوانچی.jpg](https://commons.wikimedia.org/wiki/File:%DA%A9%D8%A7%D8%B1%D9%88%D9%86%D8%B3%D8%B1%D8%A7%DB%8C_%D8%AA%D8%A7%D8%AC%D9%88%D8%A7%D9%86%DA%86%DB%8C.jpg), personal album, Public domain; بهینه‌شده با WebP (43,412 bytes).
+- `marivan-marivan-zarivar-iran-jpg.webp` — [Marivan-zarivar-Iran.jpg](https://commons.wikimedia.org/wiki/File:Marivan-zarivar-Iran.jpg), Mr.minoque, CC BY-SA 2.5; بهینه‌شده با WebP (21,060 bytes).
+- `baneh-baneh-panorama-from-arbaba-jpg.webp` — [Baneh panorama from Arbaba.jpg](https://commons.wikimedia.org/wiki/File:Baneh_panorama_from_Arbaba.jpg), Peyman14rojhak, CC BY-SA 4.0; بهینه‌شده با WebP (9,760 bytes).
+- `qorveh-qorveh-urban-planning-jpg.webp` — [Qorveh urban planning.jpg](https://commons.wikimedia.org/wiki/File:Qorveh_urban_planning.jpg), Unknown authorUnknown author, Public domain; بهینه‌شده با WebP (42,440 bytes).
+- `borujen-borujen-3-jpg.webp` — [Borujen 3.jpg](https://commons.wikimedia.org/wiki/File:Borujen_3.jpg), Khjo, CC BY-SA 3.0; بهینه‌شده با WebP (20,092 bytes).
+- `lordegan-borujen-3-jpg.webp` — [Borujen 3.jpg](https://commons.wikimedia.org/wiki/File:Borujen_3.jpg), Khjo, CC BY-SA 3.0; بهینه‌شده با WebP (20,092 bytes).
+- `farokh-shahr-borujen-3-jpg.webp` — [Borujen 3.jpg](https://commons.wikimedia.org/wiki/File:Borujen_3.jpg), Khjo, CC BY-SA 3.0; بهینه‌شده با WebP (20,092 bytes).
+- `farsan-borujen-3-jpg.webp` — [Borujen 3.jpg](https://commons.wikimedia.org/wiki/File:Borujen_3.jpg), Khjo, CC BY-SA 3.0; بهینه‌شده با WebP (20,092 bytes).
+- `dogonbadan-ghachsaran-jpg.webp` — [Ghachsaran.jpg](https://commons.wikimedia.org/wiki/File:Ghachsaran.jpg), Emakarimi, CC BY-SA 4.0; بهینه‌شده با WebP (17,586 bytes).
+- `dehdasht-handkerchief-dance-by-southern-lurs.webp` — [Handkerchief dance by Southern Lurs in Dehdasht.jpg](https://commons.wikimedia.org/wiki/File:Handkerchief_dance_by_Southern_Lurs_in_Dehdasht.jpg), Shadegan, CC BY-SA 4.0; بهینه‌شده با WebP (45,094 bytes).
+- `likak-tat-r-likak-2022-02-25-12-jpg.webp` — [Tatár-likak 2022-02-25 (12).jpg](https://commons.wikimedia.org/wiki/File:Tat%C3%A1r-likak_2022-02-25_(12).jpg), Szenti Tamás, CC BY-SA 4.0; بهینه‌شده با WebP (60,996 bytes).
+- `madavan-tat-r-likak-2022-02-25-12-jpg.webp` — [Tatár-likak 2022-02-25 (12).jpg](https://commons.wikimedia.org/wiki/File:Tat%C3%A1r-likak_2022-02-25_(12).jpg), Szenti Tamás, CC BY-SA 4.0; بهینه‌شده با WebP (60,996 bytes).
+- `shahroud-shahroud-iran-cloud-forest-panorami.webp` — [Shahroud - Iran - Cloud Forest - panoramio.jpg](https://commons.wikimedia.org/wiki/File:Shahroud_-_Iran_-_Cloud_Forest_-_panoramio.jpg), Alireza Javaheri, CC BY 3.0; بهینه‌شده با WebP (12,540 bytes).
+- `damghan-tarikhaneh-damghan-iran-jpg.webp` — [Tarikhaneh, Damghan, Iran.jpg](https://commons.wikimedia.org/wiki/File:Tarikhaneh,_Damghan,_Iran.jpg), Mehdi Saeidi, CC BY 2.0; بهینه‌شده با WebP (17,852 bytes).
+- `garmsar-the-cistern-in-garmsar-iran-jpg.webp` — [The cistern in Garmsar,Iran.jpg](https://commons.wikimedia.org/wiki/File:The_cistern_in_Garmsar,Iran.jpg), Reza1rameh, CC BY-SA 4.0; بهینه‌شده با WebP (29,598 bytes).
+- `mehdishahr-darband-cave-jpg.webp` — [Darband Cave.jpg](https://commons.wikimedia.org/wiki/File:Darband_Cave.jpg), user:Rahiane sHOMAL, FAL; بهینه‌شده با WebP (38,846 bytes).
