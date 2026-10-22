@@ -7950,3 +7950,179 @@ button.pill {
 .tourism-note strong { display: block; margin-bottom: 2px; color: var(--brand-dark); font-size: 12px; }
 .tourism-note p { margin: 0; font-size: 10.5px; line-height: 1.8; }
 @media (max-width: 560px) { .tourism-hero { padding: 18px 16px 20px; border-radius: 22px; } .tourism-hero__icon { width: 50px; height: 50px; font-size: 27px; } .tourism-hero h1 { font-size: 25px; } .tourism-hero > p:not(.tourism-hero__eyebrow) { font-size: 11.5px; } .tourism-grid { grid-template-columns: 1fr; } .tourism-list-head h2 { font-size: 17px; } }
+
+
+/* Business registration: keep subscription choices together and place the
+   Gold benefits directly below them in the same premium selection card. */
+.biz-registration__subscription-card {
+  position: relative;
+  overflow: hidden;
+  margin-top: 18px;
+  padding: clamp(12px, 2.6vw, 20px);
+  border: 1px solid #ead49a;
+  border-radius: 22px;
+  background: linear-gradient(155deg, #fffdf5 0%, #fff9e8 40%, #fff 100%);
+  box-shadow: 0 12px 30px rgb(166 107 25 / 9%);
+}
+.biz-registration__subscription-card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  content: '';
+  background: linear-gradient(90deg, #b77717, #f0c75e, #fff1ad);
+}
+.biz-registration--jam-style .biz-registration__subscription-card .biz-registration__plans-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+  margin-top: 4px;
+}
+.biz-registration__subscription-card .biz-registration__plan {
+  min-width: 0;
+  min-height: 174px;
+  padding: 15px 13px 13px;
+  border-radius: 17px;
+  cursor: pointer;
+}
+.biz-registration__subscription-card .biz-registration__plan:focus-visible {
+  outline: 3px solid rgb(183 119 23 / 40%);
+  outline-offset: 2px;
+}
+.biz-registration__subscription-card .biz-registration__plan.is-selected {
+  border-color: #bd861e;
+  box-shadow: 0 0 0 3px rgb(240 199 94 / 25%), 0 10px 24px rgb(166 107 25 / 12%);
+}
+.biz-registration__gold-benefits {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgb(183 119 23 / 20%);
+}
+.biz-registration__gold-benefits h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 11px;
+  color: #81550f;
+  font-size: 14px;
+  font-weight: 900;
+}
+.biz-registration__gold-benefits h3 > span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #fff0af, #e3ae3d);
+  box-shadow: inset 0 1px 0 #fff7d6, 0 5px 12px rgb(166 107 25 / 15%);
+  font-size: 17px;
+}
+.biz-registration__gold-benefits ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.biz-registration__gold-benefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgb(183 119 23 / 13%);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 74%);
+  color: #594b31;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.8;
+}
+.biz-registration__benefit-icon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border: 1px solid #f0d99e;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #fff5d7, #f7e4b2);
+  color: #9a6811;
+  font-size: 16px;
+}
+@media (max-width: 600px) {
+  .biz-registration__subscription-card {
+    padding: 12px 10px;
+    border-radius: 18px;
+  }
+  .biz-registration__subscription-card .biz-registration__plan {
+    min-height: 158px;
+    padding: 12px 9px 10px;
+    gap: 8px;
+    border-radius: 15px;
+  }
+  .biz-registration__subscription-card .biz-registration__plan .plan-card__tier {
+    font-size: 13px;
+  }
+  .biz-registration__subscription-card .biz-registration__plan .plan-card__duration {
+    font-size: 11.5px;
+  }
+  .biz-registration__subscription-card .biz-registration__plan .plan-card__price {
+    font-size: 17px;
+  }
+  .biz-registration__gold-benefits ul {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+  .biz-registration__gold-benefits li {
+    align-items: center;
+    padding: 8px 9px;
+  }
+}
+@media (max-width: 350px) {
+  .biz-registration--jam-style .biz-registration__subscription-card .biz-registration__plans-grid {
+    gap: 7px;
+  }
+  .biz-registration__subscription-card .biz-registration__plan {
+    padding-inline: 7px;
+  }
+}
+
+/* Make the Register Business tab unmistakable without changing the owner's
+   separate Businesses-list destination. */
+.bottom-nav__item--register-business .bottom-nav__icon {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border: 1px solid #efd99f;
+  border-radius: 11px;
+  background: linear-gradient(145deg, #fff6dc, #f2dfa9);
+  color: #81550f;
+  filter: none;
+  opacity: 1;
+  font-size: 18px;
+  box-shadow: 0 4px 10px rgb(166 107 25 / 12%);
+}
+.bottom-nav__item--register-business .bottom-nav__iconwrap::after {
+  position: absolute;
+  top: -4px;
+  inset-inline-end: -6px;
+  display: grid;
+  width: 15px;
+  height: 15px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #168052;
+  color: #fff;
+  content: '+';
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+.bottom-nav__item--register-business.is-active .bottom-nav__icon {
+  border-color: #d6b35c;
+  background: linear-gradient(145deg, #ffe8a5, #e1b54d);
+  transform: translateY(-2px);
+}

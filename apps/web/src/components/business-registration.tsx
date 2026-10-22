@@ -645,35 +645,45 @@ export function BusinessRegistration() {
             </p>
           )}
           {plans && (
-            <div className="plans-grid" data-testid="biz-plans">
-              {plans.map((plan) => (
-                <article
-                  key={plan.id}
-                  className={`plan-card plan-card--${plan.tier.toLowerCase()} biz-registration__plan${selectedPlanId === plan.id ? ' is-selected' : ''}`}
-                  role="button"
-                  tabIndex={0}
-                  aria-pressed={selectedPlanId === plan.id}
-                  onClick={() => setSelectedPlanId(plan.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setSelectedPlanId(plan.id);
-                    }
-                  }}
-                  data-testid={`biz-plan-${plan.id}`}
-                >
-                  <div className="plan-card__tier">
-                    <span aria-hidden>{TIER_ICON[plan.tier] ?? '⭐'}</span> {plan.label}
-                  </div>
-                  <div className="plan-card__duration">{formatPlanDuration(plan.durationDays)}</div>
-                  <div className="plan-card__price">{formatRial(plan.price)}</div>
-                  <p className="biz-registration__plan-note">
-                    {plan.tier === 'GOLD' ? 'بالاترین سطح اشتراک' : plan.tier === 'SILVER' ? 'اشتراک ویژه کسب‌وکار' : 'طرح رایگان'}
-                  </p>
-                  {selectedPlanId === plan.id && <span className="biz-registration__selected">✓ انتخاب شما</span>}
-                </article>
-              ))}
-            </div>
+            <section className="biz-registration__subscription-card" data-testid="biz-plans" aria-label="انتخاب پلن کسب‌وکار">
+              <div className="plans-grid biz-registration__plans-grid">
+                {plans.map((plan) => (
+                  <article
+                    key={plan.id}
+                    className={`plan-card plan-card--${plan.tier.toLowerCase()} biz-registration__plan${selectedPlanId === plan.id ? ' is-selected' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={selectedPlanId === plan.id}
+                    onClick={() => setSelectedPlanId(plan.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedPlanId(plan.id);
+                      }
+                    }}
+                    data-testid={`biz-plan-${plan.id}`}
+                  >
+                    <div className="plan-card__tier">
+                      <span aria-hidden>{TIER_ICON[plan.tier] ?? '⭐'}</span> {plan.label}
+                    </div>
+                    <div className="plan-card__duration">{formatPlanDuration(plan.durationDays)}</div>
+                    <div className="plan-card__price">{formatRial(plan.price)}</div>
+                    <p className="biz-registration__plan-note">
+                      {plan.tier === 'GOLD' ? 'بالاترین سطح اشتراک' : plan.tier === 'SILVER' ? 'اشتراک ویژه کسب‌وکار' : 'طرح رایگان'}
+                    </p>
+                    {selectedPlanId === plan.id && <span className="biz-registration__selected">✓ انتخاب شما</span>}
+                  </article>
+                ))}
+              </div>
+              <section className="biz-registration__gold-benefits" aria-labelledby="biz-gold-benefits-title">
+                <h3 id="biz-gold-benefits-title"><span aria-hidden>👑</span> مزیت‌های انتخاب اشتراک طلایی</h3>
+                <ul>
+                  <li><span className="biz-registration__benefit-icon" aria-hidden>✨</span><span>ثبت کسب‌وکار در ویترین طلایی</span></li>
+                  <li><span className="biz-registration__benefit-icon" aria-hidden>📣</span><span>پیام تبلیغاتی ویژه در دیوار شهر به‌صورت روزانه</span></li>
+                  <li><span className="biz-registration__benefit-icon" aria-hidden>🎬</span><span>ساخت کلیپ تبلیغاتی از کسب‌وکار و انتشار در صفحهٔ شهرجو به آدرس shahrju.ir</span></li>
+                </ul>
+              </section>
+            </section>
           )}
           <div className="auth-actions">
             <button className="btn btn-primary" disabled={!selectedPlanId || busy} onClick={confirmAndPay}>

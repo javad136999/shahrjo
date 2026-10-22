@@ -45,9 +45,11 @@ describe('BottomNav', () => {
     expect(screen.queryByTestId('bottom-nav-news')).toBeNull();
     expect(screen.getByTestId('bottom-nav-businesses')).toHaveTextContent('کسب‌وکارها');
     expect(screen.getByTestId('bottom-nav-businesses')).toHaveAttribute('href', '/businesses');
+    expect(screen.getByTestId('bottom-nav-businesses')).not.toHaveClass('bottom-nav__item--register-business');
     expect(screen.getByTestId('bottom-nav-wall')).toHaveTextContent('دیوار');
     expect(screen.getByTestId('bottom-nav-messages')).toHaveTextContent('پیام‌ها');
     expect(screen.getByTestId('bottom-nav-register-business')).toHaveTextContent('ثبت کسب‌وکار');
+    expect(screen.getByTestId('bottom-nav-register-business')).toHaveClass('bottom-nav__item--register-business');
     expect(screen.getByTestId('bottom-nav-profile')).toHaveTextContent('پروفایل');
     expect(screen.getByTestId('bottom-nav-profile')).toHaveAttribute('href', '/profile');
     expect(screen.getByTestId('bottom-nav-wall')).toHaveAttribute('href', '/wall');

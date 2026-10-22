@@ -164,7 +164,12 @@ describe('BusinessRegistration', () => {
     fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: اشتراک/ }));
 
     // step 3: pick GOLD plan then confirm
-    await screen.findByTestId('biz-plans');
+    const plansCard = await screen.findByTestId('biz-plans');
+    expect(plansCard).toContainElement(screen.getByTestId('biz-plan-10'));
+    expect(plansCard).toContainElement(screen.getByTestId('biz-plan-11'));
+    expect(plansCard).toHaveTextContent('ثبت کسب‌وکار در ویترین طلایی');
+    expect(plansCard).toHaveTextContent('پیام تبلیغاتی ویژه در دیوار شهر به‌صورت روزانه');
+    expect(plansCard).toHaveTextContent('ساخت کلیپ تبلیغاتی از کسب‌وکار و انتشار در صفحهٔ شهرجو به آدرس shahrju.ir');
     fireEvent.click(screen.getByTestId('biz-plan-11'));
     fireEvent.click(screen.getByRole('button', { name: /تأیید و پرداخت/ }));
 

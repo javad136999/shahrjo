@@ -100,7 +100,7 @@ export function BottomNav() {
     // never chosen a city is sent to the city-selection page (`/`).
     { id: 'home', href: city ? `/city/${city.slug}` : '/', icon: '🏠', label: 'خانه' },
     { id: 'wall', href: '/wall', icon: '🧱', label: 'دیوار' },
-    { id: 'businesses', href: '/businesses', icon: '🏪', label: 'کسب‌وکارها' },
+    { id: 'businesses', href: '/businesses', icon: '🏬', label: 'کسب‌وکارها' },
     { id: 'messages', href: '/messages', icon: '💬', label: 'پیام‌ها' },
     { id: 'register-business', href: '/business/new', icon: '🏪', label: 'ثبت کسب‌وکار' },
     { id: 'profile', href: '/profile', icon: '👤', label: 'پروفایل' },
@@ -137,7 +137,7 @@ export function BottomNav() {
           <Link
             key={item.id}
             href={item.href}
-            className={`bottom-nav__item${isActive(item) ? ' is-active' : ''}`}
+            className={`bottom-nav__item${isActive(item) ? ' is-active' : ''}${item.id === 'register-business' ? ' bottom-nav__item--register-business' : ''}`}
             data-testid={`bottom-nav-${item.id}`}
           >
             <span className="bottom-nav__iconwrap" aria-hidden>
