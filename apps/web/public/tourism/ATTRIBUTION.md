@@ -60,3 +60,9 @@ Tourism thumbnails are optimized WebP derivatives of the files linked below. The
 - `yazd-dolatabad.webp` — [Dowlat Abad Garden, Yazd, Iran.jpg](https://commons.wikimedia.org/wiki/File:Dowlat_Abad_Garden,_Yazd,_Iran.jpg), David Stanley, CC BY 2.0.
 - `yazd-firetemple.webp` — [Zoroastrian Fire Temple, Yazd 02.jpg](https://commons.wikimedia.org/wiki/File:Zoroastrian_Fire_Temple,_Yazd_02.jpg), Bernard Gagnon, CC BY-SA 4.0.
 - `yazd-jame.webp` — [20110103 Jame-e Kabir and Roknedin Mauseleum Yazd Iran.jpg](https://commons.wikimedia.org/wiki/File:20110103_Jame-e_Kabir_and_Roknedin_Mauseleum_Yazd_Iran.jpg), User:Ggia, CC BY-SA 3.0.
+
+- `jam-siraf.webp` — [Taheri port.jpg](https://commons.wikimedia.org/wiki/File:Taheri_port.jpg), dehsaeed, CC BY-SA 4.0.
+- `sanandaj-abidar.webp` — [Abidar.JPG](https://commons.wikimedia.org/wiki/File:Abidar.JPG), Ebrahim Badakhshan (original uploader: Ruler), public domain.
+- `sanandaj-asif.webp` — [Asef Vaziri House 3.jpg](https://commons.wikimedia.org/wiki/File:Asef_Vaziri_House_3.jpg), LilyOfTheWest, CC BY-SA 4.0.
+- `semnan-arg.webp` — [Arg Gate. Semnan 1.jpg](https://commons.wikimedia.org/wiki/File:Arg_Gate._Semnan_1.jpg), Arosha-photo (Reza Sobhani), CC BY-SA 4.0.
+- `asaluyeh-coast.webp` — [ساحل هاله 01.jpg](https://commons.wikimedia.org/wiki/File:%D8%B3%D8%A7%D8%AD%D9%84_%D9%87%D8%A7%D9%84%D9%87_01.jpg), Ahmadrknowledge, CC BY-SA 4.0.

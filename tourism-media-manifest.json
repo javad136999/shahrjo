@@ -673,6 +673,66 @@
       "width": 640,
       "height": 480,
       "bytes": 20878
+    },
+    "jam-siraf": {
+      "imageUrl": "/tourism/jam-siraf.webp",
+      "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Taheri_port.jpg",
+      "imageCredit": "dehsaeed",
+      "imageLicense": "CC BY-SA 4.0",
+      "fileTitle": "File:Taheri port.jpg",
+      "query": "Siraf ancient port Iran Wikimedia Commons",
+      "score": 5,
+      "width": 900,
+      "height": 598,
+      "bytes": 147466
+    },
+    "sanandaj-abidar": {
+      "imageUrl": "/tourism/sanandaj-abidar.webp",
+      "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Abidar.JPG",
+      "imageCredit": "Ebrahim Badakhshan (original uploader: Ruler)",
+      "imageLicense": "Public domain",
+      "fileTitle": "File:Abidar.JPG",
+      "query": "Abidar park Sanandaj Iran Wikimedia Commons",
+      "score": 5,
+      "width": 900,
+      "height": 598,
+      "bytes": 129416
+    },
+    "sanandaj-asif": {
+      "imageUrl": "/tourism/sanandaj-asif.webp",
+      "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Asef_Vaziri_House_3.jpg",
+      "imageCredit": "LilyOfTheWest",
+      "imageLicense": "CC BY-SA 4.0",
+      "fileTitle": "File:Asef Vaziri House 3.jpg",
+      "query": "Asef Vaziri House Sanandaj Wikimedia Commons",
+      "score": 5,
+      "width": 900,
+      "height": 598,
+      "bytes": 116936
+    },
+    "semnan-arg": {
+      "imageUrl": "/tourism/semnan-arg.webp",
+      "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:Arg_Gate._Semnan_1.jpg",
+      "imageCredit": "Arosha-photo (Reza Sobhani)",
+      "imageLicense": "CC BY-SA 4.0",
+      "fileTitle": "File:Arg Gate. Semnan 1.jpg",
+      "query": "Semnan Arg Gate Wikimedia Commons",
+      "score": 5,
+      "width": 900,
+      "height": 600,
+      "bytes": 90468
+    },
+    "asaluyeh-coast": {
+      "imageUrl": "/tourism/asaluyeh-coast.webp",
+      "imageSourceUrl": "https://commons.wikimedia.org/wiki/File:%D8%B3%D8%A7%D8%AD%D9%84_%D9%87%D8%A7%D9%84%D9%87_01.jpg",
+      "imageCredit": "Ahmadrknowledge",
+      "imageLicense": "CC BY-SA 4.0",
+      "fileTitle": "File:ساحل هاله 01.jpg",
+      "query": "Haleh Beach Asaluyeh Wikimedia Commons",
+      "score": 5,
+      "width": 900,
+      "height": 675,
+      "bytes": 15896
     }
   },
   "missing": [
@@ -684,11 +744,6 @@
     {
       "id": "jam-oudal",
       "name": "آبشار اودال",
-      "city": "jam"
-    },
-    {
-      "id": "jam-siraf",
-      "name": "بندر تاریخی سیراف",
       "city": "jam"
     },
     {
@@ -707,16 +762,6 @@
       "city": "ahvaz"
     },
     {
-      "id": "sanandaj-asif",
-      "name": "عمارت آصف وزیری (خانهٔ کرد)",
-      "city": "sanandaj"
-    },
-    {
-      "id": "sanandaj-abidar",
-      "name": "پارک و مجموعهٔ تفریحی آبیدر",
-      "city": "sanandaj"
-    },
-    {
       "id": "yasuj-gangeh",
       "name": "تنگ گنجه‌ای",
       "city": "yasuj"
@@ -732,11 +777,6 @@
       "city": "yasuj"
     },
     {
-      "id": "semnan-arg",
-      "name": "دروازهٔ ارگ سمنان",
-      "city": "semnan"
-    },
-    {
       "id": "asaluyeh-hara",
       "name": "جنگل حرا و خورهای نایبند",
       "city": "asaluyeh"
@@ -744,11 +784,6 @@
     {
       "id": "asaluyeh-beaches",
       "name": "سواحل و دماغهٔ نایبند",
-      "city": "asaluyeh"
-    },
-    {
-      "id": "asaluyeh-coast",
-      "name": "کرانهٔ خلیج فارس",
       "city": "asaluyeh"
     },
     {
