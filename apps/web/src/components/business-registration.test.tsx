@@ -61,6 +61,10 @@ const cats = [{ id: 3, name: 'رستوران', slug: 'restaurants', icon: '🍽'
 const plans = [
   { id: 10, code: 'SILVER_1M', tier: 'SILVER', label: 'نقره‌ای یک‌ماهه', badge: null, durationDays: 30, price: 200_000, sortOrder: 1 },
   { id: 11, code: 'GOLD_1M', tier: 'GOLD', label: 'طلایی یک‌ماهه', badge: 'ویژه', durationDays: 30, price: 500_000, sortOrder: 2 },
+  { id: 12, code: 'GOLD_6M', tier: 'GOLD', label: '۶ ماهه', badge: 'پیشنهاد ویژه', durationDays: 180, price: 15_000_000, sortOrder: 3 },
+  { id: 13, code: 'GOLD_12M', tier: 'GOLD', label: '۱۲ ماهه', badge: 'به‌صرفه‌ترین', durationDays: 365, price: 25_000_000, sortOrder: 4 },
+  { id: 14, code: 'SILVER_6M', tier: 'SILVER', label: '۶ ماهه', badge: 'پیشنهاد ویژه', durationDays: 180, price: 8_000_000, sortOrder: 5 },
+  { id: 15, code: 'SILVER_12M', tier: 'SILVER', label: '۱۲ ماهه', badge: 'به‌صرفه‌ترین', durationDays: 365, price: 13_000_000, sortOrder: 6 },
 ];
 
 async function chooseBusinessCategory(id: number) {
@@ -175,6 +179,12 @@ describe('BusinessRegistration', () => {
     expect(screen.getByTestId('biz-benefits-silver')).toHaveTextContent('ثبت کسب‌وکار روی نقشه');
     expect(screen.getByTestId('biz-benefits-silver')).toHaveTextContent('منو و محصولات کسب‌وکار');
     expect(screen.getByTestId('biz-benefits-silver')).toHaveTextContent('@shahrju.ir');
+    expect(screen.getByTestId('biz-benefits-gold').querySelector('a[href="https://www.instagram.com/shahrju.ir/"]')).toHaveAttribute('target', '_blank');
+    expect(screen.getByTestId('biz-benefits-silver').querySelector('a[href="https://www.instagram.com/shahrju.ir/"]')).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(screen.getByTestId('biz-plan-monthly-12')).toHaveTextContent('میانگین ماهانه: ۲٬۵۰۰٬۰۰۰ ریال');
+    expect(screen.getByTestId('biz-plan-monthly-13')).toHaveTextContent('میانگین ماهانه: ۲٬۰۸۳٬۳۳۳ ریال');
+    expect(screen.getByTestId('biz-plan-monthly-14')).toHaveTextContent('میانگین ماهانه: ۱٬۳۳۳٬۳۳۳ ریال');
+    expect(screen.getByTestId('biz-plan-monthly-15')).toHaveTextContent('میانگین ماهانه: ۱٬۰۸۳٬۳۳۳ ریال');
     fireEvent.click(screen.getByTestId('biz-plan-11'));
     fireEvent.click(screen.getByRole('button', { name: /تأیید و پرداخت/ }));
 

@@ -22,19 +22,24 @@ import { thumbFallback, thumbUrlFor } from '@/lib/format';
 import type { BusinessCategoryOption, City, CityMapData, PlanItem } from '@/lib/types';
 
 const formatRial = (rial: number) => `${new Intl.NumberFormat('fa-IR').format(rial)} ریال`;
-const formatPlanDuration = (days: number) => days >= 30 && days % 30 === 0 ? `${(days / 30).toLocaleString('fa-IR')} ماهه` : `${days.toLocaleString('fa-IR')} روزه`;
+const planDurationMonths = (days: number) => days === 365 ? 12 : days >= 30 && days % 30 === 0 ? days / 30 : null;
+const formatPlanDuration = (days: number) => {
+  const months = planDurationMonths(days);
+  return months ? `${months.toLocaleString('fa-IR')} ماهه` : `${days.toLocaleString('fa-IR')} روزه`;
+};
 const TIER_ICON: Record<string, string> = { GOLD: '👑', SILVER: '🥈', FREE: '⭐' };
 const TIER_LABEL: Record<PlanItem['tier'], string> = { GOLD: 'اشتراک طلایی', SILVER: 'اشتراک نقره‌ای', FREE: 'اشتراک رایگان' };
-const TIER_BENEFITS: Partial<Record<PlanItem['tier'], { icon: string; text: string }[]>> = {
+const TIER_BENEFITS: Partial<Record<PlanItem['tier'], { icon: string; text: string; instagram?: boolean }[]>> = {
   GOLD: [
     { icon: '✨', text: 'ثبت کسب‌وکار در ویترین طلایی' },
     { icon: '📣', text: 'پیام تبلیغاتی ویژه در دیوار شهر به‌صورت روزانه' },
     { icon: '🎬', text: 'ساخت کلیپ تبلیغاتی از کسب‌وکار و انتشار در صفحهٔ شهرجو به آدرس shahrju.ir' },
+    { icon: '📸', text: 'معرفی و بازدید از پیج اینستاگرام شهرجو', instagram: true },
   ],
   SILVER: [
     { icon: '📍', text: 'ثبت کسب‌وکار روی نقشه' },
     { icon: '🛍️', text: 'منو و محصولات کسب‌وکار' },
-    { icon: '🎬', text: 'ساخت کلیپ تبلیغاتی و انتشار در پیج اینستاگرام شهرجو (@shahrju.ir)' },
+    { icon: '🎬', text: 'ساخت کلیپ تبلیغاتی و انتشار در پیج اینستاگرام شهرجو', instagram: true },
   ],
 };
 
@@ -682,7 +687,7 @@ export function BusinessRegistration() {
                       {tierPlans.map((plan) => (
                         <article
                           key={plan.id}
-                          className={`plan-card plan-card--${plan.tier.toLowerCase()} biz-registration__plan${selectedPlanId === plan.id ? ' is-selected' : ''}`}
+                          className={`plan-card plan-card--${plan.tier.toLowerCase()} biz-registration__plan${(planDurationMonths(plan.durationDays) ?? 0) >= 6 ? ' biz-registration__plan--long' : ''}${selectedPlanId === plan.id ? ' is-selected' : ''}`}
                           role="button"
                           tabIndex={0}
                           aria-pressed={selectedPlanId === plan.id}
@@ -700,6 +705,11 @@ export function BusinessRegistration() {
                           </div>
                           <div className="plan-card__duration">{formatPlanDuration(plan.durationDays)}</div>
                           <div className="plan-card__price">{formatRial(plan.price)}</div>
+                          {(planDurationMonths(plan.durationDays) ?? 0) >= 6 && (
+                            <div className="biz-registration__plan-monthly" data-testid={`biz-plan-monthly-${plan.id}`}>
+                              میانگین ماهانه: {formatRial(Math.round(plan.price / (planDurationMonths(plan.durationDays) ?? 1)))}
+                            </div>
+                          )}
                           <p className="biz-registration__plan-note">
                             {plan.tier === 'GOLD' ? 'بالاترین سطح اشتراک' : plan.tier === 'SILVER' ? 'اشتراک ویژه کسب‌وکار' : 'طرح رایگان'}
                           </p>
@@ -714,7 +724,12 @@ export function BusinessRegistration() {
                           {benefits.map((benefit) => (
                             <li key={benefit.text}>
                               <span className="biz-registration__benefit-icon" aria-hidden>{benefit.icon}</span>
-                              <span>{benefit.text}</span>
+                              <span>
+                                {benefit.text}
+                                {benefit.instagram && (
+                                  <> {' '}<a href="https://www.instagram.com/shahrju.ir/" target="_blank" rel="noopener noreferrer">@shahrju.ir</a></>
+                                )}
+                              </span>
                             </li>
                           ))}
                         </ul>

@@ -45,6 +45,13 @@ body {
   padding: 0;
 }
 
+/* Keep Android/PWA WebView text inflation from making the installed app's
+   cards and controls larger than the same responsive page in the browser. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   /* JamCity-inspired warm canvas: soft gold + green glows over off-white. */
   /* minimal canvas: the glows are whispers, not paint */
@@ -6615,6 +6622,9 @@ button.pill {
 .biz-registration--jam-style .biz-registration__plan .plan-card__duration { color:#748279; }
 .biz-registration--jam-style .biz-registration__plan .plan-card__price { font-size:21px; color:#13794b; }
 .biz-registration__plan-note { margin:0; color:#7c8981; font-size:11px; line-height:1.7; }
+.biz-registration__plan-monthly { margin-top:-5px; color:#62766d; font-size:10.5px; font-weight:750; line-height:1.65; }
+.biz-registration__tier-benefits a { color:#176c4a; font-weight:900; text-decoration:underline; text-underline-offset:2px; }
+.biz-registration__tier-benefits a:hover { color:#0b4f35; }
 .biz-registration__selected { align-self:flex-start; padding:4px 10px; border-radius:999px; background:#e4f6eb; color:#13794b; font-size:11px; font-weight:850; }
 .biz-registration--jam-style .auth-actions { margin-top:20px; gap:10px; }
 .biz-registration--jam-style .auth-actions .btn-primary { border-radius:14px; background:#168052; font-weight:850; }
@@ -8219,6 +8229,7 @@ button.pill {
   border-radius: 16px;
   cursor: pointer;
 }
+.biz-registration__tier-section .biz-registration__plan--long { min-height: 174px; }
 .biz-registration__tier-section .biz-registration__plan:focus-visible {
   outline: 3px solid rgb(22 128 82 / 30%);
   outline-offset: 2px;
@@ -8284,9 +8295,11 @@ button.pill {
 @media (max-width: 600px) {
   .biz-registration__tier-section { padding: 12px 10px; border-radius: 18px; }
   .biz-registration__tier-section .biz-registration__plan { min-height: 148px; padding: 11px 8px 9px; gap: 7px; }
+  .biz-registration__tier-section .biz-registration__plan--long { min-height: 166px; }
   .biz-registration__tier-section .biz-registration__plan .plan-card__tier { font-size: 12.5px; }
   .biz-registration__tier-section .biz-registration__plan .plan-card__duration { font-size: 11px; }
   .biz-registration__tier-section .biz-registration__plan .plan-card__price { font-size: 16px; }
+  .biz-registration__plan-monthly { font-size: 9.5px; }
   .biz-registration__tier-benefits ul { grid-template-columns: 1fr; gap: 6px; }
   .biz-registration__tier-benefits li { align-items: center; padding: 7px 8px; }
 }
