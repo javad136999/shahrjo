@@ -73,11 +73,18 @@ export default async function CityPage({ params }: CityPageProps) {
     showcase === null && mapData === null ? 'دریافت محتوای شهر ناموفق بود؛ چند لحظه دیگر دوباره تلاش کنید.' : null;
 
   return (
-    <CityHomeClient
-      city={city}
-      showcase={showcase ?? []}
-      mapData={mapData}
-      feedError={feedError}
-    />
+    <>
+      <div className="city-tourism-cta">
+        <Link href={`/city/${city.slug}/tourism`} className="btn btn-primary">
+          🧭 راهنمای گردشگری و جاهای دیدنی {city.name}
+        </Link>
+      </div>
+      <CityHomeClient
+        city={city}
+        showcase={showcase ?? []}
+        mapData={mapData}
+        feedError={feedError}
+      />
+    </>
   );
 }

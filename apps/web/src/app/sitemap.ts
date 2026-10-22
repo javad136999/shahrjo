@@ -8,6 +8,7 @@ import { SITE_URL } from '@/lib/site';
  *
  * - the static public pages,
  * - every city home that exists in the API (data-driven, never hardcoded),
+ * - every public tourism guide for those cities,
  *
  * Deliberately absent: `priority` and `changeFrequency` (Google ignores both),
  * private/personal routes (/profile, /messages, /businesses, /login, /admin),
@@ -44,6 +45,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // no lastModified on purpose: we have no reliable "last important change"
     // for a city page, and a guessed date is worse than none.
   }));
+  const tourismEntries: MetadataRoute.Sitemap = (cities ?? []).map((city) => ({
+    url: `${SITE_URL}/city/${city.slug}/tourism`,
+  }));
 
-  return [...fixed, ...cityEntries];
+  return [...fixed, ...cityEntries, ...tourismEntries];
 }

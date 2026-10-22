@@ -32,7 +32,11 @@ export function openGraphFor(input: {
   url: string;
   title: string;
   description: string;
+  imageUrl?: string;
 }) {
+  const image = input.imageUrl
+    ? { url: input.imageUrl, width: 640, height: 420, alt: input.title }
+    : { url: '/icon-512x512.png?v=2', width: 512, height: 512, alt: 'لوگوی شهرجو' };
   return {
     type: 'website' as const,
     locale: 'fa_IR',
@@ -40,6 +44,6 @@ export function openGraphFor(input: {
     url: input.url,
     title: input.title,
     description: input.description,
-    images: [{ url: '/icon-512x512.png?v=2', width: 512, height: 512, alt: 'لوگوی شهرجو' }],
+    images: [image],
   };
 }

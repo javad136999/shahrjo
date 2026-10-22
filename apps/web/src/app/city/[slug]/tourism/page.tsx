@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { CityTourismView } from '@/components/city-tourism';
 import { serverApi } from '@/lib/server-data';
 import { absoluteUrl, openGraphFor } from '@/lib/site';
+import { getTourismSpots } from '@/lib/tourism';
 import type { City } from '@/lib/types';
 
 interface CityTourismPageProps {
@@ -26,7 +27,14 @@ export async function generateMetadata({ params }: CityTourismPageProps): Promis
   const title = `جاهای دیدنی ${city.name} | گردشگری شهرجو`;
   const description = `راهنمای گردشگری ${city.name}: جاهای دیدنی، طبیعت، مکان‌های تاریخی، غذا و بازار با لوکیشن روی نقشه.`;
   const url = absoluteUrl(`/city/${city.slug}/tourism`);
-  return { title, description, alternates: { canonical: url }, openGraph: openGraphFor({ url, title, description }) };
+  const imageUrl = getTourismSpots(city).find((spot) => spot.imageUrl)?.imageUrl;
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: openGraphFor({ url, title, description, imageUrl }),
+    twitter: { card: 'summary_large_image', title, description, images: imageUrl ? [imageUrl] : undefined },
+  };
 }
 
 export default async function CityTourismPage({ params }: CityTourismPageProps) {

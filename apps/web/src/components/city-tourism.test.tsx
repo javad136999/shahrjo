@@ -23,12 +23,12 @@ describe('CityTourismView place details', () => {
 
     const details = screen.getByTestId('tourism-details-shiraz-hafez');
     expect(details).not.toHaveAttribute('open');
-    expect(screen.getByText(/آرامگاه حافظ در باغی شاعرانه/)).not.toBeVisible();
+    expect(screen.getByText(/آرامگاه شاعر در باغی آرام/)).not.toBeVisible();
 
     fireEvent.click(details.querySelector('summary')!);
 
     expect(details).toHaveAttribute('open');
-    expect(within(details).getByText(/آرامگاه حافظ در باغی شاعرانه/)).toBeInTheDocument();
+    expect(within(details).getByText(/آرامگاه شاعر در باغی آرام/)).toBeInTheDocument();
     expect(within(details).queryByText('دسته‌بندی')).not.toBeInTheDocument();
     expect(within(details).queryByText('زمان پیشنهادی')).not.toBeInTheDocument();
     expect(within(details).queryByText('محدوده')).not.toBeInTheDocument();
