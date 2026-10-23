@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
 import { HomeClient } from '@/components/home-client';
 import type { City } from '@/lib/types';
 
@@ -41,13 +42,13 @@ describe('HomeClient city restoration', () => {
     mockGetTokens.mockReturnValue(false);
   });
 
-  it('returns to the locally remembered city instead of showing city selection', async () => {
+  it('redirects to the locally remembered city while keeping server content available', async () => {
     mockGetLocalCity.mockReturnValue({ id: 7, slug: 'test-city', name: 'شهر آزمایشی' });
     render(<HomeClient initialCities={cities} />);
 
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/city/test-city'));
     expect(mockSetLocalCity).toHaveBeenCalledWith({ id: 7, slug: 'test-city', name: 'شهر آزمایشی' });
-    expect(screen.queryByTestId('city-test-city')).not.toBeInTheDocument();
+    expect(screen.getByTestId('city-test-city')).toBeInTheDocument();
   });
 
   it('restores a profile city when there is no locally remembered choice', async () => {
@@ -58,6 +59,13 @@ describe('HomeClient city restoration', () => {
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/city/test-city'));
     expect(mockApiGet).toHaveBeenCalledWith('/users/me');
     expect(mockSetLocalCity).toHaveBeenCalledWith({ id: 7, slug: 'test-city', name: 'شهر آزمایشی' });
+  });
+
+  it('renders the server-fetched city grid immediately instead of swapping a restore spinner after hydration', () => {
+    const html = renderToString(<HomeClient initialCities={cities} />);
+
+    expect(html).toContain('data-testid="city-test-city"');
+    expect(html).not.toContain('در حال بازگرداندن شهر انتخاب‌شده');
   });
 
   it('shows city selection only when the visitor has no saved city', async () => {

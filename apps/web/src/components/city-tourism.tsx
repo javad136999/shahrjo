@@ -40,7 +40,18 @@ export function CityTourismView({ city }: CityTourismViewProps) {
           {visibleSpots.map((spot, index) => (
             <li key={spot.id} className="tourism-card" data-testid={`tourism-${spot.id}`}>
               <div className="tourism-card__visual" style={{ '--tourism-accent': spot.accent } as React.CSSProperties}>
-                {spot.imageUrl ? <img className="tourism-card__image" src={spot.imageUrl} alt={`عکس ${spot.name}`} loading="lazy" decoding="async" width="640" height="420" /> : null}
+                {spot.imageUrl ? (
+                  <img
+                    className="tourism-card__image"
+                    src={spot.imageUrl}
+                    alt={`عکس ${spot.name}`}
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    fetchPriority={index === 0 ? 'high' : 'auto'}
+                    decoding="async"
+                    width="640"
+                    height="420"
+                  />
+                ) : null}
                 <span className="tourism-card__number">{new Intl.NumberFormat('fa-IR', { minimumIntegerDigits: 2 }).format(index + 1)}</span>
                 {!spot.imageUrl ? <span className="tourism-card__emoji" aria-hidden>{spot.icon}</span> : null}
                 <span className="tourism-card__category">{spot.category}</span>

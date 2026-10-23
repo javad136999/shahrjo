@@ -29,6 +29,7 @@ jest.mock('leaflet', () => {
     setView: jest.fn(),
     fitBounds: jest.fn(),
     invalidateSize: jest.fn(),
+    stop: jest.fn(),
     remove: jest.fn(),
     on: jest.fn(),
     getZoom: jest.fn(() => 12),
@@ -105,9 +106,11 @@ describe('CityMap', () => {
     expect(instance.setView).toHaveBeenCalledWith([27.83, 52.32], 10, { animate: false });
     expect(instance.setView.mock.invocationCallOrder[0]).toBeLessThan(leaflet.tileLayer.mock.invocationCallOrder[0]);
     expect(leaflet.tileLayer.mock.invocationCallOrder[0]).toBeLessThan(leaflet.marker.mock.invocationCallOrder[0]);
+    expect(instance.fitBounds.mock.calls[0][1]).toMatchObject({ animate: false });
     // no decorative circle without a boundary — the pins define the view
     expect(leaflet.circle).not.toHaveBeenCalled();
     unmount();
+    expect(instance.stop).toHaveBeenCalled();
     expect(instance.remove).toHaveBeenCalled();
   });
 

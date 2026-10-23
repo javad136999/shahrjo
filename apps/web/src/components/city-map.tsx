@@ -452,14 +452,22 @@ export function CityMap({ data }: CityMapProps) {
 
       const frameMap = () => {
         if (!map) return;
+        // ResizeObserver can fire several times while the page settles. Stop
+        // any pending zoom transition before applying a deterministic frame;
+        // a stale transition callback must not outlive this map instance.
+        if (typeof map.stop === 'function') map.stop();
         if (activeCat && pins.length > 0) {
           // Never a street-level view: at least a neighbourhood-sized window, max level 15.
           const focus = withMinSpan(boxOfPoints(pins) as LatLngBox);
-          map.fitBounds(focus, { padding: [26, 26], maxZoom: FILTER_MAX_ZOOM });
+          map.fitBounds(focus, { padding: [26, 26], maxZoom: FILTER_MAX_ZOOM, animate: false });
         } else if (urban) {
-          map.fitBounds(withMinSpan(urban), { padding: [24, 24], maxZoom: URBAN_MAX_ZOOM });
+          map.fitBounds(withMinSpan(urban), { padding: [24, 24], maxZoom: URBAN_MAX_ZOOM, animate: false });
         } else if (pins.length > 0) {
-          map.fitBounds(withMinSpan(boxOfPoints(pins) as LatLngBox), { padding: [56, 56], maxZoom: URBAN_MAX_ZOOM });
+          map.fitBounds(withMinSpan(boxOfPoints(pins) as LatLngBox), {
+            padding: [56, 56],
+            maxZoom: URBAN_MAX_ZOOM,
+            animate: false,
+          });
         }
       };
 
@@ -500,6 +508,7 @@ export function CityMap({ data }: CityMapProps) {
       disposed = true;
       resizeObserver?.disconnect();
       resizeObserver = null;
+      if (map && typeof map.stop === 'function') map.stop();
       map?.remove();
       map = null;
     };

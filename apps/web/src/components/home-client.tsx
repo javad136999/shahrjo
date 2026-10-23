@@ -25,18 +25,15 @@ export function HomeClient({ initialCities }: HomeClientProps) {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
-  const [restoringCity, setRestoringCity] = useState(true);
 
   const load = useCallback(async () => {
     setError(null);
     setCities(null);
-    setRestoringCity(true);
     try {
       const list = await api.get<City[]>('/cities');
       setCities(list);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'دریافت فهرست شهرها ناموفق بود');
-      setRestoringCity(false);
     }
   }, []);
 
@@ -77,15 +74,11 @@ export function HomeClient({ initialCities }: HomeClientProps) {
             router.replace(`/city/${profileCity.slug}`);
             return;
           }
-          setRestoringCity(false);
         })
         .catch(() => {
           if (!alive) return;
           setMe(null);
-          setRestoringCity(false);
         });
-    } else {
-      setRestoringCity(false);
     }
 
     return () => {
@@ -147,13 +140,7 @@ export function HomeClient({ initialCities }: HomeClientProps) {
         </p>
       )}
 
-      {cities && restoringCity && (
-        <p className="muted loading" aria-busy>
-          در حال بازگرداندن شهر انتخاب‌شده…
-        </p>
-      )}
-
-      {cities && !restoringCity && (
+      {cities && (
         <CityGrid cities={cities} onSelect={handleSelect} selectedCityId={me?.cityId ?? null} disabled={syncing} />
       )}
     </>
