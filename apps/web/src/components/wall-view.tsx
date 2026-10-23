@@ -360,25 +360,21 @@ export function WallView({ city }: WallViewProps) {
     }
   };
 
-  /**
-   * A sticker is a one-tap message: it is sent immediately (like WhatsApp),
-   * as a normal wall post whose whole content is the sticker emoji.
-   */
-  const sendSticker = async (emoji: string) => {
-    if (sending) return;
-    setSending(true);
-    setError(null);
-    try {
-      await createWallPost({ cityId: city.id, content: emoji, replyToId: replyTo?.id });
-      setStickerOpen(false);
-      setReplyTo(null);
-      await load();
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) setGate(true);
-      else setError(err instanceof Error ? err.message : 'ارسال استیکر ناموفق بود');
-    } finally {
-      setSending(false);
-    }
+  /** Insert an emoji at the caret; choosing one must not publish a message. */
+  const insertSticker = (emoji: string) => {
+    const input = inputRef.current;
+    const start = input?.selectionStart ?? text.length;
+    const end = input?.selectionEnd ?? start;
+    const next = `${text.slice(0, start)}${emoji}${text.slice(end)}`;
+    setText(next);
+    setStickerOpen(false);
+    requestAnimationFrame(() => {
+      const target = inputRef.current;
+      if (!target) return;
+      const caret = start + emoji.length;
+      target.focus();
+      target.setSelectionRange(caret, caret);
+    });
   };
 
   const patchPost = (id: number, patch: Partial<WallPost>) => {
@@ -557,6 +553,9 @@ export function WallView({ city }: WallViewProps) {
   const hasContent = Boolean(text.trim() || image || voice);
   const activeStickerPack =
     WALL_STICKER_PACKS.find((pack) => pack.id === stickerPack) ?? WALL_STICKER_PACKS[0];
+  const hasPublishedWallAd = Boolean(
+    feed?.posts.some((post) => post.ad?.status === 'APPROVED') || feed?.pinned?.ad?.status === 'APPROVED',
+  );
 
   if (gate) {
     return (
@@ -1004,16 +1003,18 @@ export function WallView({ city }: WallViewProps) {
               <small>{c.name}</small>
             </Link>
           ))}
-          <Link
-            href={`/city/${city.slug}?businessCategory=car_dealer#map`}
-            className="wall-cat wall-cat--business"
-            aria-label={`اتوگالری‌های شهر ${city.name}`}
-            data-testid="wall-cat-car_dealer"
-            title={`اتوگالری‌های شهر ${city.name}`}
-          >
-            <span aria-hidden="true">🚘</span>
-            <small>اتوگالری</small>
-          </Link>
+          {hasPublishedWallAd && (
+            <Link
+              href={`/city/${city.slug}?businessCategory=car_dealer#map`}
+              className="wall-cat wall-cat--business"
+              aria-label={`اتوگالری‌های شهر ${city.name}`}
+              data-testid="wall-cat-car_dealer"
+              title={`اتوگالری‌های شهر ${city.name}`}
+            >
+              <span aria-hidden="true">🚘</span>
+              <small>اتوگالری</small>
+            </Link>
+          )}
         </nav>
       </header>
 
@@ -1124,7 +1125,7 @@ export function WallView({ city }: WallViewProps) {
           <div className="wall-stickers" data-testid="wall-sticker-panel" role="dialog" aria-label="استیکرها">
             <div className="wall-stickers__head">
               <b>استیکرها</b>
-              <span className="wall-stickers__hint">با یک لمس ارسال می‌شود</span>
+              <span className="wall-stickers__hint">با لمس، داخل متن قرار می‌گیرد</span>
               <button
                 type="button"
                 className="wall-stickers__close"
@@ -1156,10 +1157,10 @@ export function WallView({ city }: WallViewProps) {
                   key={sticker.id}
                   type="button"
                   className="wall-stickers__item"
-                  aria-label={`ارسال استیکر ${sticker.emoji}`}
+                  aria-label={`افزودن ایموجی ${sticker.emoji} به متن`}
                   data-testid={`wall-sticker-${sticker.id}`}
                   disabled={sending}
-                  onClick={() => void sendSticker(sticker.emoji)}
+                  onClick={() => insertSticker(sticker.emoji)}
                 >
                   <span aria-hidden>{sticker.emoji}</span>
                 </button>

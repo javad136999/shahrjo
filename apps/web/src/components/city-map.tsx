@@ -132,9 +132,6 @@ export function CityMap({ data }: CityMapProps) {
         });
       }
     }
-    if (!bySlug.has('car_dealer')) {
-      bySlug.set('car_dealer', { slug: 'car_dealer', name: 'اتوگالری', icon: '🚘' });
-    }
     return [...bySlug.values()];
   }, [validBusinesses]);
 
@@ -271,8 +268,8 @@ export function CityMap({ data }: CityMapProps) {
             `<span class="jam-map-marker__pulse"></span>` +
             `<span class="jam-map-marker__body" aria-hidden="true">${glyph}</span>` +
             `</span>`,
-          iconSize: [28, 28],
-          iconAnchor: [14, 14],
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
         });
         const popup =
           `<div class="map-popup">` +

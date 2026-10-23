@@ -121,10 +121,31 @@ describe('WallView', () => {
     expect(screen.getByTestId('wall-home-top')).toHaveAttribute('href', '/city/sample-city');
     expect(screen.getByTestId('wall-home-top')).toHaveTextContent('خانهٔ شهر');
     expect(screen.queryByTestId('wall-home-bottom')).toBeNull();
-    const autogallery = screen.getByTestId('wall-cat-car_dealer');
+    // The map shortcut is not shown for a wall with no published ad.
+    expect(screen.queryByTestId('wall-cat-car_dealer')).toBeNull();
+  });
+
+  it('links the autogallery icon to mapped businesses only when a published ad is on the wall', async () => {
+    mockGetWall.mockResolvedValue({
+      ...feed,
+      posts: [makePost({
+        id: 12,
+        ad: {
+          id: 77,
+          title: 'خودروی سالم',
+          description: 'آگهی منتشرشده',
+          price: 500,
+          image: null,
+          status: 'APPROVED',
+          canRemove: false,
+        },
+      })],
+      pinned: null,
+    });
+    render(<WallView city={city} />);
+    const autogallery = await screen.findByTestId('wall-cat-car_dealer');
     expect(autogallery).toHaveAttribute('href', '/city/sample-city?businessCategory=car_dealer#map');
     expect(autogallery).toHaveTextContent('اتوگالری');
-    expect(autogallery).toHaveAttribute('aria-label', 'اتوگالری‌های شهر شهر نمونه');
   });
 
   it('renders post images from the thumbnail variant (lists never fetch the full file)', async () => {
@@ -251,8 +272,7 @@ describe('WallView', () => {
     expect(screen.queryByTestId('wall-home-bottom')).toBeNull();
   });
 
-  it('opens the sticker tray, switches packs and sends a sticker in one tap', async () => {
-    mockCreate.mockResolvedValue(makePost({ id: 21, content: '🐱' }));
+  it('opens the sticker tray, switches packs and inserts an emoji into the message text', async () => {
     render(<WallView city={city} />);
     fireEvent.click(await screen.findByTestId('wall-sticker-btn'));
     expect(await screen.findByTestId('wall-sticker-panel')).toBeInTheDocument();
@@ -263,12 +283,11 @@ describe('WallView', () => {
     expect(screen.getByTestId('wall-sticker-cat')).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('wall-sticker-cat'));
-    await waitFor(() =>
-      expect(mockCreate).toHaveBeenCalledWith({ cityId: 1, content: '🐱', replyToId: undefined }),
-    );
-    // the tray closes and the feed refreshes after sending
+    expect(screen.getByTestId('wall-input')).toHaveValue('🐱');
+    expect(mockCreate).not.toHaveBeenCalled();
+    // the tray closes and focus returns to the text input
     await waitFor(() => expect(screen.queryByTestId('wall-sticker-panel')).toBeNull());
-    await waitFor(() => expect(mockGetWall).toHaveBeenCalledTimes(2));
+    expect(screen.getByTestId('wall-input')).toHaveFocus();
   });
 
   it('renders a sticker message as a big sticker instead of a text bubble', async () => {

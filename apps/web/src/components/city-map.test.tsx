@@ -235,7 +235,7 @@ describe('CityMap', () => {
     expect(iconOptions.html).toContain('jam-map-marker__pulse');
     expect(iconOptions.html).not.toContain('map-pin__name');
     expect(iconOptions.html).not.toContain('<script>');
-    expect(iconOptions.iconSize).toEqual([28, 28]);
+    expect(iconOptions.iconSize).toEqual([24, 24]);
   });
 
   it('keeps business logos out of compact map markers while retaining business title and popup', async () => {
@@ -253,7 +253,7 @@ describe('CityMap', () => {
     expect(iconOptions.html).toContain('jam-map-marker__body');
     expect(iconOptions.html).toContain('--marker-main:#c58a28');
     expect(leaflet.marker.mock.calls[0][1]).toMatchObject({ title: 'رستوران ویترین', alt: 'رستوران ویترین' });
-    expect(iconOptions.iconSize).toEqual([28, 28]);
+    expect(iconOptions.iconSize).toEqual([24, 24]);
     const popup = leaflet.marker.mock.results[0].value.bindPopup.mock.calls[0][0] as string;
     expect(popup).toContain('رستوران ویترین');
     expect(popup).toContain('/business/');

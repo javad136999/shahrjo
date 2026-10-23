@@ -3348,7 +3348,10 @@ a.my-ads__item:hover {
 .wall-room__copy {
   display: flex;
   flex-direction: column;
+  flex: 1 1 120px;
   min-width: 0;
+  position: relative;
+  z-index: 2;
   line-height: 1.35;
 }
 
@@ -4103,7 +4106,8 @@ a.my-ads__item:hover {
 
 /* The six category shortcuts that replaced the city/change-city pills. */
 .wall-cats {
-  margin-inline-start: auto;
+  flex: 0 1 auto;
+  max-width: 48%;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -6659,15 +6663,15 @@ button.pill {
   position: relative;
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   color: var(--marker-main, #2f7657);
   transform: translate(var(--jam-marker-offset, 0, 0));
   isolation: isolate;
 }
 .jam-map-marker__pulse {
   position: absolute;
-  inset: -5px;
+  inset: -4px;
   border: 0;
   border-radius: 50%;
   background: radial-gradient(circle, var(--marker-ring, #99cdb0) 0%, transparent 70%);
@@ -6685,7 +6689,7 @@ button.pill {
   background: transparent;
   box-shadow: none;
   filter: drop-shadow(0 0 4px var(--marker-ring, #99cdb0)) drop-shadow(0 1px 1px rgb(0 0 0 / 32%));
-  font-size: 19px;
+  font-size: 17px;
   line-height: 1;
   transform: translateZ(0);
   transition: transform .16s ease, filter .16s ease;
