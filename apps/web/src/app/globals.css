@@ -8605,3 +8605,119 @@ button.pill {
 @media (prefers-reduced-motion: reduce) {
   .menu-showcase__card { transition: none; }
 }
+
+
+/* Fresh emerald theme for the city-wall ad entry. */
+.wall-adbtn--fresh {
+  border-color: #62b989;
+  background: linear-gradient(112deg, #effcf5 0%, #dff5e8 55%, #e9fff2 100%);
+  color: #104d37;
+  box-shadow: 0 5px 15px rgb(16 128 78 / 15%);
+  animation: none;
+}
+.wall-adbtn--fresh:hover {
+  border-color: #31966a;
+  background: linear-gradient(112deg, #e6faee 0%, #d1f0df 55%, #e1faeb 100%);
+  box-shadow: 0 8px 19px rgb(16 128 78 / 22%);
+}
+.wall-adbtn--fresh .wall-adbtn__icon {
+  border: 1px solid rgb(255 255 255 / 72%);
+  background: linear-gradient(145deg, #16a778, #08734f);
+  color: #fff;
+  box-shadow: 0 4px 10px rgb(8 115 79 / 22%);
+}
+.wall-adbtn--fresh .wall-adbtn__copy strong { color: #104d37; }
+.wall-adbtn--fresh .wall-adbtn__copy small { color: #4d7964; }
+.wall-adbtn--fresh .wall-adbtn__arrow { color: #13845c; }
+.wall-adbtn--fresh:focus-visible { outline-color: rgb(19 132 92 / 48%); }
+
+/* Progressive ad form: keep required essentials visible and tuck optional fields away. */
+.ad-page .ad-form {
+  border-color: #cfe6d8;
+  background: linear-gradient(180deg, #f7fcf9 0, #fff 245px);
+  box-shadow: 0 14px 34px rgb(18 91 57 / 8%);
+}
+.ad-form__mark {
+  border-color: #a8d8bd;
+  background: linear-gradient(145deg, #15976a, #08734f);
+  color: #fff;
+  box-shadow: 0 5px 13px rgb(8 115 79 / 20%);
+}
+.ad-form__intro { color: #5e7568; }
+.ad-form__field textarea { min-height: 82px; }
+.ad-form__extras {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #d4e8dc;
+  border-radius: 14px;
+  background: #f6fbf8;
+}
+.ad-form__extras > summary {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  color: #28563f;
+  cursor: pointer;
+  list-style: none;
+}
+.ad-form__extras > summary::-webkit-details-marker { display: none; }
+.ad-form__extras > summary::after {
+  margin-inline-start: auto;
+  color: #13845c;
+  content: '⌄';
+  font-size: 19px;
+  font-weight: 800;
+}
+.ad-form__extras[open] > summary { border-bottom: 1px solid #deece3; }
+.ad-form__extras[open] > summary::after { content: '⌃'; }
+.ad-form__extras > summary:focus-visible {
+  outline: 3px solid rgb(19 132 92 / 28%);
+  outline-offset: -3px;
+}
+.ad-form__extras-icon {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  flex: 0 0 31px;
+  place-items: center;
+  border-radius: 10px;
+  background: #e0f3e8;
+  color: #11774f;
+  font-size: 20px;
+  font-weight: 800;
+}
+.ad-form__extras-copy { display: flex; flex-direction: column; gap: 1px; }
+.ad-form__extras-copy strong { font-size: 12px; font-weight: 900; }
+.ad-form__extras-copy small { color: #72877a; font-size: 10px; }
+.ad-form__extras-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  padding: 11px 12px 13px;
+}
+.ad-form__extras-grid .ad-form__field--wide { grid-column: 1 / -1; }
+.ad-form__field input:focus-visible,
+.ad-form__field select:focus-visible,
+.ad-form__field textarea:focus-visible {
+  border-color: #13845c;
+  box-shadow: 0 0 0 3px rgb(19 132 92 / 12%);
+}
+.ad-form__field input[type='file']::file-selector-button {
+  background: linear-gradient(145deg, #15976a, #08734f);
+}
+.ad-form__actions .btn-primary {
+  background: linear-gradient(145deg, #15976a, #08734f);
+  box-shadow: 0 7px 16px rgb(8 115 79 / 19%);
+}
+.ad-form__history > summary::after { color: #13845c; }
+@media (max-width: 560px) {
+  .ad-form__extras > summary { min-height: 50px; padding: 8px 10px; }
+  .ad-form__extras-grid { gap: 8px; padding: 9px 10px 11px; }
+  .ad-form__field textarea { min-height: 76px; }
+}
+@media (max-width: 360px) {
+  .ad-form__extras-grid { grid-template-columns: 1fr; }
+  .ad-form__extras-grid .ad-form__field--wide { grid-column: auto; }
+}

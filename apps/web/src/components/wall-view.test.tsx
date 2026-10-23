@@ -232,10 +232,11 @@ describe('WallView', () => {
     // the ad entry left the bar: it is a text row under the send box now
     const adBtn = screen.getByTestId('wall-ad-btn');
     expect(adBtn).toHaveAttribute('href', '/ads/new');
-    expect(adBtn).toHaveTextContent('ثبت آگهی در دیوار شهر');
-    expect(adBtn).toHaveTextContent('برای شروع ثبت آگهی، اینجا بزن');
-    expect(adBtn).toHaveAttribute('aria-label', 'ثبت آگهی در دیوار شهر؛ برای شروع اینجا بزن');
+    expect(adBtn).toHaveTextContent('ثبت آگهی');
+    expect(adBtn).toHaveTextContent('شروع سریع با متن و عکس');
+    expect(adBtn).toHaveAttribute('aria-label', 'ثبت آگهی در دیوار شهر');
     expect(adBtn.className).toContain('wall-adbtn');
+    expect(adBtn.className).toContain('wall-adbtn--fresh');
     expect(adBtn.querySelector('.wall-adbtn__glyph')).toBeInTheDocument();
     expect(bar).not.toContainElement(adBtn);
     expect(screen.getByTestId('wall-composer')).toContainElement(adBtn);

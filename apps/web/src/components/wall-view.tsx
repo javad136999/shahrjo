@@ -1266,10 +1266,10 @@ export function WallView({ city }: WallViewProps) {
 
         <Link
           href="/ads/new"
-          className="wall-adbtn"
+          className="wall-adbtn wall-adbtn--fresh"
           data-testid="wall-ad-btn"
           title="ثبت آگهی در دیوار شهر"
-          aria-label="ثبت آگهی در دیوار شهر؛ برای شروع اینجا بزن"
+          aria-label="ثبت آگهی در دیوار شهر"
         >
           <span className="wall-adbtn__icon" aria-hidden="true">
             <svg className="wall-adbtn__glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -1278,8 +1278,8 @@ export function WallView({ city }: WallViewProps) {
             </svg>
           </span>
           <span className="wall-adbtn__copy">
-            <strong>ثبت آگهی در دیوار شهر</strong>
-            <small>برای شروع ثبت آگهی، اینجا بزن</small>
+            <strong>ثبت آگهی</strong>
+            <small>شروع سریع با متن و عکس</small>
           </span>
           <span className="wall-adbtn__arrow" aria-hidden="true">←</span>
         </Link>

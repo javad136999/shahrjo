@@ -279,7 +279,7 @@ export function AdForm() {
             ✕
           </button>
         </div>
-        <p className="muted ad-form__intro">عنوان و توضیحات را بنویس؛ عکس و قیمت اختیاری‌اند. پس از بررسی مدیر، آگهی در دیوار شهر نمایش داده می‌شود.</p>
+        <p className="muted ad-form__intro">برای شروع دسته‌بندی، عنوان و توضیح را بنویس؛ عکس، قیمت، تماس و آدرس را فقط اگر لازم است اضافه کن.</p>
 
         {noCity && (
           <div className="banner banner--warn" role="status">
@@ -339,7 +339,7 @@ export function AdForm() {
             <textarea
               id="description"
               name="description"
-              rows={4}
+              rows={3}
               maxLength={4000}
               placeholder="شرایط، قیمت پیشنهادی، زمان تماس…"
               value={description}
@@ -348,45 +348,56 @@ export function AdForm() {
             />
           </div>
 
-          <div className="ad-form__field">
-            <label htmlFor="price">قیمت (ریال) — اختیاری</label>
-            <input
-              id="price"
-              name="price"
-              type="text"
-              inputMode="numeric"
-              placeholder="خالی = توافقی"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
-          </div>
+          <details className="ad-form__extras ad-form__field--wide" data-testid="ad-optional-details">
+            <summary data-testid="ad-optional-summary">
+              <span className="ad-form__extras-icon" aria-hidden="true">＋</span>
+              <span className="ad-form__extras-copy">
+                <strong>جزئیات اختیاری آگهی</strong>
+                <small>قیمت، شماره تماس و آدرس</small>
+              </span>
+            </summary>
+            <div className="ad-form__extras-grid">
+              <div className="ad-form__field">
+                <label htmlFor="price">قیمت (ریال) — اختیاری</label>
+                <input
+                  id="price"
+                  name="price"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="خالی = توافقی"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                />
+              </div>
 
-          <div className="ad-form__field">
-            <label htmlFor="phone">شماره تماس</label>
-            <input
-              id="phone"
-              name="phone"
-              type="tel"
-              inputMode="numeric"
-              dir="ltr"
-              placeholder="09xxxxxxxxx"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-          </div>
+              <div className="ad-form__field">
+                <label htmlFor="phone">شماره تماس — اختیاری</label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  inputMode="numeric"
+                  dir="ltr"
+                  placeholder="09xxxxxxxxx"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
 
-          <div className="ad-form__field ad-form__field--wide">
-            <label htmlFor="address">آدرس — اختیاری</label>
-            <input
-              id="address"
-              name="address"
-              type="text"
-              maxLength={300}
-              placeholder="خیابان، محله…"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-            />
-          </div>
+              <div className="ad-form__field ad-form__field--wide">
+                <label htmlFor="address">آدرس — اختیاری</label>
+                <input
+                  id="address"
+                  name="address"
+                  type="text"
+                  maxLength={300}
+                  placeholder="خیابان، محله…"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+              </div>
+            </div>
+          </details>
 
           <div className="ad-form__field ad-form__field--wide">
             <label className="ad-form__file-label" htmlFor="images"><span aria-hidden>🖼️</span><span>تصاویر (حداکثر {MAX_IMAGES.toLocaleString('fa-IR')} — هر کدام تا ۵ مگابایت)</span></label>

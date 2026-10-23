@@ -62,6 +62,10 @@ function fillValidFields() {
   });
 }
 
+function openOptionalFields() {
+  fireEvent.click(screen.getByTestId('ad-optional-summary'));
+}
+
 describe('AdForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -95,6 +99,22 @@ describe('AdForm', () => {
     expect(screen.getByTestId('ad-image-policy')).toHaveTextContent('متن آگهی');
   });
 
+  it('keeps the initial form short and reveals optional details on demand', async () => {
+    render(<AdForm />);
+    await screen.findByRole('option', { name: 'لوازم' });
+
+    const optionalDetails = screen.getByTestId('ad-optional-details');
+    expect(optionalDetails).not.toHaveAttribute('open');
+    expect(screen.getByLabelText('عنوان آگهی')).toBeInTheDocument();
+    expect(screen.getByLabelText('توضیحات')).toBeInTheDocument();
+
+    openOptionalFields();
+    expect(optionalDetails).toHaveAttribute('open');
+    expect(screen.getByLabelText(/قیمت/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/شماره تماس/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/آدرس/)).toBeInTheDocument();
+  });
+
   it('offers a ✕ close that leaves the form (history back, or the wall as a fallback)', async () => {
     render(<AdForm />);
     await screen.findByRole('option', { name: 'لوازم' });
@@ -122,6 +142,7 @@ describe('AdForm', () => {
     render(<AdForm />);
     await screen.findByRole('option', { name: 'لوازم' });
     fillValidFields();
+    openOptionalFields();
     fireEvent.change(screen.getByLabelText(/قیمت/), { target: { value: 'قیمت توافقی' } });
     fireEvent.click(screen.getByRole('button', { name: 'ارسال' }));
 
@@ -147,6 +168,7 @@ describe('AdForm', () => {
     render(<AdForm />);
     await screen.findByRole('option', { name: 'لوازم' });
     fillValidFields();
+    openOptionalFields();
     fireEvent.change(screen.getByLabelText(/قیمت/), { target: { value: '۱٬۲۰۰٬۰۰۰' } });
 
     const first = new File(['a'], 'one.jpg', { type: 'image/jpeg' });
@@ -192,6 +214,7 @@ describe('AdForm', () => {
     render(<AdForm />);
     await screen.findByRole('option', { name: 'لوازم' });
     fillValidFields();
+    openOptionalFields();
     fireEvent.change(screen.getByLabelText(/شماره تماس/), { target: { value: '۰۹۱۲۳۴۵۶۷۸۹' } });
     fireEvent.click(screen.getByRole('button', { name: 'ارسال' }));
     await waitFor(() => expect(mockCreateAd).toHaveBeenCalledWith(expect.objectContaining({ phone: '09123456789' })));
