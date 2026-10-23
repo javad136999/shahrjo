@@ -1279,7 +1279,7 @@ export function WallView({ city }: WallViewProps) {
           </span>
           <span className="wall-adbtn__copy">
             <strong>ثبت آگهی</strong>
-            <small>شروع سریع با متن و عکس</small>
+            <small>فروش کالا یا معرفی خدمات</small>
           </span>
           <span className="wall-adbtn__arrow" aria-hidden="true">←</span>
         </Link>

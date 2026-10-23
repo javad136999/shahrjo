@@ -18,6 +18,17 @@ const city: City = {
 };
 
 describe('CityTourismView place details', () => {
+  it('removes the duplicate hero panel and brings the categories to the top', () => {
+    render(<CityTourismView city={city} />);
+
+    expect(screen.getByRole('heading', { level: 1, name: 'جاهای دیدنی شهر نمونه' })).toHaveClass('sr-only');
+    expect(screen.queryByTestId('tourism-head')).not.toBeInTheDocument();
+
+    const categories = screen.getByRole('region', { name: 'دسته‌بندی مکان‌ها' });
+    const listHeading = screen.getByRole('heading', { level: 2, name: 'برای شروع کجا برویم؟' });
+    expect(categories.compareDocumentPosition(listHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('opens a place description and linked map below its card when tapped', () => {
     render(<CityTourismView city={city} />);
 

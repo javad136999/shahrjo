@@ -233,7 +233,7 @@ describe('WallView', () => {
     const adBtn = screen.getByTestId('wall-ad-btn');
     expect(adBtn).toHaveAttribute('href', '/ads/new');
     expect(adBtn).toHaveTextContent('ثبت آگهی');
-    expect(adBtn).toHaveTextContent('شروع سریع با متن و عکس');
+    expect(adBtn).toHaveTextContent('فروش کالا یا معرفی خدمات');
     expect(adBtn).toHaveAttribute('aria-label', 'ثبت آگهی در دیوار شهر');
     expect(adBtn.className).toContain('wall-adbtn');
     expect(adBtn.className).toContain('wall-adbtn--fresh');

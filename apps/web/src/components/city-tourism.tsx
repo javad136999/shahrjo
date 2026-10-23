@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { getTourismSpots, tourismCategories } from '@/lib/tourism';
 import type { City } from '@/lib/types';
@@ -21,22 +20,7 @@ export function CityTourismView({ city }: CityTourismViewProps) {
 
   return (
     <div className="tourism-page">
-      <header className="tourism-hero" data-testid="tourism-head">
-        <div className="tourism-hero__glow" aria-hidden />
-        <div className="tourism-hero__topline">
-          <Link href={`/city/${city.slug}`} className="btn btn-ghost" data-testid="tourism-back">بازگشت به {city.name}</Link>
-          <span className="tourism-hero__badge">راهنمای سفر</span>
-        </div>
-        <div className="tourism-hero__icon" aria-hidden>🧭</div>
-        <p className="tourism-hero__eyebrow">شهر را از نگاه مسافر ببین</p>
-        <h1>جاهای دیدنی {city.name}</h1>
-        <p>مکان‌های منتخب با توضیح، دسته‌بندی، مختصات و لینک منبع معتبر برای برنامه‌ریزی سفر.</p>
-        <div className="tourism-hero__stats" aria-label="خلاصه راهنما">
-          <span><b>{new Intl.NumberFormat('fa-IR').format(spots.length)}</b> پیشنهاد منتخب</span>
-          <span><b>۵</b> دسته‌بندی سفر</span>
-          <span><b>نقشه</b> برای هر مکان</span>
-        </div>
-      </header>
+      <h1 className="sr-only">جاهای دیدنی {city.name}</h1>
 
       <section className="tourism-categories" aria-label="دسته‌بندی مکان‌ها">
         {tourismCategories.map((category) => (
