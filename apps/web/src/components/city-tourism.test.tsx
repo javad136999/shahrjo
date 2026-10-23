@@ -47,6 +47,8 @@ describe('CityTourismView place details', () => {
     const card = details.closest('li')!;
     expect(within(card).getByRole('img', { name: 'عکس حافظیه' })).toHaveAttribute('loading', 'eager');
     expect(within(card).getByRole('img', { name: 'عکس حافظیه' })).toHaveAttribute('fetchpriority', 'high');
+    expect(screen.getByRole('img', { name: 'عکس سعدیه' })).toHaveAttribute('loading', 'eager');
+    expect(screen.getByRole('img', { name: 'عکس سعدیه' })).toHaveAttribute('fetchpriority', 'high');
     expect(within(details).getByRole('link', { name: /عکس: Diego Delso/ })).toHaveAttribute('href', expect.stringContaining('commons.wikimedia.org/wiki/File:Mausoleo_de_Hafez'));
     expect(within(details).getByRole('link', { name: /مشاهدهٔ مکان روی نقشه/ })).toHaveAttribute('target', '_blank');
     expect(within(details).getByRole('link', { name: /منبع اطلاعات/ })).toHaveAttribute('href', expect.stringContaining('eghamat24'));

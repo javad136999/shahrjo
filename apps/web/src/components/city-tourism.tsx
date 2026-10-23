@@ -17,6 +17,11 @@ export function CityTourismView({ city }: CityTourismViewProps) {
     () => activeCategory === 'همه' ? spots : spots.filter((spot) => spot.category === activeCategory),
     [activeCategory, spots],
   );
+  // The first two photo cards commonly fit in the initial mobile viewport;
+  // keep either eligible LCP candidate out of the lazy-loading queue.
+  const prioritizedImageIndexes = new Set(
+    visibleSpots.flatMap((spot, index) => spot.imageUrl ? [index] : []).slice(0, 2),
+  );
 
   return (
     <div className="tourism-page">
@@ -45,8 +50,8 @@ export function CityTourismView({ city }: CityTourismViewProps) {
                     className="tourism-card__image"
                     src={spot.imageUrl}
                     alt={`عکس ${spot.name}`}
-                    loading={index === 0 ? 'eager' : 'lazy'}
-                    fetchPriority={index === 0 ? 'high' : 'auto'}
+                    loading={prioritizedImageIndexes.has(index) ? 'eager' : 'lazy'}
+                    fetchPriority={prioritizedImageIndexes.has(index) ? 'high' : 'auto'}
                     decoding="async"
                     width="640"
                     height="420"
