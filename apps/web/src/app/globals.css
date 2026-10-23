@@ -6671,13 +6671,13 @@ button.pill {
 }
 .jam-map-marker__pulse {
   position: absolute;
-  inset: -4px;
+  inset: -6px;
   border: 0;
   border-radius: 50%;
   background: radial-gradient(circle, var(--marker-ring, #99cdb0) 0%, transparent 70%);
-  filter: blur(2px);
-  opacity: .62;
-  animation: jam-map-marker-pulse 2.4s ease-out infinite;
+  filter: blur(3px);
+  opacity: .2;
+  animation: jam-map-marker-pulse 1.8s ease-in-out infinite;
   z-index: -1;
 }
 .jam-map-marker__body {
@@ -6700,12 +6700,16 @@ button.pill {
   filter: drop-shadow(0 0 7px var(--marker-ring, #99cdb0)) drop-shadow(0 2px 2px rgb(0 0 0 / 36%));
 }
 @keyframes jam-map-marker-pulse {
-  0%, 100% { transform: scale(.88); opacity: .45; }
-  50% { transform: scale(1.08); opacity: .9; }
+  0%, 100% { transform: scale(.55); opacity: .16; filter: blur(1px) brightness(.85); }
+  55% { transform: scale(1.65); opacity: .96; filter: blur(4px) brightness(1.35); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .jam-map-marker__pulse { animation: none; }
+  .jam-map-marker__pulse { animation: jam-map-marker-soft-pulse 3s ease-in-out infinite; }
   .jam-map-marker__body { transition: none; }
+}
+@keyframes jam-map-marker-soft-pulse {
+  0%, 100% { opacity: .28; }
+  50% { opacity: .78; }
 }
 
 
@@ -8817,4 +8821,4 @@ button.pill {
 /* Business icons are map markers, not labels; reduce their visual footprint. */
 .jam-map-marker { width: 18px; height: 18px; }
 .jam-map-marker__body { font-size: 13px; }
-.jam-map-marker__pulse { inset: -3px; }
+.jam-map-marker__pulse { inset: -5px; }
