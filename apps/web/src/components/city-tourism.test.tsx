@@ -2,6 +2,22 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { CityTourismView } from '@/components/city-tourism';
 import type { City } from '@/lib/types';
 
+jest.mock('leaflet', () => {
+  const makeLayer = () => {
+    const layer: Record<string, unknown> = {};
+    layer.addTo = jest.fn(() => layer);
+    layer.bindPopup = jest.fn(() => layer);
+    return layer;
+  };
+  return {
+    map: jest.fn(() => ({ fitBounds: jest.fn(), setView: jest.fn(), invalidateSize: jest.fn(), stop: jest.fn(), remove: jest.fn() })),
+    tileLayer: jest.fn(() => makeLayer()),
+    divIcon: jest.fn(() => ({})),
+    marker: jest.fn(() => makeLayer()),
+    latLngBounds: jest.fn((points) => ({ points })),
+  };
+});
+
 jest.mock('next/link', () => ({
   __esModule: true,
   default: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => <a href={href} {...props}>{children}</a>,
@@ -18,6 +34,15 @@ const city: City = {
 };
 
 describe('CityTourismView place details', () => {
+  it('shows all selected city attractions on the in-page map', () => {
+    const tabriz: City = { ...city, name: 'تبریز', slug: 'tabriz', latitude: 38.08, longitude: 46.3 };
+    render(<CityTourismView city={tabriz} />);
+
+    expect(screen.getByTestId('tourism-map')).toHaveAttribute('data-pins', '12');
+    expect(screen.getByRole('application', { name: 'نقشهٔ جاذبه‌های گردشگری' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'جاذبه‌ها روی نقشه' })).toBeInTheDocument();
+  });
+
   it('removes the duplicate hero panel and brings the categories to the top', () => {
     render(<CityTourismView city={city} />);
 

@@ -119,6 +119,53 @@ describe('Isfahan tourism completeness', () => {
 });
 
 
+describe('Tabriz and Yazd tourism additions', () => {
+  it('adds eight distinct, mapped Tabriz attractions and labels Kandovan as outside the city', () => {
+    const spots = getTourismSpots({ slug: 'tabriz' } as City);
+    const additions = spots.filter((spot) => spot.id.startsWith('tabriz-added-'));
+
+    expect(spots).toHaveLength(12);
+    expect(additions).toHaveLength(8);
+    expect(new Set(spots.map((spot) => spot.id)).size).toBe(spots.length);
+    for (const name of ['موزه آذربایجان', 'ارگ علیشاه (ارگ تبریز)', 'موزه قاجار (خانه امیرنظام گروسی)', 'مسجد جامع تبریز', 'کاخ شهرداری تبریز (عمارت ساعت)', 'روستای صخره‌ای کندوان']) {
+      expect(spots.some((spot) => spot.name === name)).toBe(true);
+    }
+    for (const spot of additions) {
+      expect(Number.isFinite(spot.latitude)).toBe(true);
+      expect(Number.isFinite(spot.longitude)).toBe(true);
+      expect(spot.latitude).toBeGreaterThan(37.7);
+      expect(spot.latitude).toBeLessThan(38.2);
+      expect(spot.longitude).toBeGreaterThan(46.2);
+      expect(spot.longitude).toBeLessThan(46.5);
+      expect(spot.coordinateSourceUrl).toContain('openstreetmap.org');
+    }
+    expect(spots.find((spot) => spot.id === 'tabriz-added-kandovan')?.locationLabel).toContain('خارج از شهر');
+  });
+
+  it('adds eight distinct, mapped Yazd attractions and labels the Towers of Silence as outside the city', () => {
+    const spots = getTourismSpots({ slug: 'yazd' } as City);
+    const additions = spots.filter((spot) => spot.id.startsWith('yazd-added-'));
+
+    expect(spots).toHaveLength(12);
+    expect(additions).toHaveLength(8);
+    expect(new Set(spots.map((spot) => spot.id)).size).toBe(spots.length);
+    for (const name of ['میدان امیرچخماق و تکیه', 'زندان اسکندر (مدرسه ضیائیه)', 'موزه آب یزد', 'خانه لاری‌ها', 'بازار خان', 'خانه هنر یزد', 'برج‌های خاموشان (دخمه زرتشتیان)']) {
+      expect(spots.some((spot) => spot.name === name)).toBe(true);
+    }
+    for (const spot of additions) {
+      expect(Number.isFinite(spot.latitude)).toBe(true);
+      expect(Number.isFinite(spot.longitude)).toBe(true);
+      expect(spot.latitude).toBeGreaterThan(31.7);
+      expect(spot.latitude).toBeLessThan(32.0);
+      expect(spot.longitude).toBeGreaterThan(54.2);
+      expect(spot.longitude).toBeLessThan(54.5);
+      expect(spot.coordinateSourceUrl).toContain('openstreetmap.org');
+    }
+    expect(spots.find((spot) => spot.id === 'yazd-added-towers-of-silence')?.locationLabel).toContain('خارج از محدودهٔ شهری');
+  });
+});
+
+
 describe('Mashhad and Shiraz tourism additions', () => {
   it('expands Mashhad with distinct, sourced attractions and labels nearby towns', () => {
     const spots = getTourismSpots({ slug: 'mashhad' } as City);

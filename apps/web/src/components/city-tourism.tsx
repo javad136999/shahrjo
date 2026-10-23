@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { getTourismSpots, tourismCategories } from '@/lib/tourism';
 import type { City } from '@/lib/types';
+import { TourismMap } from '@/components/tourism-map';
 
 export interface CityTourismViewProps { city: City }
 
@@ -39,6 +40,14 @@ export function CityTourismView({ city }: CityTourismViewProps) {
         <div><p className="tourism-list-head__eyebrow">انتخاب‌های شهرجو</p><h2>{activeCategory === 'همه' ? 'برای شروع کجا برویم؟' : `مکان‌های ${activeCategory}`}</h2></div>
         <span className="count-chip">{new Intl.NumberFormat('fa-IR').format(visibleSpots.length)} مکان</span>
       </div>
+
+      <section className="tourism-map-section" aria-labelledby="tourism-map-heading">
+        <div className="tourism-map-section__head">
+          <div><p className="tourism-list-head__eyebrow">نمای نزدیک و مقصدهای پیرامونی</p><h2 id="tourism-map-heading">جاذبه‌ها روی نقشه</h2></div>
+          <span className="tourism-map-section__count">{new Intl.NumberFormat('fa-IR').format(visibleSpots.length)} نشانگر</span>
+        </div>
+        <TourismMap spots={visibleSpots} />
+      </section>
 
       {visibleSpots.length === 0 ? <div className="empty-state tourism-empty">برای این دسته هنوز مکان پیشنهادی ثبت نشده است.</div> : (
         <ul className="tourism-grid" data-testid="tourism-list">
