@@ -8758,12 +8758,26 @@ button.pill {
 }
 .wall--jam-theme .wall-room__identity {
   grid-area: identity;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(36px, 1fr) minmax(0, 26rem) minmax(36px, 1fr);
   align-items: center;
-  gap: 10px;
+  justify-items: center;
+  gap: 0;
   min-width: 0;
 }
-.wall--jam-theme .wall-room__copy { min-width: 0; }
+.wall--jam-theme .wall-room__avatar {
+  grid-column: 1;
+  grid-row: 1;
+}
+.wall--jam-theme .wall-room__copy {
+  grid-column: 2;
+  grid-row: 1;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+}
+.wall--jam-theme .wall-room__meta { text-align: center; }
 .wall--jam-theme .wall-room__name {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -8785,7 +8799,7 @@ button.pill {
     padding: 10px;
   }
   .wall--jam-theme .wall-homebtn { min-height: 36px; padding-inline: 10px; }
-  .wall--jam-theme .wall-room__identity { gap: 8px; }
+  .wall--jam-theme .wall-room__identity { gap: 0; }
   .wall--jam-theme .wall-room__avatar { width: 36px; height: 36px; }
   .wall--jam-theme .wall-room__name { font-size: 14px; }
   .wall--jam-theme .wall-room__meta { font-size: 10.5px; }
