@@ -104,6 +104,8 @@ describe('WallView', () => {
     render(<WallView city={city} />);
     await screen.findByTestId('wall-room');
     expect(screen.getByTestId('wall-room-name')).toHaveTextContent('دیوار شهر شهر نمونه');
+    expect(screen.getByTestId('wall-room-name').querySelector('.wall-room__title-icon')).toHaveTextContent('💬');
+    expect(document.querySelector('.wall-room__avatar')).not.toBeInTheDocument();
     expect(document.querySelector('.wall-room__identity')).toContainElement(screen.getByTestId('wall-room-name'));
     expect(screen.getByTestId('wall-room-members')).toHaveTextContent('۱۲ عضو');
     expect(screen.getByTestId('wall-room-members')).toHaveTextContent('۳۴ پیام');

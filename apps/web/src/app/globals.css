@@ -8763,15 +8763,11 @@ button.pill {
 .wall--jam-theme .wall-room__identity {
   grid-area: identity;
   display: grid;
-  grid-template-columns: minmax(36px, 1fr) minmax(0, 26rem) minmax(36px, 1fr);
+  grid-template-columns: minmax(20px, 1fr) minmax(0, 26rem) minmax(20px, 1fr);
   align-items: center;
   justify-items: center;
   gap: 0;
   min-width: 0;
-}
-.wall--jam-theme .wall-room__avatar {
-  grid-column: 1;
-  grid-row: 1;
 }
 .wall--jam-theme .wall-room__copy {
   grid-column: 2;
@@ -8783,6 +8779,27 @@ button.pill {
 }
 .wall--jam-theme .wall-room__meta { text-align: center; }
 .wall--jam-theme .wall-room__name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  max-width: 100%;
+  min-width: 0;
+}
+.wall--jam-theme .wall-room__title-icon {
+  display: grid;
+  flex: 0 0 28px;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgb(21 126 87 / 16%);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #e9f7ee, #d8efdf);
+  font-size: 15px;
+  line-height: 1;
+}
+.wall--jam-theme .wall-room__title-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -8804,7 +8821,7 @@ button.pill {
   }
   .wall--jam-theme .wall-homebtn { min-height: 36px; padding-inline: 10px; }
   .wall--jam-theme .wall-room__identity { gap: 0; }
-  .wall--jam-theme .wall-room__avatar { width: 36px; height: 36px; }
+  .wall--jam-theme .wall-room__title-icon { flex-basis: 24px; width: 24px; height: 24px; font-size: 14px; }
   .wall--jam-theme .wall-room__name { font-size: 14px; }
   .wall--jam-theme .wall-room__meta { font-size: 10.5px; }
   .wall--jam-theme .wall-cats {

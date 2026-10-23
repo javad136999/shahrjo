@@ -1,5 +1,6 @@
 import type { City } from '@/lib/types';
 import { additionalCitySpots } from './tourism-next20';
+import { citySpotAdditions } from './tourism-city-additions';
 import { tourismBatch2 } from './tourism-batch2';
 import { tourismBatch3 } from './tourism-batch3';
 
@@ -23,6 +24,7 @@ export interface TourismSpot {
   locationLabel: string;
   sourceUrl: string;
   sourceLabel: string;
+  coordinateSourceUrl?: string;
 }
 
 type SpotSeed = Omit<TourismSpot, 'latitude' | 'longitude'> & { latitude: number; longitude: number };
@@ -177,7 +179,9 @@ const fallback = (city: City): TourismSpot[] => [
 ];
 
 export function getTourismSpots(city: City): TourismSpot[] {
-  return (citySpots[city.slug] ?? additionalCitySpots[city.slug] ?? tourismBatch2[city.slug] ?? tourismBatch3[city.slug] ?? fallback(city)).map((spot) => ({ ...spot }));
+  const existingSpots = citySpots[city.slug] ?? additionalCitySpots[city.slug] ?? tourismBatch2[city.slug] ?? tourismBatch3[city.slug] ?? fallback(city);
+  const additions = citySpotAdditions[city.slug] ?? [];
+  return [...existingSpots, ...additions].map((spot) => ({ ...spot }));
 }
 
 export const tourismCategories: Array<{ label: TourismCategory | 'همه'; icon: string }> = [

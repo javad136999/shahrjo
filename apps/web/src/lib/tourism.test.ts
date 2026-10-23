@@ -117,3 +117,46 @@ describe('Isfahan tourism completeness', () => {
     }
   });
 });
+
+
+describe('Mashhad and Shiraz tourism additions', () => {
+  it('expands Mashhad with distinct, sourced attractions and labels nearby towns', () => {
+    const spots = getTourismSpots({ slug: 'mashhad' } as City);
+    const additions = spots.filter((spot) => spot.id.startsWith('mashhad-added-'));
+
+    expect(spots).toHaveLength(12);
+    expect(additions).toHaveLength(8);
+    expect(new Set(spots.map((spot) => spot.id)).size).toBe(spots.length);
+    for (const name of ['پارک کوهسنگی', 'پارک ملت مشهد', 'سرزمین موج‌های آبی', 'موزهٔ بزرگ خراسان', 'آرامگاه خواجه ربیع']) {
+      expect(spots.some((spot) => spot.name === name)).toBe(true);
+    }
+    for (const spot of additions) {
+      expect(Number.isFinite(spot.latitude)).toBe(true);
+      expect(Number.isFinite(spot.longitude)).toBe(true);
+      expect(spot.coordinateSourceUrl).toContain('openstreetmap.org');
+    }
+    expect(spots.find((spot) => spot.id === 'mashhad-added-torghabeh')?.locationLabel).toContain('بیرون از مشهد');
+    expect(spots.find((spot) => spot.id === 'mashhad-added-shandiz')?.locationLabel).toContain('بیرون از مشهد');
+  });
+
+  it('expands Shiraz with distinct, sourced attractions located in the city', () => {
+    const spots = getTourismSpots({ slug: 'shiraz' } as City);
+    const additions = spots.filter((spot) => spot.id.startsWith('shiraz-added-'));
+
+    expect(spots).toHaveLength(14);
+    expect(additions).toHaveLength(9);
+    expect(new Set(spots.map((spot) => spot.id)).size).toBe(spots.length);
+    for (const name of ['ارگ کریم‌خان', 'بازار وکیل', 'دروازهٔ قرآن', 'باغ جهان‌نما', 'حرم شاهچراغ']) {
+      expect(spots.some((spot) => spot.name === name)).toBe(true);
+    }
+    for (const spot of additions) {
+      expect(Number.isFinite(spot.latitude)).toBe(true);
+      expect(Number.isFinite(spot.longitude)).toBe(true);
+      expect(spot.latitude).toBeGreaterThan(29.59);
+      expect(spot.latitude).toBeLessThan(29.66);
+      expect(spot.longitude).toBeGreaterThan(52.48);
+      expect(spot.longitude).toBeLessThan(52.58);
+      expect(spot.coordinateSourceUrl).toContain('openstreetmap.org');
+    }
+  });
+});

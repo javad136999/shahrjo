@@ -977,13 +977,11 @@ export function WallView({ city }: WallViewProps) {
           <span className="wall-homebtn__label">خانهٔ شهر</span>
         </Link>
         <div className="wall-room__identity">
-          <span className="wall-room__avatar" aria-hidden>
-            💬
-          </span>
           <div className="wall-room__copy">
             <small className="wall-room__eyebrow">گفت‌وگوی زندهٔ شهر</small>
             <strong className="wall-room__name" data-testid="wall-room-name">
-              {feed.room.name}
+              <span className="wall-room__title-icon" aria-hidden="true">💬</span>
+              <span className="wall-room__title-text">{feed.room.name}</span>
             </strong>
             <small className="wall-room__meta" data-testid="wall-room-members">
               {feed.room.memberCount.toLocaleString('fa-IR')} عضو ·{' '}
