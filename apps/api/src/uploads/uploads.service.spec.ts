@@ -52,6 +52,7 @@ function makeService(
     aliveAds?: { id: number }[];
     alivePosts?: { id: number }[];
     expiring?: unknown[];
+    expiringVoice?: unknown[];
     expiredNews?: { id: number; coverUrl: string }[];
     newsCoverMedia?: { id: number; storageKey: string; sizeBytes?: number }[];
   } = {},
@@ -78,8 +79,11 @@ function makeService(
         }
         // step 2b: news covers matched by their public url
         if (typeof where.url === 'string') return Promise.resolve(opts.newsCoverMedia ?? []);
-        // step 2: the 4-day retention walk (only it filters on mimeType)
-        if (where.mimeType) return Promise.resolve(opts.expiring ?? []);
+        // step 2: the 7-day image / 7-day voice retention walks
+        if (where.mimeType) {
+          const mime = where.mimeType as { startsWith?: string };
+          return Promise.resolve(mime.startsWith === 'audio/' ? opts.expiringVoice ?? [] : opts.expiring ?? []);
+        }
         if (where.entityId === null) return Promise.resolve(opts.unclaimed ?? []); // step 3
         if (where.entityId && typeof where.entityId === 'object') {
           return Promise.resolve(opts.attached ?? []); // step 4
@@ -483,7 +487,7 @@ describe('UploadsService.sweep — disk-fill protection', () => {
 
     const result = await service.sweep();
 
-    expect(result).toEqual({ removedFiles: 2, freedBytes: 2048, thumbsCreated: 0, expiredImages: 0 });
+    expect(result).toEqual({ removedFiles: 2, freedBytes: 2048, thumbsCreated: 0, expiredImages: 0, expiredVoiceNotes: 0 });
     expect(prisma.media.delete).toHaveBeenCalledWith({ where: { id: 1 } });
     expect(await storage.list()).toHaveLength(0);
   });
@@ -495,7 +499,7 @@ describe('UploadsService.sweep — disk-fill protection', () => {
     const expiryCall = prisma.media.findMany.mock.calls
       .map((c) => c[0].where)
       .find((w) => w.mimeType);
-    // the 4-day policy targets AD/WALL only: owner business/menu photos stay
+    // the 7-day policy targets AD/WALL only: owner business/menu photos stay
     // (they are compressed instead, see BUSINESS_PROFILE)
     expect(expiryCall.entityType).toEqual({ in: ['AD', 'WALL'] });
 
@@ -561,7 +565,7 @@ describe('UploadsService.sweep — disk-fill protection', () => {
     expect(await alive.storage.exists(aliveKey)).toBe(true);
   });
 
-  it('expires an ad photo after 4 days: gallery row + files go, the ad text stays', async () => {
+  it('expires an ad photo after 7 days: gallery row + files go, the ad text stays', async () => {
     const key = 'media/2026/10/oldadphotooldadphotooldad.webp';
     const url = `/api/v1/files/${key}`;
     const { service, prisma, storage } = makeService({
@@ -583,7 +587,7 @@ describe('UploadsService.sweep — disk-fill protection', () => {
     expect(await storage.exists(thumbKeyFor(key))).toBe(false);
   });
 
-  it('expires a wall photo after 4 days by clearing the post image, not the post', async () => {
+  it('expires a wall photo after 7 days by clearing the post image, not the post', async () => {
     const key = 'media/2026/10/oldwallphotooldwallphoto.webp';
     const url = `/api/v1/files/${key}`;
     const { service, prisma, storage } = makeService({
@@ -597,6 +601,22 @@ describe('UploadsService.sweep — disk-fill protection', () => {
     expect(prisma.wallPost.updateMany).toHaveBeenCalledWith({ where: { imageUrl: url }, data: { imageUrl: null } });
     expect(prisma.adImage.deleteMany).not.toHaveBeenCalled();
     expect(await storage.exists(key)).toBe(false);
+  });
+
+  it('expires a wall voice note after 7 days by clearing the post audio, not the post', async () => {
+    const key = 'voice/2026/10/oldwallvoiceoldwallvoiceold.webm';
+    const url = `/api/v1/files/${key}`;
+    const { service, prisma, storage } = makeService({
+      expiringVoice: [{ id: 13, storageKey: key, sizeBytes: 3072, url }],
+    });
+    await storage.put(key, Buffer.alloc(3072, 6));
+
+    const result = await service.sweep();
+
+    expect(result.expiredVoiceNotes).toBe(1);
+    expect(prisma.wallPost.updateMany).toHaveBeenCalledWith({ where: { voiceUrl: url }, data: { voiceUrl: null } });
+    expect(await storage.exists(key)).toBe(false);
+    expect(prisma.media.delete).toHaveBeenCalledWith({ where: { id: 13 } });
   });
 
   it('keeps a photo when its reference cannot be cleared (never a broken image)', async () => {

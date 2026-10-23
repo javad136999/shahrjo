@@ -26,7 +26,9 @@ const FILE_MIN_AGE_MS = 48 * 3_600_000;
  * them: the ad/post keeps its text, only the picture goes. Keeps a city wall
  * that runs for months from filling the disk with stale photos.
  */
-export const POST_IMAGE_MAX_AGE_MS = 4 * 86_400_000;
+export const POST_IMAGE_MAX_AGE_MS = 7 * 86_400_000;
+/** Public wall voice notes are retained for one week, then removed. */
+export const WALL_VOICE_MAX_AGE_MS = 7 * 86_400_000;
 /** How often the automatic sweep runs. */
 export const SWEEP_INTERVAL_MS = 6 * 3_600_000;
 /** Max thumbnails (re)generated per sweep — keeps CPU bounded on legacy data. */
@@ -53,6 +55,8 @@ export interface SweepResult {
   thumbsCreated: number;
   /** Public ad/wall photos that aged out — their posts kept their text. */
   expiredImages: number;
+  /** Public wall voice notes that aged out — their posts kept their text. */
+  expiredVoiceNotes: number;
 }
 
 export interface StorageOverview {
@@ -357,10 +361,11 @@ export class UploadsService implements OnModuleInit {
   private async sweepSafely(): Promise<void> {
     try {
       const result = await this.sweep();
-      if (result.removedFiles > 0 || result.thumbsCreated > 0 || result.expiredImages > 0) {
+      if (result.removedFiles > 0 || result.thumbsCreated > 0 || result.expiredImages > 0 || result.expiredVoiceNotes > 0) {
         this.logger.log(
           `storage sweep: removed ${result.removedFiles} file(s), freed ${result.freedBytes} bytes, ` +
-            `created ${result.thumbsCreated} thumbnail(s), expired ${result.expiredImages} post photo(s)`,
+            `created ${result.thumbsCreated} thumbnail(s), expired ${result.expiredImages} post photo(s), ` +
+            `${result.expiredVoiceNotes} voice note(s)`,
         );
       }
     } catch (err) {
@@ -370,7 +375,8 @@ export class UploadsService implements OnModuleInit {
 
   /**
    * Disk-protection sweep: (1) hard-delete soft-deleted media past retention,
-   * (2) expire public post photos (ads + wall) older than 4 days — text stays,
+   * (2) expire public post photos (ads + wall) older than one week — text stays,
+   * (2a) expire wall voice notes older than one week — text stays,
    * (2b) free the covers of news older than the one-week publishing window,
    * (3) drop uploads never claimed by an entity, (4) drop media whose entity
    * is gone, (5) unlink orphan files that no Media row references (thumbnails
@@ -382,6 +388,7 @@ export class UploadsService implements OnModuleInit {
     let freedBytes = 0;
     let thumbsCreated = 0;
     let expiredImages = 0;
+    let expiredVoiceNotes = 0;
 
     const remove = async (row: { storageKey: string; sizeBytes?: number }): Promise<void> => {
       for (const key of [row.storageKey, thumbKeyFor(row.storageKey)]) {
@@ -402,7 +409,7 @@ export class UploadsService implements OnModuleInit {
       await this.prisma.media.delete({ where: { id: row.id } });
     }
 
-    // (2) public post photos age out after 4 days: the reference is cleared
+    // (2) public post photos age out after one week: the reference is cleared
     // first (so nothing ever points at a deleted file), then the files and the
     // Media row go. The ad / wall post keeps its text and stays reachable.
     const expiring = await this.prisma.media.findMany({
@@ -432,6 +439,30 @@ export class UploadsService implements OnModuleInit {
       await remove(row);
       await this.prisma.media.delete({ where: { id: row.id } });
       expiredImages += 1;
+    }
+
+    // (2a) wall voice notes expire after one week. Clear the post reference
+    // first so a successful sweep can never leave a broken audio player.
+    const expiringVoiceNotes = await this.prisma.media.findMany({
+      where: {
+        entityType: 'WALL',
+        entityId: { not: null },
+        mimeType: { startsWith: 'audio/' },
+        deletedAt: null,
+        createdAt: { lt: new Date(Date.now() - WALL_VOICE_MAX_AGE_MS) },
+      },
+      select: { id: true, storageKey: true, sizeBytes: true, url: true },
+    });
+    for (const row of expiringVoiceNotes) {
+      try {
+        await this.prisma.wallPost.updateMany({ where: { voiceUrl: row.url }, data: { voiceUrl: null } });
+      } catch (err) {
+        this.logger.warn(`expired voice ${row.id} kept — could not detach it: ${String(err)}`);
+        continue;
+      }
+      await remove(row);
+      await this.prisma.media.delete({ where: { id: row.id } });
+      expiredVoiceNotes += 1;
     }
 
     // (2b) news covers of stories that fell out of the one-week publishing
@@ -567,7 +598,7 @@ export class UploadsService implements OnModuleInit {
       }
     }
 
-    return { removedFiles, freedBytes, thumbsCreated, expiredImages };
+    return { removedFiles, freedBytes, thumbsCreated, expiredImages, expiredVoiceNotes };
   }
 
   /** Usage numbers for the admin storage panel. */
