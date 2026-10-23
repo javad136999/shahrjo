@@ -97,3 +97,23 @@ describe('tourism coverage for all supported cities', () => {
     }
   });
 });
+
+
+describe('Isfahan tourism completeness', () => {
+  it('includes a broad set of distinct, located city attractions', () => {
+    const spots = getTourismSpots({ slug: 'isfahan' } as City);
+    expect(spots).toHaveLength(14);
+    expect(new Set(spots.map((spot) => spot.id)).size).toBe(spots.length);
+    for (const name of ['میدان نقش جهان', 'کاخ عالی‌قاپو', 'مسجد شیخ لطف‌الله', 'پل خواجو', 'کلیسای وانک', 'منارجنبان']) {
+      expect(spots.some((spot) => spot.name === name)).toBe(true);
+    }
+    for (const spot of spots) {
+      expect(Number.isFinite(spot.latitude)).toBe(true);
+      expect(Number.isFinite(spot.longitude)).toBe(true);
+      expect(spot.latitude).toBeGreaterThan(32.4);
+      expect(spot.latitude).toBeLessThan(32.9);
+      expect(spot.longitude).toBeGreaterThan(51.3);
+      expect(spot.longitude).toBeLessThan(52.0);
+    }
+  });
+});

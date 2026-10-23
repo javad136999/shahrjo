@@ -976,18 +976,20 @@ export function WallView({ city }: WallViewProps) {
           <span aria-hidden="true">🏠</span>
           <span className="wall-homebtn__label">خانهٔ شهر</span>
         </Link>
-        <span className="wall-room__avatar" aria-hidden>
-          💬
-        </span>
-        <div className="wall-room__copy">
-          <small className="wall-room__eyebrow">گفت‌وگوی زندهٔ شهر</small>
-          <strong className="wall-room__name" data-testid="wall-room-name">
-            {feed.room.name}
-          </strong>
-          <small className="wall-room__meta" data-testid="wall-room-members">
-            {feed.room.memberCount.toLocaleString('fa-IR')} عضو ·{' '}
-            {feed.room.messageCount.toLocaleString('fa-IR')} پیام
-          </small>
+        <div className="wall-room__identity">
+          <span className="wall-room__avatar" aria-hidden>
+            💬
+          </span>
+          <div className="wall-room__copy">
+            <small className="wall-room__eyebrow">گفت‌وگوی زندهٔ شهر</small>
+            <strong className="wall-room__name" data-testid="wall-room-name">
+              {feed.room.name}
+            </strong>
+            <small className="wall-room__meta" data-testid="wall-room-members">
+              {feed.room.memberCount.toLocaleString('fa-IR')} عضو ·{' '}
+              {feed.room.messageCount.toLocaleString('fa-IR')} پیام
+            </small>
+          </div>
         </div>
         <nav className="wall-cats" aria-label="دسته‌بندی آگهی‌ها" data-testid="wall-cats">
           {cats.map((c) => (

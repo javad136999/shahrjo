@@ -8736,3 +8736,71 @@ button.pill {
   .ad-form__extras-grid { grid-template-columns: 1fr; }
   .ad-form__extras-grid .ad-form__field--wide { grid-column: auto; }
 }
+
+
+/* Room header: keep the home link, room identity and shortcuts in separate
+   tracks so the icon row can never collide with the city title. */
+.wall--jam-theme .wall-room {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, auto);
+  grid-template-areas: "home identity cats";
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.wall--jam-theme .wall-homebtn {
+  grid-area: home;
+  min-height: 40px;
+  padding-inline: 13px;
+  border-radius: 14px;
+  color: #176443;
+  font-weight: 850;
+}
+.wall--jam-theme .wall-room__identity {
+  grid-area: identity;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.wall--jam-theme .wall-room__copy { min-width: 0; }
+.wall--jam-theme .wall-room__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wall--jam-theme .wall-cats {
+  grid-area: cats;
+  width: max-content;
+  max-width: min(42vw, 440px);
+  flex-wrap: nowrap;
+  overscroll-behavior-inline: contain;
+}
+.wall--jam-theme .wall-cat { flex: 0 0 auto; }
+@media (max-width: 720px) {
+  .wall--jam-theme .wall-room {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "home identity" "cats cats";
+    gap: 9px 10px;
+    padding: 10px;
+  }
+  .wall--jam-theme .wall-homebtn { min-height: 36px; padding-inline: 10px; }
+  .wall--jam-theme .wall-room__identity { gap: 8px; }
+  .wall--jam-theme .wall-room__avatar { width: 36px; height: 36px; }
+  .wall--jam-theme .wall-room__name { font-size: 14px; }
+  .wall--jam-theme .wall-room__meta { font-size: 10.5px; }
+  .wall--jam-theme .wall-cats {
+    width: 100%;
+    max-width: 100%;
+    padding: 2px 0 4px;
+  }
+}
+@media (max-width: 360px) {
+  .wall--jam-theme .wall-homebtn__label { display: none; }
+  .wall--jam-theme .wall-homebtn { width: 36px; padding: 0; }
+}
+
+/* Business icons are map markers, not labels; reduce their visual footprint. */
+.jam-map-marker { width: 18px; height: 18px; }
+.jam-map-marker__body { font-size: 13px; }
+.jam-map-marker__pulse { inset: -3px; }

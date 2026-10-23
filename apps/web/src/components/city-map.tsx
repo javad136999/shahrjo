@@ -268,8 +268,8 @@ export function CityMap({ data }: CityMapProps) {
             `<span class="jam-map-marker__pulse"></span>` +
             `<span class="jam-map-marker__body" aria-hidden="true">${glyph}</span>` +
             `</span>`,
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
         });
         const popup =
           `<div class="map-popup">` +
