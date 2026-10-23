@@ -2985,6 +2985,33 @@ a.my-ads__item:hover {
   text-decoration: underline;
 }
 
+.map-popup--amenity {
+  min-width: 0;
+  max-width: 210px;
+}
+.city-amenity-marker-root {
+  background: transparent;
+  border: 0;
+}
+.city-amenity-marker {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border: 1px solid #d7dde1;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: none;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  transition: none;
+  animation: none;
+}
+.city-amenity-marker--hospital { color: #b33c4a; }
+.city-amenity-marker--clinic { color: #267866; }
+.city-amenity-marker--parking { color: #4a6681; }
+
 @media (max-width: 640px) {
   .city-map__canvas {
     height: 320px;

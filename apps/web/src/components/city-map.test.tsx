@@ -114,6 +114,41 @@ describe('CityMap', () => {
     expect(instance.remove).toHaveBeenCalled();
   });
 
+  it('shows small, non-pulsing amenity markers with only a name and Google Maps route', async () => {
+    const leaflet = require('leaflet');
+    const mapData: CityMapData = {
+      ...data,
+      amenities: [
+        { id: 'node/1', kind: 'hospital', name: 'بیمارستان نمونه', latitude: 27.832, longitude: 52.322 },
+        { id: 'way/2', kind: 'clinic', name: 'درمانگاه نمونه', latitude: 27.833, longitude: 52.323 },
+        { id: 'node/3', kind: 'parking', name: 'پارکینگ نمونه', latitude: 27.834, longitude: 52.324 },
+      ],
+    };
+    render(<CityMap data={mapData} />);
+    await waitFor(() => expect(leaflet.marker).toHaveBeenCalledTimes(5));
+
+    const amenityIcons = leaflet.divIcon.mock.calls.slice(0, 3).map(([options]: [{ iconSize: number[]; className: string; html: string }]) => options);
+    expect(amenityIcons).toHaveLength(3);
+    for (const icon of amenityIcons) {
+      expect(icon.iconSize).toEqual([16, 16]);
+      expect(icon.className).toBe('city-amenity-marker-root');
+      expect(icon.html).toContain('city-amenity-marker');
+      expect(icon.html).not.toMatch(/pulse|glow|highlight|jam-map-marker/i);
+    }
+
+    const popups = leaflet.marker.mock.results.slice(0, 3).map((result: { value: { bindPopup: { mock: { calls: unknown[][] } } } }) => result.value.bindPopup.mock.calls[0][0] as string);
+    expect(popups[0]).toContain('بیمارستان نمونه');
+    expect(popups[0]).toContain('https://www.google.com/maps/dir/?api=1&destination=27.832%2C52.322');
+    expect(popups[1]).toContain('درمانگاه نمونه');
+    expect(popups[2]).toContain('پارکینگ نمونه');
+    for (const popup of popups) {
+      expect(popup).toContain('مسیریابی');
+      expect(popup.match(/<strong/g)).toHaveLength(1);
+      expect(popup.match(/<a /g)).toHaveLength(1);
+      expect(popup).not.toContain('map-popup__cat');
+    }
+  });
+
   it('ignores a legacy pin outside the configured city so it cannot distort the frame', async () => {
     const leaflet = require('leaflet');
     const withForeignPin: CityMapData = {

@@ -3,6 +3,89 @@ import { Prisma } from '@prisma/client';
 import { isCoordinateInCity } from '../businesses/businesses.service';
 import { PrismaService } from '../prisma/prisma.service';
 
+const OVERPASS_INTERPRETER_URL = 'https://overpass.private.coffee/api/interpreter';
+const CITY_MAP_AMENITY_CACHE_MS = 6 * 60 * 60 * 1000;
+const CITY_MAP_AMENITY_ERROR_CACHE_MS = 60 * 1000;
+const CITY_MAP_AMENITY_TIMEOUT_MS = 8_000;
+
+export type CityMapAmenityKind = 'hospital' | 'clinic' | 'parking';
+
+export interface CityMapAmenity {
+  id: string;
+  kind: CityMapAmenityKind;
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
+interface OverpassAmenityElement {
+  type?: unknown;
+  id?: unknown;
+  lat?: unknown;
+  lon?: unknown;
+  center?: { lat?: unknown; lon?: unknown };
+  tags?: Record<string, unknown>;
+}
+
+interface MapAmenityCity {
+  slug: string;
+  latitude: number | null;
+  longitude: number | null;
+  boundary: unknown;
+}
+
+function collectBoundaryPositions(value: unknown, positions: [number, number][]): void {
+  if (Array.isArray(value)) {
+    if (typeof value[0] === 'number' && typeof value[1] === 'number') {
+      positions.push([value[0], value[1]]);
+      return;
+    }
+    for (const child of value) collectBoundaryPositions(child, positions);
+    return;
+  }
+  if (typeof value === 'object' && value !== null) {
+    for (const child of Object.values(value)) collectBoundaryPositions(child, positions);
+  }
+}
+
+/** Overpass bbox order is south, west, north, east; match the city pin fallback. */
+function cityMapAmenityBbox(city: MapAmenityCity): string | null {
+  const positions: [number, number][] = [];
+  collectBoundaryPositions(city.boundary, positions);
+
+  let south: number;
+  let west: number;
+  let north: number;
+  let east: number;
+  if (positions.length >= 3) {
+    const latitudes = positions.map(([, lat]) => lat);
+    const longitudes = positions.map(([lng]) => lng);
+    south = Math.min(...latitudes);
+    west = Math.min(...longitudes);
+    north = Math.max(...latitudes);
+    east = Math.max(...longitudes);
+  } else if (city.latitude !== null && city.longitude !== null) {
+    south = city.latitude - 0.15;
+    west = city.longitude - 0.15;
+    north = city.latitude + 0.15;
+    east = city.longitude + 0.15;
+  } else {
+    return null;
+  }
+
+  if (![south, west, north, east].every(Number.isFinite) || south >= north || west >= east) return null;
+  return [south, west, north, east].map((coordinate) => coordinate.toFixed(6)).join(',');
+}
+
+function cityMapAmenityKind(tags: Record<string, unknown>): CityMapAmenityKind | null {
+  const amenity = typeof tags.amenity === 'string' ? tags.amenity.toLowerCase() : '';
+  const healthcare = typeof tags.healthcare === 'string' ? tags.healthcare.toLowerCase() : '';
+  if (amenity === 'parking') return 'parking';
+  if (amenity === 'hospital' || healthcare === 'hospital') return 'hospital';
+  if (amenity === 'clinic' || healthcare === 'clinic') return 'clinic';
+  return null;
+}
+
 export const DEFAULT_CONTENT_LIMIT = 12;
 
 /**
@@ -97,6 +180,7 @@ export interface CityMapData {
     logoUrl: string | null;
     category: { name: string; slug: string; icon: string | null; color: string | null };
   }>;
+  amenities: CityMapAmenity[];
 }
 
 export interface NewsDetail extends NewsItem {
@@ -150,6 +234,7 @@ export interface BusinessDetail {
 @Injectable()
 export class ContentService {
   constructor(private readonly prisma: PrismaService) {}
+  private readonly cityMapAmenityCache = new Map<string, { expiresAt: number; promise: Promise<CityMapAmenity[]> }>();
 
   /**
    * The one-week window filter. `publishedAt` is the timestamp that counts;
@@ -344,7 +429,7 @@ export class ContentService {
     });
     if (!city) throw new NotFoundException('شهر یافت نشد');
 
-    const businesses = await this.prisma.business.findMany({
+    const businessesPromise = this.prisma.business.findMany({
       where: { cityId: city.id, status: 'APPROVED', latitude: { not: null }, longitude: { not: null } },
       orderBy: [{ showcasePriority: 'asc' }, { rating: 'desc' }],
       select: {
@@ -359,6 +444,8 @@ export class ContentService {
       },
     });
 
+    const [businesses, amenities] = await Promise.all([businessesPromise, this.cityMapAmenities(city)]);
+
     return {
       city,
       // Legacy rows can predate city pin validation, and direct DB/imported
@@ -371,7 +458,95 @@ export class ContentService {
         latitude: b.latitude as number,
         longitude: b.longitude as number,
         })),
+      amenities,
     };
+  }
+
+  private cityMapAmenities(city: MapAmenityCity): Promise<CityMapAmenity[]> {
+    const bbox = cityMapAmenityBbox(city);
+    if (!bbox) return Promise.resolve([]);
+
+    const key = `${city.slug}:${bbox}`;
+    const cached = this.cityMapAmenityCache.get(key);
+    if (cached && cached.expiresAt > Date.now()) return cached.promise;
+
+    const promise = this.fetchCityMapAmenities(city, bbox)
+      .then((amenities) => {
+        this.cityMapAmenityCache.set(key, {
+          expiresAt: Date.now() + CITY_MAP_AMENITY_CACHE_MS,
+          promise: Promise.resolve(amenities),
+        });
+        return amenities;
+      })
+      .catch(() => {
+        const empty = Promise.resolve([] as CityMapAmenity[]);
+        this.cityMapAmenityCache.set(key, {
+          expiresAt: Date.now() + CITY_MAP_AMENITY_ERROR_CACHE_MS,
+          promise: empty,
+        });
+        return empty;
+      });
+
+    // Keep the in-flight request so simultaneous visitors share one Overpass query.
+    this.cityMapAmenityCache.set(key, {
+      expiresAt: Date.now() + CITY_MAP_AMENITY_CACHE_MS,
+      promise,
+    });
+    return promise;
+  }
+
+  private async fetchCityMapAmenities(city: MapAmenityCity, bbox: string): Promise<CityMapAmenity[]> {
+    const query =
+      `[out:json][timeout:6][maxsize:12000000];\n` +
+      `(\n` +
+      `  nwr["amenity"~"^(hospital|clinic|parking)$"](${bbox});\n` +
+      `  nwr["healthcare"~"^(hospital|clinic)$"](${bbox});\n` +
+      `);\n` +
+      `out center tags;`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), CITY_MAP_AMENITY_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(OVERPASS_INTERPRETER_URL, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'user-agent': 'ShahrJo/1.0 (+https://shahrju.ir)',
+        },
+        body: new URLSearchParams({ data: query }).toString(),
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(`Overpass returned HTTP ${response.status}`);
+
+      const payload = (await response.json()) as { elements?: OverpassAmenityElement[] };
+      if (!Array.isArray(payload.elements)) return [];
+
+      const amenities: CityMapAmenity[] = [];
+      for (const element of payload.elements) {
+        const tags = typeof element.tags === 'object' && element.tags !== null ? element.tags : {};
+        const kind = cityMapAmenityKind(tags);
+        if (!kind) continue;
+
+        const latitude = typeof element.center?.lat === 'number' ? element.center.lat :
+          typeof element.lat === 'number' ? element.lat : Number.NaN;
+        const longitude = typeof element.center?.lon === 'number' ? element.center.lon :
+          typeof element.lon === 'number' ? element.lon : Number.NaN;
+        if (!isCoordinateInCity(city, latitude, longitude)) continue;
+
+        const fallbackName = kind === 'hospital' ? 'بیمارستان' : kind === 'clinic' ? 'درمانگاه' : 'پارکینگ';
+        const name = [tags['name:fa'], tags.name, tags['name:en']].find(
+          (value): value is string => typeof value === 'string' && value.trim().length > 0,
+        )?.trim() ?? fallbackName;
+        const elementType = element.type === 'way' || element.type === 'relation' ? element.type : 'node';
+        const id = typeof element.id === 'number' ? `${elementType}/${element.id}` : `${elementType}/${latitude}/${longitude}`;
+        amenities.push({ id, kind, name, latitude, longitude });
+      }
+
+      return amenities;
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   /** A single published news article + view counting (Phase 6). */
