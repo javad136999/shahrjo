@@ -606,27 +606,6 @@
     min-height: 36px;
     padding-inline: 9px;
   }
-
-  .city-tourism-cta {
-    display: flex;
-    justify-content: center;
-    min-width: 0;
-    margin: 0 0 8px;
-  }
-
-  .city-tourism-cta .btn {
-    display: inline-flex;
-    width: fit-content;
-    max-width: 100%;
-    min-height: 34px;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    padding: 6px 10px;
-    font-size: clamp(10px, 3.2vw, 12px);
-    line-height: 1.3;
-    white-space: nowrap;
-  }
 }
 
 @media (max-width: 360px) {
@@ -636,5 +615,4 @@
   .site-header .header-pills > .pill .pill__label { font-size: 9px; }
   .site-header .brand { gap: 3px; font-size: 14px; }
   .site-header .brand-cityname { max-width: 24vw; }
-  .city-tourism-cta .btn { padding-inline: 8px; font-size: 10px; }
 }
