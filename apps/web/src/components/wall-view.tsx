@@ -368,7 +368,7 @@ export function WallView({ city }: WallViewProps) {
     const next = `${text.slice(0, start)}${emoji}${text.slice(end)}`;
     setText(next);
     setStickerOpen(false);
-    requestAnimationFrame(() => {
+    queueMicrotask(() => {
       const target = inputRef.current;
       if (!target) return;
       const caret = start + emoji.length;
@@ -806,16 +806,6 @@ export function WallView({ city }: WallViewProps) {
             </div>
           ) : (
             <>
-              {sticker ? (
-                <p className="wall-sticker" data-testid={`wall-sticker-post-${post.id}`}>
-                  <span role="img" aria-label={`استیکر ${sticker}`}>
-                    {sticker}
-                  </span>
-                </p>
-              ) : (
-                post.content && <p className="wall-post__text">{post.content}</p>
-              )}
-
               {post.imageUrl && (
                 // feed shows the 400px thumbnail; the full copy lives in storage
                 // eslint-disable-next-line @next/next/no-img-element -- remote media
@@ -826,6 +816,16 @@ export function WallView({ city }: WallViewProps) {
                   loading="lazy"
                   onError={thumbFallback(post.imageUrl)}
                 />
+              )}
+
+              {sticker ? (
+                <p className="wall-sticker" data-testid={`wall-sticker-post-${post.id}`}>
+                  <span role="img" aria-label={`استیکر ${sticker}`}>
+                    {sticker}
+                  </span>
+                </p>
+              ) : (
+                post.content && <p className="wall-post__text">{post.content}</p>
               )}
 
               {post.voiceUrl && (

@@ -348,6 +348,38 @@ describe('WallView', () => {
     await waitFor(() => expect(screen.queryByTestId('wall-image-chip')).toBeNull());
   });
 
+  it('sends an optional photo caption and renders the photo above its text', async () => {
+    mockUpload.mockResolvedValue({ id: 55, url: '/api/v1/files/media/photo.webp' });
+    mockCreate.mockResolvedValue(makePost({ id: 15, imageUrl: '/api/v1/files/media/photo.webp', content: 'کپشن عکس' }));
+    mockGetWall.mockResolvedValueOnce(feed).mockResolvedValueOnce({
+      ...feed,
+      posts: [makePost({ id: 15, imageUrl: '/api/v1/files/media/photo.webp', content: 'کپشن عکس' })],
+      pinned: null,
+    });
+    render(<WallView city={city} />);
+    const picker = await screen.findByTestId('wall-image');
+    fireEvent.change(picker, { target: { files: [new File(['x'], 'photo.png', { type: 'image/png' })] } });
+    fireEvent.change(screen.getByTestId('wall-input'), { target: { value: 'کپشن عکس' } });
+    fireEvent.click(screen.getByTestId('wall-send'));
+
+    await waitFor(() =>
+      expect(mockCreate).toHaveBeenCalledWith({
+        cityId: 1,
+        content: 'کپشن عکس',
+        replyToId: undefined,
+        imageIds: [55],
+        voiceMediaId: undefined,
+      }),
+    );
+    const post = await screen.findByTestId('wall-post-15');
+    const body = post.querySelector('.wall-post__body');
+    const image = body?.querySelector('.wall-post__image');
+    const caption = body?.querySelector('.wall-post__text');
+    expect(image).toBeTruthy();
+    expect(caption).toBeTruthy();
+    expect(image!.compareDocumentPosition(caption!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('shows the error with a retry button when the feed fails (no endless loading)', async () => {
     mockGetWall.mockRejectedValue(new Error('خطای داخلی سرور'));
     render(<WallView city={city} />);
