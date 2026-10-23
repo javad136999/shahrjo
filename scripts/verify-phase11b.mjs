@@ -226,7 +226,7 @@ for (const marker of [
   'wall-bar__emoji',
   'wall-stickers',
   'wall-tool--inline',
-  'className="wall-adbtn"',
+  'className="wall-adbtn',
   'ثبت آگهی فروش',
 ]) {
   if (!wallView.includes(marker)) { console.error(`WEB wall: missing ${marker}`); fail++; }
