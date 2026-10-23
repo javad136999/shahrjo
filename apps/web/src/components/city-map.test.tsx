@@ -298,6 +298,29 @@ describe('CityMap', () => {
     expect(screen.getByTestId('map-cat-option-cafes')).toHaveTextContent('کافه');
   });
 
+  it('starts on the auto-gallery filter when opened from the city-wall shortcut', async () => {
+    const previousUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    window.history.replaceState({}, '', '/city/sample-city?businessCategory=car_dealer#map');
+    try {
+      render(<CityMap data={{
+        ...data,
+        businesses: [...data.businesses, {
+          id: 42,
+          name: 'اتوگالری نمونه',
+          slug: 'sample-car-dealer',
+          latitude: 27.832,
+          longitude: 52.322,
+          subscriptionTier: 'FREE',
+          logoUrl: null,
+          category: { name: 'اتوگالری و خرید و فروش خودرو', slug: 'car_dealer', icon: '🚗', color: null },
+        }],
+      }} />);
+      await waitFor(() => expect(screen.getByTestId('map-catbtn')).toHaveTextContent('اتوگالری'));
+    } finally {
+      window.history.replaceState({}, '', previousUrl || '/');
+    }
+  });
+
   it('filters markers to the chosen category and re-zooms onto them', async () => {
     const leaflet = require('leaflet');
     render(<CityMap data={data} />);

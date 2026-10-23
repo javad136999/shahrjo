@@ -119,7 +119,12 @@ describe('WallView', () => {
     // the single 🏠 entry back to that city's home page (the composer dock has
     // none any more: it is a WhatsApp-style bar now)
     expect(screen.getByTestId('wall-home-top')).toHaveAttribute('href', '/city/sample-city');
+    expect(screen.getByTestId('wall-home-top')).toHaveTextContent('خانهٔ شهر');
     expect(screen.queryByTestId('wall-home-bottom')).toBeNull();
+    const autogallery = screen.getByTestId('wall-cat-car_dealer');
+    expect(autogallery).toHaveAttribute('href', '/city/sample-city?businessCategory=car_dealer#map');
+    expect(autogallery).toHaveTextContent('اتوگالری');
+    expect(autogallery).toHaveAttribute('aria-label', 'اتوگالری‌های شهر شهر نمونه');
   });
 
   it('renders post images from the thumbnail variant (lists never fetch the full file)', async () => {

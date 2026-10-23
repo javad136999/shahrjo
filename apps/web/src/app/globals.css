@@ -4874,20 +4874,28 @@ body.wall-screen .wall-composer {
   border-bottom: 0;
 }
 
-/* Home entry in the room bar (icon-only; the bottom composer carries the pill). */
+/* Distinguish the city-home entry from the real-estate category icon. */
 .wall-homebtn {
-  display: grid;
-  place-items: center;
-  width: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 36px;
   height: 36px;
+  padding: 0 9px;
   flex-shrink: 0;
   border: 1px solid rgb(14 122 95 / 25%);
-  border-radius: 50%;
+  border-radius: 999px;
   background: #fff;
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1;
   box-shadow: 0 4px 12px -6px rgb(21 59 45 / 45%);
   transition: transform 0.15s ease, background 0.15s ease;
+}
+.wall-homebtn__label {
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .wall-homebtn:hover {

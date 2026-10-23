@@ -108,6 +108,12 @@ export function CityMap({ data }: CityMapProps) {
   const [catOpen, setCatOpen] = useState(false);
   const [activeCat, setActiveCat] = useState<string | null>(null); // category slug
 
+  // The city-wall shortcut opens the city map with the auto-gallery filter.
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('businessCategory');
+    if (requested === 'car_dealer') setActiveCat(requested);
+  }, []);
+
   // Reject broken or out-of-city legacy pins before they can affect bounds,
   // markers, category counts or the initial city frame.
   const validBusinesses = useMemo(
@@ -125,6 +131,9 @@ export function CityMap({ data }: CityMapProps) {
           icon: b.category.icon,
         });
       }
+    }
+    if (!bySlug.has('car_dealer')) {
+      bySlug.set('car_dealer', { slug: 'car_dealer', name: 'اتوگالری', icon: '🚘' });
     }
     return [...bySlug.values()];
   }, [validBusinesses]);

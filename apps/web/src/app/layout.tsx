@@ -6,7 +6,6 @@ import { HeaderCity } from '@/components/header-city';
 import { HeaderPills } from '@/components/header-pills';
 import { SiteChrome } from '@/components/site-chrome';
 import { VisitBeacon } from '@/components/visit-beacon';
-import { WebInstallButton } from '@/components/web-install-button';
 import './globals.css';
 import './mobile-home-fixes.css';
 import { SITE_URL } from '@/lib/site';
@@ -133,7 +132,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </footer>
           <BottomNav />
         </SiteChrome>
-        <WebInstallButton />
         <VisitBeacon />
       </body>
     </html>

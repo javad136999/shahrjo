@@ -974,7 +974,8 @@ export function WallView({ city }: WallViewProps) {
           aria-label={`صفحه اصلی شهر ${city.name}`}
           title={`صفحه اصلی شهر ${city.name}`}
         >
-          🏠
+          <span aria-hidden="true">🏠</span>
+          <span className="wall-homebtn__label">خانهٔ شهر</span>
         </Link>
         <span className="wall-room__avatar" aria-hidden>
           💬
@@ -1003,6 +1004,16 @@ export function WallView({ city }: WallViewProps) {
               <small>{c.name}</small>
             </Link>
           ))}
+          <Link
+            href={`/city/${city.slug}?businessCategory=car_dealer#map`}
+            className="wall-cat wall-cat--business"
+            aria-label={`اتوگالری‌های شهر ${city.name}`}
+            data-testid="wall-cat-car_dealer"
+            title={`اتوگالری‌های شهر ${city.name}`}
+          >
+            <span aria-hidden="true">🚘</span>
+            <small>اتوگالری</small>
+          </Link>
         </nav>
       </header>
 

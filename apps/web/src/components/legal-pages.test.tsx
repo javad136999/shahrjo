@@ -77,6 +77,7 @@ describe('صفحه شرایط استفاده', () => {
 describe('فوتر سایت', () => {
   it('دقیقاً یک پیوند برای هر یک از حریم خصوصی، شرایط استفاده و تماس با ما دارد', () => {
     render(<RootLayout><div /></RootLayout> as ReactElement);
+    expect(screen.queryByRole('button', { name: /نصب نسخه وب/ })).not.toBeInTheDocument();
     const footer = document.querySelector('footer');
     expect(footer).toBeTruthy();
     const f = within(footer as HTMLElement);
