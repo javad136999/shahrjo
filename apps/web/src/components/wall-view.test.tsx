@@ -118,11 +118,11 @@ describe('WallView', () => {
     expect(screen.queryByTestId('wall-cat-market')).toBeNull(); // only the first six are shown
     expect(screen.queryByTestId('wall-change-city')).toBeNull();
     expect(screen.queryByTestId('wall-back-city')).toBeNull();
-    // the site header/nav are gone in the room → the room's own top bar carries
-    // the single 🏠 entry back to that city's home page (the composer dock has
-    // none any more: it is a WhatsApp-style bar now)
-    expect(screen.getByTestId('wall-home-top')).toHaveAttribute('href', '/city/sample-city');
-    expect(screen.getByTestId('wall-home-top')).toHaveTextContent('خانهٔ شهر');
+    // the room header keeps a minimal arrow back to the city page, with no home tile.
+    expect(screen.getByTestId('wall-back-top')).toHaveAttribute('href', '/city/sample-city');
+    expect(screen.getByTestId('wall-back-top')).toHaveAccessibleName('بازگشت به صفحهٔ شهر شهر نمونه');
+    expect(screen.getByTestId('wall-back-top').querySelector('svg')).toBeInTheDocument();
+    expect(screen.getByTestId('wall-back-top')).not.toHaveTextContent('خانهٔ شهر');
     expect(screen.queryByTestId('wall-home-bottom')).toBeNull();
     // The map shortcut is not shown for a wall with no published ad.
     expect(screen.queryByTestId('wall-cat-car_dealer')).toBeNull();
@@ -625,6 +625,7 @@ describe('WallView', () => {
     expect(bar).toHaveAttribute('href', '/ad/42');
     expect(bar).toHaveTextContent('دیوار شهر');
     expect(bar).toHaveTextContent('ویلای شمال');
+    expect(bar.querySelector('.wall-pinnedbar__copy small')).toHaveTextContent('نزدیک ساحل');
     expect(bar.className).toContain('wall-pinnedbar');
     // the heavyweight pinned card is not rendered for an ad
     expect(screen.queryByTestId('wall-pinned')).not.toBeInTheDocument();

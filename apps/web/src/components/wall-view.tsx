@@ -965,16 +965,17 @@ export function WallView({ city }: WallViewProps) {
   return (
     <div className="wall wall--jam-theme" data-testid="wall">
       <header className="wall-room" data-testid="wall-room">
-        {/* The site header/nav are hidden in the room — the city home lives here. */}
+        {/* The site header/nav are hidden in the room — keep a compact route back to the city. */}
         <Link
           href={`/city/${city.slug}`}
-          className="wall-homebtn"
-          data-testid="wall-home-top"
-          aria-label={`صفحه اصلی شهر ${city.name}`}
-          title={`صفحه اصلی شهر ${city.name}`}
+          className="wall-backbtn"
+          data-testid="wall-back-top"
+          aria-label={`بازگشت به صفحهٔ شهر ${city.name}`}
+          title={`بازگشت به صفحهٔ شهر ${city.name}`}
         >
-          <span aria-hidden="true">🏠</span>
-          <span className="wall-homebtn__label">خانهٔ شهر</span>
+          <svg className="wall-backglyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
         </Link>
         <div className="wall-room__identity">
           <div className="wall-room__copy">
@@ -1030,7 +1031,10 @@ export function WallView({ city }: WallViewProps) {
           </span>
           <span className="wall-pinnedbar__copy">
             <b>دیوار شهر</b>
-            <small>{feed.pinned.ad.title}</small>
+            <small>
+              {feed.pinned.ad.title}
+              {feed.pinned.ad.description.trim() ? ` · ${feed.pinned.ad.description.trim()}` : ''}
+            </small>
           </span>
           <span className="wall-pinnedbar__cta" aria-hidden>
             ↗

@@ -15,6 +15,8 @@ jest.mock('leaflet', () => {
     invalidateSize: jest.fn(),
     stop: jest.fn(),
     remove: jest.fn(),
+    on: jest.fn(),
+    closePopup: jest.fn(),
   };
   return {
     map: jest.fn(() => mapInstance),
@@ -60,7 +62,17 @@ describe('TourismMap', () => {
     const popup = leaflet.marker.mock.results[1].value.bindPopup.mock.calls[0][0] as string;
     expect(popup).toContain('&lt;script&gt;');
     expect(popup).not.toContain('<script>');
-    expect(popup).toContain('https://www.openstreetmap.org/?mlat=37.79');
-    expect(leaflet.map.mock.results[0].value.remove).toHaveBeenCalledTimes(0);
+    expect(popup).toContain('https://www.google.com/maps/dir/?api=1&destination=37.79%2C46.25');
+    expect(popup).toContain('مسیریابی با گوگل‌مپ');
+    expect(popup).not.toContain('OpenStreetMap');
+
+    const map = leaflet.map.mock.results[0].value;
+    const popupOptions = leaflet.marker.mock.results[1].value.bindPopup.mock.calls[0][1];
+    expect(popupOptions).toMatchObject({ maxWidth: 260, maxHeight: 168, closeOnClick: true });
+    const mapClick = map.on.mock.calls.find(([event]: [string]) => event === 'click')?.[1];
+    expect(mapClick).toEqual(expect.any(Function));
+    mapClick();
+    expect(map.closePopup).toHaveBeenCalledTimes(1);
+    expect(map.remove).toHaveBeenCalledTimes(0);
   });
 });

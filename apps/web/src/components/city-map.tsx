@@ -526,17 +526,14 @@ export function CityMap({ data }: CityMapProps) {
           <button
             type="button"
             className={`map-catbtn${catOpen ? ' is-open' : ''}`}
-            aria-label="دسته‌بندی کسب‌وکارها"
+            aria-label="دسته‌بندی‌ها"
             aria-expanded={catOpen}
             data-testid="map-catbtn"
             onClick={() => setCatOpen((v) => !v)}
           >
-            <span className="map-catbtn__icon" aria-hidden>
-              ✨
-            </span>
             <span className="map-catbtn__copy">
-              <b>{activeMeta ? activeMeta.name : 'دسته‌بندی کسب‌وکارها'}</b>
-              <small>{activeMeta ? 'فیلتر فعال است' : 'کافه، رستوران، باشگاه و…'}</small>
+              <b>دسته‌بندی‌ها</b>
+              <small>{activeMeta ? activeMeta.name : 'انتخاب نوع کسب‌وکار'}</small>
             </span>
             <span className="map-catbtn__chev" aria-hidden>
               ⌄

@@ -290,8 +290,8 @@ describe('CityMap', () => {
   it('shows the category filter with its menu (JamCity-style)', async () => {
     render(<CityMap data={data} />);
     const btn = screen.getByTestId('map-catbtn');
-    expect(btn).toHaveAttribute('aria-label', 'دسته‌بندی کسب‌وکارها');
-    expect(btn).toHaveTextContent('دسته‌بندی کسب‌وکارها');
+    expect(btn).toHaveAttribute('aria-label', 'دسته‌بندی‌ها');
+    expect(btn).toHaveTextContent('دسته‌بندی‌ها');
     // menu closed initially
     expect(screen.queryByTestId('map-catmenu')).not.toBeInTheDocument();
     fireEvent.click(btn);
@@ -397,7 +397,7 @@ describe('CityMap', () => {
       const lastCalls = leaflet.marker.mock.calls.slice(-2);
       expect(lastCalls).toHaveLength(2);
     });
-    expect(screen.getByTestId('map-catbtn')).toHaveTextContent('دسته‌بندی کسب‌وکارها');
+    expect(screen.getByTestId('map-catbtn')).toHaveTextContent('دسته‌بندی‌ها');
   });
 
   it('locks the frame: hard maxBounds hugging the outline + wheel zoom inside it', async () => {

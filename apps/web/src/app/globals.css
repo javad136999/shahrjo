@@ -3601,17 +3601,6 @@ a.my-ads__item:hover {
   transform: translateY(-1px);
 }
 
-.map-catbtn__icon {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 11px;
-  background: linear-gradient(145deg, #eafff2, #fff4d9);
-  font-size: 16px;
-  box-shadow: inset 0 0 0 1px rgb(37 125 77 / 8%);
-}
-
 .map-catbtn__copy {
   display: flex;
   min-width: 0;
@@ -4878,34 +4867,39 @@ body.wall-screen .wall-composer {
   border-bottom: 0;
 }
 
-/* Distinguish the city-home entry from the real-estate category icon. */
-.wall-homebtn {
+/* Compact arrow entry from the city wall back to the city page. */
+.wall-backbtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  min-width: 36px;
-  height: 36px;
-  padding: 0 9px;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0;
   flex-shrink: 0;
-  border: 1px solid rgb(14 122 95 / 25%);
-  border-radius: 999px;
-  background: #fff;
-  font-size: 15px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #315746;
   line-height: 1;
-  box-shadow: 0 4px 12px -6px rgb(21 59 45 / 45%);
-  transition: transform 0.15s ease, background 0.15s ease;
+  box-shadow: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, color 0.15s ease;
 }
-.wall-homebtn__label {
-  font-size: 10px;
-  font-weight: 800;
-  white-space: nowrap;
+.wall-backglyph {
+  display: block;
+  width: 22px;
+  height: 22px;
 }
 
-.wall-homebtn:hover {
+.wall-backbtn:hover {
   text-decoration: none;
-  background: var(--brand-soft);
-  transform: translateY(-1px);
+  color: #147849;
+  transform: translateX(2px);
+}
+.wall-backbtn:focus-visible {
+  outline: 2px solid #15976a;
+  outline-offset: 2px;
 }
 
 /* ============ City wall v2 — chat-room restyle ============
@@ -6413,13 +6407,13 @@ button.pill {
   color: #174c37;
   letter-spacing: -.02em;
 }
-.wall--jam-theme .wall-homebtn,
 .wall--jam-theme .wall-room__actions .pill {
   border-color: rgb(21 126 87 / 16%);
   background: #f4f9f5;
   color: #315746;
   box-shadow: 0 3px 10px rgb(24 75 52 / 4%);
 }
+.wall--jam-theme .wall-backbtn { border: 0; background: transparent; color: #315746; box-shadow: none; }
 .wall--jam-theme .wall-cats {
   scrollbar-color: #c5ddce transparent;
 }
@@ -6490,6 +6484,7 @@ button.pill {
   background: #fff0c8;
   color: #9c6a1c;
 }
+.wall--jam-theme .wall-pinnedbar__copy small { color: #b42345; }
 .wall--jam-theme .wall-adcard,
 .wall--jam-theme .wall-promocard {
   border-color: rgb(21 126 87 / 14%);
@@ -7933,12 +7928,19 @@ button.pill {
 .tourism-map-marker-root { background: transparent; border: 0; }
 .tourism-map-marker { display: grid; width: 34px; height: 34px; place-items: center; background: var(--tourism-marker-accent, var(--brand)); border: 2px solid #fff; border-radius: 50% 50% 50% 8px; box-shadow: 0 4px 12px rgb(22 46 34 / 34%); transform: rotate(-45deg); }
 .tourism-map-marker__glyph { display: block; font-size: 16px; line-height: 1; transform: rotate(45deg); }
-.tourism-map-popup { min-width: 180px; color: var(--text); font-family: inherit; direction: rtl; }
+.tourism-map__canvas .tourism-map-popup-shell .leaflet-popup-content-wrapper { overflow: hidden; border-radius: 15px; box-shadow: 0 12px 30px rgb(22 46 34 / 20%); }
+.tourism-map__canvas .tourism-map-popup-shell .leaflet-popup-content { width: 224px !important; max-width: calc(100vw - 84px); max-height: 148px; margin: 11px 12px; overflow: auto; box-sizing: border-box; }
+.tourism-map__canvas .tourism-map-popup-shell .leaflet-popup-close-button { z-index: 2; color: #68786d; }
+.tourism-map-popup { width: 100%; min-width: 0; max-width: 224px; color: var(--text); font-family: inherit; direction: rtl; }
+.tourism-map-popup__heading { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tourism-map-popup__emoji { display: grid; flex: 0 0 30px; width: 30px; height: 30px; place-items: center; border-radius: 10px; background: #f1f7f0; font-size: 16px; }
+.tourism-map-popup__titles { min-width: 0; }
 .tourism-map-popup strong, .tourism-map-popup span { display: block; }
-.tourism-map-popup strong { margin-bottom: 4px; font-size: 13px; }
+.tourism-map-popup strong { margin-bottom: 3px; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .tourism-map-popup span { color: var(--muted); font-size: 10px; }
-.tourism-map-popup p { margin: 7px 0; font-size: 10px; line-height: 1.7; }
-.tourism-map-popup a { color: var(--brand-dark); font-size: 10px; font-weight: 800; }
+.tourism-map-popup p { display: -webkit-box; margin: 7px 0 9px; overflow: hidden; font-size: 10px; line-height: 1.65; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.tourism-map-popup__directions { display: flex; align-items: center; justify-content: center; min-height: 32px; padding: 5px 9px; border-radius: 9px; background: var(--brand-dark); color: #fff !important; font-size: 10px; font-weight: 900; text-decoration: none; }
+.tourism-map-popup__directions:hover { background: var(--brand); color: #fff !important; text-decoration: none; }
 .tourism-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
 .tourism-card { overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 12px 30px -23px rgb(21 59 45 / 55%); transition: transform .18s, box-shadow .18s, border-color .18s; }
 .tourism-card:hover { transform: translateY(-3px); border-color: rgb(14 122 95 / 38%); box-shadow: 0 18px 34px -22px rgb(21 59 45 / 65%); }
@@ -8757,23 +8759,25 @@ button.pill {
 }
 
 
-/* Room header: keep the home link, room identity and shortcuts in separate
+/* Room header: keep the back link, room identity and shortcuts in separate
    tracks so the icon row can never collide with the city title. */
 .wall--jam-theme .wall-room {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) minmax(0, auto);
-  grid-template-areas: "home identity cats";
+  grid-template-areas: "back identity cats";
   align-items: center;
   gap: 12px;
   min-width: 0;
 }
-.wall--jam-theme .wall-homebtn {
-  grid-area: home;
+.wall--jam-theme .wall-backbtn {
+  grid-area: back;
   min-height: 40px;
-  padding-inline: 13px;
-  border-radius: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: #176443;
-  font-weight: 850;
+  box-shadow: none;
 }
 .wall--jam-theme .wall-room__identity {
   grid-area: identity;
@@ -8830,11 +8834,11 @@ button.pill {
 @media (max-width: 720px) {
   .wall--jam-theme .wall-room {
     grid-template-columns: auto minmax(0, 1fr);
-    grid-template-areas: "home identity" "cats cats";
+    grid-template-areas: "back identity" "cats cats";
     gap: 9px 10px;
     padding: 10px;
   }
-  .wall--jam-theme .wall-homebtn { min-height: 36px; padding-inline: 10px; }
+  .wall--jam-theme .wall-backbtn { width: 36px; min-height: 36px; height: 36px; padding: 0; }
   .wall--jam-theme .wall-room__identity { gap: 0; }
   .wall--jam-theme .wall-room__title-icon { flex-basis: 24px; width: 24px; height: 24px; font-size: 14px; }
   .wall--jam-theme .wall-room__name { font-size: 14px; }
@@ -8846,8 +8850,7 @@ button.pill {
   }
 }
 @media (max-width: 360px) {
-  .wall--jam-theme .wall-homebtn__label { display: none; }
-  .wall--jam-theme .wall-homebtn { width: 36px; padding: 0; }
+  .wall--jam-theme .wall-backbtn { width: 36px; padding: 0; }
 }
 
 /* Business icons are map markers, not labels; reduce their visual footprint. */

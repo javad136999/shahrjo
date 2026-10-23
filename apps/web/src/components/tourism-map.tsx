@@ -33,6 +33,7 @@ export function TourismMap({ spots }: TourismMapProps) {
         maxZoom: 18,
         attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map);
+      map.on('click', () => map?.closePopup());
 
       const points: [number, number][] = [];
       for (const spot of spots) {
@@ -47,17 +48,30 @@ export function TourismMap({ spots }: TourismMapProps) {
           iconSize: [36, 40],
           iconAnchor: [18, 36],
         });
-        const openStreetMapUrl = `https://www.openstreetmap.org/?mlat=${spot.latitude}&mlon=${spot.longitude}#map=16/${spot.latitude}/${spot.longitude}`;
+        const googleMapsDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+          `${spot.latitude},${spot.longitude}`,
+        )}`;
         const popup =
           `<div class="tourism-map-popup" dir="rtl">` +
+          `<div class="tourism-map-popup__heading">` +
+          `<span class="tourism-map-popup__emoji" aria-hidden="true">${escapeHtml(spot.icon)}</span>` +
+          `<div class="tourism-map-popup__titles">` +
           `<strong>${escapeHtml(spot.name)}</strong>` +
           `<span>${escapeHtml(spot.category)} · ${escapeHtml(spot.locationLabel)}</span>` +
+          `</div></div>` +
           `<p>${escapeHtml(spot.description)}</p>` +
-          `<a href="${openStreetMapUrl}" target="_blank" rel="noreferrer">بازکردن در OpenStreetMap ↗</a>` +
+          `<a class="tourism-map-popup__directions" href="${googleMapsDirectionsUrl}" target="_blank" rel="noopener noreferrer">مسیریابی با گوگل‌مپ ↗</a>` +
           '</div>';
         L.marker(point, { icon, title: spot.name, alt: spot.name })
           .addTo(map)
-          .bindPopup(popup, { autoPanPadding: [24, 48], maxWidth: 300 });
+          .bindPopup(popup, {
+            autoPanPadding: [14, 14],
+            maxWidth: 260,
+            maxHeight: 168,
+            minWidth: 0,
+            closeOnClick: true,
+            className: 'tourism-map-popup-shell',
+          });
       }
 
       if (points.length > 1) {
