@@ -235,7 +235,7 @@ describe('CityMap', () => {
     expect(iconOptions.html).toContain('jam-map-marker__pulse');
     expect(iconOptions.html).not.toContain('map-pin__name');
     expect(iconOptions.html).not.toContain('<script>');
-    expect(iconOptions.iconSize).toEqual([38, 38]);
+    expect(iconOptions.iconSize).toEqual([28, 28]);
   });
 
   it('keeps business logos out of compact map markers while retaining business title and popup', async () => {
@@ -253,7 +253,7 @@ describe('CityMap', () => {
     expect(iconOptions.html).toContain('jam-map-marker__body');
     expect(iconOptions.html).toContain('--marker-main:#c58a28');
     expect(leaflet.marker.mock.calls[0][1]).toMatchObject({ title: 'رستوران ویترین', alt: 'رستوران ویترین' });
-    expect(iconOptions.iconSize).toEqual([38, 38]);
+    expect(iconOptions.iconSize).toEqual([28, 28]);
     const popup = leaflet.marker.mock.results[0].value.bindPopup.mock.calls[0][0] as string;
     expect(popup).toContain('رستوران ویترین');
     expect(popup).toContain('/business/');
@@ -463,7 +463,7 @@ describe('CityMap', () => {
     }
   });
 
-  it('pulls stacked pins apart and sends them home when the user zooms', async () => {
+  it('spreads stacked pins at neighborhood zoom and returns them to exact positions at street zoom', async () => {
     const leaflet = require('leaflet');
     // two businesses registered on the very same metre
     const stacked: CityMapData = {
@@ -496,9 +496,18 @@ describe('CityMap', () => {
     expect(apartA).not.toEqual(apartB); // they no longer cover each other
     expect(apartA).not.toEqual([27.831, 52.321]); // nudged away from the shared spot
 
+    // A zoom-in reaches the exact-position threshold; zoomend must not spread again.
     restorePins();
+    instance.getZoom.mockReturnValue(16);
+    spreadPins();
     expect(first.setLatLng).toHaveBeenLastCalledWith([27.831, 52.321]);
     expect(second.setLatLng).toHaveBeenLastCalledWith([27.831, 52.321]);
+
+    // Zooming back out restores the temporary declutter offsets.
+    instance.getZoom.mockReturnValue(12);
+    spreadPins();
+    expect(first.setLatLng.mock.calls.at(-1)[0]).not.toEqual([27.831, 52.321]);
+    expect(second.setLatLng.mock.calls.at(-1)[0]).not.toEqual([27.831, 52.321]);
   });
 
   it('opens that business’s info card when its pin is hit', async () => {

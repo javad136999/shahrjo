@@ -6659,41 +6659,41 @@ button.pill {
   position: relative;
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
+  width: 28px;
+  height: 28px;
   color: var(--marker-main, #2f7657);
   transform: translate(var(--jam-marker-offset, 0, 0));
   isolation: isolate;
 }
 .jam-map-marker__pulse {
   position: absolute;
-  inset: 2px;
-  border: 2px solid var(--marker-ring, #99cdb0);
+  inset: -5px;
+  border: 0;
   border-radius: 50%;
-  background: var(--marker-soft, #e8f5ed);
-  box-shadow: 0 2px 8px rgb(25 54 38 / 22%);
-  opacity: .9;
+  background: radial-gradient(circle, var(--marker-ring, #99cdb0) 0%, transparent 70%);
+  filter: blur(2px);
+  opacity: .62;
   animation: jam-map-marker-pulse 2.4s ease-out infinite;
   z-index: -1;
 }
 .jam-map-marker__body {
-  display: grid;
-  place-items: center;
-  width: 29px;
-  height: 29px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  background: var(--marker-soft, #e8f5ed);
-  box-shadow: 0 2px 6px rgb(25 54 38 / 28%), 0 0 0 1px var(--marker-ring, #99cdb0);
-  font-size: 17px;
+  display: block;
+  width: auto;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  filter: drop-shadow(0 0 4px var(--marker-ring, #99cdb0)) drop-shadow(0 1px 1px rgb(0 0 0 / 32%));
+  font-size: 19px;
   line-height: 1;
   transform: translateZ(0);
-  transition: transform .16s ease, box-shadow .16s ease;
+  transition: transform .16s ease, filter .16s ease;
 }
 .shahrjo-jam-marker:hover .jam-map-marker__body,
 .shahrjo-jam-marker:focus-visible .jam-map-marker__body {
-  transform: scale(1.14);
-  box-shadow: 0 4px 12px rgb(25 54 38 / 32%), 0 0 0 2px var(--marker-ring, #99cdb0);
+  transform: scale(1.2);
+  filter: drop-shadow(0 0 7px var(--marker-ring, #99cdb0)) drop-shadow(0 2px 2px rgb(0 0 0 / 36%));
 }
 @keyframes jam-map-marker-pulse {
   0%, 100% { transform: scale(.88); opacity: .45; }

@@ -271,8 +271,8 @@ export function CityMap({ data }: CityMapProps) {
             `<span class="jam-map-marker__pulse"></span>` +
             `<span class="jam-map-marker__body" aria-hidden="true">${glyph}</span>` +
             `</span>`,
-          iconSize: [38, 38],
-          iconAnchor: [19, 19],
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
         });
         const popup =
           `<div class="map-popup">` +
@@ -301,7 +301,9 @@ export function CityMap({ data }: CityMapProps) {
 
       // ---- pin declutter: many pins must never sit on top of each other ----
       /** clear air (px) two pins have to keep between them */
-      const PIN_GAP = 34;
+      const PIN_GAP = 30;
+      /** At street-level zoom, show every marker at its exact saved coordinate. */
+      const EXACT_POSITION_ZOOM = 16;
       /** a pin never drifts further than this (px) from its real coordinate */
       const PIN_NUDGE_MAX = 120;
       const RELAX_STEPS = 24;
@@ -377,11 +379,13 @@ export function CityMap({ data }: CityMapProps) {
         }
       };
 
-      // Zoom changed: pins go home at the start of the animation, then the
-      // new viewport spreads them apart again (a shared zoomstart handler first,
-      // so the `is-zoomed` name-label rule keeps owning the first zoomend).
+      // At neighborhood scale, gently separate overlapping markers. Once the
+      // visitor zooms in, restore every marker to its exact saved coordinates.
       map.on('zoomstart', restorePins);
-      map.on('zoomend', spreadPins);
+      map.on('zoomend', () => {
+        if (map && map.getZoom() >= EXACT_POSITION_ZOOM) restorePins();
+        else spreadPins();
+      });
       spreadPins();
 
       // ---- view fit: always the URBAN area first; a category filter narrows to its pins ----
