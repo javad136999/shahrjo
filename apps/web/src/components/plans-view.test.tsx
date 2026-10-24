@@ -13,7 +13,7 @@ const mockGetPlans = jest.fn();
 const mockGetMySubscriptions = jest.fn();
 const mockCheckoutPlan = jest.fn();
 const mockVerifyBazaarPurchase = jest.fn();
-const mockConsumeBazaarPurchase = jest.fn().mockResolvedValue(undefined);
+const mockPurchaseWithBazaar = jest.fn().mockResolvedValue('bazaar-token');
 
 jest.mock('@/lib/api', () => ({
   ApiError: class ApiError extends Error {
@@ -31,8 +31,7 @@ jest.mock('@/lib/api', () => ({
 }));
 
 jest.mock('@/lib/bazaar', () => ({
-  purchaseWithBazaar: jest.fn().mockResolvedValue('bazaar-token'),
-  consumeBazaarPurchase: (purchaseToken: string) => mockConsumeBazaarPurchase(purchaseToken),
+  purchaseWithBazaar: (productId: string, packageName: string) => mockPurchaseWithBazaar(productId, packageName),
 }));
 
 import { PlansView } from '@/components/plans-view';
@@ -78,7 +77,7 @@ describe('PlansView', () => {
 
   it('binds the checkout to a suspended business when it landed from «فعال‌سازی»', async () => {
     mockSearchGet.mockImplementation((key: string) => (key === 'business' ? '9' : null));
-    mockCheckoutPlan.mockResolvedValue({ paymentId: 9, productId: 'GOLD_1M', packageName: 'ir.shahrju.app', amount: 4_000_000 });
+    mockCheckoutPlan.mockResolvedValue({ paymentId: 9, productId: 'M1_GOLD', packageName: 'ir.shahrju.app', amount: 4_000_000 });
     render(<PlansView />);
 
     // the banner tells the owner this purchase reactivates that business
@@ -101,7 +100,7 @@ describe('PlansView', () => {
   it('starts a checkout and verifies the Bazaar purchase', async () => {
     mockCheckoutPlan.mockResolvedValue({
       paymentId: 9,
-      productId: 'GOLD_1M',
+      productId: 'M1_GOLD',
       packageName: 'ir.shahrju.app',
       amount: 4_000_000,
     });
@@ -112,8 +111,8 @@ describe('PlansView', () => {
 
     await waitFor(() => expect(mockCheckoutPlan).toHaveBeenCalledWith({ planId: 1 }));
     await waitFor(() => {
-      expect(mockVerifyBazaarPurchase).toHaveBeenCalledWith({ paymentId: 9, productId: 'GOLD_1M', purchaseToken: 'bazaar-token' });
-      expect(mockConsumeBazaarPurchase).toHaveBeenCalledWith('bazaar-token');
+      expect(mockPurchaseWithBazaar).toHaveBeenCalledWith('M1_GOLD', 'ir.shahrju.app');
+      expect(mockVerifyBazaarPurchase).toHaveBeenCalledWith({ paymentId: 9, productId: 'M1_GOLD', purchaseToken: 'bazaar-token' });
       expect(mockReplace).toHaveBeenCalledWith('/plans/result?status=SUCCESS');
     });
   });

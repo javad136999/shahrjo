@@ -16,7 +16,7 @@ import {
   uploadBusinessImage,
   verifyBazaarPurchase,
 } from '@/lib/api';
-import { consumeBazaarPurchase, purchaseWithBazaar } from '@/lib/bazaar';
+import { purchaseWithBazaar } from '@/lib/bazaar';
 import { isMapCoordinateInCity, normalizeCityBoundary } from '@/lib/map-boundary';
 import { thumbFallback, thumbUrlFor } from '@/lib/format';
 import type { BusinessCategoryOption, City, CityMapData, PlanItem } from '@/lib/types';
@@ -446,12 +446,6 @@ export function BusinessRegistration() {
       const purchaseToken = await purchaseWithBazaar(session.productId, session.packageName);
       const result = await verifyBazaarPurchase({ paymentId: session.paymentId, productId: session.productId, purchaseToken });
       if (result !== 'SUCCESS' && result !== 'ALREADY_PAID') throw new Error('پرداخت بازار تأیید نشد.');
-      try {
-        await consumeBazaarPurchase(purchaseToken);
-      } catch (consumeError) {
-        // The server has already granted the subscription; never prompt a second payment for a consume retry.
-        console.warn('Bazaar purchase was verified but could not be consumed.', consumeError);
-      }
       router.replace(`/plans/result?status=${encodeURIComponent(result)}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'خطا در ثبت کسب‌وکار؛ دوباره تلاش کنید');

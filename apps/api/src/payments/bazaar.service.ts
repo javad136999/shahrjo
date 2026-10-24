@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 export interface BazaarPurchase {
   purchaseState: number;
   orderId: string | null;
+  validUntilTimestampMsec: number | null;
   raw: Record<string, unknown>;
 }
 
@@ -29,7 +30,7 @@ export class BazaarService {
     const product = encodeURIComponent(productId);
     const token = encodeURIComponent(purchaseToken);
     const pkg = encodeURIComponent(this.packageName);
-    const url = `https://pardakht.cafebazaar.ir/devapi/v2/api/validate/${pkg}/inapp/${product}/purchases/${token}/?access_token=${encodeURIComponent(this.accessToken)}`;
+    const url = `https://pardakht.cafebazaar.ir/devapi/v2/api/validate/${pkg}/subscriptions/${product}/purchases/${token}/?access_token=${encodeURIComponent(this.accessToken)}`;
     let response: Response;
     try {
       response = await fetch(url, {
@@ -53,10 +54,17 @@ export class BazaarService {
     const raw = payload as Record<string, unknown>;
     const purchaseState = Number(raw.purchaseState ?? raw.purchase_state ?? -1);
     const orderId = typeof raw.orderId === 'string' ? raw.orderId : typeof raw.order_id === 'string' ? raw.order_id : null;
+    const rawValidUntil = raw.validUntilTimestampMsec;
+    const parsedValidUntil = typeof rawValidUntil === 'number' || typeof rawValidUntil === 'string'
+      ? Number(rawValidUntil)
+      : Number.NaN;
+    const validUntilTimestampMsec = Number.isFinite(parsedValidUntil) && parsedValidUntil > 0
+      ? parsedValidUntil
+      : null;
     if (!Number.isInteger(purchaseState) || purchaseState < 0) {
       throw new HttpException('پاسخ اعتبارسنجی خرید بازار نامعتبر است', HttpStatus.BAD_GATEWAY);
     }
-    return { purchaseState, orderId, raw };
+    return { purchaseState, orderId, validUntilTimestampMsec, raw };
   }
 
   private assertConfigured(): void {

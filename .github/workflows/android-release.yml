@@ -15,10 +15,8 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout latest main
+      - name: Checkout requested ref
         uses: actions/checkout@v4
-        with:
-          ref: main
 
       - name: Check required release secrets
         env:
@@ -52,6 +50,15 @@ jobs:
       - name: Install Android 35 SDK packages
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
+      - name: Configure Bazaar RSA Gradle property outside the repository
+        env:
+          BAZAAR_RSA_PUBLIC_KEY: ${{ secrets.BAZAAR_RSA_PUBLIC_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.gradle"
+          umask 077
+          printf 'BAZAAR_RSA_PUBLIC_KEY=%s\n' "$BAZAAR_RSA_PUBLIC_KEY" >> "$HOME/.gradle/gradle.properties"
+
       - name: Prepare and validate signing keystore
         env:
           KEYSTORE_B64: ${{ secrets.SHAHRJO_KEYSTORE_BASE64 }}
@@ -64,10 +71,8 @@ jobs:
           keytool -list -keystore "$RUNNER_TEMP/shahrjo-release.jks" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null
           echo "KEYSTORE_PATH=$RUNNER_TEMP/shahrjo-release.jks" >> "$GITHUB_ENV"
 
-      - name: Build release APK from main
+      - name: Build release APK from requested ref
         working-directory: apps/android
-        env:
-          BAZAAR_RSA_PUBLIC_KEY: ${{ secrets.BAZAAR_RSA_PUBLIC_KEY }}
         run: ./gradlew --no-daemon :app:assembleRelease
 
       - name: Align and sign release APK
