@@ -60,13 +60,27 @@ jobs:
             fi
           fi
 
-          # Preserve tracked server-local changes outside the checkout and in git stash
-          # before fast-forwarding. Never discard or overwrite them silently.
-          dirty_status="$(git status --porcelain --untracked-files=all)"
-          if printf '%s\n' "$dirty_status" | grep -q '^??'; then
-            echo "::error::Untracked files exist in DEPLOY_PATH; refusing to alter the server checkout."
-            printf '%s\n' "$dirty_status" | grep '^??' || true
-            exit 1
+          # Leave non-conflicting untracked server files in place (for example,
+          # public verification files). Refuse only if origin/main would overlap.
+          mapfile -d '' untracked_paths < <(git ls-files --others --exclude-standard -z)
+          mapfile -d '' remote_paths < <(git ls-tree -r -z --name-only origin/main)
+          if [ "${#untracked_paths[@]}" -gt 0 ]; then
+            echo "Untracked local files (left in place unless conflicting):"
+            printf '  %s\n' "${untracked_paths[@]}"
+            conflicts=()
+            for local_path in "${untracked_paths[@]}"; do
+              for remote_path in "${remote_paths[@]}"; do
+                if [[ "$local_path" == "$remote_path" || "$local_path" == "$remote_path/"* || "$remote_path" == "$local_path/"* ]]; then
+                  conflicts+=("$local_path <-> $remote_path")
+                  break
+                fi
+              done
+            done
+            if [ "${#conflicts[@]}" -gt 0 ]; then
+              echo "::error::Untracked paths conflict with origin/main; refusing to move them."
+              printf '%s\n' "${conflicts[@]}"
+              exit 1
+            fi
           fi
 
           if ! git diff --quiet || ! git diff --cached --quiet; then
