@@ -22,6 +22,7 @@ const provinces = [
   { name: 'چهارمحال و بختیاری', slug: 'chaharmahal-bakhtiari' },
   { name: 'کهگیلویه و بویراحمد', slug: 'kohgiluyeh-boyer-ahmad' },
   { name: 'سمنان', slug: 'semnan' },
+  { name: 'گیلان', slug: 'gilan' },
 ];
 
 const cities = [
@@ -106,6 +107,17 @@ const cities = [
   { province: 'semnan', name: 'دامغان', slug: 'damghan', latitude: 36.167451, longitude: 54.3379993, featured: false },
   { province: 'semnan', name: 'گرمسار', slug: 'garmsar', latitude: 35.2221321, longitude: 52.3385276, featured: false },
   { province: 'semnan', name: 'مهدی‌شهر', slug: 'mehdishahr', latitude: 35.7108029, longitude: 53.3555769, featured: false },
+  // Gilan's ten largest cities by the 2016 census; null boundaries use a map window around each center.
+  { province: 'gilan', name: 'رشت', slug: 'rasht', latitude: 37.2697578, longitude: 49.5894854, featured: true },
+  { province: 'gilan', name: 'بندر انزلی', slug: 'bandar-anzali', latitude: 37.4716356, longitude: 49.4685904, featured: false },
+  { province: 'gilan', name: 'لاهیجان', slug: 'lahijan', latitude: 37.2060727, longitude: 50.0028774, featured: false },
+  { province: 'gilan', name: 'لنگرود', slug: 'langarud', latitude: 37.1955948, longitude: 50.1529566, featured: false },
+  { province: 'gilan', name: 'تالش', slug: 'talesh', latitude: 37.7974981, longitude: 48.904184, featured: false },
+  { province: 'gilan', name: 'آستارا', slug: 'astara', latitude: 38.4193239, longitude: 48.8715278, featured: false },
+  { province: 'gilan', name: 'صومعه‌سرا', slug: 'someh-sara', latitude: 37.301672, longitude: 49.3147378, featured: false },
+  { province: 'gilan', name: 'آستانه اشرفیه', slug: 'astaneh-ashrafiyeh', latitude: 37.2607374, longitude: 49.9456642, featured: false },
+  { province: 'gilan', name: 'رودسر', slug: 'rudsar', latitude: 37.1381592, longitude: 50.2927862, featured: false },
+  { province: 'gilan', name: 'فومن', slug: 'fuman', latitude: 37.2273234, longitude: 49.3141954, featured: false },
 ];
 
 const roles = [
