@@ -247,11 +247,6 @@ class MainActivity : ComponentActivity() {
                 requestedPackageName = message.optString("packageName"),
                 replyProxy = replyProxy,
             )
-            "consume" -> consumePurchase(
-                requestId = requestId,
-                purchaseToken = message.optString("purchaseToken"),
-                replyProxy = replyProxy,
-            )
             else -> sendError(replyProxy, requestId, "درخواست پرداخت نامعتبر است.")
         }
     }
@@ -278,7 +273,7 @@ class MainActivity : ComponentActivity() {
         }
 
         runCatching {
-            client.purchaseProduct(
+            client.subscribeProduct(
                 registry = activityResultRegistry,
                 request = PurchaseRequest(
                     productId = productId,
@@ -306,31 +301,6 @@ class MainActivity : ComponentActivity() {
             }
         }.onFailure {
             sendError(replyProxy, requestId, safeError("شروع پرداخت بازار ناموفق بود.", it))
-        }
-    }
-
-    private fun consumePurchase(
-        requestId: String,
-        purchaseToken: String,
-        replyProxy: JavaScriptReplyProxy,
-    ) {
-        val client = payment
-        if (!paymentReady || client == null || purchaseToken.isBlank()) {
-            sendError(replyProxy, requestId, "تأیید نهایی خرید بازار ممکن نشد.")
-            return
-        }
-
-        runCatching {
-            client.consumeProduct(purchaseToken = purchaseToken) {
-                consumeSucceed {
-                    sendSuccess(replyProxy, requestId, JSONObject())
-                }
-                consumeFailed { throwable ->
-                    sendError(replyProxy, requestId, safeError("نهایی‌سازی خرید در بازار ناموفق بود.", throwable))
-                }
-            }
-        }.onFailure {
-            sendError(replyProxy, requestId, safeError("نهایی‌سازی خرید در بازار ناموفق بود.", it))
         }
     }
 
@@ -392,12 +362,12 @@ class MainActivity : ComponentActivity() {
         val TRUSTED_HOSTS = setOf("shahrju.ir", "www.shahrju.ir")
         val TRUSTED_ORIGINS = setOf("https://shahrju.ir", "https://www.shahrju.ir")
         val SUPPORTED_PRODUCT_IDS = setOf(
-            "GOLD_1M",
-            "GOLD_6M",
-            "GOLD_12M",
-            "SILVER_1M",
-            "SILVER_6M",
-            "SILVER_12M",
+            "M1_GOLD",
+            "M6_GOLD",
+            "M12_GOLD",
+            "M1_SILVER",
+            "M6_SILVER",
+            "M12_SILVER",
         )
 
         val BRIDGE_BOOTSTRAP = """
@@ -425,9 +395,6 @@ class MainActivity : ComponentActivity() {
               window.ShahrjoBazaar = Object.freeze({
                 purchase: function (input) {
                   return call('purchase', { productId: input.productId, packageName: input.packageName });
-                },
-                consume: function (input) {
-                  return call('consume', { purchaseToken: input.purchaseToken });
                 }
               });
             })();

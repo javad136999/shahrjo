@@ -3,10 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-val bazaarRsaPublicKey = providers.gradleProperty("BAZAAR_RSA_PUBLIC_KEY")
-    .orElse(providers.environmentVariable("BAZAAR_RSA_PUBLIC_KEY"))
-    .orElse("")
-    .get()
+val bazaarRsaPublicKey = providers.gradleProperty("BAZAAR_RSA_PUBLIC_KEY").orElse("").get()
 val escapedRsaPublicKey = bazaarRsaPublicKey
     .replace("\\", "\\\\")
     .replace("\"", "\\\"")
@@ -19,8 +16,8 @@ android {
         applicationId = "ir.shahrju.app"
         minSdk = 21
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.0.3"
+        versionCode = 5
+        versionName = "1.0.4"
         buildConfigField("String", "BAZAAR_PACKAGE_NAME", "\"ir.shahrju.app\"")
         buildConfigField("String", "BAZAAR_RSA_PUBLIC_KEY", "\"$escapedRsaPublicKey\"")
     }
@@ -49,7 +46,7 @@ dependencies {
 val verifyBazaarReleaseKey = tasks.register("verifyBazaarReleaseKey") {
     doLast {
         check(bazaarRsaPublicKey.isNotBlank()) {
-            "BAZAAR_RSA_PUBLIC_KEY is required for a release build. Set it with -PBAZAAR_RSA_PUBLIC_KEY=... or as an environment variable."
+            "BAZAAR_RSA_PUBLIC_KEY is required for a release build. Set it in ~/.gradle/gradle.properties (outside Git)."
         }
     }
 }

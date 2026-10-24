@@ -13,6 +13,20 @@ import { BazaarService } from './bazaar.service';
 /** Per-user hourly checkout cap — aborted sessions should not spam the gateway. */
 const MAX_CHECKOUTS_PER_HOUR = 10;
 
+/** Database plan codes remain stable; these are the exact subscription IDs configured in Bazaar. */
+const BAZAAR_PRODUCT_ID_BY_PLAN_CODE: Record<string, string> = {
+  GOLD_1M: 'M1_GOLD',
+  GOLD_6M: 'M6_GOLD',
+  GOLD_12M: 'M12_GOLD',
+  SILVER_1M: 'M1_SILVER',
+  SILVER_6M: 'M6_SILVER',
+  SILVER_12M: 'M12_SILVER',
+};
+
+function bazaarProductIdForPlanCode(planCode: string): string {
+  return BAZAAR_PRODUCT_ID_BY_PLAN_CODE[planCode] ?? planCode;
+}
+
 export interface PlanItem {
   id: number;
   code: string;
@@ -118,7 +132,7 @@ export class PaymentsService {
     });
     return {
       paymentId: payment.id,
-      productId: plan.code,
+      productId: bazaarProductIdForPlanCode(plan.code),
       packageName: this.bazaar.packageName,
       amount: Number(payment.amount),
     };
@@ -136,7 +150,7 @@ export class PaymentsService {
       where: { id: payment.planId },
       select: { code: true },
     });
-    if (plan.code !== dto.productId) throw new BadRequestException('محصول پرداخت با پلن انتخاب‌شده یکسان نیست');
+    if (bazaarProductIdForPlanCode(plan.code) !== dto.productId) throw new BadRequestException('محصول پرداخت با پلن انتخاب‌شده یکسان نیست');
     const purchase = await this.bazaar.verifyPurchase(dto.productId, dto.purchaseToken);
     if (purchase.purchaseState !== 0) {
       await this.prisma.payment.updateMany({
@@ -163,7 +177,7 @@ export class PaymentsService {
         where: { id: payment.planId },
         select: { tier: true, durationDays: true },
       });
-      return this.activateVerifiedPayment(tx, payment, fullPlan);
+      return this.activateVerifiedPayment(tx, payment, fullPlan, purchase.validUntilTimestampMsec);
     });
     if (outcome === 'SUCCESS') {
       try {
@@ -174,9 +188,17 @@ export class PaymentsService {
     }
     return outcome;
   }
-  private async activateVerifiedPayment(tx: any, payment: any, plan: { tier: any; durationDays: number }): Promise<'SUCCESS'> {
+  private async activateVerifiedPayment(
+    tx: any,
+    payment: any,
+    plan: { tier: any; durationDays: number },
+    validUntilTimestampMsec: number | null,
+  ): Promise<'SUCCESS'> {
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + plan.durationDays * 86_400_000);
+    const marketExpiry = validUntilTimestampMsec === null ? Number.NaN : Number(validUntilTimestampMsec);
+    const expiresAt = Number.isFinite(marketExpiry) && marketExpiry > 0
+      ? new Date(marketExpiry)
+      : new Date(now.getTime() + plan.durationDays * 86_400_000);
     await tx.subscription.create({
       data: { userId: payment.userId, businessId: payment.businessId, planId: payment.planId, tier: plan.tier, status: 'ACTIVE', startsAt: now, expiresAt },
     });
