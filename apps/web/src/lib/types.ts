@@ -273,16 +273,6 @@ export interface CityMapBusiness {
   category: { name: string; slug: string; icon: string | null; color: string | null };
 }
 
-export type CityMapAmenityKind = 'hospital' | 'clinic' | 'parking';
-
-export interface CityMapAmenity {
-  id: string;
-  kind: CityMapAmenityKind;
-  name: string;
-  latitude: number;
-  longitude: number;
-}
-
 export interface CityMapData {
   city: {
     id: number;
@@ -294,7 +284,6 @@ export interface CityMapData {
     boundary: unknown | null;
   };
   businesses: CityMapBusiness[];
-  amenities?: CityMapAmenity[];
 }
 
 /** Private chat (پیام‌های خصوصی — 1:1, started from the city wall). */

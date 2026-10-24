@@ -321,16 +321,6 @@ describe('ContentService.showcase (Phase 9)', () => {
 });
 
 describe('ContentService.map (Phase 9)', () => {
-  beforeEach(() => {
-    jest.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({ elements: [] }),
-    } as Response);
-  });
-
-  afterEach(() => jest.restoreAllMocks());
-
   it('returns the center, boundary and pinned APPROVED businesses', async () => {
     const { service, prisma } = makeService();
     const boundary = { type: 'Polygon', coordinates: [[[52.2, 27.7], [52.5, 27.7], [52.5, 27.9], [52.2, 27.9], [52.2, 27.7]]] };
@@ -362,73 +352,7 @@ describe('ContentService.map (Phase 9)', () => {
     expect(data.city).toMatchObject({ id: 7, slug: 'sample-city', latitude: 27.83, boundary });
     expect(data.businesses).toHaveLength(1);
     expect(data.businesses[0]).toMatchObject({ id: 40, latitude: 27.831, longitude: 52.321, subscriptionTier: 'GOLD' });
-    expect(data.amenities).toEqual([]);
     expect(() => JSON.stringify(data)).not.toThrow();
-  });
-
-  it('returns named hospitals, clinics and parking from OSM inside the city and caches the query', async () => {
-    const { service, prisma } = makeService();
-    const boundary = { type: 'Polygon', coordinates: [[[52.2, 27.7], [52.5, 27.7], [52.5, 27.9], [52.2, 27.9], [52.2, 27.7]]] };
-    prisma.city.findFirst.mockResolvedValue({
-      id: 7,
-      name: 'شهر نمونه',
-      slug: 'sample-city',
-      latitude: 27.83,
-      longitude: 52.32,
-      boundary,
-    });
-    prisma.business.findMany.mockResolvedValue([]);
-    const fetchMock = globalThis.fetch as jest.MockedFunction<typeof fetch>;
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        elements: [
-          { type: 'node', id: 1, lat: 27.83, lon: 52.32, tags: { amenity: 'hospital', 'name:fa': 'بیمارستان نمونه' } },
-          { type: 'way', id: 2, center: { lat: 27.84, lon: 52.31 }, tags: { healthcare: 'clinic', name: 'درمانگاه نمونه' } },
-          { type: 'node', id: 3, lat: 27.82, lon: 52.33, tags: { amenity: 'parking' } },
-          { type: 'node', id: 4, lat: 29.59, lon: 52.58, tags: { amenity: 'hospital', name: 'بیرون شهر' } },
-        ],
-      }),
-    } as Response);
-
-    const first = await service.map('sample-city');
-    const second = await service.map('sample-city');
-
-    expect(first.amenities).toEqual([
-      { id: 'node/1', kind: 'hospital', name: 'بیمارستان نمونه', latitude: 27.83, longitude: 52.32 },
-      { id: 'way/2', kind: 'clinic', name: 'درمانگاه نمونه', latitude: 27.84, longitude: 52.31 },
-      { id: 'node/3', kind: 'parking', name: 'پارکینگ', latitude: 27.82, longitude: 52.33 },
-    ]);
-    expect(second.amenities).toEqual(first.amenities);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const requestInit = fetchMock.mock.calls[0][1];
-    const query = new URLSearchParams(String(requestInit?.body)).get('data') ?? '';
-    expect(query).toContain('nwr["amenity"~"^(hospital|clinic|parking)$"]');
-    expect(query).toContain('nwr["healthcare"~"^(hospital|clinic)$"]');
-    expect(query).toContain('out center tags;');
-    expect(query).toContain('(27.700000,52.200000,27.900000,52.500000)');
-  });
-
-  it('keeps the city map available when Overpass fails', async () => {
-    const { service, prisma } = makeService();
-    prisma.city.findFirst.mockResolvedValue({
-      id: 7,
-      name: 'شهر نمونه',
-      slug: 'sample-city',
-      latitude: 27.83,
-      longitude: 52.32,
-      boundary: null,
-    });
-    prisma.business.findMany.mockResolvedValue([
-      { id: 40, name: 'رستوران ویترین', slug: 'rest', latitude: 27.831, longitude: 52.321, subscriptionTier: 'GOLD', category: { name: 'رستوران', icon: '🍽', color: '#0e7a5f' } },
-    ]);
-    (globalThis.fetch as jest.MockedFunction<typeof fetch>).mockRejectedValueOnce(new Error('upstream unavailable'));
-
-    const data = await service.map('sample-city');
-
-    expect(data.businesses).toHaveLength(1);
-    expect(data.amenities).toEqual([]);
   });
 
   it('404s for unknown cities without querying businesses', async () => {

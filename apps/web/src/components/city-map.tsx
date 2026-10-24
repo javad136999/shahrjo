@@ -177,7 +177,6 @@ export function CityMap({ data }: CityMapProps) {
       const center: [number, number] | null =
         city.latitude !== null && city.longitude !== null ? [city.latitude, city.longitude] : null;
       if (!center && businesses.length === 0) return; // nowhere to look — handled by parent
-
       const boundary = normalizeCityBoundary(city.boundary);
       // bounds of the admin outline, computed before the map exists
       const outline = boundary ? boundsOfBoundary(boundary) : null;
@@ -235,36 +234,6 @@ export function CityMap({ data }: CityMapProps) {
       // The boundary is framing data only (view + pan limit). It used to be
       // drawn as a dashed gold outline; for the seeded bounding boxes that made
       // a square frame around the city, so the canvas now stays clean.
-
-      for (const amenity of data.amenities ?? []) {
-        const presentation =
-          amenity.kind === 'hospital'
-            ? { glyph: '✚', modifier: 'hospital' }
-            : amenity.kind === 'clinic'
-              ? { glyph: '+', modifier: 'clinic' }
-              : { glyph: 'P', modifier: 'parking' };
-        const icon = L.divIcon({
-          className: 'city-amenity-marker-root',
-          html: `<span class="city-amenity-marker city-amenity-marker--${presentation.modifier}" aria-hidden="true">${presentation.glyph}</span>`,
-          iconSize: [16, 16],
-          iconAnchor: [8, 8],
-        });
-        const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-          `${amenity.latitude},${amenity.longitude}`,
-        )}`;
-        const popup =
-          `<div class="map-popup map-popup--amenity" dir="rtl">` +
-          `<strong>${esc(amenity.name)}</strong>` +
-          `<a href="${directionsUrl}" target="_blank" rel="noopener noreferrer">مسیریابی ↗</a>` +
-          `</div>`;
-        L.marker([amenity.latitude, amenity.longitude], {
-          icon,
-          title: amenity.name,
-          alt: amenity.name,
-        })
-          .addTo(map)
-          .bindPopup(popup, { autoPanPadding: [24, 48], maxWidth: 230 });
-      }
 
       // True coordinates of every pin — the declutter below only ever nudges
       // a pin around this anchor, so geography is never lost.
