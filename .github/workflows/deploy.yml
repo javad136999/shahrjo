@@ -60,6 +60,37 @@ jobs:
             fi
           fi
 
+          # Preserve tracked server-local changes outside the checkout and in git stash
+          # before fast-forwarding. Never discard or overwrite them silently.
+          dirty_status="$(git status --porcelain --untracked-files=all)"
+          if printf '%s\n' "$dirty_status" | grep -q '^??'; then
+            echo "::error::Untracked files exist in DEPLOY_PATH; refusing to alter the server checkout."
+            printf '%s\n' "$dirty_status" | grep '^??' || true
+            exit 1
+          fi
+
+          if ! git diff --quiet || ! git diff --cached --quiet; then
+            echo "Tracked local changes found; preserving before deployment:"
+            git status --short
+            git diff --stat HEAD
+            umask 077
+            backup_dir="$(dirname "$DEPLOY_PATH")/$(basename "$DEPLOY_PATH")-local-change-backups"
+            mkdir -p "$backup_dir"
+            chmod 700 "$backup_dir"
+            backup_patch="$backup_dir/pre-deploy-${TESTED_SHA:-manual}-$(date -u +%Y%m%dT%H%M%SZ).patch"
+            git diff --binary HEAD > "$backup_patch"
+            chmod 600 "$backup_patch"
+            echo "Local patch preserved outside checkout: $backup_patch"
+            echo "Local patch SHA-256: $(sha256sum "$backup_patch" | awk '{print $1}')"
+            git stash push -m "pre-deploy server changes ${TESTED_SHA:-manual}"
+            if ! git diff --quiet || ! git diff --cached --quiet; then
+              echo "::error::Tracked changes remain after git stash; refusing to continue."
+              exit 1
+            fi
+          else
+            echo "No tracked local changes to preserve."
+          fi
+
           git checkout main
           git pull --ff-only origin main
           if [ -n "$TESTED_SHA" ] && [ "$(git rev-parse HEAD)" != "$TESTED_SHA" ]; then
