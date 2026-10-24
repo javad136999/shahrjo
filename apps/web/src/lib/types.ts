@@ -445,6 +445,21 @@ export interface BusinessDetail {
   category: { name: string; slug: string; icon: string | null; color: string | null };
   /** «منو و محصولات» — empty array when the owner registered none. */
   products: BusinessProductItem[];
+  reviews: BusinessReview[];
+}
+
+export interface BusinessReview {
+  id: number;
+  rating: number;
+  body: string | null;
+  updatedAt: string;
+  userName: string;
+}
+
+export interface SavedBusinessReview {
+  review: BusinessReview;
+  rating: number;
+  ratingCount: number;
 }
 
 export interface BusinessCategoryOption {

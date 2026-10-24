@@ -10,6 +10,8 @@ import type {
   BusinessDetail,
   BusinessItem,
   BusinessProductItem,
+  BusinessReview,
+  SavedBusinessReview,
   ServiceListingItem,
   CheckoutSession,
   CityMapData,
@@ -98,7 +100,7 @@ async function extractError(res: Response): Promise<string> {
   return `خطای ${res.status}`;
 }
 
-type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 interface RequestOptions {
   body?: unknown;
@@ -191,6 +193,7 @@ async function requestForm<T>(path: string, form: FormData): Promise<T> {
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, { body }),
+  put: <T>(path: string, body?: unknown) => request<T>('PUT', path, { body }),
   patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, { body }),
   delete: <T>(path: string, body?: unknown) => request<T>('DELETE', path, { body }),
 };
@@ -314,6 +317,17 @@ export async function getNewsDetail(slug: string): Promise<NewsDetail> {
 
 export async function getBusinessDetail(id: number): Promise<BusinessDetail> {
   return api.get<BusinessDetail>(`/businesses/${id}`);
+}
+
+export async function getMyBusinessReview(id: number): Promise<BusinessReview | null> {
+  return api.get<BusinessReview | null>(`/businesses/${id}/reviews/me`);
+}
+
+export async function saveBusinessReview(
+  id: number,
+  body: { rating: number; body?: string },
+): Promise<SavedBusinessReview> {
+  return api.put<SavedBusinessReview>(`/businesses/${id}/reviews/me`, body);
 }
 
 export async function toggleAdFavorite(id: number): Promise<{ favorited: boolean }> {

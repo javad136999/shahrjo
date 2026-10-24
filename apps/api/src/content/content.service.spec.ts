@@ -85,6 +85,15 @@ describe('ContentService.businessDetail', () => {
           isAvailable: true,
         },
       ],
+      reviews: [
+        {
+          id: 4,
+          rating: 5,
+          body: 'کیفیت عالی بود',
+          updatedAt: new Date('2026-02-01'),
+          user: { fullName: 'مریم' },
+        },
+      ],
     });
     prisma.business.update.mockResolvedValue({ viewCount: 10 });
 
@@ -101,6 +110,9 @@ describe('ContentService.businessDetail', () => {
     // BigInt Rial must leave the API as a plain number
     expect(detail.products).toHaveLength(1);
     expect(detail.products[0]).toMatchObject({ name: 'لاته', section: 'نوشیدنی', price: 250_000 });
+    expect(detail.reviews).toEqual([
+      { id: 4, rating: 5, body: 'کیفیت عالی بود', updatedAt: new Date('2026-02-01'), userName: 'مریم' },
+    ]);
   });
 
   it('ships an empty menu array when the owner registered no products', async () => {
@@ -126,6 +138,7 @@ describe('ContentService.businessDetail', () => {
       city: { name: 'شهر نمونه', slug: 'sample-city' },
       category: { name: 'فروشگاه', slug: 'shop', icon: '🛍️', color: null },
       products: [],
+      reviews: [],
     });
     prisma.business.update.mockResolvedValue({ viewCount: 2 });
 

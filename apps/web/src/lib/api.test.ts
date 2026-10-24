@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { ApiError, api, clearTokens, getTokens, setTokens } from '@/lib/api';
+import { ApiError, api, clearTokens, getMyBusinessReview, getTokens, saveBusinessReview, setTokens } from '@/lib/api';
 
 const ENDPOINT = '/api/v1/users/me';
 
@@ -45,6 +45,23 @@ describe('api client', () => {
     expect(url).toBe('/api/v1/auth/send-otp');
     expect((init.headers as Record<string, string>).Authorization).toBe('Bearer access-token');
     expect(init.body).toBe(JSON.stringify({ phone: '09123456789' }));
+  });
+
+  it('loads the signed-in review and saves it with PUT', async () => {
+    setTokens({ accessToken: 'access-token', refreshToken: 'refresh-token' });
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(jsonResponse({ data: null }))
+      .mockResolvedValueOnce(jsonResponse({ data: { review: { id: 9 }, rating: 5, ratingCount: 1 } }));
+
+    await expect(getMyBusinessReview(30)).resolves.toBeNull();
+    await saveBusinessReview(30, { rating: 5, body: 'عالی بود' });
+
+    expect((global.fetch as jest.Mock).mock.calls[0][0]).toBe('/api/v1/businesses/30/reviews/me');
+    const [url, init] = (global.fetch as jest.Mock).mock.calls[1];
+    expect(url).toBe('/api/v1/businesses/30/reviews/me');
+    expect(init.method).toBe('PUT');
+    expect(init.body).toBe(JSON.stringify({ rating: 5, body: 'عالی بود' }));
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer access-token');
   });
 
   it('refreshes on 401 once and replays the request', async () => {

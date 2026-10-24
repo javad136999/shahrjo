@@ -140,6 +140,16 @@ export interface BusinessDetail {
   category: { name: string; slug: string; icon: string | null; color: string | null };
   /** Menu & products («منو و محصولات») — empty array when none registered. */
   products: BusinessProductItem[];
+  /** Latest public ratings/comments, intentionally limited to keep the profile light. */
+  reviews: BusinessReviewPreview[];
+}
+
+export interface BusinessReviewPreview {
+  id: number;
+  rating: number;
+  body: string | null;
+  updatedAt: Date;
+  userName: string;
 }
 
 /**
@@ -440,6 +450,17 @@ export class ContentService {
             isAvailable: true,
           },
         },
+        reviews: {
+          orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+          take: 20,
+          select: {
+            id: true,
+            rating: true,
+            body: true,
+            updatedAt: true,
+            user: { select: { fullName: true } },
+          },
+        },
       },
     });
     if (!business) throw new NotFoundException('کسب‌وکار یافت نشد');
@@ -449,13 +470,20 @@ export class ContentService {
       data: { viewCount: { increment: 1 } },
       select: { viewCount: true },
     });
-    const { products, ...rest } = business;
+    const { products, reviews, ...rest } = business;
     return {
       ...rest,
       viewCount: updated.viewCount,
       products: products.map((product) => ({
         ...product,
         price: product.price === null ? null : Number(product.price),
+      })),
+      reviews: (reviews ?? []).map((review) => ({
+        id: review.id,
+        rating: review.rating,
+        body: review.body,
+        updatedAt: review.updatedAt,
+        userName: review.user.fullName?.trim() || 'کاربر شهرجو',
       })),
     };
   }
