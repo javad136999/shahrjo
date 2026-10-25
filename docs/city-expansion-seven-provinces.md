@@ -1,4 +1,4 @@
-# شهرهای بزرگ هفت استان افزوده‌شده
+# شهرهای بزرگ استان‌های افزوده‌شده
 
 ## معیار انتخاب
 
@@ -15,6 +15,26 @@
 - سبزوار (`sabzevar`) — ۲۴۳٬۷۰۰ نفر؛ `36.2134053, 57.6808799`. [15]
 - تربت حیدریه (`torbat-heydariyeh`) — ۱۴۰٬۰۱۹ نفر؛ `35.2740853, 59.2194494`. [16]
 - کاشمر (`kashmar`) — ۱۰۲٬۲۸۲ نفر؛ `35.2446715, 58.4641341`. [17]
+
+### خراسان شمالی
+
+منبع جمعیت: جدول شهرهای استان در CityPopulation. مختصات از رکوردهای شهری Nominatim گرفته شده‌اند. [48] [49]
+
+- بجنورد (`bojnurd`) — ۲۲۸٬۹۳۱ نفر؛ `37.4759752, 57.3319881`. [50]
+- شیروان (`shirvan`) — ۸۲٬۶۸۹ نفر؛ `37.3964405, 57.9303523`. [51]
+- اسفراین (`esfarayen`) — ۵۹٬۴۹۰ نفر؛ `37.0750975, 57.5096169`. [52]
+- آشخانه (`ashkhaneh`) — ۲۵٬۱۰۴ نفر؛ `37.5603754, 56.9229950`. [53]
+- جاجرم (`jajarm`) — ۱۹٬۵۸۰ نفر؛ `36.9499996, 56.3792939`. [54]
+
+### خراسان جنوبی
+
+منبع جمعیت: جدول شهرهای استان در CityPopulation. مختصات از رکوردهای شهری Nominatim گرفته شده‌اند. [49]
+
+- بیرجند (`birjand`) — ۲۰۳٬۶۳۶ نفر؛ `32.8657752, 59.2214201`. [55]
+- قائن (`qaen`) — ۴۲٬۳۲۳ نفر؛ `33.7339874, 59.1793303`. [56]
+- طبس (`tabas`) — ۳۹٬۶۷۶ نفر؛ `33.5962283, 56.9249087`. [57]
+- فردوس (`ferdows`) — ۲۸٬۶۹۵ نفر؛ `34.0187655, 58.1717681`. [58]
+- نهبندان (`nehbandan`) — ۱۸٬۳۰۴ نفر؛ `31.5431543, 60.0349456`. [59]
 
 ### آذربایجان شرقی
 
@@ -125,3 +145,15 @@
 [45]: https://nominatim.openstreetmap.org/lookup?osm_ids=R17341143&format=jsonv2 "Nominatim Damghan Record"
 [46]: https://nominatim.openstreetmap.org/lookup?osm_ids=R14132426&format=jsonv2 "Nominatim Garmsar Record"
 [47]: https://nominatim.openstreetmap.org/lookup?osm_ids=R16191767&format=jsonv2 "Nominatim Mehdishahr Record"
+[48]: https://www.citypopulation.de/en/iran/khorasaneshomali/ "City Population North Khorasan"
+[49]: https://www.citypopulation.de/en/iran/khorasanejunoubi/ "City Population South Khorasan"
+[50]: https://nominatim.openstreetmap.org/lookup?osm_ids=R8197616&format=jsonv2 "Nominatim Bojnurd Record"
+[51]: https://nominatim.openstreetmap.org/lookup?osm_ids=R9647903&format=jsonv2 "Nominatim Shirvan Record"
+[52]: https://nominatim.openstreetmap.org/lookup?osm_ids=R9647902&format=jsonv2 "Nominatim Esfarayen Record"
+[53]: https://nominatim.openstreetmap.org/search?q=%D8%A2%D8%B4%D8%AE%D8%A7%D9%86%D9%87%2C%20%D8%AE%D8%B1%D8%A7%D8%B3%D8%A7%D9%86%20%D8%B4%D9%85%D8%A7%D9%84%DB%8C%2C%20%D8%A7%DB%8C%D8%B1%D8%A7%D9%86&format=jsonv2&limit=1 "Nominatim Ashkhaneh Search"
+[54]: https://nominatim.openstreetmap.org/lookup?osm_ids=R10460873&format=jsonv2 "Nominatim Jajarm Record"
+[55]: https://nominatim.openstreetmap.org/lookup?osm_ids=R8199755&format=jsonv2 "Nominatim Birjand Record"
+[56]: https://nominatim.openstreetmap.org/lookup?osm_ids=R17341123&format=jsonv2 "Nominatim Qaen Record"
+[57]: https://nominatim.openstreetmap.org/lookup?osm_ids=R17341501&format=jsonv2 "Nominatim Tabas Record"
+[58]: https://nominatim.openstreetmap.org/lookup?osm_ids=R15955463&format=jsonv2 "Nominatim Ferdows Record"
+[59]: https://nominatim.openstreetmap.org/lookup?osm_ids=R18067083&format=jsonv2 "Nominatim Nehbandan Record"
