@@ -23,6 +23,7 @@ const provinces = [
   { name: 'کهگیلویه و بویراحمد', slug: 'kohgiluyeh-boyer-ahmad' },
   { name: 'سمنان', slug: 'semnan' },
   { name: 'گیلان', slug: 'gilan' },
+  { name: 'مازندران', slug: 'mazandaran' },
 ];
 
 const cities = [
@@ -118,6 +119,17 @@ const cities = [
   { province: 'gilan', name: 'آستانه اشرفیه', slug: 'astaneh-ashrafiyeh', latitude: 37.2607374, longitude: 49.9456642, featured: false },
   { province: 'gilan', name: 'رودسر', slug: 'rudsar', latitude: 37.1381592, longitude: 50.2927862, featured: false },
   { province: 'gilan', name: 'فومن', slug: 'fuman', latitude: 37.2273234, longitude: 49.3141954, featured: false },
+  // Mazandaran's ten largest cities by the 2016 city census; coordinates are approximate city centres.
+  { province: 'mazandaran', name: 'ساری', slug: 'sari', latitude: 36.5633, longitude: 53.0601, featured: true },
+  { province: 'mazandaran', name: 'بابل', slug: 'babol', latitude: 36.5387, longitude: 52.6789, featured: false },
+  { province: 'mazandaran', name: 'آمل', slug: 'amol', latitude: 36.4696, longitude: 52.3507, featured: false },
+  { province: 'mazandaran', name: 'قائم‌شهر', slug: 'qaem-shahr', latitude: 36.4636, longitude: 52.8618, featured: false },
+  { province: 'mazandaran', name: 'بهشهر', slug: 'behshahr', latitude: 36.6923, longitude: 53.5526, featured: false },
+  { province: 'mazandaran', name: 'چالوس', slug: 'chalus', latitude: 36.6550, longitude: 51.4204, featured: false },
+  { province: 'mazandaran', name: 'نکا', slug: 'neka', latitude: 36.6500, longitude: 53.2990, featured: false },
+  { province: 'mazandaran', name: 'بابلسر', slug: 'babolsar', latitude: 36.7002, longitude: 52.6501, featured: false },
+  { province: 'mazandaran', name: 'تنکابن', slug: 'tonekabon', latitude: 36.8167, longitude: 50.8736, featured: false },
+  { province: 'mazandaran', name: 'نوشهر', slug: 'nowshahr', latitude: 36.6488, longitude: 51.4960, featured: false },
 ];
 
 const roles = [

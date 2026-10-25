@@ -176,6 +176,7 @@ const citySpots: Record<string, SpotSeed[]> = {
 const fallback = (city: City): TourismSpot[] => [
   { id: `${city.slug}-center`, name: `مرکز تاریخی ${city.name}`, category: 'فرهنگی', description: `نقطهٔ شروع پیشنهادی برای آشنایی با بافت، فرهنگ و حال‌وهوای ${city.name}.`, latitude: city.latitude ?? 0, longitude: city.longitude ?? 0, icon: '🧭', accent: '#0e7a5f', duration: '۱ تا ۲ ساعت', tip: 'پیش از حرکت، ساعات فعالیت و مسیر را بررسی کنید.', locationLabel: city.name, sourceUrl: 'https://www.visitiran.ir/', sourceLabel: source.visitIran },
   { id: `${city.slug}-market`, name: `بازار محلی ${city.name}`, category: 'غذا و بازار', description: `برای خرید سوغات و آشنایی با طعم‌های محلی ${city.name}.`, latitude: (city.latitude ?? 0) + 0.006, longitude: (city.longitude ?? 0) + 0.006, icon: '🧺', accent: '#b45309', duration: '۲ ساعت', tip: 'برای خرید، از فروشندگان محلی و شناخته‌شده راهنمایی بگیرید.', locationLabel: city.name, sourceUrl: 'https://www.visitiran.ir/', sourceLabel: source.visitIran },
+  { id: `${city.slug}-park`, name: `بوستان شهری ${city.name}`, category: 'تفریحی', description: `فضایی ساده برای قدم‌زدن، استراحت و شروع یک گشت کوتاه در ${city.name}.`, latitude: (city.latitude ?? 0) - 0.006, longitude: (city.longitude ?? 0) + 0.003, icon: '🌿', accent: '#15803d', duration: '۱ تا ۲ ساعت', tip: 'برای امکانات، ساعت فعالیت و شرایط استفاده، اطلاعات محلی همان روز را بررسی کنید.', locationLabel: city.name, sourceUrl: 'https://www.visitiran.ir/', sourceLabel: source.visitIran },
 ];
 
 export function getTourismSpots(city: City): TourismSpot[] {

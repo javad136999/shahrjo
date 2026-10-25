@@ -98,6 +98,25 @@ describe('tourism coverage for all supported cities', () => {
   });
 });
 
+describe('tourism fallback coverage', () => {
+  it('keeps an otherwise unlisted city useful with three distinct starter spots', () => {
+    const spots = getTourismSpots({
+      id: 999,
+      name: 'شهر آزمایشی',
+      slug: 'unlisted-city',
+      isFeatured: false,
+      latitude: 35.7,
+      longitude: 51.4,
+      province: { id: 99, name: 'استان آزمایشی', slug: 'test' },
+    } as City);
+
+    expect(spots).toHaveLength(3);
+    expect(new Set(spots.map((spot) => spot.id)).size).toBe(3);
+    expect(spots.map((spot) => spot.category)).toEqual(['فرهنگی', 'غذا و بازار', 'تفریحی']);
+    expect(spots.every((spot) => spot.sourceUrl === 'https://www.visitiran.ir/')).toBe(true);
+  });
+});
+
 
 describe('Isfahan tourism completeness', () => {
   it('includes a broad set of distinct, located city attractions', () => {
