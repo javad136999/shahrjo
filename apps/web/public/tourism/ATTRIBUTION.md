@@ -67,6 +67,17 @@ Tourism thumbnails are optimized WebP derivatives of the files linked below. The
 - `semnan-arg.webp` — [Arg Gate. Semnan 1.jpg](https://commons.wikimedia.org/wiki/File:Arg_Gate._Semnan_1.jpg), Arosha-photo (Reza Sobhani), CC BY-SA 4.0.
 - `asaluyeh-coast.webp` — [ساحل هاله 01.jpg](https://commons.wikimedia.org/wiki/File:%D8%B3%D8%A7%D8%AD%D9%84_%D9%87%D8%A7%D9%84%D9%87_01.jpg), Ahmadrknowledge, CC BY-SA 4.0.
 
+## تصاویر تکمیل‌شدهٔ جاذبه‌های یزد
+- `yazd-old-town.webp` — ['Friendship alleys' in Yazd, Iran. (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:%27Friendship_alleys%27_in_Yazd,_Iran._(Unsplash).jpg), Sander van Dijk, CC0; بهینه‌شده با WebP (10,652 bytes).
+- `yazd-amir-chakhmaq.webp` — [Amir Chakhmaq Complex, Yazd.jpg](https://commons.wikimedia.org/wiki/File:Amir_Chakhmaq_Complex,_Yazd.jpg), Bernard Gagnon, CC BY-SA 4.0; بهینه‌شده با WebP (44,852 bytes).
+- `yazd-alexander-prison.webp` — [Alexander's-Prison.jpg](https://commons.wikimedia.org/wiki/File:Alexander%27s-Prison.jpg), Mehrnaz Shapouri, CC BY-SA 4.0; بهینه‌شده با WebP (59,418 bytes).
+- `yazd-water-museum.webp` — [Water Museum, Yazd 01.jpg](https://commons.wikimedia.org/wiki/File:Water_Museum,_Yazd_01.jpg), Bernard Gagnon, CC BY-SA 4.0; بهینه‌شده با WebP (116,796 bytes).
+- `yazd-lari-house.webp` — [Lariha House.jpg](https://commons.wikimedia.org/wiki/File:Lariha_House.jpg), Mohammdm.bj, CC BY-SA 4.0; بهینه‌شده با WebP (12,348 bytes).
+- `yazd-khan-bazaar.webp` — [Bazaar, Yazd (5113992057).jpg](https://commons.wikimedia.org/wiki/File:Bazaar,_Yazd_(5113992057).jpg), Fulvio Spada, CC BY-SA 2.0; بهینه‌شده با WebP (59,630 bytes).
+- `yazd-markar-clock.webp` — [Markar Clock Tower-1.jpg](https://commons.wikimedia.org/wiki/File:Markar_Clock_Tower-1.jpg), Mohamad.baghipoor, CC BY-SA 4.0; بهینه‌شده با WebP (79,124 bytes).
+- `yazd-art-house.webp` — [Malekzadeh House (Yazd Art House) 01.jpg](https://commons.wikimedia.org/wiki/File:Malekzadeh_House_(Yazd_Art_House)_01.jpg), Parastoo.Atrsaei, CC BY-SA 4.0; بهینه‌شده با WebP (77,366 bytes).
+- `yazd-towers-of-silence.webp` — [20110102 Zoroastrian Towers of Silence Yazd Iran.jpg](https://commons.wikimedia.org/wiki/File:20110102_Zoroastrian_Towers_of_Silence_Yazd_Iran.jpg), Ggia, CC BY-SA 4.0; بهینه‌شده با WebP (64,910 bytes).
+
 ## تصاویر مرحلهٔ دوم؛ ۲۰ شهر
 
 - **File:Persian Gulf, Heat of the Day, Bandar Ganaveh خلیج فارس، بایددل رو به دریازد،بندرگناوه - panoramio.jpg** — Mahdi Kalhor; CC BY 3.0. [صفحهٔ فایل](https://commons.wikimedia.org/wiki/File:Persian_Gulf,_Heat_of_the_Day,_Bandar_Ganaveh_%D8%AE%D9%84%DB%8C%D8%AC_%D9%81%D8%A7%D8%B1%D8%B3%D8%8C_%D8%A8%D8%A7%DB%8C%D8%AF%D8%AF%D9%84_%D8%B1%D9%88_%D8%A8%D9%87_%D8%AF%D8%B1%DB%8C%D8%A7%D8%B2%D8%AF%D8%8C%D8%A8%D9%86%D8%AF%D8%B1%DA%AF%D9%86%D8%A7%D9%88%D9%87_-_panoramio.jpg)
