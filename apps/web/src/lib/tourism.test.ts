@@ -98,6 +98,33 @@ describe('tourism coverage for all supported cities', () => {
   });
 });
 
+const northernCitySlugs = [
+  'rasht', 'bandar-anzali', 'lahijan', 'langarud', 'talesh', 'astara', 'someh-sara',
+  'astaneh-ashrafiyeh', 'rudsar', 'fuman', 'sari', 'babol', 'amol', 'qaem-shahr',
+  'behshahr', 'chalus', 'neka', 'babolsar', 'tonekabon', 'nowshahr',
+] as const;
+
+describe('northern-city natural tourism coverage', () => {
+  it.each(northernCitySlugs)('%s has a sourced, mappable natural attraction', (slug) => {
+    const spots = getTourismSpots({ slug } as City);
+    const naturalSpots = spots.filter((spot) => spot.category === 'طبیعت');
+
+    expect(naturalSpots.length).toBeGreaterThan(0);
+    for (const spot of naturalSpots) {
+      expect(spot.name.trim()).not.toBe('');
+      expect(spot.locationLabel.trim()).not.toBe('');
+      expect(Number.isFinite(spot.latitude)).toBe(true);
+      expect(Number.isFinite(spot.longitude)).toBe(true);
+      expect(spot.latitude).toBeGreaterThan(35);
+      expect(spot.latitude).toBeLessThan(39);
+      expect(spot.longitude).toBeGreaterThan(48);
+      expect(spot.longitude).toBeLessThan(55);
+      expect(spot.sourceUrl).toMatch(/^https?:\/\//);
+      expect(spot.coordinateSourceUrl).toMatch(/^https?:\/\//);
+    }
+  });
+});
+
 describe('tourism fallback coverage', () => {
   it('keeps an otherwise unlisted city useful with three distinct starter spots', () => {
     const spots = getTourismSpots({

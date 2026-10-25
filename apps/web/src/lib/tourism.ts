@@ -1,6 +1,7 @@
 import type { City } from '@/lib/types';
 import { additionalCitySpots } from './tourism-next20';
 import { citySpotAdditions } from './tourism-city-additions';
+import { northernNatureSpots } from './tourism-northern';
 import { tourismBatch2 } from './tourism-batch2';
 import { tourismBatch3 } from './tourism-batch3';
 
@@ -181,7 +182,7 @@ const fallback = (city: City): TourismSpot[] => [
 
 export function getTourismSpots(city: City): TourismSpot[] {
   const existingSpots = citySpots[city.slug] ?? additionalCitySpots[city.slug] ?? tourismBatch2[city.slug] ?? tourismBatch3[city.slug] ?? fallback(city);
-  const additions = citySpotAdditions[city.slug] ?? [];
+  const additions = [...(citySpotAdditions[city.slug] ?? []), ...(northernNatureSpots[city.slug] ?? [])];
   return [...existingSpots, ...additions].map((spot) => ({ ...spot }));
 }
 
