@@ -362,12 +362,12 @@ class MainActivity : ComponentActivity() {
         val TRUSTED_HOSTS = setOf("shahrju.ir", "www.shahrju.ir")
         val TRUSTED_ORIGINS = setOf("https://shahrju.ir", "https://www.shahrju.ir")
         val SUPPORTED_PRODUCT_IDS = setOf(
-            "M1_GOLD",
-            "M6_GOLD",
-            "M12_GOLD",
-            "M1_SILVER",
-            "M6_SILVER",
-            "M12_SILVER",
+            "GOLD_1M",
+            "GOLD_6M",
+            "GOLD_12M",
+            "SILVER_1M",
+            "SILVER_6M",
+            "SILVER_12M",
         )
 
         val BRIDGE_BOOTSTRAP = """
