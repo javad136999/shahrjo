@@ -83,6 +83,15 @@ describe('per-page SEO (city pages)', () => {
     expect(page).toContain('generateMetadata');
   });
 
+  it('the tourism page exposes route-specific metadata and structured attractions', () => {
+    const page = read('city', '[slug]', 'tourism', 'page.tsx');
+    expect(page).toMatch(/alternates:\s*{\s*canonical:/);
+    expect(page).toContain('keywords:');
+    expect(page).toContain("'@type': 'BreadcrumbList'");
+    expect(page).toContain("'@type': 'TouristAttraction'");
+    expect(page).toContain("application/ld+json");
+  });
+
   it('the landing page exposes the confirmed title and a canonical', () => {
     const page = read('page.tsx');
     expect(page).toMatch(/alternates:\s*{\s*canonical:/);

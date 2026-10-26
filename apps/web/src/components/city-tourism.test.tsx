@@ -46,7 +46,8 @@ describe('CityTourismView place details', () => {
   it('removes the duplicate hero panel and brings the categories to the top', () => {
     render(<CityTourismView city={city} />);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'جاهای دیدنی شهر نمونه' })).toHaveClass('sr-only');
+    expect(screen.getByRole('heading', { level: 1, name: 'جاهای دیدنی شهر نمونه' })).not.toHaveClass('sr-only');
+    expect(screen.getByText(/در این راهنمای گردشگری/)).toBeInTheDocument();
     expect(screen.queryByTestId('tourism-head')).not.toBeInTheDocument();
 
     const categories = screen.getByRole('region', { name: 'دسته‌بندی مکان‌ها' });

@@ -26,7 +26,14 @@ export function CityTourismView({ city }: CityTourismViewProps) {
 
   return (
     <div className="tourism-page">
-      <h1 className="sr-only">جاهای دیدنی {city.name}</h1>
+      <nav className="breadcrumbs" aria-label="مسیر صفحه">
+        <a href="/">شهرجو</a><span aria-hidden="true">/</span><a href={`/city/${city.slug}`}>{city.name}</a><span aria-hidden="true">/</span><span>گردشگری</span>
+      </nav>
+      <header className="tourism-intro">
+        <p className="tourism-list-head__eyebrow">راهنمای سفر در شهرجو</p>
+        <h1>جاهای دیدنی {city.name}</h1>
+        <p>در این راهنمای گردشگری، جاذبه‌های تاریخی، طبیعی، فرهنگی و تفریحی {city.name} را با توضیح کوتاه، زمان پیشنهادی بازدید و موقعیت روی نقشه پیدا کنید.</p>
+      </header>
 
       <section className="tourism-categories" aria-label="دسته‌بندی مکان‌ها">
         {tourismCategories.map((category) => (
@@ -52,7 +59,7 @@ export function CityTourismView({ city }: CityTourismViewProps) {
       {visibleSpots.length === 0 ? <div className="empty-state tourism-empty">برای این دسته هنوز مکان پیشنهادی ثبت نشده است.</div> : (
         <ul className="tourism-grid" data-testid="tourism-list">
           {visibleSpots.map((spot, index) => (
-            <li key={spot.id} className="tourism-card" data-testid={`tourism-${spot.id}`}>
+            <li id={spot.id} key={spot.id} className="tourism-card" data-testid={`tourism-${spot.id}`}>
               <div className="tourism-card__visual" style={{ '--tourism-accent': spot.accent } as React.CSSProperties}>
                 {spot.imageUrl ? (
                   <img
