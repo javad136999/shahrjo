@@ -15,12 +15,12 @@ const MAX_CHECKOUTS_PER_HOUR = 10;
 
 /** Database plan codes remain stable; these are the exact subscription IDs configured in Bazaar. */
 const BAZAAR_PRODUCT_ID_BY_PLAN_CODE: Record<string, string> = {
-  GOLD_1M: 'M1_GOLD',
-  GOLD_6M: 'M6_GOLD',
-  GOLD_12M: 'M12_GOLD',
-  SILVER_1M: 'M1_SILVER',
-  SILVER_6M: 'M6_SILVER',
-  SILVER_12M: 'M12_SILVER',
+  GOLD_1M: 'GOLD_1M',
+  GOLD_6M: 'GOLD_6M',
+  GOLD_12M: 'GOLD_12M',
+  SILVER_1M: 'SILVER_1M',
+  SILVER_6M: 'SILVER_6M',
+  SILVER_12M: 'SILVER_12M',
 };
 
 function bazaarProductIdForPlanCode(planCode: string): string {
