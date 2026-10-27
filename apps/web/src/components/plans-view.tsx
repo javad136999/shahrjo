@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ApiError, checkoutPlan, getMySubscriptions, getPlans, getTokens, verifyBazaarPurchase } from '@/lib/api';
-import { purchaseWithBazaar } from '@/lib/bazaar';
-import type { MySubscription, PlanItem } from '@/lib/types';
+import { ApiError, checkoutPlan, getMySubscriptions, getPaymentHistory, getPlans, getTokens, verifyBazaarPurchase } from '@/lib/api';
+import { getSubscribedProductsWithBazaar, purchaseWithBazaar } from '@/lib/bazaar';
+import type { MySubscription, PaymentHistoryItem, PlanItem } from '@/lib/types';
 
 const TIER_META: Record<string, { icon: string; label: string }> = {
   GOLD: { icon: '👑', label: 'طلایی' },
@@ -62,8 +62,10 @@ export function PlansView() {
   const reactivateId = Number(searchParams.get('business')) || null;
   const [plans, setPlans] = useState<PlanItem[] | null>(null);
   const [subs, setSubs] = useState<MySubscription[]>([]);
+  const [payments, setPayments] = useState<PaymentHistoryItem[]>([]);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
   const [loading, setLoading] = useState<number | null>(null);
+  const [restoringPaymentId, setRestoringPaymentId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
 
@@ -74,13 +76,15 @@ export function PlansView() {
 
     (async () => {
       try {
-        const [planRows, subRows] = await Promise.all([
+        const [planRows, subRows, paymentRows] = await Promise.all([
           getPlans(),
           hasTokens ? getMySubscriptions().catch(() => []) : Promise.resolve([]),
+          hasTokens ? getPaymentHistory().catch(() => []) : Promise.resolve([]),
         ]);
         if (!alive) return;
         setPlans(planRows);
         setSubs(subRows);
+        setPayments(paymentRows);
       } catch (err) {
         if (!alive) return;
         setPageError(err instanceof ApiError ? err.message : 'دریافت پلن‌ها ممکن نشد');
@@ -116,6 +120,30 @@ export function PlansView() {
     }
   }
 
+  async function restorePayment(payment: PaymentHistoryItem) {
+    setError(null);
+    setRestoringPaymentId(payment.id);
+    try {
+      const purchases = await getSubscribedProductsWithBazaar();
+      const purchase = purchases.find((item) => item.productId === payment.plan.code && item.purchaseState === 'PURCHASED');
+      if (!purchase) throw new Error('اشتراک فعالی برای این پلن در بازار پیدا نشد؛ مبلغی دوباره کسر نشده است.');
+      const result = await verifyBazaarPurchase({
+        paymentId: payment.id,
+        productId: payment.plan.code,
+        purchaseToken: purchase.purchaseToken,
+      });
+      if (result !== 'SUCCESS' && result !== 'ALREADY_PAID') throw new Error('بازار هنوز این خرید را تأیید نکرده است.');
+      router.replace(`/plans/result?status=${encodeURIComponent(result)}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'بازیابی پرداخت ممکن نشد؛ دوباره تلاش کنید.');
+      setRestoringPaymentId(null);
+    }
+  }
+
+  const pendingPayments = payments.filter(
+    (payment) => payment.provider === 'BAZAAR' && ['CREATED', 'STARTED'].includes(payment.status),
+  );
+
   return (
     <div className="ad-page">
       <section className="plans-hero">
@@ -139,6 +167,36 @@ export function PlansView() {
         <div className="banner banner--error" role="alert">
           {error}
         </div>
+      )}
+
+      {pendingPayments.length > 0 && (
+        <section className="dash-section" data-testid="pending-bazaar-payments">
+          <div className="dash-section__head">
+            <span className="icon-tile" aria-hidden>↻</span>
+            <div className="dash-section__title">
+              <h2>بازیابی پرداخت انجام‌شده</h2>
+              <p className="dash-section__sub">اگر پرداخت در بازار انجام شده اما اینجا تأیید نشده، خرید قبلی را بدون پرداخت دوباره بازیابی کن.</p>
+            </div>
+          </div>
+          <div className="subs-list">
+            {pendingPayments.map((payment) => (
+              <div className="sub-row" key={payment.id} data-testid={`pending-payment-${payment.id}`}>
+                <div className="sub-row__body">
+                  <strong>{payment.business ? `کسب‌وکار: ${payment.business.name}` : `اشتراک ${payment.plan.label}`}</strong>
+                  <span className="sub-row__meta">{payment.plan.label} · {formatRial(payment.amount)}</span>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => void restorePayment(payment)}
+                  disabled={restoringPaymentId !== null}
+                >
+                  {restoringPaymentId === payment.id ? 'در حال بازیابی…' : 'بازیابی خرید قبلی'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {subs.length > 0 && (

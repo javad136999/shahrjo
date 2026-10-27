@@ -29,7 +29,9 @@ import ir.cafebazaar.poolakey.ConnectionState
 import ir.cafebazaar.poolakey.Payment
 import ir.cafebazaar.poolakey.config.PaymentConfiguration
 import ir.cafebazaar.poolakey.config.SecurityCheck
+import ir.cafebazaar.poolakey.entity.PurchaseState
 import ir.cafebazaar.poolakey.request.PurchaseRequest
+import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
@@ -247,7 +249,39 @@ class MainActivity : ComponentActivity() {
                 requestedPackageName = message.optString("packageName"),
                 replyProxy = replyProxy,
             )
+            "querySubscriptions" -> querySubscribedProducts(requestId, replyProxy)
             else -> sendError(replyProxy, requestId, "درخواست پرداخت نامعتبر است.")
+        }
+    }
+
+    private fun querySubscribedProducts(requestId: String, replyProxy: JavaScriptReplyProxy) {
+        val client = payment
+        if (!paymentReady || client == null || paymentConnection?.getState() != ConnectionState.Connected) {
+            sendError(replyProxy, requestId, "اتصال بازار آماده نیست؛ بازار را نصب و دوباره تلاش کنید.")
+            return
+        }
+        runCatching {
+            client.getSubscribedProducts {
+                querySucceed { purchases ->
+                    val active = JSONArray()
+                    purchases
+                        .filter { it.purchaseState == PurchaseState.PURCHASED }
+                        .forEach { purchase ->
+                            active.put(
+                                JSONObject()
+                                    .put("productId", purchase.productId)
+                                    .put("purchaseToken", purchase.purchaseToken)
+                                    .put("purchaseState", purchase.purchaseState.name),
+                            )
+                        }
+                    sendSuccess(replyProxy, requestId, JSONObject().put("purchases", active))
+                }
+                queryFailed { throwable ->
+                    sendError(replyProxy, requestId, safeError("بازیابی خریدهای بازار ممکن نشد.", throwable))
+                }
+            }
+        }.onFailure {
+            sendError(replyProxy, requestId, safeError("بازیابی خریدهای بازار ممکن نشد.", it))
         }
     }
 
@@ -395,6 +429,9 @@ class MainActivity : ComponentActivity() {
               window.ShahrjoBazaar = Object.freeze({
                 purchase: function (input) {
                   return call('purchase', { productId: input.productId, packageName: input.packageName });
+                },
+                querySubscribedProducts: function () {
+                  return call('querySubscriptions', {});
                 }
               });
             })();

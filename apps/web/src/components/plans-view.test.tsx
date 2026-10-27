@@ -11,9 +11,11 @@ jest.mock('next/navigation', () => ({
 const mockGetTokens = jest.fn();
 const mockGetPlans = jest.fn();
 const mockGetMySubscriptions = jest.fn();
+const mockGetPaymentHistory = jest.fn();
 const mockCheckoutPlan = jest.fn();
 const mockVerifyBazaarPurchase = jest.fn();
 const mockPurchaseWithBazaar = jest.fn().mockResolvedValue('bazaar-token');
+const mockGetSubscribedProductsWithBazaar = jest.fn();
 
 jest.mock('@/lib/api', () => ({
   ApiError: class ApiError extends Error {
@@ -26,12 +28,14 @@ jest.mock('@/lib/api', () => ({
   getTokens: () => mockGetTokens(),
   getPlans: () => mockGetPlans(),
   getMySubscriptions: () => mockGetMySubscriptions(),
+  getPaymentHistory: () => mockGetPaymentHistory(),
   checkoutPlan: (body: unknown) => mockCheckoutPlan(body),
   verifyBazaarPurchase: (body: unknown) => mockVerifyBazaarPurchase(body),
 }));
 
 jest.mock('@/lib/bazaar', () => ({
   purchaseWithBazaar: (productId: string, packageName: string) => mockPurchaseWithBazaar(productId, packageName),
+  getSubscribedProductsWithBazaar: () => mockGetSubscribedProductsWithBazaar(),
 }));
 
 import { PlansView } from '@/components/plans-view';
@@ -50,6 +54,8 @@ describe('PlansView', () => {
     mockGetTokens.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
     mockGetPlans.mockResolvedValue(plans);
     mockGetMySubscriptions.mockResolvedValue([]);
+    mockGetPaymentHistory.mockResolvedValue([]);
+    mockGetSubscribedProductsWithBazaar.mockResolvedValue([]);
   });
 
   it('renders every active plan with Persian-formatted price', async () => {
@@ -115,6 +121,38 @@ describe('PlansView', () => {
       expect(mockVerifyBazaarPurchase).toHaveBeenCalledWith({ paymentId: 9, productId: 'M1_GOLD', purchaseToken: 'bazaar-token' });
       expect(mockReplace).toHaveBeenCalledWith('/plans/result?status=SUCCESS');
     });
+  });
+
+  it('restores an active Bazaar subscription for a pending business payment without another checkout', async () => {
+    mockGetPaymentHistory.mockResolvedValue([
+      {
+        id: 22,
+        amount: 4_000_000,
+        status: 'CREATED',
+        provider: 'BAZAAR',
+        refId: null,
+        createdAt: '2026-10-27T08:00:00.000Z',
+        plan: { code: 'GOLD_1M', label: '۱ ماهه', tier: 'GOLD' },
+        business: { id: 44, name: 'نانوایی نمونه' },
+      },
+    ]);
+    mockGetSubscribedProductsWithBazaar.mockResolvedValue([
+      { productId: 'GOLD_1M', purchaseToken: 'original-market-token', purchaseState: 'PURCHASED' },
+    ]);
+    mockVerifyBazaarPurchase.mockResolvedValue('SUCCESS');
+
+    render(<PlansView />);
+    const payment = await screen.findByTestId('pending-payment-22');
+    expect(payment).toHaveTextContent('نانوایی نمونه');
+    fireEvent.click(screen.getByRole('button', { name: 'بازیابی خرید قبلی' }));
+
+    await waitFor(() => expect(mockVerifyBazaarPurchase).toHaveBeenCalledWith({
+      paymentId: 22,
+      productId: 'GOLD_1M',
+      purchaseToken: 'original-market-token',
+    }));
+    expect(mockCheckoutPlan).not.toHaveBeenCalled();
+    expect(mockReplace).toHaveBeenCalledWith('/plans/result?status=SUCCESS');
   });
 
   it('shows the API error when the gateway cannot be reached', async () => {

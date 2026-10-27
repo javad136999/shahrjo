@@ -1,5 +1,12 @@
 export interface BazaarBridge {
   purchase(input: { productId: string; packageName: string }): Promise<{ purchaseToken: string; productId?: string }>;
+  querySubscribedProducts?: () => Promise<{ purchases: BazaarSubscriptionPurchase[] }>;
+}
+
+export interface BazaarSubscriptionPurchase {
+  productId: string;
+  purchaseToken: string;
+  purchaseState: string;
 }
 
 declare global {
@@ -20,4 +27,12 @@ export async function purchaseWithBazaar(productId: string, packageName: string)
   if (!result?.purchaseToken) throw new Error('توکن خرید بازار دریافت نشد.');
   if (result.productId && result.productId !== productId) throw new Error('محصول خریداری‌شده با پلن انتخابی یکسان نیست.');
   return result.purchaseToken;
+}
+
+/** Recover an active subscription token from Poolakey without starting a new charge. */
+export async function getSubscribedProductsWithBazaar(): Promise<BazaarSubscriptionPurchase[]> {
+  const query = typeof window !== 'undefined' ? window.ShahrjoBazaar?.querySubscribedProducts : undefined;
+  if (!query) throw new Error('برای بازیابی خرید، نسخهٔ جدید اپ اندروید شهرجو را از بازار نصب کنید.');
+  const result = await query();
+  return Array.isArray(result?.purchases) ? result.purchases : [];
 }

@@ -223,7 +223,16 @@ export class PaymentsService {
   }
   /** The caller's payment history (newest first), with plan labels. */
   async mine(user: User): Promise<
-    { id: number; amount: number; status: string; refId: string | null; createdAt: Date; plan: { code: string; label: string; tier: string } }[]
+    {
+      id: number;
+      amount: number;
+      status: string;
+      provider: string;
+      refId: string | null;
+      createdAt: Date;
+      plan: { code: string; label: string; tier: string };
+      business: { id: number; name: string } | null;
+    }[]
   > {
     const rows = await this.prisma.payment.findMany({
       where: { userId: user.id },
@@ -232,9 +241,11 @@ export class PaymentsService {
         id: true,
         amount: true,
         status: true,
+        provider: true,
         refId: true,
         createdAt: true,
         plan: { select: { code: true, label: true, tier: true } },
+        business: { select: { id: true, name: true } },
       },
     });
     return rows.map((r) => ({ ...r, amount: Number(r.amount) }));

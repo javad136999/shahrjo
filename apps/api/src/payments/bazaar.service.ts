@@ -30,7 +30,7 @@ export class BazaarService {
     const product = encodeURIComponent(productId);
     const token = encodeURIComponent(purchaseToken);
     const pkg = encodeURIComponent(this.packageName);
-    const url = `https://pardakht.cafebazaar.ir/devapi/v2/api/validate/${pkg}/subscriptions/${product}/purchases/${token}/?access_token=${encodeURIComponent(this.accessToken)}`;
+    const url = `https://pardakht.cafebazaar.ir/devapi/v2/api/applications/${pkg}/subscriptions/${product}/purchases/${token}/?access_token=${encodeURIComponent(this.accessToken)}`;
     let response: Response;
     try {
       response = await fetch(url, {
@@ -41,15 +41,26 @@ export class BazaarService {
     } catch {
       throw new HttpException('ارتباط با بازار برقرار نشد؛ دوباره تلاش کنید', HttpStatus.BAD_GATEWAY);
     }
+    let body: string;
+    try {
+      body = await response.text();
+    } catch {
+      throw new HttpException('پاسخ نامعتبر از بازار دریافت شد', HttpStatus.BAD_GATEWAY);
+    }
     let payload: unknown;
     try {
-      payload = await response.json();
+      payload = JSON.parse(body);
     } catch {
+      const contentType = response.headers.get('content-type') ?? 'unknown';
+      this.logger.warn(`Bazaar validation returned non-JSON: HTTP ${response.status}, content-type=${contentType}, bytes=${body.length}`);
       throw new HttpException('پاسخ نامعتبر از بازار دریافت شد', HttpStatus.BAD_GATEWAY);
     }
     if (!response.ok || !payload || typeof payload !== 'object') {
       this.logger.warn(`Bazaar validation rejected with HTTP ${response.status}`);
-      throw new HttpException('خرید بازار قابل تأیید نیست', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'خرید بازار قابل تأیید نیست',
+        response.status >= 500 ? HttpStatus.BAD_GATEWAY : HttpStatus.BAD_REQUEST,
+      );
     }
     const raw = payload as Record<string, unknown>;
     const purchaseState = Number(raw.purchaseState ?? raw.purchase_state ?? -1);

@@ -168,6 +168,7 @@ export function BusinessRegistration() {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
 
   const [error, setError] = useState<string | null>(null);
+  const [paymentNeedsRecovery, setPaymentNeedsRecovery] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -476,6 +477,7 @@ export function BusinessRegistration() {
     }
     setBusy(true);
     setError(null);
+    setPaymentNeedsRecovery(false);
     try {
       const biz = await createBusiness({
         name: name.trim(),
@@ -489,7 +491,13 @@ export function BusinessRegistration() {
       });
       const session = await checkoutPlan({ planId: selectedPlanId, businessId: biz.id });
       const purchaseToken = await purchaseWithBazaar(session.productId, session.packageName);
-      const result = await verifyBazaarPurchase({ paymentId: session.paymentId, productId: session.productId, purchaseToken });
+      let result: Awaited<ReturnType<typeof verifyBazaarPurchase>>;
+      try {
+        result = await verifyBazaarPurchase({ paymentId: session.paymentId, productId: session.productId, purchaseToken });
+      } catch (verificationError) {
+        setPaymentNeedsRecovery(true);
+        throw verificationError;
+      }
       if (result !== 'SUCCESS' && result !== 'ALREADY_PAID') throw new Error('پرداخت بازار تأیید نشد.');
       router.replace(`/plans/result?status=${encodeURIComponent(result)}`);
     } catch (e) {
@@ -537,6 +545,14 @@ export function BusinessRegistration() {
       {error && (
         <div className="banner banner--error" role="alert">
           {error}
+          {paymentNeedsRecovery && (
+            <div className="auth-actions">
+              <p>اگر پرداخت در بازار انجام شده، دوباره پرداخت نکن؛ خرید قبلی را بازیابی کن.</p>
+              <button type="button" className="btn btn-primary" onClick={() => router.replace('/plans')}>
+                رفتن به بازیابی پرداخت قبلی
+              </button>
+            </div>
+          )}
         </div>
       )}
 

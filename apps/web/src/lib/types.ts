@@ -145,9 +145,11 @@ export interface PaymentHistoryItem {
   id: number;
   amount: number;
   status: string;
+  provider: string;
   refId: string | null;
   createdAt: string;
   plan: { code: string; label: string; tier: string };
+  business: { id: number; name: string } | null;
 }
 
 export interface MySubscription {
