@@ -14,15 +14,24 @@ jest.mock('leaflet', () => {
     layer.remove = jest.fn(() => layer);
     return layer;
   };
+  const mapHandlers: Record<string, (payload: unknown) => void> = {};
   const mapInstance = {
     setView: jest.fn(),
     fitBounds: jest.fn(),
     invalidateSize: jest.fn(),
     remove: jest.fn(),
-    on: jest.fn(),
+    on: jest.fn((type: string, callback: (payload: unknown) => void) => {
+      mapHandlers[type] = callback;
+    }),
+    fire: jest.fn((type: string, payload: unknown) => {
+      mapHandlers[type]?.(payload);
+    }),
+    getZoom: jest.fn(() => 13),
   };
   return {
     map: jest.fn(() => mapInstance),
+    latLng: jest.fn((lat: number, lng: number) => ({ lat, lng })),
+    divIcon: jest.fn(() => ({})),
     tileLayer: jest.fn(() => makeLayer()),
     geoJSON: jest.fn(() => makeLayer()),
     marker: jest.fn(() => makeLayer()),
@@ -199,6 +208,35 @@ describe('BusinessRegistration', () => {
       expect(mockPurchaseWithBazaar).toHaveBeenCalledWith('M1_GOLD', 'ir.shahrju.app');
       expect(m.verifyBazaarPurchase).toHaveBeenCalledWith({ paymentId: 1, productId: 'M1_GOLD', purchaseToken: 'bazaar-token' });
     });
+  });
+
+  it('lets the user place the business pin using the device location', async () => {
+    const getCurrentPosition = jest.fn((success: (position: { coords: { latitude: number; longitude: number } }) => void) => {
+      success({ coords: { latitude: 27.8, longitude: 52.3 } });
+    });
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: { getCurrentPosition },
+    });
+
+    render(<BusinessRegistration />);
+    fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
+    await chooseBusinessCategory(3);
+    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: موقعیت/ }));
+    await screen.findByTestId('biz-map');
+    fireEvent.click(screen.getByRole('button', { name: 'موقعیت فعلی من' }));
+
+    const leaflet = require('leaflet');
+    await waitFor(() => expect(leaflet.map.mock.results[0].value.fire).toHaveBeenCalledWith(
+      'click',
+      { latlng: { lat: 27.8, lng: 52.3 } },
+    ));
+    expect(leaflet.map.mock.results[0].value.setView).toHaveBeenCalledWith(
+      [27.8, 52.3],
+      16,
+      expect.anything(),
+    );
+    expect(await screen.findByText(/سنجاق روی مختصات/)).toBeInTheDocument();
   });
 
   it('uploads the business photo (compressed route) and sends it with the registration', async () => {

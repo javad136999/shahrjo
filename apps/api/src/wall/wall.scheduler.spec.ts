@@ -1,6 +1,7 @@
 import type { PrismaService } from '../prisma/prisma.service';
 import {
   TEHRAN_OFFSET_MS,
+  GOLD_BUSINESS_PROMOS_ENABLED,
   WALL_REPOST_SLOTS,
   WALL_REPOSTS_ENABLED,
   WallRepostScheduler,
@@ -12,6 +13,7 @@ function makePrisma() {
   return {
     wallPost: {
       findMany: jest.fn().mockResolvedValue([]),
+      groupBy: jest.fn().mockResolvedValue([]),
       create: jest.fn().mockResolvedValue({ id: 1 }),
     },
     ad: { findMany: jest.fn().mockResolvedValue([]) },
@@ -19,9 +21,9 @@ function makePrisma() {
   };
 }
 
-function makeScheduler() {
+function makeScheduler(automation = { ads: true, promo: true }) {
   const prisma = makePrisma();
-  const scheduler = new WallRepostScheduler(prisma as unknown as PrismaService);
+  const scheduler = new WallRepostScheduler(prisma as unknown as PrismaService, automation);
   return { scheduler, prisma };
 }
 
@@ -75,6 +77,30 @@ describe('tehranClock / tehranDayStart', () => {
 describe('WallRepostScheduler.tick', () => {
   it('keeps the external timer disabled by default', () => {
     expect(WALL_REPOSTS_ENABLED).toBe(false);
+    expect(GOLD_BUSINESS_PROMOS_ENABLED).toBe(true);
+  });
+
+  it('keeps GOLD business promotions running when ordinary ad reposts are stopped', async () => {
+    const { scheduler, prisma } = makeScheduler({ ads: false, promo: true });
+    prisma.business.findMany.mockResolvedValue([
+      {
+        id: 31,
+        cityId: 5,
+        ownerId: 9,
+        name: 'کسب‌وکار ۳۱',
+        address: null,
+        description: 'خدمات ویژه',
+        category: { name: 'کافه', icon: '☕' },
+      },
+    ]);
+
+    const posted = await scheduler.tick(new Date('2026-10-08T04:30:00.000Z')); // 08:00 Tehran
+
+    expect(posted).toBe(1);
+    expect(prisma.ad.findMany).not.toHaveBeenCalled();
+    expect(prisma.wallPost.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ businessId: 31 }) }),
+    );
   });
 
   it('publishes nothing before the first slot of the day', async () => {
@@ -270,11 +296,12 @@ describe('GOLD business promos — 2 attractive messages a day', () => {
     );
   });
 
-  it('prefers a business not promoted in the last 7 days when possible', async () => {
+  it('chooses randomly only among businesses with the fewest historical promo posts', async () => {
     const { scheduler, prisma } = makeScheduler();
-    prisma.wallPost.findMany
-      .mockResolvedValueOnce([]) // today: nobody
-      .mockResolvedValueOnce([{ businessId: 30 }]); // this week: 30
+    prisma.wallPost.groupBy.mockResolvedValue([
+      { businessId: 30, _count: { businessId: 3 } },
+      { businessId: 31, _count: { businessId: 0 } },
+    ]);
     prisma.business.findMany.mockResolvedValue([business(30), business(31)]);
 
     await scheduler.publishPromo(DAY, WALL_REPOST_SLOTS[2]);
@@ -282,21 +309,27 @@ describe('GOLD business promos — 2 attractive messages a day', () => {
     expect(prisma.wallPost.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ businessId: 31 }) }),
     );
+    expect(prisma.wallPost.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        by: ['businessId'],
+        where: { businessId: { in: [30, 31] } },
+      }),
+    );
   });
 
-  it('falls back to a recently-promoted business when everyone is recent', async () => {
+  it('never repeats the same business on the same day, even if it has fewer prior posts', async () => {
     const { scheduler, prisma } = makeScheduler();
-    prisma.wallPost.findMany
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([{ businessId: 30 }]);
-    prisma.business.findMany.mockResolvedValue([business(30)]);
+    prisma.wallPost.findMany.mockResolvedValue([{ businessId: 30 }]);
+    prisma.wallPost.groupBy.mockResolvedValue([
+      { businessId: 30, _count: { businessId: 0 } },
+      { businessId: 31, _count: { businessId: 4 } },
+    ]);
+    prisma.business.findMany.mockResolvedValue([business(30), business(31)]);
 
     const posted = await scheduler.publishPromo(DAY, WALL_REPOST_SLOTS[2]);
 
     expect(posted).toBe(1);
-    expect(prisma.wallPost.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ businessId: 30 }) }),
-    );
+    expect(prisma.wallPost.create.mock.calls[0][0].data.businessId).toBe(31);
   });
 
   it('publishes nothing without an eligible GOLD business or a promo slot', async () => {

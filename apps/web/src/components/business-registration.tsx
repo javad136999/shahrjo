@@ -170,6 +170,7 @@ export function BusinessRegistration() {
   const [error, setError] = useState<string | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [locating, setLocating] = useState(false);
 
   // Leaflet refs kept out of React state so clicks don't re-init the map.
   const logoInput = useRef<HTMLInputElement | null>(null);
@@ -249,13 +250,12 @@ export function BusinessRegistration() {
   }, [mapData, mapReady]);
 
   /**
-   * Leaflet picker — initialised once when the user reaches the location step
-   * and re-framed in place when the profile-city map data arrives. Re-creating
-   * the instance on that data change used to flash a grey canvas and misplace
-   * the tiles/zoom control while the owner was filling the form.
+   * Leaflet picker — initialise only after the profile-city geometry is ready.
+   * This avoids showing Leaflet's empty dark/grey canvas while the city is still
+   * loading, then frame the instance in place when the user enters this step.
    */
   useEffect(() => {
-    if (step !== 2) return;
+    if (step !== 2 || mapStatus !== 'ready') return;
     const container = mapEl.current;
     if (!container) return;
     let disposed = false;
@@ -275,7 +275,7 @@ export function BusinessRegistration() {
       const lat = city?.latitude;
       const lng = city?.longitude;
       const boundary = normalizeCityBoundary(city?.boundary);
-      if (boundary) {
+      if (city && boundary) {
         try {
           const layer = L.geoJSON(boundary as never, {
             style: { color: '#c9971f', weight: 2, fillColor: '#f2c94c', fillOpacity: 0.08, dashArray: '6 5' },
@@ -285,18 +285,27 @@ export function BusinessRegistration() {
           if (bounds.isValid()) {
             map.fitBounds(bounds, { padding: [20, 20] });
             if (typeof map.setMaxBounds === 'function') map.setMaxBounds(bounds.pad(0.08));
+            const selected = locationRef.current;
+            if (selected && isMapCoordinateInCity(city, selected.lat, selected.lng)) {
+              map.setView([selected.lat, selected.lng], 16, { animate: false });
+            }
             return;
           }
         } catch {
           /* degenerate bounds — keep the centre view */
         }
       }
-      if (typeof lat !== 'number' || typeof lng !== 'number') {
+      if (!city || typeof lat !== 'number' || typeof lng !== 'number') {
         map.setView([30, 52], 6);
         return;
       }
       if (typeof map.setMaxBounds === 'function') {
         map.setMaxBounds([[lat - 0.15, lng - 0.15], [lat + 0.15, lng + 0.15]]);
+      }
+      const selected = locationRef.current;
+      if (selected && isMapCoordinateInCity(city, selected.lat, selected.lng)) {
+        map.setView([selected.lat, selected.lng], 16, { animate: false });
+        return;
       }
       map.setView([lat, lng], 13);
     };
@@ -386,13 +395,49 @@ export function BusinessRegistration() {
     };
     // `location` is read once when the picker opens; the click handler owns it after.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- init only on entering step 2
-  }, [step]);
+  }, [step, mapStatus]);
 
   const clearLocation = () => {
     setLocation(null);
     locationRef.current = null;
     markerObj.current?.remove();
     markerObj.current = null;
+  };
+
+  const locateCurrentPosition = () => {
+    if (!navigator.geolocation) {
+      setLocationError('امکان دریافت موقعیت در این مرورگر وجود ندارد؛ روی نقشه محل کسب‌وکار را انتخاب کن.');
+      return;
+    }
+    setLocating(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocating(false);
+        const next = {
+          lat: Math.round(position.coords.latitude * 1e6) / 1e6,
+          lng: Math.round(position.coords.longitude * 1e6) / 1e6,
+        };
+        const city = mapDataRef.current?.city;
+        if (!city || !isMapCoordinateInCity(city, next.lat, next.lng)) {
+          setLocationError('موقعیت فعلی بیرون از محدودهٔ شهر ثبت‌شده است؛ محل کسب‌وکار را با لمس نقشه انتخاب کن.');
+          return;
+        }
+        const map = mapObj.current;
+        const L = Lref.current;
+        if (!map || !L) {
+          setLocationError('نقشه هنوز آماده نیست؛ چند لحظهٔ دیگر دوباره تلاش کن.');
+          return;
+        }
+        map.fire('click', { latlng: L.latLng(next.lat, next.lng) });
+        map.setView([next.lat, next.lng], Math.max(map.getZoom(), 16), { animate: true });
+      },
+      () => {
+        setLocating(false);
+        setLocationError('موقعیت دریافت نشد؛ دسترسی مکان‌یابی را بررسی کن یا محل را با لمس نقشه انتخاب کن.');
+      },
+      { enableHighAccuracy: true, timeout: 12_000, maximumAge: 30_000 },
+    );
   };
 
   const detailsValid = name.trim().length >= 2 && categoryId !== '';
@@ -616,9 +661,29 @@ export function BusinessRegistration() {
             شهر ثبت: <strong>{mapCityName ?? 'شهر حساب کاربری'}</strong>. برای گذاشتن سنجاق، روی محل دقیق کسب‌وکار در نقشه لمس یا کلیک کن؛
             برای اصلاح، سنجاق قرمز را بکش یا نقطهٔ جدیدی انتخاب کن. اگر موقعیت را نمی‌دانی، می‌توانی بدون سنجاق ادامه بدهی.
           </p>
-          {mapStatus === 'loading' && <p className="muted small" aria-live="polite">در حال بارگذاری نقشهٔ شهر…</p>}
+          {mapStatus === 'loading' && (
+            <div className="biz-map-placeholder" role="status" aria-live="polite">
+              <span className="biz-map-placeholder__pin" aria-hidden="true">📍</span>
+              <span>در حال آماده‌سازی نقشهٔ {mapCityName ?? 'شهر حساب کاربری'}…</span>
+            </div>
+          )}
           {mapStatus === 'unavailable' && locationError && <p className="banner banner--error" role="alert">{locationError}</p>}
-          <div ref={mapEl} className={`biz-map${mapStatus !== 'ready' ? ' is-unavailable' : ''}`} role="application" aria-label={`انتخاب موقعیت کسب‌وکار در ${mapCityName ?? 'شهر حساب کاربری'}`} aria-disabled={mapStatus !== 'ready'} data-testid="biz-map" />
+          {mapStatus === 'ready' && (
+            <>
+              <div className="biz-map-toolbar">
+                <span className="biz-map-toolbar__hint">برای ثبت محل، روی نقشه بزن یا نشانگر را جابه‌جا کن</span>
+                <div className="biz-map-toolbar__actions">
+                  <button type="button" className="btn btn-ghost biz-map-toolbar__button" onClick={locateCurrentPosition} disabled={locating}>
+                    {locating ? 'در حال یافتن…' : 'موقعیت فعلی من'}
+                  </button>
+                  <button type="button" className="btn btn-ghost biz-map-toolbar__button" onClick={() => frameMapRef.current?.()}>
+                    نمایش محدودهٔ شهر
+                  </button>
+                </div>
+              </div>
+              <div ref={mapEl} className="biz-map" role="application" aria-label={`انتخاب موقعیت کسب‌وکار در ${mapCityName ?? 'شهر حساب کاربری'}`} aria-disabled="false" data-testid="biz-map" />
+            </>
+          )}
           {locationError && mapStatus === 'ready' && <p className="banner banner--error" role="alert">{locationError}</p>}
           {location ? (
             <p className="chip chip--ok">

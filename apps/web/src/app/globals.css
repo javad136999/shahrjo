@@ -4410,12 +4410,79 @@ a.my-ads__item:hover {
   border-color: var(--primary, #c9971f);
 }
 .biz-map {
+  position: relative;
+  isolation: isolate;
   height: 320px;
   width: 100%;
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid var(--line, #e4e4e7);
+  border: 1px solid #dce7df;
+  margin: 0;
+  background: #eaf1ea;
+}
+.biz-map .leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #eaf1ea;
+  color: #26352c;
+  font-family: inherit;
+}
+.biz-map-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 0 8px;
+}
+.biz-map-toolbar__hint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.biz-map-toolbar__actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.biz-map-toolbar__button {
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid #dce7df;
+  border-radius: 11px;
+  background: #fff;
+  color: #28543b;
+  font-size: 12px;
+  font-weight: 800;
+}
+.biz-map-toolbar__button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+.biz-map-placeholder {
+  display: flex;
+  min-height: 220px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
   margin: 10px 0;
+  border: 1px solid #dce7df;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #f5faf6, #eaf3ec);
+  color: #496553;
+  font-size: 13px;
+  font-weight: 700;
+}
+.biz-map-placeholder__pin {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 5px 18px rgb(35 68 48 / 12%);
+  font-size: 22px;
 }
 .biz-location-instructions {
   padding: 10px 12px;
@@ -4424,7 +4491,6 @@ a.my-ads__item:hover {
   background: var(--surface, #f8faf9);
   line-height: 1.8;
 }
-.biz-map.is-unavailable,
 .admin-newbiz__map.is-unavailable {
   pointer-events: none;
   filter: grayscale(0.75);
@@ -4443,7 +4509,23 @@ a.my-ads__item:hover {
 }
 @media (max-width: 480px) {
   .biz-map {
-    height: 260px;
+    height: 300px;
+  }
+  .biz-map-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .biz-map-toolbar__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .biz-map-toolbar__button {
+    min-height: 42px;
+    padding-inline: 8px;
+    font-size: 11px;
+  }
+  .biz-map-placeholder {
+    min-height: 220px;
   }
 }
 

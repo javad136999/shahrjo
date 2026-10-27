@@ -12,8 +12,9 @@ import { PrismaService } from '../prisma/prisma.service';
  *   • 22:00 → 2 old ads
  * ⇒ 2 promoted GOLD ads per day (one morning, one evening), 10 old ads spread
  * over the four day-parts, and **2 attractive GOLD-business messages** (morning
- * + evening): picked at random, never the same business twice in a day and
- * avoided again for 7 days while the pool allows it. Each ad is republished at most once per
+ * + evening): picked at random among businesses with the fewest prior promo
+ * posts, never the same business twice in a day. This exhausts each current
+ * fairness round before any eligible business gets another turn. Each ad is republished at most once per
  * day (its id is excluded as soon as it has been used) and the selection is
  * random over the eligible pool.
  *
@@ -45,8 +46,10 @@ export const WALL_REPOST_SLOTS: WallRepostSlot[] = [
 
 /** How often the scheduler checks whether a slot is due. */
 export const REPOST_CHECK_MS = 60_000;
-/** Wall repost automation stays off unless explicitly enabled by the operator. */
+/** Ordinary ad reposts stay off unless explicitly enabled by the operator. */
 export const WALL_REPOSTS_ENABLED = process.env.ENABLE_WALL_REPOSTS === 'true';
+/** GOLD business promotions remain on unless explicitly disabled by the operator. */
+export const GOLD_BUSINESS_PROMOS_ENABLED = process.env.ENABLE_GOLD_BUSINESS_PROMOS !== 'false';
 /** «اگهی قدیمی» = at least this old. */
 export const OLD_AD_MIN_AGE_MS = 7 * 86_400_000;
 /** Upper bound of the candidate pool sampled per slot. */
@@ -134,11 +137,17 @@ export class WallRepostScheduler implements OnModuleInit {
   /** slot key («hour:minute») → the Tehran day it already ran for. */
   private readonly doneSlots = new Map<string, string>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly automation = {
+      ads: WALL_REPOSTS_ENABLED,
+      promo: GOLD_BUSINESS_PROMOS_ENABLED,
+    },
+  ) {}
 
   onModuleInit(): void {
-    if (!WALL_REPOSTS_ENABLED) {
-      this.logger.log('wall repost automation disabled');
+    if (!this.automation.ads && !this.automation.promo) {
+      this.logger.log('wall repost and GOLD business promo automation disabled');
       return;
     }
     const timer = setInterval(() => void this.tickSafely(), REPOST_CHECK_MS);
@@ -169,62 +178,61 @@ export class WallRepostScheduler implements OnModuleInit {
       if (this.doneSlots.has(key)) continue;
       if (minutes < slot.hour * 60 + slot.minute) continue; // not due yet
       this.doneSlots.set(key, day); // marked BEFORE publishing — never twice
-      posted += await this.runSlot(day, slot);
+      posted += await this.runSlot(day, slot, {
+        ads: this.automation.ads,
+        promo: this.automation.promo,
+      });
     }
     return posted;
   }
 
   /** One day-part: its GOLD picks first, then its old-ad picks. */
-  async runSlot(day: string, slot: WallRepostSlot): Promise<number> {
-    const since = tehranDayStart(day);
-    const usedRows = await this.prisma.wallPost.findMany({
-      where: { adId: { not: null }, createdAt: { gte: since } },
-      select: { adId: true },
-    });
-    const used = new Set(
-      usedRows.map((row) => row.adId).filter((id): id is number => typeof id === 'number'),
-    );
-
+  async runSlot(
+    day: string,
+    slot: WallRepostSlot,
+    options: { ads: boolean; promo: boolean } = { ads: true, promo: true },
+  ): Promise<number> {
     let posted = 0;
-    for (const gold of [true, false]) {
-      const take = gold ? slot.gold : slot.old;
-      if (take <= 0) continue;
-      const picks = await this.pickAds(gold ? 'gold' : 'old', take, used);
-      for (const ad of picks) {
-        await this.publish(ad, slot, gold);
-        used.add(ad.id);
-        posted += 1;
+    if (options.ads) {
+      const since = tehranDayStart(day);
+      const usedRows = await this.prisma.wallPost.findMany({
+        where: { adId: { not: null }, createdAt: { gte: since } },
+        select: { adId: true },
+      });
+      const used = new Set(
+        usedRows.map((row) => row.adId).filter((id): id is number => typeof id === 'number'),
+      );
+      for (const gold of [true, false]) {
+        const take = gold ? slot.gold : slot.old;
+        if (take <= 0) continue;
+        const picks = await this.pickAds(gold ? 'gold' : 'old', take, used);
+        for (const ad of picks) {
+          await this.publish(ad, slot, gold);
+          used.add(ad.id);
+          posted += 1;
+        }
       }
     }
-    posted += await this.publishPromo(day, slot);
+    if (options.promo) posted += await this.publishPromo(day, slot);
     return posted;
   }
 
   /**
-   * One GOLD business message per morning/evening slot: random, never twice
-   * in the same Tehran day, and preferring businesses that have not been
-   * promoted in the last 7 days (falls back when the pool is that small).
+   * One GOLD business message per morning/evening slot: random among businesses
+   * with the fewest historical promo posts, never twice in the same Tehran day.
    * Posts land on the business's own city wall, authored by its owner.
    */
   async publishPromo(day: string, slot: WallRepostSlot): Promise<number> {
     if (slot.promo <= 0) return 0;
 
     const since = tehranDayStart(day);
-    const weekAgo = new Date(Date.now() - 7 * 86_400_000);
-    const [todayRows, recentRows] = await Promise.all([
-      this.prisma.wallPost.findMany({
-        where: { businessId: { not: null }, createdAt: { gte: since } },
-        select: { businessId: true },
-      }),
-      this.prisma.wallPost.findMany({
-        where: { businessId: { not: null }, createdAt: { gte: weekAgo } },
-        select: { businessId: true },
-      }),
-    ]);
-    const idsOf = (rows: { businessId: number | null }[]): Set<number> =>
-      new Set(rows.map((row) => row.businessId).filter((id): id is number => id !== null));
-    const usedToday = idsOf(todayRows);
-    const usedRecently = idsOf(recentRows);
+    const todayRows = await this.prisma.wallPost.findMany({
+      where: { businessId: { not: null }, createdAt: { gte: since } },
+      select: { businessId: true },
+    });
+    const usedToday = new Set(
+      todayRows.map((row) => row.businessId).filter((id): id is number => id !== null),
+    );
 
     const now = new Date();
     const rows = await this.prisma.business.findMany({
@@ -235,7 +243,6 @@ export class WallRepostScheduler implements OnModuleInit {
         showcaseEnabled: true,
         subscriptionExpiresAt: { gt: now },
       },
-      take: CANDIDATE_LIMIT,
       select: {
         id: true,
         cityId: true,
@@ -250,8 +257,17 @@ export class WallRepostScheduler implements OnModuleInit {
     // strict: never twice in one day (morning + evening pick different ones)
     const pool = rows.filter((business) => !usedToday.has(business.id));
     if (pool.length === 0) return 0;
-    const fresh = pool.filter((business) => !usedRecently.has(business.id));
-    const pick = shuffle(fresh.length > 0 ? fresh : pool)[0];
+    const counts = await this.prisma.wallPost.groupBy({
+      by: ['businessId'],
+      where: { businessId: { in: pool.map((business) => business.id) } },
+      _count: { businessId: true },
+    });
+    const postCount = new Map(counts.map((row) => [row.businessId, row._count.businessId]));
+    const leastPromoted = Math.min(...pool.map((business) => postCount.get(business.id) ?? 0));
+    const leastPromotedPool = pool.filter(
+      (business) => (postCount.get(business.id) ?? 0) === leastPromoted,
+    );
+    const pick = shuffle(leastPromotedPool)[0];
 
     await this.prisma.wallPost.create({
       data: {
