@@ -23,7 +23,8 @@ function makePrisma() {
 
 function makeScheduler(automation = { ads: true, promo: true }) {
   const prisma = makePrisma();
-  const scheduler = new WallRepostScheduler(prisma as unknown as PrismaService, automation);
+  const scheduler = new WallRepostScheduler(prisma as unknown as PrismaService);
+  Object.defineProperty(scheduler, 'automation', { value: automation });
   return { scheduler, prisma };
 }
 

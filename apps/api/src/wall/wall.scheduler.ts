@@ -136,14 +136,12 @@ export class WallRepostScheduler implements OnModuleInit {
   private readonly logger = new Logger(WallRepostScheduler.name);
   /** slot key («hour:minute») → the Tehran day it already ran for. */
   private readonly doneSlots = new Map<string, string>();
+  private readonly automation = {
+    ads: WALL_REPOSTS_ENABLED,
+    promo: GOLD_BUSINESS_PROMOS_ENABLED,
+  };
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly automation = {
-      ads: WALL_REPOSTS_ENABLED,
-      promo: GOLD_BUSINESS_PROMOS_ENABLED,
-    },
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   onModuleInit(): void {
     if (!this.automation.ads && !this.automation.promo) {
