@@ -66,7 +66,9 @@ export default async function CityPage({ params }: CityPageProps) {
 
   const [showcase, mapData, menuShowcase] = await Promise.all([
     serverApi<ShowcaseItem[]>(`/showcase?city=${encodeURIComponent(city.slug)}&limit=12`, 60),
-    serverApi<CityMapData>(`/map?city=${encodeURIComponent(city.slug)}`, 60),
+    // Business owners can edit their public profile at any time. The map must
+    // not keep a stale server-rendered pin label/logo after that edit.
+    serverApi<CityMapData>(`/map?city=${encodeURIComponent(city.slug)}`, 0),
     serverApi<MenuShowcaseItem[]>(`/menu-showcase?city=${encodeURIComponent(city.slug)}&limit=200`, 60),
   ]);
 
