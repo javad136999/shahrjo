@@ -51,7 +51,7 @@ for (const marker of [
   if (!service.includes(marker)) { console.error('PAYMENTS: missing', marker); fail++; }
 }
 const gateway = read('apps/api/src/payments/bazaar.service.ts');
-for (const marker of ['BAZAAR_ACCESS_TOKEN', 'BAZAAR_PACKAGE_NAME', 'pardakht.cafebazaar.ir', 'validate/']) {
+for (const marker of ['BAZAAR_ACCESS_TOKEN', 'BAZAAR_PACKAGE_NAME', 'pardakht.cafebazaar.ir', '/subscriptions/', '/purchases/']) {
   if (!gateway.includes(marker)) { console.error('BAZAAR: missing', marker); fail++; }
 }
 const envExample = read('.env.example');

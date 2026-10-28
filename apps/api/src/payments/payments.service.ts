@@ -13,14 +13,14 @@ import { BazaarService } from './bazaar.service';
 /** Per-user hourly checkout cap — aborted sessions should not spam the gateway. */
 const MAX_CHECKOUTS_PER_HOUR = 10;
 
-/** Database plan codes remain stable; these are the exact subscription IDs configured in Bazaar. */
+/** Database plan codes map to the exact subscription IDs configured in Bazaar. */
 const BAZAAR_PRODUCT_ID_BY_PLAN_CODE: Record<string, string> = {
-  GOLD_1M: 'GOLD_1M',
-  GOLD_6M: 'GOLD_6M',
-  GOLD_12M: 'GOLD_12M',
-  SILVER_1M: 'SILVER_1M',
-  SILVER_6M: 'SILVER_6M',
-  SILVER_12M: 'SILVER_12M',
+  GOLD_1M: 'M1_GOLD',
+  GOLD_6M: 'M6_GOLD',
+  GOLD_12M: 'M12_GOLD',
+  SILVER_1M: 'M1_SILVER',
+  SILVER_6M: 'M6_SILVER',
+  SILVER_12M: 'M12_SILVER',
 };
 
 function bazaarProductIdForPlanCode(planCode: string): string {
@@ -144,7 +144,23 @@ export class PaymentsService {
       select: { id: true, userId: true, businessId: true, planId: true, amount: true, status: true, provider: true },
     });
     if (!payment) throw new NotFoundException('تراکنش یافت نشد');
-    if (payment.status === 'SUCCESS') return 'ALREADY_PAID';
+    if (payment.status === 'SUCCESS') {
+      // A previous deployment could have marked the payment successful before
+      // the subscription transaction completed. Do not strand a paid purchase:
+      // the same verify call repairs the missing entitlement and business state.
+      const existing = await this.prisma.subscription.findFirst({
+        where: { userId: payment.userId, businessId: payment.businessId, planId: payment.planId, status: 'ACTIVE' },
+        select: { id: true },
+      });
+      if (!existing) {
+        const fullPlan = await this.prisma.subscriptionPlan.findUniqueOrThrow({
+          where: { id: payment.planId },
+          select: { tier: true, durationDays: true },
+        });
+        await this.prisma.$transaction((tx) => this.activateVerifiedPayment(tx, payment, fullPlan, null));
+      }
+      return 'ALREADY_PAID';
+    }
     if (payment.provider !== 'BAZAAR') throw new BadRequestException('تراکنش با پرداخت بازار ساخته نشده است');
     const plan = await this.prisma.subscriptionPlan.findUniqueOrThrow({
       where: { id: payment.planId },

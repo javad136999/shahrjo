@@ -63,7 +63,10 @@ export class BazaarService {
       );
     }
     const raw = payload as Record<string, unknown>;
-    const purchaseState = Number(raw.purchaseState ?? raw.purchase_state ?? -1);
+    const rawPurchaseState = raw.purchaseState ?? raw.purchase_state;
+    // Bazaar's REST API normally returns 0 for a purchased subscription, while
+    // some proxy/SDK versions expose the equivalent enum as "PURCHASED".
+    const purchaseState = rawPurchaseState === 'PURCHASED' ? 0 : Number(rawPurchaseState ?? -1);
     const orderId = typeof raw.orderId === 'string' ? raw.orderId : typeof raw.order_id === 'string' ? raw.order_id : null;
     const rawValidUntil = raw.validUntilTimestampMsec;
     const parsedValidUntil = typeof rawValidUntil === 'number' || typeof rawValidUntil === 'string'

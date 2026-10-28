@@ -34,6 +34,7 @@ jest.mock('@/lib/api', () => ({
 }));
 
 jest.mock('@/lib/bazaar', () => ({
+  bazaarProductIdForPlanCode: (planCode: string) => planCode === 'GOLD_1M' ? 'M1_GOLD' : planCode,
   purchaseWithBazaar: (productId: string, packageName: string) => mockPurchaseWithBazaar(productId, packageName),
   getSubscribedProductsWithBazaar: () => mockGetSubscribedProductsWithBazaar(),
 }));
@@ -137,7 +138,7 @@ describe('PlansView', () => {
       },
     ]);
     mockGetSubscribedProductsWithBazaar.mockResolvedValue([
-      { productId: 'GOLD_1M', purchaseToken: 'original-market-token', purchaseState: 'PURCHASED' },
+      { productId: 'M1_GOLD', purchaseToken: 'original-market-token', purchaseState: 'PURCHASED' },
     ]);
     mockVerifyBazaarPurchase.mockResolvedValue('SUCCESS');
 
@@ -148,7 +149,7 @@ describe('PlansView', () => {
 
     await waitFor(() => expect(mockVerifyBazaarPurchase).toHaveBeenCalledWith({
       paymentId: 22,
-      productId: 'GOLD_1M',
+      productId: 'M1_GOLD',
       purchaseToken: 'original-market-token',
     }));
     expect(mockCheckoutPlan).not.toHaveBeenCalled();

@@ -9,6 +9,19 @@ export interface BazaarSubscriptionPurchase {
   purchaseState: string;
 }
 
+/** Database plan codes are intentionally different from Bazaar product IDs. */
+export function bazaarProductIdForPlanCode(planCode: string): string {
+  const ids: Record<string, string> = {
+    GOLD_1M: 'M1_GOLD',
+    GOLD_6M: 'M6_GOLD',
+    GOLD_12M: 'M12_GOLD',
+    SILVER_1M: 'M1_SILVER',
+    SILVER_6M: 'M6_SILVER',
+    SILVER_12M: 'M12_SILVER',
+  };
+  return ids[planCode] ?? planCode;
+}
+
 declare global {
   interface Window {
     ShahrjoBazaar?: BazaarBridge;

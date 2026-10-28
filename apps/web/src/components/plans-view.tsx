@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ApiError, checkoutPlan, getMySubscriptions, getPaymentHistory, getPlans, getTokens, verifyBazaarPurchase } from '@/lib/api';
-import { getSubscribedProductsWithBazaar, purchaseWithBazaar } from '@/lib/bazaar';
+import { bazaarProductIdForPlanCode, getSubscribedProductsWithBazaar, purchaseWithBazaar } from '@/lib/bazaar';
 import type { MySubscription, PaymentHistoryItem, PlanItem } from '@/lib/types';
 
 const TIER_META: Record<string, { icon: string; label: string }> = {
@@ -125,11 +125,12 @@ export function PlansView() {
     setRestoringPaymentId(payment.id);
     try {
       const purchases = await getSubscribedProductsWithBazaar();
-      const purchase = purchases.find((item) => item.productId === payment.plan.code && item.purchaseState === 'PURCHASED');
+      const productId = bazaarProductIdForPlanCode(payment.plan.code);
+      const purchase = purchases.find((item) => item.productId === productId && item.purchaseState === 'PURCHASED');
       if (!purchase) throw new Error('اشتراک فعالی برای این پلن در بازار پیدا نشد؛ مبلغی دوباره کسر نشده است.');
       const result = await verifyBazaarPurchase({
         paymentId: payment.id,
-        productId: payment.plan.code,
+        productId,
         purchaseToken: purchase.purchaseToken,
       });
       if (result !== 'SUCCESS' && result !== 'ALREADY_PAID') throw new Error('بازار هنوز این خرید را تأیید نکرده است.');
