@@ -267,8 +267,8 @@ export function CityMap({ data }: CityMapProps) {
             `<span class="jam-map-marker__pulse"></span>` +
             `<span class="jam-map-marker__body" aria-hidden="true">${glyph}</span>` +
             `</span>`,
-          iconSize: [18, 18],
-          iconAnchor: [9, 9],
+          iconSize: [16, 16],
+          iconAnchor: [8, 8],
         });
         const popup =
           `<div class="map-popup">` +
@@ -297,11 +297,13 @@ export function CityMap({ data }: CityMapProps) {
 
       // ---- pin declutter: many pins must never sit on top of each other ----
       /** clear air (px) two pins have to keep between them */
-      const PIN_GAP = 30;
+      // Keep the overview compact: the old 30px gap and 120px displacement
+      // made nearby businesses look artificially far apart at the first zoom.
+      const PIN_GAP = 18;
       /** At street-level zoom, show every marker at its exact saved coordinate. */
       const EXACT_POSITION_ZOOM = 16;
       /** a pin never drifts further than this (px) from its real coordinate */
-      const PIN_NUDGE_MAX = 120;
+      const PIN_NUDGE_MAX = 48;
       const RELAX_STEPS = 24;
 
       /** Zoom changed → every pin drops back onto its true coordinate first. */

@@ -141,9 +141,9 @@ describe('BusinessRegistration', () => {
     fireEvent.click(await screen.findByRole('combobox', { name: 'دسته‌بندی' }));
     await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(8));
 
-    // کافه، رستوران، نانوایی، املاک، اتوگالری، فروشگاه — then the server order
+    // خدماتی مثل لوله‌کشی اول می‌آیند؛ سپس کافه، رستوران، نانوایی و دسته‌های عمومی.
     expect(screen.getAllByRole('option').map((option) => option.getAttribute('data-category-id'))).toEqual([
-      '4', '3', '7', '5', '6', '2', '1', '8',
+      '1', '4', '3', '7', '5', '6', '2', '8',
     ]);
     fireEvent.change(screen.getByRole('searchbox', { name: 'جستجوی دسته‌بندی کسب‌وکار' }), { target: { value: 'نانوایی' } });
     await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(1));

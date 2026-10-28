@@ -6859,15 +6859,15 @@ button.pill {
   position: relative;
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
   color: var(--marker-main, #2f7657);
   transform: translate(var(--jam-marker-offset, 0, 0));
   isolation: isolate;
 }
 .jam-map-marker__pulse {
   position: absolute;
-  inset: -6px;
+  inset: -4px;
   border: 0;
   border-radius: 50%;
   background: radial-gradient(circle, var(--marker-ring, #99cdb0) 0%, transparent 70%);
@@ -6885,7 +6885,7 @@ button.pill {
   background: transparent;
   box-shadow: none;
   filter: drop-shadow(0 0 4px var(--marker-ring, #99cdb0)) drop-shadow(0 1px 1px rgb(0 0 0 / 32%));
-  font-size: 17px;
+  font-size: 13px;
   line-height: 1;
   transform: translateZ(0);
   transition: transform .16s ease, filter .16s ease;

@@ -44,13 +44,35 @@ const TIER_BENEFITS: Partial<Record<PlanItem['tier'], { icon: string; text: stri
 };
 
 /**
- * The signup list leads with the trades people actually look for in a city —
- * café/restaurant, bakery, real-estate agency, car gallery and shops — in that
- * order; every other trade follows in the order the API returned (Array#sort
- * is stable). Matched by slug first, with the seeded name as a fallback.
+ * The signup list leads with the practical service trades people most often
+ * search for — electrician, plumbing, appliance repair, cleaning and home
+ * maintenance — then falls back to familiar shops and venues. Matched by slug
+ * first, with the seeded name as a fallback.
  */
-const POPULAR_CATEGORY_SLUGS = ['cafe', 'restaurant', 'bakery', 'real_estate', 'car_dealer', 'shop'];
-const POPULAR_CATEGORY_NAMES = ['کافه', 'رستوران', 'نانوایی', 'املاک', 'اتوگالری', 'فروشگاه'];
+const POPULAR_CATEGORY_SLUGS = [
+  'electrician',
+  'plumbing',
+  'ac_service',
+  'heating_service',
+  'appliance_repair',
+  'cleaning_service',
+  'cabinet_shop',
+  'masonry',
+  'construction_contractor',
+  'car_service',
+  'repair',
+  'phone_repair',
+  'moving_company',
+  'tailor',
+  'beauty',
+  'cafe',
+  'restaurant',
+  'bakery',
+  'real_estate',
+  'car_dealer',
+  'shop',
+];
+const POPULAR_CATEGORY_NAMES = ['برق‌کاری', 'لوله‌کشی و تاسیسات', 'نصب و سرویس کولر', 'سرویس پکیج و شوفاژ', 'تعمیر لوازم خانگی', 'نظافت منزل و محل کار'];
 
 const popularRank = (c: BusinessCategoryOption): number => {
   const bySlug = POPULAR_CATEGORY_SLUGS.indexOf(c.slug ?? '');
