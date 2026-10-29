@@ -430,7 +430,7 @@ export class BusinessesService {
       pinned: latitude !== null,
       productCount: products.length,
       products: products.map((product) => ({ ...product, price: rial(product.price) })),
-      listings: listings.map((listing) => ({
+      listings: (listings ?? []).map((listing) => ({
         ...listing,
         kind: String(listing.kind),
         price: rial(listing.price),
