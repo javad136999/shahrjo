@@ -78,6 +78,9 @@ export interface ServiceListingItem {
   phone: string;
   description: string | null;
   category: { name: string; slug: string; icon: string | null };
+  rating: number;
+  ratingCount: number;
+  userRating?: number;
 }
 
 export interface LocalCity {

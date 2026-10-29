@@ -15,6 +15,12 @@ export class CityContentQueryDto {
   @Max(200)
   limit?: number;
 
+  /** Optional title-text query for city service listings. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  q?: string;
+
   /** Optional ad-category slug — only ads of that category are returned. */
   @IsOptional()
   @IsString()

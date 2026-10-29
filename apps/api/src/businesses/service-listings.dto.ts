@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsInt, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
+import { IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
@@ -32,4 +32,11 @@ export class CreateServiceListingDto {
   @IsString()
   @MaxLength(500)
   description?: string;
+}
+
+export class RateServiceListingDto {
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  rating!: number;
 }

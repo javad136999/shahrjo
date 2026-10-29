@@ -182,6 +182,7 @@ model User {
   adminProfile  AdminUser?
   businesses    Business[]
   serviceListings ServiceListing[]
+  serviceListingRatings ServiceListingRating[]
   media         Media[]
   payments      Payment[]
   subscriptions Subscription[]
@@ -475,6 +476,8 @@ model ServiceListing {
   ownerId     Int      @map("owner_id")
   name        String   @db.VarChar(160)
   phone       String   @db.VarChar(15)
+  normalizedPhone String @map("normalized_phone") @db.VarChar(15)
+  uniquePhoneGuard Boolean @default(false) @map("unique_phone_guard")
   description String?  @db.VarChar(500)
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -483,15 +486,33 @@ model ServiceListing {
   city     City             @relation(fields: [cityId], references: [id], onDelete: Cascade)
   category BusinessCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   owner    User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ratings  ServiceListingRating[]
 
   @@index([cityId, categoryId, isActive, createdAt])
   @@index([ownerId])
+  @@index([normalizedPhone])
   @@map("service_listings")
 }
 
 // One menu/product row of a business (منو و محصولات). `section` is the free
 // text menu group the owner writes («نوشیدنی»، «غذاهای اصلی»…): it keeps the
 // public menu grouped without a second table to manage.
+model ServiceListingRating {
+  id              Int      @id @default(autoincrement())
+  serviceListingId Int     @map("service_listing_id")
+  userId          Int      @map("user_id")
+  rating          Int
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  serviceListing ServiceListing @relation(fields: [serviceListingId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceListingId, userId])
+  @@index([serviceListingId, rating])
+  @@map("service_listing_ratings")
+}
+
 model BusinessProduct {
   id          Int      @id @default(autoincrement())
   businessId  Int      @map("business_id")

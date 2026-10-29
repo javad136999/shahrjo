@@ -526,8 +526,8 @@ async function main(): Promise<void> {
   for (const c of serviceCategories) {
     await prisma.businessCategory.upsert({
       where: { slug: c.slug },
-      update: { name: c.name, icon: c.icon, isService: true },
-      create: { ...c, isService: true },
+      update: { name: c.name, icon: c.icon, isService: true, sortOrder: serviceCategories.indexOf(c) + 1 },
+      create: { ...c, isService: true, sortOrder: serviceCategories.indexOf(c) + 1 },
     });
   }
 

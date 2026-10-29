@@ -16,7 +16,8 @@ function makePrisma() {
   return {
     city: { findFirst: jest.fn() },
     businessCategory: { findFirst: jest.fn() },
-    serviceListing: { create: jest.fn(), findMany: jest.fn() },
+    serviceListing: { create: jest.fn(), findMany: jest.fn(), findFirst: jest.fn() },
+    serviceListingRating: { upsert: jest.fn(), aggregate: jest.fn() },
   };
 }
 
@@ -37,6 +38,8 @@ describe('ServiceListingsService', () => {
       category: { name: 'تعمیرکار کولر', slug: 'svc_ac_repair', icon: '❄️' },
     });
     prisma.serviceListing.findMany.mockResolvedValue([]);
+    prisma.serviceListing.findFirst.mockResolvedValue(null);
+    prisma.serviceListingRating.aggregate.mockResolvedValue({ _avg: { rating: 4.5 }, _count: { _all: 2 } });
   });
 
   it('creates a service-listing row only, with the entered contact and service details', async () => {
@@ -51,6 +54,8 @@ describe('ServiceListingsService', () => {
           categoryId: 90,
           name: dto.name,
           phone: dto.phone,
+          normalizedPhone: dto.phone,
+          uniquePhoneGuard: true,
           description: dto.description,
         },
       }),
@@ -58,6 +63,12 @@ describe('ServiceListingsService', () => {
     expect('business' in prisma).toBe(false);
   });
 
+  it('rejects a phone already used by an existing listing after normalizing Persian numerals', async () => {
+    prisma.serviceListing.findFirst.mockResolvedValue({ id: 8 });
+    await expect(service.create(user, { ...dto, phone: '۰۹۱۲-۱۱۱-۲۲۳۳' })).rejects.toMatchObject({ status: 409 });
+    expect(prisma.businessCategory.findFirst).not.toHaveBeenCalled();
+    expect(prisma.serviceListing.create).not.toHaveBeenCalled();
+  });
   it('rejects a category that is not an active service category', async () => {
     prisma.businessCategory.findFirst.mockResolvedValue(null);
 
@@ -65,6 +76,20 @@ describe('ServiceListingsService', () => {
     expect(prisma.serviceListing.create).not.toHaveBeenCalled();
   });
 
+  it('allows one authenticated vote per user, updating an existing rating and returning the aggregate', async () => {
+    prisma.serviceListing.findFirst.mockResolvedValue({ id: 11, ownerId: 8 });
+    await expect(service.rate(user, 11, 5)).resolves.toEqual({ rating: 4.5, ratingCount: 2, userRating: 5 });
+    expect(prisma.serviceListingRating.upsert).toHaveBeenCalledWith({
+      where: { serviceListingId_userId: { serviceListingId: 11, userId: user.id } },
+      create: { serviceListingId: 11, userId: user.id, rating: 5 },
+      update: { rating: 5 },
+    });
+  });
+  it('prevents owners from rating their own service listing', async () => {
+    prisma.serviceListing.findFirst.mockResolvedValue({ id: 11, ownerId: user.id });
+    await expect(service.rate(user, 11, 5)).rejects.toMatchObject({ status: 403 });
+    expect(prisma.serviceListingRating.upsert).not.toHaveBeenCalled();
+  });
   it('returns only active listings for the selected city and service category', async () => {
     await service.list('sample-city', 200, 'svc_ac_repair');
 

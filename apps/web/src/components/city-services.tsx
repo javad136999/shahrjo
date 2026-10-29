@@ -8,6 +8,7 @@ import {
   getCityServiceListings,
   getServiceCategories,
   getTokens,
+  rateServiceListing,
 } from '@/lib/api';
 import type { ServiceListingItem, BusinessCategoryOption } from '@/lib/types';
 
@@ -60,6 +61,9 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
 
   /** Selected service slug in the finder panel (null = nothing picked yet). */
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const [activeSearch, setActiveSearch] = useState('');
+  const [ratingBusy, setRatingBusy] = useState<number | null>(null);
+  const [ratingError, setRatingError] = useState<string | null>(null);
   const [serviceQuery, setServiceQuery] = useState('');
   const [results, setResults] = useState<ServiceListingItem[] | null>(null);
   const [finding, setFinding] = useState(false);
@@ -109,18 +113,46 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
 
   const valid = form.name.trim().length >= 2 && form.categoryId !== '' && form.phone.trim().length >= 4;
 
-  const filteredCategories = (categories ?? []).filter((category) => {
-    const query = normalizePersianSearch(serviceQuery);
-    if (!query) return true;
-    return normalizePersianSearch(`${category.name} ${category.slug}`).includes(query);
-  });
   const selectedCategory = categories?.find((category) => category.slug === activeSlug) ?? null;
 
-  const searchService = () => {
-    const match = serviceQuery.trim()
-      ? filteredCategories[0]
-      : filteredCategories.find((category) => category.slug === activeSlug) ?? filteredCategories[0];
-    void pickService(match?.slug ?? null);
+  const searchService = async () => {
+    const query = serviceQuery.trim();
+    if (!query) {
+      if (activeSlug) void pickService(activeSlug);
+      return;
+    }
+    setActiveSlug(null);
+    setActiveSearch(query);
+    setResults(null);
+    setFindError(null);
+    setResultsOpen(true);
+    const requestId = ++requestSequence.current;
+    setFinding(true);
+    try {
+      const list = await getCityServiceListings(citySlug, 200, undefined, query);
+      if (requestId === requestSequence.current) setResults(list);
+    } catch (err) {
+      if (requestId === requestSequence.current) setFindError(err instanceof ApiError ? err.message : 'جستجوی عنوان شغل ناموفق بود');
+    } finally {
+      if (requestId === requestSequence.current) setFinding(false);
+    }
+  };
+
+  const submitRating = async (listing: ServiceListingItem, rating: number) => {
+    if (!getTokens()) {
+      router.replace('/login?next=/');
+      return;
+    }
+    setRatingBusy(listing.id);
+    setRatingError(null);
+    try {
+      const updated = await rateServiceListing(listing.id, rating);
+      setResults((current) => current?.map((row) => row.id === listing.id ? { ...row, rating: updated.rating, ratingCount: updated.ratingCount, userRating: updated.userRating } : row) ?? null);
+    } catch (err) {
+      setRatingError(err instanceof ApiError ? err.message : 'ثبت امتیاز ناموفق بود');
+    } finally {
+      setRatingBusy(null);
+    }
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -154,6 +186,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
   const pickService = useCallback(
     async (slug: string | null) => {
       setActiveSlug(slug);
+      setActiveSearch('');
       setResults(null);
       setFindError(null);
       if (!slug) {
@@ -292,7 +325,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
       {panel === 'find' && (
         <div className="service-panel" data-testid="service-find">
           <h3>چه خدماتی در شهر {cityName} نیاز داری؟</h3>
-          <p className="muted small">خدمت مورد نظرت را انتخاب کن تا مشاغل ثبت‌شدهٔ همان خدمت را ببینی.</p>
+          <p className="muted small">عنوان شغل را جستجو کن یا از دسته‌بندی‌های پرکاربرد انتخاب کن.</p>
 
           {error && (
             <p className="error" role="alert">
@@ -309,7 +342,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
           {categories && (
             <>
               <div className="service-search" role="search">
-                <label htmlFor="service-query">جستجوی خدمت</label>
+                <label htmlFor="service-query">جستجوی عنوان شغل</label>
                 <div className="service-search__row">
                   <input
                     id="service-query"
@@ -331,7 +364,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
                   <button
                     type="button"
                     className="btn btn-primary service-search__button"
-                    disabled={filteredCategories.length === 0}
+                    disabled={!serviceQuery.trim()}
                     onClick={searchService}
                     data-testid="service-search-button"
                   >
@@ -339,8 +372,8 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
                   </button>
                 </div>
               </div>
-              <div className="service-chips" role="listbox" aria-label="فهرست خدمات" data-testid="service-chips">
-              {filteredCategories.map((c) => (
+              <div className="service-chips" role="listbox" aria-label="دسته‌بندی‌های خدمات" data-testid="service-chips">
+              {(categories ?? []).map((c) => (
                 <button
                   key={c.slug}
                   type="button"
@@ -361,7 +394,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
         </div>
       )}
 
-      {resultsOpen && activeSlug && selectedCategory && (
+      {resultsOpen && (activeSlug || activeSearch) && (
         <div
           className="service-results-overlay"
           data-testid="service-results-overlay"
@@ -380,7 +413,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
               <div>
                 <p className="service-results-dialog__eyebrow">فهرست متخصصان شهر {cityName}</p>
                 <h2 id="service-results-title">
-                  <span aria-hidden>{selectedCategory.icon ?? '◆'}</span> {selectedCategory.name}
+                  {selectedCategory ? <><span aria-hidden>{selectedCategory.icon ?? '◆'}</span> {selectedCategory.name}</> : `جستجوی «${activeSearch}»`}
                 </h2>
                 <p>شغل‌های ثبت‌شده و شمارهٔ تماس مستقیم؛ بدون صفحهٔ کسب‌وکار</p>
               </div>
@@ -407,7 +440,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
               {!finding && findError && (
                 <div className="service-results-error" role="alert">
                   <p>{findError}</p>
-                  <button type="button" className="btn btn-primary" onClick={() => void pickService(activeSlug)}>
+                  <button type="button" className="btn btn-primary" onClick={() => activeSearch ? void searchService() : void pickService(activeSlug)}>
                     تلاش دوباره
                   </button>
                 </div>
@@ -417,8 +450,8 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
                 <div className="service-results-empty" data-testid="service-results-empty" role="status">
                   <span className="service-results-empty__icon" aria-hidden>🔎</span>
                   <h3>شغلی ثبت نشده است</h3>
-                  <p>برای «{selectedCategory.name}» هنوز شغلی در شهر {cityName} ثبت نشده.</p>
-                  <button
+                  <p>{selectedCategory ? `برای «${selectedCategory.name}» هنوز شغلی در شهر ${cityName} ثبت نشده.` : `برای «${activeSearch}» شغلی پیدا نشد.`}</p>
+                  {selectedCategory && <button
                     type="button"
                     className="btn btn-primary"
                     data-testid="service-empty-register"
@@ -431,7 +464,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
                     }}
                   >
                     ثبت اولین شغل در این دسته
-                  </button>
+                  </button>}
                 </div>
               )}
 
@@ -445,6 +478,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
                       <thead>
                         <tr>
                           <th scope="col">عنوان شغل و خدمات</th>
+                          <th scope="col">امتیاز کاربران</th>
                           <th scope="col">شماره تماس</th>
                           <th scope="col">تماس</th>
                         </tr>
@@ -459,6 +493,13 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
                                 {listing.category.name}
                               </small>
                               {listing.description && <small>{listing.description}</small>}
+                            </td>
+                            <td data-label="امتیاز کاربران" className="service-results-table__rating">
+                              <div className="service-rating-stars" role="group" aria-label={`امتیاز ${listing.name}`} data-testid={`service-rating-${listing.id}`}>
+                                {[1, 2, 3, 4, 5].map((star) => <button key={star} type="button" aria-label={`${star.toLocaleString('fa-IR')} از ۵ ستاره`} aria-pressed={(listing as ServiceListingItem & { userRating?: number }).userRating === star} disabled={ratingBusy === listing.id} onClick={() => void submitRating(listing, star)}>{star <= Math.round(listing.rating ?? 0) ? '★' : '☆'}</button>)}
+                              </div>
+                              <small>{listing.ratingCount ? `${listing.rating.toLocaleString('fa-IR')} (${listing.ratingCount.toLocaleString('fa-IR')} رأی)` : 'بدون امتیاز'}</small>
+                              {ratingError && <small className="error" role="alert">{ratingError}</small>}
                             </td>
                             <td data-label="شماره تماس" className="service-results-table__phone">
                               <a href={`tel:${listing.phone}`} dir="ltr">{listing.phone}</a>

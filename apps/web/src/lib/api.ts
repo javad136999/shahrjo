@@ -503,9 +503,11 @@ export async function getCityServiceListings(
   slug: string,
   limit = 200,
   category?: string,
+  query?: string,
 ): Promise<ServiceListingItem[]> {
   const cat = category ? `&category=${encodeURIComponent(category)}` : '';
-  return api.get<ServiceListingItem[]>(`/service-listings?${cityQS(slug, limit)}${cat}`);
+  const q = query ? `&q=${encodeURIComponent(query)}` : '';
+  return api.get<ServiceListingItem[]>(`/service-listings?${cityQS(slug, limit)}${cat}${q}`);
 }
 
 // ---------- city wall (دیوار شهر — Phase 8b) ----------
@@ -665,6 +667,10 @@ export async function getServiceCategories(): Promise<BusinessCategoryOption[]> 
 }
 
 /** Register a lightweight service listing (auth), without creating a Business profile. */
+export async function rateServiceListing(id: number, rating: number): Promise<{ rating: number; ratingCount: number; userRating: number }> {
+  return api.post(`/service-listings/${id}/rating`, { rating });
+}
+
 export async function createServiceListing(body: {
   citySlug: string;
   name: string;

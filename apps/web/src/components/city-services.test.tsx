@@ -155,7 +155,7 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     expect(screen.getByTestId('service-search-button')).toBeEnabled();
     fireEvent.click(screen.getByTestId('service-search-button'));
 
-    await waitFor(() => expect(m.getCityServiceListings).toHaveBeenCalledWith('sample-city', 200, 'svc_cabinet_maker'));
+    await waitFor(() => expect(m.getCityServiceListings).toHaveBeenCalledWith('sample-city', 200, undefined, 'کابینت'));
     expect(await screen.findByTestId('service-result-501')).toBeInTheDocument();
   });
 
@@ -167,12 +167,23 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     expect(input).toHaveAttribute('type', 'text');
     fireEvent.change(input, { target: { value: 'كابینت ساز' } });
     expect(screen.getByTestId('service-chip-svc_cabinet_maker')).toBeInTheDocument();
-    expect(screen.queryByTestId('service-chip-svc_ac_repair')).not.toBeInTheDocument();
+    expect(screen.getByTestId('service-chip-svc_ac_repair')).toBeInTheDocument();
     fireEvent.keyDown(input, { key: 'Enter' });
 
-    await waitFor(() => expect(m.getCityServiceListings).toHaveBeenCalledWith('sample-city', 200, 'svc_cabinet_maker'));
+    await waitFor(() => expect(m.getCityServiceListings).toHaveBeenCalledWith('sample-city', 200, undefined, 'كابینت ساز'));
   });
 
+  it('submits a selected star rating and updates the displayed average', async () => {
+    m.rateServiceListing = jest.fn().mockResolvedValue({ rating: 4, ratingCount: 2, userRating: 5 });
+    render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
+    fireEvent.click(screen.getByTestId('service-tile-find'));
+    await screen.findByTestId('service-find');
+    fireEvent.click(await screen.findByTestId('service-chip-svc_cabinet_maker'));
+    const stars = await screen.findByTestId('service-rating-501');
+    fireEvent.click(screen.getByRole('button', { name: '۵ از ۵ ستاره' }));
+    await waitFor(() => expect(m.rateServiceListing).toHaveBeenCalledWith(501, 5));
+    expect(screen.getByTestId('service-result-501')).toHaveTextContent('۴ (۲ رأی)');
+  });
   it('shows the exact empty state and lets a visitor register that service', async () => {
     m.getCityServiceListings.mockResolvedValue([]);
     render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);

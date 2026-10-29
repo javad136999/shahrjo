@@ -7337,6 +7337,11 @@ button.pill {
   color: #718077;
   font-size: 11px;
 }
+.service-results-table__rating { min-width: 145px; text-align: center; }
+.service-rating-stars { display: flex; justify-content: center; gap: 2px; direction: ltr; }
+.service-rating-stars button { border: 0; background: transparent; color: #d49a18; cursor: pointer; font-size: 1.35rem; line-height: 1.2; padding: 1px 3px; }
+.service-rating-stars button:disabled { cursor: wait; opacity: .55; }
+.service-results-table__rating small { display: block; color: var(--muted, #667085); font-size: .78rem; margin-top: 3px; }
 .service-results-table__phone a {
   color: #0e7a5f;
   direction: ltr;
