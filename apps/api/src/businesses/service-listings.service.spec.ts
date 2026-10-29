@@ -15,8 +15,8 @@ const dto = {
 function makePrisma() {
   return {
     city: { findFirst: jest.fn() },
-    businessCategory: { findFirst: jest.fn() },
-    serviceListing: { create: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), count: jest.fn() },
+    businessCategory: { findFirst: jest.fn(), findMany: jest.fn() },
+    serviceListing: { create: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), count: jest.fn(), groupBy: jest.fn() },
     serviceListingRating: { upsert: jest.fn(), aggregate: jest.fn() },
   };
 }
@@ -30,6 +30,7 @@ describe('ServiceListingsService', () => {
     service = new ServiceListingsService(prisma as unknown as PrismaService);
     prisma.city.findFirst.mockResolvedValue({ id: 5 });
     prisma.businessCategory.findFirst.mockResolvedValue({ id: 90 });
+    prisma.businessCategory.findMany.mockResolvedValue([{ id: 90, slug: 'svc_ac_repair' }, { id: 91, slug: 'svc_plumber' }]);
     prisma.serviceListing.create.mockResolvedValue({
       id: 11,
       name: dto.name,
@@ -39,10 +40,19 @@ describe('ServiceListingsService', () => {
     });
     prisma.serviceListing.findMany.mockResolvedValue([]);
     prisma.serviceListing.count.mockResolvedValue(123);
+    prisma.serviceListing.groupBy.mockResolvedValue([{ categoryId: 90, _count: { _all: 2 } }]);
     prisma.serviceListing.findFirst.mockResolvedValue(null);
     prisma.serviceListingRating.aggregate.mockResolvedValue({ _avg: { rating: 4.5 }, _count: { _all: 2 } });
   });
 
+  it('returns each active service category count, including categories with no listings', async () => {
+    await expect(service.categoryCounts('sample-city')).resolves.toEqual({ svc_ac_repair: 2, svc_plumber: 0 });
+    expect(prisma.serviceListing.groupBy).toHaveBeenCalledWith({
+      by: ['categoryId'],
+      where: { cityId: 5, isActive: true },
+      _count: { _all: true },
+    });
+  });
   it('counts all active listings in a city without applying the search page limit', async () => {
     await expect(service.count('sample-city')).resolves.toBe(123);
     expect(prisma.serviceListing.count).toHaveBeenCalledWith({ where: { cityId: 5, isActive: true } });

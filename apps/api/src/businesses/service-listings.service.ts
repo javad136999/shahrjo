@@ -23,6 +23,28 @@ export class ServiceListingsService {
     return this.prisma.serviceListing.count({ where: { cityId: city.id, isActive: true } });
   }
 
+  /** Active listing count for each service category in the city, including zeroes. */
+  async categoryCounts(citySlug: string) {
+    const city = await this.prisma.city.findFirst({
+      where: { slug: citySlug, isActive: true, province: { isActive: true } },
+      select: { id: true },
+    });
+    if (!city) throw new NotFoundException('شهر انتخاب‌شده یافت نشد');
+    const [categories, grouped] = await Promise.all([
+      this.prisma.businessCategory.findMany({
+        where: { isService: true, isActive: true },
+        select: { id: true, slug: true },
+      }),
+      this.prisma.serviceListing.groupBy({
+        by: ['categoryId'],
+        where: { cityId: city.id, isActive: true },
+        _count: { _all: true },
+      }),
+    ]);
+    const countByCategoryId = new Map(grouped.map((row) => [row.categoryId, row._count._all]));
+    return Object.fromEntries(categories.map((category) => [category.slug, countByCategoryId.get(category.id) ?? 0]));
+  }
+
   /** Public directory search: only lightweight listings, never Business profiles. */
   async list(citySlug: string, limit = 200, categorySlug?: string, query?: string) {
     const city = await this.prisma.city.findFirst({

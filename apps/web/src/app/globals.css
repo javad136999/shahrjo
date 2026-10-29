@@ -930,6 +930,7 @@ a:hover {
 /* Minimal desk cards: hairline border, one whisper of a shadow, a soft tinted
    icon tile — no gradients and no heavy type. */
 .service-tile {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 11px;
@@ -954,6 +955,7 @@ a:hover {
   background: #f8fcfa;
 }
 .service-tile--find {
+  padding-top: 21px;
   background: #fffefb;
 }
 .service-tile--find.is-open {
@@ -979,23 +981,14 @@ a:hover {
 }
 .service-tile__count {
   position: absolute;
-  inset-inline-end: -9px;
-  inset-block-end: -7px;
-  display: grid;
-  min-width: 24px;
-  height: 20px;
-  place-items: center;
-  padding: 0 5px;
-  border: 1.5px solid #dc2626;
-  border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 2px 6px rgb(127 29 29 / 16%);
+  inset-inline-start: 11px;
+  inset-block-start: 5px;
   color: #c81e1e;
   direction: rtl;
   font-size: 10px;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 .service-tile__copy {
   display: flex;
@@ -1062,6 +1055,14 @@ a:hover {
   border-color: rgb(14 122 95 / 65%);
   background: var(--brand-soft, #eaf6f0);
   color: var(--brand-dark, #0e7a5f);
+}
+.service-chip__count {
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+  color: #c81e1e;
+  font-size: 10px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Registered tradespeople of the picked service. */

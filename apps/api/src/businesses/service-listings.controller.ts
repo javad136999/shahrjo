@@ -10,6 +10,11 @@ export class ServiceListingsController {
   constructor(private readonly serviceListings: ServiceListingsService) {}
 
   @Public()
+  @Get('category-counts')
+  categoryCounts(@Query() query: CityContentQueryDto): ReturnType<ServiceListingsService['categoryCounts']> {
+    return this.serviceListings.categoryCounts(query.city);
+  }
+  @Public()
   @Get('count')
   count(@Query() query: CityContentQueryDto): ReturnType<ServiceListingsService['count']> {
     return this.serviceListings.count(query.city);

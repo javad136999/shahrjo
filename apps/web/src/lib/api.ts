@@ -502,6 +502,9 @@ export async function getCityBusinesses(
 export async function getCityServiceListingCount(slug: string): Promise<number> {
   return api.get<number>(`/service-listings/count?city=${encodeURIComponent(slug)}`);
 }
+export async function getCityServiceCategoryCounts(slug: string): Promise<Record<string, number>> {
+  return api.get<Record<string, number>>(`/service-listings/category-counts?city=${encodeURIComponent(slug)}`);
+}
 
 export async function getCityServiceListings(
   slug: string,

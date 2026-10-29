@@ -11,6 +11,7 @@ jest.mock('@/lib/api', () => ({
   getServiceCategories: jest.fn(),
   getCityServiceListings: jest.fn(),
   getCityServiceListingCount: jest.fn(),
+  getCityServiceCategoryCounts: jest.fn(),
   createServiceListing: jest.fn(),
   ApiError: class ApiError extends Error {
     constructor(public readonly status: number, message: string) {
@@ -45,6 +46,7 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     m.getServiceCategories.mockResolvedValue(cats);
     m.getCityServiceListings.mockResolvedValue(listings);
     m.getCityServiceListingCount.mockResolvedValue(123);
+    m.getCityServiceCategoryCounts.mockResolvedValue({ svc_ac_repair: 2, svc_cabinet_maker: 0 });
     m.createServiceListing.mockResolvedValue({ id: 501, name: 'کابینت‌کار', phone: '09121112233' });
   });
 
@@ -66,9 +68,18 @@ describe('CityServices (دفتر خدمات شهر)', () => {
   it('shows the city-wide registered service count in a red count badge', async () => {
     render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
     const badge = await screen.findByTestId('service-listing-count');
-    expect(badge).toHaveTextContent('۱۲۳');
+    expect(badge).toHaveTextContent('۱۲۳ شغل ثبت‌شده');
     expect(badge).toHaveAttribute('aria-label', '۱۲۳ شغل ثبت‌شده');
     expect(m.getCityServiceListingCount).toHaveBeenCalledWith('sample-city');
+  });
+
+  it('shows a registered-listing count beside every service category', async () => {
+    render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
+    fireEvent.click(screen.getByTestId('service-tile-find'));
+    await screen.findByTestId('service-find');
+    expect(await screen.findByTestId('service-category-count-svc_ac_repair')).toHaveTextContent('۲');
+    expect(screen.getByTestId('service-chip-svc_ac_repair')).toHaveTextContent('تعمیرکار کولر۲');
+    expect(screen.getByTestId('service-category-count-svc_cabinet_maker')).toHaveTextContent('۰');
   });
 
   it('opens the registration form and lists only service categories', async () => {
