@@ -6454,6 +6454,45 @@ button.pill {
   white-space: nowrap;
 }
 
+/* Property files and vehicle inventory */
+.biz-listings,
+.biz-listings-public {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--gold-line);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgb(255 253 246 / 96%), rgb(250 254 251 / 96%));
+}
+.biz-listings__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 15px; }
+.biz-listings__head h2, .biz-listings-public__title { margin: 0; font-size: 17px; }
+.biz-listings__head p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.biz-listings__grid, .biz-listings-public__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.biz-listing-card, .biz-listings-public__card { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
+.biz-listing-card { display: flex; min-height: 142px; }
+.biz-listing-card > img, .biz-listing-card__placeholder, .biz-listings-public__card > img, .biz-listings-public__placeholder { width: 118px; min-width: 118px; height: 142px; object-fit: cover; }
+.biz-listing-card__placeholder, .biz-listings-public__placeholder { display: grid; place-items: center; background: var(--gold-soft); font-size: 32px; }
+.biz-listing-card__body { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 5px; padding: 11px; }
+.biz-listing-card__title, .biz-listings-public__heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.biz-listing-card__title b, .biz-listings-public__heading h3 { margin: 0; font-size: 14px; line-height: 1.5; }
+.biz-listing-card__body p, .biz-listings-public__card p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.biz-listing-card__body strong, .biz-listings-public__card strong { color: var(--brand-dark); font-size: 13px; }
+.biz-listing-card.is-muted { opacity: .62; }
+.biz-listing-card__actions { display: flex; gap: 5px; margin-top: auto; }
+.biz-listings-public { margin-top: 18px; }
+.biz-listings-public__title { margin-bottom: 11px; }
+.biz-listings-public__card { display: flex; flex-direction: column; }
+.biz-listings-public__card > img, .biz-listings-public__placeholder { width: 100%; height: 160px; }
+.biz-listings-public__card > div { padding: 11px; }
+.biz-listings-public__heading h3 { font-size: 14px; }
+.biz-listings-public__card p { margin-top: 5px; }
+.biz-listing-form { margin-bottom: 16px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
+.biz-listing-form__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+.biz-listing-form__photos { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+.biz-listing-form__photos span { position: relative; display: block; }
+.biz-listing-form__photos img { width: 66px; height: 66px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+.biz-listing-form__photos button { position: absolute; top: 2px; inset-inline-end: 2px; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: rgb(0 0 0 / 65%); color: #fff; cursor: pointer; }
+@media (max-width: 620px) { .biz-listings__head { flex-direction: column; } .biz-listing-form__grid { grid-template-columns: 1fr; } .biz-listing-card > img, .biz-listing-card__placeholder { width: 96px; min-width: 96px; } }
+
 /* ============ City map: docked category filter + photo pins ============ */
 .city-map__frame {
   position: relative;

@@ -118,6 +118,29 @@ export interface BusinessProductItem {
   isAvailable: boolean;
 }
 
+export interface BusinessListingItem {
+  id: number;
+  businessId: number;
+  kind: string;
+  title: string;
+  dealType: string | null;
+  description: string | null;
+  price: number | null;
+  deposit: number | null;
+  monthlyRent: number | null;
+  areaM2: number | null;
+  rooms: number | null;
+  brand: string | null;
+  model: string | null;
+  year: number | null;
+  mileage: number | null;
+  color: string | null;
+  transmission: string | null;
+  fuel: string | null;
+  specifications: unknown;
+  imageUrls: string[];
+}
+
 export interface BusinessDetail {
   id: number;
   name: string;
@@ -140,6 +163,7 @@ export interface BusinessDetail {
   category: { name: string; slug: string; icon: string | null; color: string | null };
   /** Menu & products («منو و محصولات») — empty array when none registered. */
   products: BusinessProductItem[];
+  listings: BusinessListingItem[];
   /** Latest public ratings/comments, intentionally limited to keep the profile light. */
   reviews: BusinessReviewPreview[];
 }
@@ -450,6 +474,32 @@ export class ContentService {
             isAvailable: true,
           },
         },
+        listings: {
+          where: { isAvailable: true },
+          orderBy: [{ sortOrder: 'asc' }, { updatedAt: 'desc' }],
+          select: {
+            id: true,
+            businessId: true,
+            kind: true,
+            title: true,
+            dealType: true,
+            description: true,
+            price: true,
+            deposit: true,
+            monthlyRent: true,
+            areaM2: true,
+            rooms: true,
+            brand: true,
+            model: true,
+            year: true,
+            mileage: true,
+            color: true,
+            transmission: true,
+            fuel: true,
+            specifications: true,
+            imageUrls: true,
+          },
+        },
         reviews: {
           orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
           take: 20,
@@ -470,13 +520,23 @@ export class ContentService {
       data: { viewCount: { increment: 1 } },
       select: { viewCount: true },
     });
-    const { products, reviews, ...rest } = business;
+    const { products, listings, reviews, ...rest } = business;
     return {
       ...rest,
       viewCount: updated.viewCount,
       products: products.map((product) => ({
         ...product,
         price: product.price === null ? null : Number(product.price),
+      })),
+      listings: (listings ?? []).map((listing) => ({
+        ...listing,
+        kind: String(listing.kind),
+        price: listing.price === null ? null : Number(listing.price),
+        deposit: listing.deposit === null ? null : Number(listing.deposit),
+        monthlyRent: listing.monthlyRent === null ? null : Number(listing.monthlyRent),
+        imageUrls: Array.isArray(listing.imageUrls)
+          ? listing.imageUrls.filter((item): item is string => typeof item === 'string')
+          : [],
       })),
       reviews: (reviews ?? []).map((review) => ({
         id: review.id,

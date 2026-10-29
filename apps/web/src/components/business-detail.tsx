@@ -5,7 +5,7 @@ import type { FormEvent } from 'react';
 import Link from 'next/link';
 import { ApiError, getBusinessDetail, getMyBusinessReview, getTokens, saveBusinessReview } from '@/lib/api';
 import { formatDate, formatPrice, formatRating, thumbFallback, thumbUrlFor } from '@/lib/format';
-import type { BusinessDetail as BusinessDetailData, BusinessProductItem, BusinessReview } from '@/lib/types';
+import type { BusinessDetail as BusinessDetailData, BusinessListingItem, BusinessProductItem, BusinessReview } from '@/lib/types';
 
 /** Menu rows grouped into their sections («نوشیدنی»، «غذاهای اصلی»…) in order. */
 function menuSections(products: BusinessProductItem[]): { title: string; items: BusinessProductItem[] }[] {
@@ -17,6 +17,13 @@ function menuSections(products: BusinessProductItem[]): { title: string; items: 
     else groups.push({ title, items: [product] });
   }
   return groups;
+}
+
+const dealLabels: Record<string, string> = { SALE: 'فروش', RENT: 'اجاره', MORTGAGE_RENT: 'رهن و اجاره' };
+
+function listingSummary(item: BusinessListingItem): string {
+  if (item.kind === 'PROPERTY') return [item.areaM2 && `${item.areaM2} متر`, item.rooms && `${item.rooms} اتاق`].filter(Boolean).join(' · ');
+  return [item.brand, item.model, item.year && `مدل ${item.year}`, item.mileage !== null && item.mileage !== undefined && `${item.mileage.toLocaleString('fa-IR')} کیلومتر`].filter(Boolean).join(' · ');
 }
 
 interface WorkingHour {
@@ -180,6 +187,7 @@ export function BusinessDetail({ id }: { id: number }) {
 
   const hours = readHours(detail.workingHours);
   const socials = readSocials(detail.socialLinks);
+  const listings = detail.listings ?? [];
 
   return (
     <div className="detail-page">
@@ -252,6 +260,20 @@ export function BusinessDetail({ id }: { id: number }) {
             </li>
           )}
         </ul>
+
+        {listings.length > 0 && (
+          <section className="biz-listings-public" aria-label={listings[0].kind === 'PROPERTY' ? 'فایل‌های املاک' : 'خودروهای اتوگالری'} data-testid="business-listings-public">
+            <h2 className="biz-listings-public__title">{listings[0].kind === 'PROPERTY' ? '🏠 فایل‌های املاک' : '🚗 خودروهای موجود'}</h2>
+            <div className="biz-listings-public__grid">
+              {listings.map((item) => (
+                <article className="biz-listings-public__card" key={item.id}>
+                  {item.imageUrls[0] ? <img src={thumbUrlFor(item.imageUrls[0]) ?? item.imageUrls[0]} onError={thumbFallback(item.imageUrls[0])} alt={item.title} /> : <span className="biz-listings-public__placeholder">{item.kind === 'PROPERTY' ? '🏠' : '🚗'}</span>}
+                  <div><div className="biz-listings-public__heading"><h3>{item.title}</h3>{item.dealType && <span className="chip">{dealLabels[item.dealType] ?? item.dealType}</span>}</div><p className="muted small">{listingSummary(item)}</p>{item.description && <p>{item.description}</p>}<strong>{formatPrice(item.price)}{item.monthlyRent ? ` · ماهانه ${formatPrice(item.monthlyRent)}` : ''}</strong></div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* «منو و محصولات» — shown when the owner has registered any, including
             for visitors arriving from the business pin on the city map. */}

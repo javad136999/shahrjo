@@ -8,6 +8,7 @@ import type {
   AdDetail,
   AdminOverview,
   BusinessDetail,
+  BusinessListingItem,
   BusinessItem,
   BusinessProductItem,
   BusinessReview,
@@ -749,6 +750,39 @@ export async function deleteBusinessProduct(
   productId: number,
 ): Promise<{ id: number; removed: boolean }> {
   return api.delete<{ id: number; removed: boolean }>(`/my-businesses/${id}/products/${productId}`);
+}
+
+export interface BusinessListingInput {
+  kind: 'PROPERTY' | 'VEHICLE';
+  title: string;
+  dealType?: 'SALE' | 'RENT' | 'MORTGAGE_RENT';
+  description?: string;
+  price?: number;
+  deposit?: number;
+  monthlyRent?: number;
+  areaM2?: number;
+  rooms?: number;
+  brand?: string;
+  model?: string;
+  year?: number;
+  mileage?: number;
+  color?: string;
+  transmission?: string;
+  fuel?: string;
+  imageUrls?: string[];
+  isAvailable?: boolean;
+}
+
+export async function createBusinessListing(id: number, body: BusinessListingInput): Promise<BusinessListingItem> {
+  return api.post<BusinessListingItem>(`/my-businesses/${id}/listings`, body);
+}
+
+export async function updateBusinessListing(id: number, listingId: number, body: BusinessListingInput): Promise<BusinessListingItem> {
+  return api.patch<BusinessListingItem>(`/my-businesses/${id}/listings/${listingId}`, body);
+}
+
+export async function deleteBusinessListing(id: number, listingId: number): Promise<{ id: number; deleted: boolean }> {
+  return api.delete<{ id: number; deleted: boolean }>(`/my-businesses/${id}/listings/${listingId}`);
 }
 
 // ---------- private chat (پیام‌های خصوصی) ----------

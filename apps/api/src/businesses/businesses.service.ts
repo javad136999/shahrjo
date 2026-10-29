@@ -40,7 +40,7 @@ export interface MyBusiness {
   productCount: number;
   /** true when the business has coordinates (i.e. it shows on the city map). */
   pinned: boolean;
-  category: { id: number; name: string; icon: string | null };
+  category: { id: number; name: string; slug?: string; icon: string | null };
 }
 
 /** One menu/product row as the owner manages it. */
@@ -57,6 +57,31 @@ export interface ManagedProduct {
   isAvailable: boolean;
 }
 
+export interface ManagedListing {
+  id: number;
+  businessId: number;
+  kind: string;
+  title: string;
+  dealType: string | null;
+  description: string | null;
+  price: number | null;
+  deposit: number | null;
+  monthlyRent: number | null;
+  areaM2: number | null;
+  rooms: number | null;
+  brand: string | null;
+  model: string | null;
+  year: number | null;
+  mileage: number | null;
+  color: string | null;
+  transmission: string | null;
+  fuel: string | null;
+  specifications: unknown;
+  imageUrls: string[];
+  sortOrder: number;
+  isAvailable: boolean;
+}
+
 /** Full owner view: editable profile fields + the menu rows. */
 export interface ManagedBusiness extends MyBusiness {
   description: string | null;
@@ -67,6 +92,7 @@ export interface ManagedBusiness extends MyBusiness {
   longitude: number | null;
   categoryId: number;
   products: ManagedProduct[];
+  listings: ManagedListing[];
 }
 
 /**
@@ -308,7 +334,7 @@ export class BusinessesService {
         rating: true,
         ratingCount: true,
         latitude: true,
-        category: { select: { id: true, name: true, icon: true } },
+        category: { select: { id: true, name: true, slug: true, icon: true } },
         _count: { select: { products: true } },
       },
     });
@@ -347,7 +373,7 @@ export class BusinessesService {
         phone: true,
         address: true,
         categoryId: true,
-        category: { select: { id: true, name: true, icon: true } },
+        category: { select: { id: true, name: true, slug: true, icon: true } },
         products: {
           orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
           select: {
@@ -361,11 +387,40 @@ export class BusinessesService {
             isAvailable: true,
           },
         },
+        listings: {
+          orderBy: [{ isAvailable: 'desc' }, { sortOrder: 'asc' }, { updatedAt: 'desc' }],
+          select: {
+            id: true,
+            businessId: true,
+            kind: true,
+            title: true,
+            dealType: true,
+            description: true,
+            price: true,
+            deposit: true,
+            monthlyRent: true,
+            areaM2: true,
+            rooms: true,
+            brand: true,
+            model: true,
+            year: true,
+            mileage: true,
+            color: true,
+            transmission: true,
+            fuel: true,
+            specifications: true,
+            imageUrls: true,
+            sortOrder: true,
+            isAvailable: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
       },
     });
     if (!business) throw new NotFoundException('کسب‌وکار یافت نشد');
 
-    const { products, latitude, ...rest } = business;
+    const { products, listings, latitude, ...rest } = business;
     return {
       ...rest,
       latitude,
@@ -375,6 +430,16 @@ export class BusinessesService {
       pinned: latitude !== null,
       productCount: products.length,
       products: products.map((product) => ({ ...product, price: rial(product.price) })),
+      listings: listings.map((listing) => ({
+        ...listing,
+        kind: String(listing.kind),
+        price: rial(listing.price),
+        deposit: rial(listing.deposit),
+        monthlyRent: rial(listing.monthlyRent),
+        imageUrls: Array.isArray(listing.imageUrls)
+          ? listing.imageUrls.filter((item): item is string => typeof item === 'string')
+          : [],
+      })),
     };
   }
 

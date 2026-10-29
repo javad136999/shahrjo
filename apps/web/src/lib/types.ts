@@ -447,6 +447,7 @@ export interface BusinessDetail {
   category: { name: string; slug: string; icon: string | null; color: string | null };
   /** «منو و محصولات» — empty array when the owner registered none. */
   products: BusinessProductItem[];
+  listings: BusinessListingItem[];
   reviews: BusinessReview[];
 }
 
@@ -484,6 +485,31 @@ export interface BusinessProductItem {
   isAvailable: boolean;
 }
 
+export interface BusinessListingItem {
+  id: number;
+  businessId: number;
+  kind: 'PROPERTY' | 'VEHICLE';
+  title: string;
+  dealType: 'SALE' | 'RENT' | 'MORTGAGE_RENT' | null;
+  description: string | null;
+  price: number | null;
+  deposit: number | null;
+  monthlyRent: number | null;
+  areaM2: number | null;
+  rooms: number | null;
+  brand: string | null;
+  model: string | null;
+  year: number | null;
+  mileage: number | null;
+  color: string | null;
+  transmission: string | null;
+  fuel: string | null;
+  specifications: unknown;
+  imageUrls: string[];
+  sortOrder: number;
+  isAvailable: boolean;
+}
+
 /** One row of «کسب‌وکارهای من» (any moderation status). */
 export interface MyBusiness {
   id: number;
@@ -501,7 +527,7 @@ export interface MyBusiness {
   productCount: number;
   /** true when coordinates are set — the business shows on the city map. */
   pinned: boolean;
-  category: { id: number; name: string; icon: string | null };
+  category: { id: number; name: string; slug?: string; icon: string | null };
 }
 
 /** Owner view of one business: editable profile + menu rows. */
@@ -513,6 +539,7 @@ export interface ManagedBusiness extends MyBusiness {
   longitude: number | null;
   categoryId: number;
   products: BusinessProductItem[];
+  listings: BusinessListingItem[];
 }
 
 export interface CreatedBusiness {

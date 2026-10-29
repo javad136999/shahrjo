@@ -6,10 +6,12 @@ import { ServiceListingsController } from './service-listings.controller';
 import { ServiceListingsService } from './service-listings.service';
 import { BusinessReviewsController } from './business-reviews.controller';
 import { BusinessReviewsService } from './business-reviews.service';
+import { BusinessListingsController } from './business-listings.controller';
+import { BusinessListingsService } from './business-listings.service';
 
 /** Owner-submitted business registration (create → PENDING moderation queue). */
 @Module({
-  controllers: [BusinessesController, ServiceListingsController, BusinessReviewsController],
-  providers: [BusinessesService, BusinessExpiryScheduler, ServiceListingsService, BusinessReviewsService],
+  controllers: [BusinessesController, ServiceListingsController, BusinessReviewsController, BusinessListingsController],
+  providers: [BusinessesService, BusinessExpiryScheduler, ServiceListingsService, BusinessReviewsService, BusinessListingsService],
 })
 export class BusinessesModule {}

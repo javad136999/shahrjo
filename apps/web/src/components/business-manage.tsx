@@ -16,8 +16,9 @@ import {
 } from '@/lib/api';
 import { formatPrice, thumbFallback, thumbUrlFor } from '@/lib/format';
 import type { BusinessCategoryOption, BusinessProductItem, ManagedBusiness } from '@/lib/types';
+import { BusinessListingsManager } from '@/components/business-listings-manager';
 
-type Tab = 'info' | 'menu';
+type Tab = 'info' | 'menu' | 'listings';
 
 /** The product being edited (null = the form is closed). */
 interface ProductDraft {
@@ -99,6 +100,7 @@ export function BusinessManage({ id, initialTab = 'info' }: { id: number; initia
     setDescription(business.description ?? '');
     setPhone(business.phone ?? '');
     setAddress(business.address ?? '');
+    if (business.category.slug === 'real_estate' || business.category.slug === 'car_dealer') setTab('listings');
   };
 
   useEffect(() => {
@@ -285,6 +287,8 @@ export function BusinessManage({ id, initialTab = 'info' }: { id: number; initia
     );
   }
 
+  const listingKind = data.category.slug === 'real_estate' ? 'PROPERTY' : data.category.slug === 'car_dealer' ? 'VEHICLE' : null;
+
   const productForm = draft && (
     <form
       className="biz-product-form"
@@ -383,14 +387,24 @@ export function BusinessManage({ id, initialTab = 'info' }: { id: number; initia
         >
           ✎ ویرایش مشخصات
         </button>
-        <button
+        {listingKind ? (
+          <button
+            type="button"
+            className={`biz-tabs__item${tab === 'listings' ? ' is-active' : ''}`}
+            onClick={() => setTab('listings')}
+            data-testid="biz-tab-listings"
+          >
+            {listingKind === 'PROPERTY' ? '🏠 فایل‌های املاک' : '🚗 خودروها'} ({data.listings.length.toLocaleString('fa-IR')})
+          </button>
+        ) : null}
+        {!listingKind && <button
           type="button"
           className={`biz-tabs__item${tab === 'menu' ? ' is-active' : ''}`}
           onClick={() => setTab('menu')}
           data-testid="biz-tab-menu"
         >
           ▤ منو و محصولات ({data.products.length.toLocaleString('fa-IR')})
-        </button>
+        </button>}
       </nav>
 
       {error && (
@@ -474,7 +488,7 @@ export function BusinessManage({ id, initialTab = 'info' }: { id: number; initia
             </button>
           </div>
         </form>
-      ) : (
+      ) : tab === 'menu' ? (
         <div className="biz-panel biz-menu" data-testid="biz-menu">
           <div className="biz-menu__head">
             <div><h2 className="biz-panel__title">منو و محصولات</h2><p>محصول‌ها را با عکس، گروه و قیمت بچین تا در صفحهٔ کسب‌وکارت مرتب دیده شوند.</p></div>
@@ -546,7 +560,9 @@ export function BusinessManage({ id, initialTab = 'info' }: { id: number; initia
 
           {productForm}
         </div>
-      )}
+      ) : listingKind ? (
+        <BusinessListingsManager businessId={id} kind={listingKind} initialListings={data.listings} />
+      ) : null}
     </section>
   );
 }

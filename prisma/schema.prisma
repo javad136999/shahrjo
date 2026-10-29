@@ -455,6 +455,7 @@ model Business {
   subscriptions Subscription[]
   referralCreditRedemptions ReferralCreditRedemption[]
   products      BusinessProduct[]
+  listings      BusinessListing[]
   wallPosts     WallPost[] // daily promo posts (2 GOLD businesses per day)
 
   @@index([cityId, categoryId, status])
@@ -508,6 +509,43 @@ model BusinessProduct {
 
   @@index([businessId, sortOrder])
   @@map("business_products")
+}
+
+enum BusinessListingKind {
+  PROPERTY
+  VEHICLE
+}
+
+model BusinessListing {
+  id            Int                 @id @default(autoincrement())
+  businessId    Int                 @map("business_id")
+  kind          BusinessListingKind
+  title         String              @db.VarChar(160)
+  dealType      String?             @map("deal_type") @db.VarChar(30)
+  description   String?
+  price         BigInt?
+  deposit       BigInt?
+  monthlyRent   BigInt?             @map("monthly_rent")
+  areaM2        Int?                @map("area_m2")
+  rooms         Int?
+  brand         String?             @db.VarChar(80)
+  model         String?             @db.VarChar(80)
+  year          Int?
+  mileage       Int?
+  color         String?             @db.VarChar(40)
+  transmission  String?             @db.VarChar(40)
+  fuel          String?             @db.VarChar(40)
+  specifications Json?
+  imageUrls     Json                @default("[]") @map("image_urls")
+  sortOrder     Int                 @default(0) @map("sort_order")
+  isAvailable   Boolean             @default(true) @map("is_available")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, kind, isAvailable, sortOrder])
+  @@map("business_listings")
 }
 
 model Review {
