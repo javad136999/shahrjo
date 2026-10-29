@@ -70,6 +70,8 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     const badge = await screen.findByTestId('service-listing-count');
     expect(badge).toHaveTextContent('۱۲۳ شغل ثبت‌شده');
     expect(badge).toHaveAttribute('aria-label', '۱۲۳ شغل ثبت‌شده');
+    expect(screen.getByTestId('service-tile-find').firstElementChild).toHaveClass('service-tile__icon');
+    expect(badge.parentElement).toHaveClass('service-tile__bottom');
     expect(m.getCityServiceListingCount).toHaveBeenCalledWith('sample-city');
   });
 

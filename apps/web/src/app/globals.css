@@ -955,7 +955,11 @@ a:hover {
   background: #f8fcfa;
 }
 .service-tile--find {
-  padding-top: 21px;
+  display: grid;
+  grid-template-rows: auto auto;
+  justify-items: center;
+  gap: 5px;
+  padding: 8px 12px 10px;
   background: #fffefb;
 }
 .service-tile--find.is-open {
@@ -976,18 +980,22 @@ a:hover {
   line-height: 1;
 }
 .service-tile--find .service-tile__icon {
-  position: relative;
   background: var(--gold-soft);
 }
-.service-tile__count {
-  position: absolute;
-  inset-inline-start: 11px;
-  inset-block-start: 5px;
-  color: #c81e1e;
+.service-tile__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
   direction: rtl;
-  font-size: 10px;
+}
+.service-tile__count {
+  flex: 0 0 auto;
+  color: #c81e1e;
+  font-size: 9.5px;
   font-weight: 800;
-  line-height: 1.2;
+  line-height: 1.3;
   white-space: nowrap;
 }
 .service-tile__copy {
@@ -995,6 +1003,14 @@ a:hover {
   min-width: 0;
   flex-direction: column;
   line-height: 1.5;
+}
+.service-tile--find .service-tile__copy {
+  align-items: flex-start;
+  text-align: right;
+}
+.service-tile--find .service-tile__copy b {
+  font-size: 11.5px;
+  line-height: 1.35;
 }
 .service-tile__copy b {
   font-size: 13.5px;

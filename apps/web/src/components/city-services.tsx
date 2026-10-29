@@ -258,17 +258,18 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
           data-testid="service-tile-find"
           onClick={() => toggle('find')}
         >
-          {cityServiceCount !== null && (
-            <span className="service-tile__count" data-testid="service-listing-count" aria-label={`${cityServiceCount.toLocaleString('fa-IR')} شغل ثبت‌شده`}>
-              {cityServiceCount.toLocaleString('fa-IR')} شغل ثبت‌شده
-            </span>
-          )}
           <span className="service-tile__icon" aria-hidden>
             🔎
           </span>
-          <span className="service-tile__copy">
-            <b>چه خدماتی در شهر {cityName} نیاز داری؟</b>
-            <small>فهرست مشاغل ثبت‌شده</small>
+          <span className="service-tile__bottom">
+            <span className="service-tile__copy">
+              <b>چه خدماتی در شهر {cityName} نیاز داری؟</b>
+            </span>
+            {cityServiceCount !== null && (
+              <span className="service-tile__count" data-testid="service-listing-count" aria-label={`${cityServiceCount.toLocaleString('fa-IR')} شغل ثبت‌شده`}>
+                {cityServiceCount.toLocaleString('fa-IR')} شغل ثبت‌شده
+              </span>
+            )}
           </span>
         </button>
       </div>
