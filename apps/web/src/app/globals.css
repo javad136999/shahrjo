@@ -956,10 +956,10 @@ a:hover {
 }
 .service-tile--find {
   display: grid;
-  grid-template-rows: auto auto;
+  grid-template-rows: auto auto auto;
   justify-items: center;
-  gap: 5px;
-  padding: 8px 12px 10px;
+  gap: 4px;
+  padding: 5px 12px 9px;
   background: #fffefb;
 }
 .service-tile--find.is-open {
@@ -982,15 +982,8 @@ a:hover {
 .service-tile--find .service-tile__icon {
   background: var(--gold-soft);
 }
-.service-tile__bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 100%;
-  direction: rtl;
-}
 .service-tile__count {
+  justify-self: start;
   flex: 0 0 auto;
   color: #c81e1e;
   font-size: 9.5px;
@@ -1005,6 +998,7 @@ a:hover {
   line-height: 1.5;
 }
 .service-tile--find .service-tile__copy {
+  width: 100%;
   align-items: flex-start;
   text-align: right;
 }
