@@ -6,6 +6,7 @@ import {
   ApiError,
   createServiceListing,
   getCityServiceListings,
+  getCityServiceListingCount,
   getServiceCategories,
   getTokens,
   rateServiceListing,
@@ -64,6 +65,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
   const [activeSearch, setActiveSearch] = useState('');
   const [ratingBusy, setRatingBusy] = useState<number | null>(null);
   const [ratingError, setRatingError] = useState<string | null>(null);
+  const [cityServiceCount, setCityServiceCount] = useState<number | null>(null);
   const [serviceQuery, setServiceQuery] = useState('');
   const [results, setResults] = useState<ServiceListingItem[] | null>(null);
   const [finding, setFinding] = useState(false);
@@ -72,6 +74,13 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
   const requestSequence = useRef(0);
   const closeResultsButton = useRef<HTMLButtonElement>(null);
 
+  useEffect(() => {
+    let alive = true;
+    getCityServiceListingCount(citySlug)
+      .then((count) => alive && setCityServiceCount(count))
+      .catch(() => alive && setCityServiceCount(null));
+    return () => { alive = false; };
+  }, [citySlug]);
   // Categories load once, lazily, on the first time either panel opens.
   useEffect(() => {
     if (!panel || categories) return;
@@ -175,6 +184,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
       });
       setForm({ ...emptyForm });
       setDone('ثبت شد؛ شغل شما در فهرست خدمات شهر قرار گرفت. صفحهٔ کسب‌وکار یا منو ساخته نشد.');
+      void getCityServiceListingCount(citySlug).then(setCityServiceCount).catch(() => undefined);
       onRegistered?.();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'ثبت شغل ناموفق بود؛ دوباره تلاش کنید');
@@ -237,8 +247,13 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
           data-testid="service-tile-find"
           onClick={() => toggle('find')}
         >
-          <span className="service-tile__icon" aria-hidden>
-            🔎
+          <span className="service-tile__icon">
+            <span aria-hidden>🔎</span>
+            {cityServiceCount !== null && (
+              <span className="service-tile__count" data-testid="service-listing-count" aria-label={`${cityServiceCount.toLocaleString('fa-IR')} شغل ثبت‌شده`}>
+                {cityServiceCount.toLocaleString('fa-IR')}
+              </span>
+            )}
           </span>
           <span className="service-tile__copy">
             <b>چه خدماتی در شهر {cityName} نیاز داری؟</b>

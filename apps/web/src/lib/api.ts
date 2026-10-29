@@ -499,6 +499,10 @@ export async function getCityBusinesses(
 }
 
 /** Lightweight service listings; these are never returned as businesses. */
+export async function getCityServiceListingCount(slug: string): Promise<number> {
+  return api.get<number>(`/service-listings/count?city=${encodeURIComponent(slug)}`);
+}
+
 export async function getCityServiceListings(
   slug: string,
   limit = 200,

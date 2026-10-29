@@ -10,6 +10,7 @@ jest.mock('@/lib/api', () => ({
   getTokens: jest.fn(),
   getServiceCategories: jest.fn(),
   getCityServiceListings: jest.fn(),
+  getCityServiceListingCount: jest.fn(),
   createServiceListing: jest.fn(),
   ApiError: class ApiError extends Error {
     constructor(public readonly status: number, message: string) {
@@ -43,11 +44,13 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     m.getTokens.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
     m.getServiceCategories.mockResolvedValue(cats);
     m.getCityServiceListings.mockResolvedValue(listings);
+    m.getCityServiceListingCount.mockResolvedValue(123);
     m.createServiceListing.mockResolvedValue({ id: 501, name: 'کابینت‌کار', phone: '09121112233' });
   });
 
-  it('offers the two service actions and stays closed until a tile is clicked', () => {
+  it('offers the two service actions and stays closed until a tile is clicked', async () => {
     render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
+    await screen.findByTestId('service-listing-count');
 
     const tiles = screen.getByTestId('city-services').querySelectorAll('.service-tile');
     expect(tiles).toHaveLength(2);
@@ -58,6 +61,14 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     expect(screen.queryByTestId('service-register')).not.toBeInTheDocument();
     expect(screen.queryByTestId('service-find')).not.toBeInTheDocument();
     expect(m.getServiceCategories).not.toHaveBeenCalled();
+  });
+
+  it('shows the city-wide registered service count in a red count badge', async () => {
+    render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
+    const badge = await screen.findByTestId('service-listing-count');
+    expect(badge).toHaveTextContent('۱۲۳');
+    expect(badge).toHaveAttribute('aria-label', '۱۲۳ شغل ثبت‌شده');
+    expect(m.getCityServiceListingCount).toHaveBeenCalledWith('sample-city');
   });
 
   it('opens the registration form and lists only service categories', async () => {

@@ -974,7 +974,28 @@ a:hover {
   line-height: 1;
 }
 .service-tile--find .service-tile__icon {
+  position: relative;
   background: var(--gold-soft);
+}
+.service-tile__count {
+  position: absolute;
+  inset-inline-end: -9px;
+  inset-block-end: -7px;
+  display: grid;
+  min-width: 24px;
+  height: 20px;
+  place-items: center;
+  padding: 0 5px;
+  border: 1.5px solid #dc2626;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgb(127 29 29 / 16%);
+  color: #c81e1e;
+  direction: rtl;
+  font-size: 10px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 .service-tile__copy {
   display: flex;

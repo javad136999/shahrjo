@@ -9,6 +9,11 @@ import { ServiceListingsService } from './service-listings.service';
 export class ServiceListingsController {
   constructor(private readonly serviceListings: ServiceListingsService) {}
 
+  @Public()
+  @Get('count')
+  count(@Query() query: CityContentQueryDto): ReturnType<ServiceListingsService['count']> {
+    return this.serviceListings.count(query.city);
+  }
   /** Search public, lightweight service entries by city and optional trade. */
   @Public()
   @Get()

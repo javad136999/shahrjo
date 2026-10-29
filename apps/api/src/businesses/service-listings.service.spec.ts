@@ -16,7 +16,7 @@ function makePrisma() {
   return {
     city: { findFirst: jest.fn() },
     businessCategory: { findFirst: jest.fn() },
-    serviceListing: { create: jest.fn(), findMany: jest.fn(), findFirst: jest.fn() },
+    serviceListing: { create: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), count: jest.fn() },
     serviceListingRating: { upsert: jest.fn(), aggregate: jest.fn() },
   };
 }
@@ -38,10 +38,15 @@ describe('ServiceListingsService', () => {
       category: { name: 'تعمیرکار کولر', slug: 'svc_ac_repair', icon: '❄️' },
     });
     prisma.serviceListing.findMany.mockResolvedValue([]);
+    prisma.serviceListing.count.mockResolvedValue(123);
     prisma.serviceListing.findFirst.mockResolvedValue(null);
     prisma.serviceListingRating.aggregate.mockResolvedValue({ _avg: { rating: 4.5 }, _count: { _all: 2 } });
   });
 
+  it('counts all active listings in a city without applying the search page limit', async () => {
+    await expect(service.count('sample-city')).resolves.toBe(123);
+    expect(prisma.serviceListing.count).toHaveBeenCalledWith({ where: { cityId: 5, isActive: true } });
+  });
   it('creates a service-listing row only, with the entered contact and service details', async () => {
     const result = await service.create(user, dto);
 

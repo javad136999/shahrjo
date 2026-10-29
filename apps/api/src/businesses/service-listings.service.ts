@@ -13,6 +13,16 @@ const normalizePhone = (value: string) => value
 export class ServiceListingsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Count every active service entry in the city without paging/truncation. */
+  async count(citySlug: string) {
+    const city = await this.prisma.city.findFirst({
+      where: { slug: citySlug, isActive: true, province: { isActive: true } },
+      select: { id: true },
+    });
+    if (!city) throw new NotFoundException('شهر انتخاب‌شده یافت نشد');
+    return this.prisma.serviceListing.count({ where: { cityId: city.id, isActive: true } });
+  }
+
   /** Public directory search: only lightweight listings, never Business profiles. */
   async list(citySlug: string, limit = 200, categorySlug?: string, query?: string) {
     const city = await this.prisma.city.findFirst({
