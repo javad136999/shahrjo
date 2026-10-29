@@ -144,3 +144,16 @@ Tourism thumbnails are optimized WebP derivatives of the files linked below. The
 - `damghan-tarikhaneh-damghan-iran-jpg.webp` — [Tarikhaneh, Damghan, Iran.jpg](https://commons.wikimedia.org/wiki/File:Tarikhaneh,_Damghan,_Iran.jpg), Mehdi Saeidi, CC BY 2.0; بهینه‌شده با WebP (17,852 bytes).
 - `garmsar-the-cistern-in-garmsar-iran-jpg.webp` — [The cistern in Garmsar,Iran.jpg](https://commons.wikimedia.org/wiki/File:The_cistern_in_Garmsar,Iran.jpg), Reza1rameh, CC BY-SA 4.0; بهینه‌شده با WebP (29,598 bytes).
 - `mehdishahr-darband-cave-jpg.webp` — [Darband Cave.jpg](https://commons.wikimedia.org/wiki/File:Darband_Cave.jpg), user:Rahiane sHOMAL, FAL; بهینه‌شده با WebP (38,846 bytes).
+
+## Isfahan additions
+New thumbnails use Wikimedia Commons source photographs. They were resized and re-encoded as WebP for web delivery.
+- `isfahan-ali-qapu.webp` — [Palacio Aali Qapu, Isfahán, Irán, 2016-09-20, DD 56.jpg](https://commons.wikimedia.org/wiki/File:Palacio_Aali_Qapu,_Isfah%C3%A1n,_Ir%C3%A1n,_2016-09-20,_DD_56.jpg), Diego Delso, CC BY-SA 4.0.
+- `isfahan-sheikh-lotfollah.webp` — [Rising of Sheykh Lotfollah.jpg](https://commons.wikimedia.org/wiki/File:Rising_of_Sheykh_Lotfollah.jpg), Alimohammadi1988, CC BY-SA 4.0.
+- `isfahan-hasht-behesht.webp` — [Hasht behesht palace 1.JPG](https://commons.wikimedia.org/wiki/File:Hasht_behesht_palace_1.JPG), مانفی, CC BY-SA 4.0.
+- `isfahan-khaju-bridge.webp` — [Khaju Bridge, Isfahan 01.jpg](https://commons.wikimedia.org/wiki/File:Khaju_Bridge,_Isfahan_01.jpg), Bernard Gagnon, CC BY-SA 4.0.
+- `isfahan-vank-cathedral.webp` — [Catedral Vank, Isfahán, Irán, 2016-09-20, DD 101-103 HDR.jpg](https://commons.wikimedia.org/wiki/File:Catedral_Vank,_Isfah%C3%A1n,_Ir%C3%A1n,_2016-09-20,_DD_101-103_HDR.jpg), Diego Delso, CC BY-SA 4.0.
+- `isfahan-jolfa-bethlehem.webp` — [Bedkhem Church, Isfahan, Iran.jpg](https://commons.wikimedia.org/wiki/File:Bedkhem_Church,_Isfahan,_Iran.jpg), Amirpashaei, CC BY-SA 4.0.
+- `isfahan-menars.webp` — [Monar Jonban Isfahan Aarash (12).jpg](https://commons.wikimedia.org/wiki/File:Monar_Jonban_Isfahan_Aarash_%2812%29.jpg), آرش, CC BY-SA 3.0.
+- `isfahan-atashgah.webp` — [Atashgah-Esfahan (1).jpg](https://commons.wikimedia.org/wiki/File:Atashgah-Esfahan_%281%29.jpg), Behnam Minaei, CC BY-SA 4.0.
+- `isfahan-bazaar.webp` — [Isfahan Grand Bazaar2021-04-13 11.jpg](https://commons.wikimedia.org/wiki/File:Isfahan_Grand_Bazaar2021-04-13_11.jpg), Morteza Salehi, CC BY 4.0.
+- `isfahan-naghshe-jahan-jame.webp` — [Hakim Mosque- Isfahan-ID223- مسجد حکیم-اصفهان.jpg](https://commons.wikimedia.org/wiki/File:Hakim_Mosque-_Isfahan-ID223-_%D9%85%D8%B3%D8%AC%D8%AF_%D8%AD%DA%A9%DB%8C%D9%85-%D8%A7%D8%B5%D9%81%D9%87%D8%A7%D9%86.jpg), Mhsheikholeslami, CC BY-SA 4.0.

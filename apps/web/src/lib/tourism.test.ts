@@ -160,6 +160,11 @@ describe('Isfahan tourism completeness', () => {
       expect(spot.latitude).toBeLessThan(32.9);
       expect(spot.longitude).toBeGreaterThan(51.3);
       expect(spot.longitude).toBeLessThan(52.0);
+      expect(spot.imageUrl).toMatch(/^\/tourism\/isfahan-.+\.webp$/);
+      expect(existsSync(path.resolve(__dirname, '../../public', spot.imageUrl!.slice(1)))).toBe(true);
+      expect(spot.imageSourceUrl).toMatch(/^https:\/\/commons\.wikimedia\.org\/wiki\//);
+      expect(spot.imageCredit).toBeTruthy();
+      expect(spot.imageLicense).toMatch(/^CC BY/);
     }
   });
 });
