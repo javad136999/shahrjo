@@ -182,7 +182,7 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     const stars = await screen.findByTestId('service-rating-501');
     fireEvent.click(screen.getByRole('button', { name: '۵ از ۵ ستاره' }));
     await waitFor(() => expect(m.rateServiceListing).toHaveBeenCalledWith(501, 5));
-    expect(screen.getByTestId('service-result-501')).toHaveTextContent('۴ (۲ رأی)');
+    expect(screen.getByTestId('service-result-501')).toHaveTextContent('۴ از ۵ · ۲ رأی');
   });
   it('shows the exact empty state and lets a visitor register that service', async () => {
     m.getCityServiceListings.mockResolvedValue([]);

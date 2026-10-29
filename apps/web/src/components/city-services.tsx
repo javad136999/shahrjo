@@ -477,8 +477,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
                     <table className="service-results-table">
                       <thead>
                         <tr>
-                          <th scope="col">عنوان شغل و خدمات</th>
-                          <th scope="col">امتیاز کاربران</th>
+                          <th scope="col">شغل و امتیاز کاربران</th>
                           <th scope="col">شماره تماس</th>
                           <th scope="col">تماس</th>
                         </tr>
@@ -486,19 +485,19 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
                       <tbody>
                         {results.map((listing) => (
                           <tr key={listing.id} data-testid={`service-result-${listing.id}`}>
-                            <td data-label="عنوان شغل و خدمات">
-                              <strong>{listing.name}</strong>
-                              <small>
+                            <td data-label="شغل و امتیاز کاربران" className="service-results-table__job">
+                              <div className="service-results-table__job-head">
+                                <div className="service-rating-stars" role="group" aria-label={`امتیاز ${listing.name}`} data-testid={`service-rating-${listing.id}`}>
+                                  {[1, 2, 3, 4, 5].map((star) => <button key={star} type="button" aria-label={`${star.toLocaleString('fa-IR')} از ۵ ستاره`} aria-pressed={(listing as ServiceListingItem & { userRating?: number }).userRating === star} disabled={ratingBusy === listing.id} onClick={() => void submitRating(listing, star)}>{star <= Math.round(listing.rating ?? 0) ? '★' : '☆'}</button>)}
+                                </div>
+                                <strong>{listing.name}</strong>
+                                <small className="service-results-table__rating-summary">{listing.ratingCount ? `${listing.rating.toLocaleString('fa-IR')} از ۵ · ${listing.ratingCount.toLocaleString('fa-IR')} رأی` : 'بدون امتیاز'}</small>
+                              </div>
+                              <small className="service-results-table__category">
                                 {listing.category.icon ? `${listing.category.icon} ` : ''}
                                 {listing.category.name}
+                                {listing.description ? ` · ${listing.description}` : ''}
                               </small>
-                              {listing.description && <small>{listing.description}</small>}
-                            </td>
-                            <td data-label="امتیاز کاربران" className="service-results-table__rating">
-                              <div className="service-rating-stars" role="group" aria-label={`امتیاز ${listing.name}`} data-testid={`service-rating-${listing.id}`}>
-                                {[1, 2, 3, 4, 5].map((star) => <button key={star} type="button" aria-label={`${star.toLocaleString('fa-IR')} از ۵ ستاره`} aria-pressed={(listing as ServiceListingItem & { userRating?: number }).userRating === star} disabled={ratingBusy === listing.id} onClick={() => void submitRating(listing, star)}>{star <= Math.round(listing.rating ?? 0) ? '★' : '☆'}</button>)}
-                              </div>
-                              <small>{listing.ratingCount ? `${listing.rating.toLocaleString('fa-IR')} (${listing.ratingCount.toLocaleString('fa-IR')} رأی)` : 'بدون امتیاز'}</small>
                               {ratingError && <small className="error" role="alert">{ratingError}</small>}
                             </td>
                             <td data-label="شماره تماس" className="service-results-table__phone">
