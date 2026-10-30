@@ -25,15 +25,18 @@ export function HomeClient({ initialCities }: HomeClientProps) {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [resolvingCity, setResolvingCity] = useState(true);
 
   const load = useCallback(async () => {
     setError(null);
+    setResolvingCity(true);
     setCities(null);
     try {
       const list = await api.get<City[]>('/cities');
       setCities(list);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'دریافت فهرست شهرها ناموفق بود');
+      setResolvingCity(false);
     }
   }, []);
 
@@ -60,8 +63,8 @@ export function HomeClient({ initialCities }: HomeClientProps) {
       };
     }
 
+    // Keep the city chooser hidden until local and profile restoration finish.
     // Older signed-in users may have a profile city but no local preference.
-    // Restore it once, then remember it locally for future visits.
     if (getTokens()) {
       api
         .get<MeResponse>('/users/me')
@@ -74,11 +77,15 @@ export function HomeClient({ initialCities }: HomeClientProps) {
             router.replace(`/city/${profileCity.slug}`);
             return;
           }
+          setResolvingCity(false);
         })
         .catch(() => {
           if (!alive) return;
           setMe(null);
+          setResolvingCity(false);
         });
+    } else {
+      setResolvingCity(false);
     }
 
     return () => {
@@ -106,6 +113,9 @@ export function HomeClient({ initialCities }: HomeClientProps) {
   const localCity = getLocalCity();
   const current = serverCity ?? (localCity && cities?.find((c) => c.id === localCity.id) ? localCity : null);
 
+  if (resolvingCity) {
+    return <div className="city-restore-pending" data-testid="city-restore-pending" aria-busy="true" />;
+  }
   return (
     <>
       <section className="hero">
