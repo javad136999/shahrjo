@@ -60,6 +60,14 @@ describe('HeaderPills', () => {
     expect(tourism).toHaveTextContent('گردشگری');
   });
 
+  it('links the compact install button to the Cafe Bazaar app page', async () => {
+    render(<HeaderPills />);
+    const install = await screen.findByTestId('header-install-pill');
+    expect(install).toHaveAttribute('href', 'http://cafebazaar.ir/app/?id=ir.shahrju.app&ref=share');
+    expect(install).toHaveAttribute('target', '_blank');
+    expect(install).toHaveTextContent('نصب');
+  });
+
   it('sends the tourism button to the city picker when no city is remembered', async () => {
     mockGetLocalCity.mockReturnValue(null);
     render(<HeaderPills />);

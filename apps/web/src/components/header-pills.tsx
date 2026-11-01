@@ -42,6 +42,18 @@ export function HeaderPills() {
         <span aria-hidden>🧭</span>
         <span className="pill__label">گردشگری شهر</span>
       </Link>
+      <a
+        href="http://cafebazaar.ir/app/?id=ir.shahrju.app&ref=share"
+        className="pill"
+        title="نصب اپلیکیشن شهرجو"
+        aria-label="نصب اپلیکیشن شهرجو از بازار"
+        data-testid="header-install-pill"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <span aria-hidden>📲</span>
+        <span className="pill__label">نصب</span>
+      </a>
       {/* This is the ONLY way to change the city: it opens the picker with
           search in place — no page jump. It always reads «انتخاب شهر» rather
           than the current city, because the adjacent header slot already
