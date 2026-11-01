@@ -16,6 +16,7 @@ import type { LocalCity } from '@/lib/types';
  */
 export function HeaderPills() {
   const [city, setCity] = useState<LocalCity | null>(null);
+  const [showInstall, setShowInstall] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const pathname = usePathname();
 
@@ -30,6 +31,16 @@ export function HeaderPills() {
     };
   }, [pathname]);
 
+  useEffect(() => {
+    // The published Android app is an Android System WebView. Its UA contains
+    // `; wv)` (and the legacy `Version/4.0` marker), unlike normal Chrome.
+    // This keeps the Bazaar install CTA in the browser only, without requiring
+    // a new Android APK just to hide a web-rendered header item.
+    const userAgent = navigator.userAgent;
+    const isAndroidWebView = /Android/i.test(userAgent) && (/[;\s]wv\)/i.test(userAgent) || /Version\/4\.0/i.test(userAgent));
+    setShowInstall(!isAndroidWebView);
+  }, []);
+
   return (
     <div className="header-pills">
       <Link
@@ -42,18 +53,20 @@ export function HeaderPills() {
         <span aria-hidden>🧭</span>
         <span className="pill__label">گردشگری شهر</span>
       </Link>
-      <a
-        href="http://cafebazaar.ir/app/?id=ir.shahrju.app&ref=share"
-        className="pill"
-        title="نصب اپلیکیشن شهرجو"
-        aria-label="نصب اپلیکیشن شهرجو از بازار"
-        data-testid="header-install-pill"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <span aria-hidden>📲</span>
-        <span className="pill__label">نصب</span>
-      </a>
+      {showInstall && (
+        <a
+          href="http://cafebazaar.ir/app/?id=ir.shahrju.app&ref=share"
+          className="pill"
+          title="نصب اپلیکیشن شهرجو"
+          aria-label="نصب اپلیکیشن شهرجو از بازار"
+          data-testid="header-install-pill"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span aria-hidden>📲</span>
+          <span className="pill__label">نصب</span>
+        </a>
+      )}
       {/* This is the ONLY way to change the city: it opens the picker with
           search in place — no page jump. It always reads «انتخاب شهر» rather
           than the current city, because the adjacent header slot already

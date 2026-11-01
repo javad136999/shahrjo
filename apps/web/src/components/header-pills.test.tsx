@@ -68,6 +68,20 @@ describe('HeaderPills', () => {
     expect(install).toHaveTextContent('نصب');
   });
 
+  it('hides the install button inside the Android app WebView', async () => {
+    const originalUserAgent = navigator.userAgent;
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (Linux; Android 13; wv) AppleWebKit/537.36 Version/4.0 Chrome/120.0 Mobile Safari/537.36',
+    });
+
+    render(<HeaderPills />);
+    await screen.findByTestId('header-city-pill');
+    expect(screen.queryByTestId('header-install-pill')).not.toBeInTheDocument();
+
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: originalUserAgent });
+  });
+
   it('sends the tourism button to the city picker when no city is remembered', async () => {
     mockGetLocalCity.mockReturnValue(null);
     render(<HeaderPills />);
