@@ -4,13 +4,18 @@ import { MyBusinesses } from '@/components/my-businesses';
 const mockList = jest.fn();
 const mockTokens = jest.fn();
 const mockReplace = jest.fn();
+const mockLocalCity = jest.fn();
+const mockProfile = jest.fn();
 const mockRouterObject = { replace: (...args: unknown[]) => mockReplace(...args) };
 
 jest.mock('next/navigation', () => ({ useRouter: () => mockRouterObject }));
 
 jest.mock('@/lib/api', () => ({
   ApiError: class ApiError extends Error {},
-  getMyBusinesses: () => mockList(),
+  CITY_CHANGED_EVENT: 'shahrjo:city-changed',
+  getLocalCity: () => mockLocalCity(),
+  getProfile: () => mockProfile(),
+  getMyBusinesses: (cityId?: number) => mockList(cityId),
   getTokens: () => mockTokens(),
 }));
 
@@ -51,6 +56,8 @@ describe('MyBusinesses («کسب‌وکارهای من»)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockTokens.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
+    mockLocalCity.mockReturnValue({ id: 7, slug: 'sample-city', name: 'شهر نمونه' });
+    mockProfile.mockResolvedValue({ cityId: 7 });
   });
 
   it('lists the owner businesses with separate edit and menu/product actions', async () => {
@@ -68,6 +75,7 @@ describe('MyBusinesses («کسب‌وکارهای من»)', () => {
     expect(screen.getByTestId('my-business-9')).toHaveTextContent('👑 طلایی');
     expect(screen.getByTestId('my-business-9')).toHaveTextContent('بدون موقعیت روی نقشه');
     expect(screen.getByTestId('my-businesses-new')).toHaveAttribute('href', '/business/new');
+    expect(mockList).toHaveBeenCalledWith(7);
   });
 
   it('keeps a suspended business in the list with a reactivate-by-purchase CTA', async () => {

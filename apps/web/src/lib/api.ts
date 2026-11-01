@@ -706,8 +706,9 @@ export async function createBusiness(body: {
 // ---------- my businesses + menu/products ----------
 
 /** The caller's own businesses, any moderation status. */
-export async function getMyBusinesses(): Promise<MyBusiness[]> {
-  return api.get<MyBusiness[]>('/my-businesses');
+export async function getMyBusinesses(cityId?: number): Promise<MyBusiness[]> {
+  const query = cityId ? `?cityId=${encodeURIComponent(cityId)}` : '';
+  return api.get<MyBusiness[]>(`/my-businesses${query}`);
 }
 
 /** One owned business with its menu rows (owner only — others get 404). */

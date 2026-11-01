@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ApiError, getMyBusinesses, getTokens } from '@/lib/api';
+import { ApiError, CITY_CHANGED_EVENT, getLocalCity, getMyBusinesses, getProfile, getTokens } from '@/lib/api';
 import { formatRating } from '@/lib/format';
 import type { MyBusiness } from '@/lib/types';
 
@@ -41,14 +41,27 @@ export function MyBusinesses() {
       return;
     }
     let alive = true;
-    getMyBusinesses()
-      .then((list) => alive && setItems(list))
+    const load = async () => {
+      const localCity = getLocalCity();
+      const cityId = localCity?.id ?? (await getProfile()).cityId ?? undefined;
+      const list = await getMyBusinesses(cityId);
+      if (alive) setItems(list);
+    };
+    load()
       .catch((err: unknown) => {
         if (!alive) return;
         setError(err instanceof ApiError ? err.message : 'دریافت کسب‌وکارها ناموفق بود');
       });
+    const onCityChanged = () => {
+      setItems(null);
+      load().catch((err: unknown) => {
+        if (alive) setError(err instanceof ApiError ? err.message : 'دریافت کسب‌وکارها ناموفق بود');
+      });
+    };
+    window.addEventListener(CITY_CHANGED_EVENT, onCityChanged);
     return () => {
       alive = false;
+      window.removeEventListener(CITY_CHANGED_EVENT, onCityChanged);
     };
   }, [router]);
 

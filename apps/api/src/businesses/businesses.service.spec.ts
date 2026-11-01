@@ -148,4 +148,18 @@ describe('BusinessesService.mine — the owner’s working list', () => {
     expect(rows[0]).toMatchObject({ status: 'CLOSED', subscriptionStatus: 'EXPIRED', productCount: 2, pinned: false });
     expect(rows[0].subscriptionExpiresAt).toBeInstanceOf(Date);
   });
+
+  it('scopes the owner dashboard to the requested active city', async () => {
+    const findFirst = jest.fn().mockResolvedValue({ id: 5 });
+    const findMany = jest.fn().mockResolvedValue([]);
+    const service = new BusinessesService({ city: { findFirst }, business: { findMany } } as unknown as PrismaService);
+
+    await service.mine(owner, 5);
+
+    expect(findFirst).toHaveBeenCalledWith({
+      where: { id: 5, isActive: true, province: { isActive: true } },
+      select: { id: true },
+    });
+    expect(findMany.mock.calls[0][0].where).toEqual({ ownerId: owner.id, cityId: 5, status: { not: 'DELETED' } });
+  });
 });

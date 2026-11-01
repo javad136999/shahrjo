@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { CurrentUser, Public } from '../common/decorators';
@@ -56,8 +57,10 @@ export class BusinessesController {
 
   /** The caller's own businesses, any moderation status («کسب‌وکارهای من»). */
   @Get('my-businesses')
-  mine(@CurrentUser() user: User): ReturnType<BusinessesService['mine']> {
-    return this.businesses.mine(user);
+  mine(@CurrentUser() user: User, @Query('cityId') cityId?: string): ReturnType<BusinessesService['mine']> {
+    const parsedCityId = cityId === undefined ? undefined : Number(cityId);
+    const validCityId = parsedCityId !== undefined && Number.isInteger(parsedCityId) && parsedCityId > 0 ? parsedCityId : undefined;
+    return this.businesses.mine(user, validCityId);
   }
 
   /** One owned business with its menu rows (owner only — others get 404). */

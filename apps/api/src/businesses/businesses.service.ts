@@ -318,9 +318,16 @@ export class BusinessesService {
    * the subscription ran out) stay visible so the owner can reactivate them
    * by buying a plan.
    */
-  async mine(user: User): Promise<MyBusiness[]> {
+  async mine(user: User, cityId?: number): Promise<MyBusiness[]> {
+    if (cityId !== undefined) {
+      const city = await this.prisma.city.findFirst({
+        where: { id: cityId, isActive: true, province: { isActive: true } },
+        select: { id: true },
+      });
+      if (!city) throw new NotFoundException('شهر انتخاب‌شده یافت نشد');
+    }
     const rows = await this.prisma.business.findMany({
-      where: { ownerId: user.id, status: { not: 'DELETED' } },
+      where: { ownerId: user.id, ...(cityId === undefined ? {} : { cityId }), status: { not: 'DELETED' } },
       orderBy: [{ createdAt: 'desc' }],
       select: {
         id: true,
