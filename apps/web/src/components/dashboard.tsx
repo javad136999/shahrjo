@@ -36,7 +36,7 @@ export function CityDashboard({ city, showcase, mapData, menuShowcase, loading, 
             <h1>به شهر {city.name} خوش آمدید</h1>
           </div>
           <Link href="/wall" className="wall-cta" data-testid="wall-cta">
-            <span className="wall-cta__icon" aria-hidden>💗</span>
+            <span className="wall-cta__icon" aria-hidden>💬</span>
             <span className="wall-cta__copy"><b>ورود به دیوار شهر</b><small>گفت‌وگو با همشهری‌ها</small></span>
             {/* the entry reads as «open» — the little white tick like before */}
             <span className="wall-cta__tick" aria-hidden>✓</span>

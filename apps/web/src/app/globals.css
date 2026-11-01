@@ -1212,13 +1212,14 @@ a:hover {
 .wall-cta__icon {
   display: grid;
   place-items: center;
-  width: 43px;
-  height: 43px;
-  flex: 0 0 43px;
-  border-radius: 15px;
-  background: rgb(255 255 255 / 17%);
-  border: 1px solid rgb(255 255 255 / 25%);
-  font-size: 22px;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgb(255 255 255 / 31%), rgb(255 255 255 / 12%));
+  border: 1px solid rgb(255 255 255 / 38%);
+  font-size: 28px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 28%), 0 5px 12px rgb(92 12 58 / 20%);
   animation: wall-heartbeat 1.65s ease-in-out infinite;
   transform-origin: center;
 }
@@ -2798,7 +2799,7 @@ a.my-ads__item:hover {
   padding: 0;
   list-style: none;
   /* RTL: +50% shifts exactly one copy to the right → seamless loop */
-  animation: showcase-marquee 42s linear infinite;
+  animation: showcase-marquee 72s linear infinite;
   will-change: transform;
 }
 
@@ -2887,9 +2888,11 @@ a.my-ads__item:hover {
   font-size: 14.5px;
   color: var(--text, #26241d);
   text-decoration: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.45;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
 }
 
 .showcase-card__name:hover {
