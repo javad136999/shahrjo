@@ -56,7 +56,7 @@ export function HeaderPills() {
       {showInstall && (
         <a
           href="http://cafebazaar.ir/app/?id=ir.shahrju.app&ref=share"
-          className="pill"
+          className="pill header-install-pill"
           title="نصب اپلیکیشن شهرجو"
           aria-label="نصب اپلیکیشن شهرجو از بازار"
           data-testid="header-install-pill"

@@ -184,6 +184,26 @@ a:hover {
   border-color: rgb(14 122 95 / 25%);
 }
 
+/* The install CTA keeps its label under the icon so it remains recognizable
+   in the compact header while staying visible on mobile web too. */
+.header-install-pill {
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 9px;
+  line-height: 1.15;
+}
+.header-install-pill .pill__label {
+  display: block !important;
+  padding: 2px 6px;
+  border: 1px solid rgb(217 143 43 / 34%);
+  border-radius: 6px;
+  color: var(--gold-dark);
+  background: var(--gold-soft);
+  font-size: 9px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 @media (max-width: 760px) {
   /* icons only — the city name and the tourism pill keep their labels */
   .header-pills .pill:not([data-testid='header-city-pill']):not([data-testid='header-news-pill'])
