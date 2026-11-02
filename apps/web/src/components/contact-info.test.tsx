@@ -11,7 +11,7 @@ describe('ContactInfo', () => {
     render(<ContactInfo />);
     expect(SITE_CONTACT.phone).toBe('۰۹۰۲۵۴۳۳۶۶۵');
     expect(SITE_CONTACT.phoneHref).toBe('tel:09025433665');
-    expect(SITE_CONTACT.address).toBe('جم');
+    expect(SITE_CONTACT.address).toBe(String.fromCodePoint(0x62c, 0x645));
     const link = screen.getByTestId('contact-phone');
     expect(link).toHaveAttribute('href', SITE_CONTACT.phoneHref);
     expect(link).toHaveTextContent(SITE_CONTACT.phone);

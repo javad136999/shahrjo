@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { ContactInfo } from '@/components/contact-info';
+import { SITE_CONTACT } from '@/lib/site-contact';
 
 export const metadata: Metadata = {
   title: 'تماس با ما',
-  description: 'راه‌های تماس با پشتیبانی شهرجو؛ شماره تماس و نشانی شهر جم',
+  description: `راه‌های تماس با پشتیبانی شهرجو؛ شماره تماس و نشانی ${SITE_CONTACT.address}`,
 };
 
 /** «تماس با ما» — راه‌های ارتباطی پشتیبانی (منبع واحد: lib/site-contact). */
