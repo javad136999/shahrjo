@@ -251,7 +251,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
               <small>کلیک کنید</small>
               <small className="service-tile__free">رایگان</small>
             </span>
-            <small>فقط معرفی شغل، بدون صفحهٔ کسب‌وکار</small>
+            <small className="service-tile__descriptor">فقط معرفی شغل، بدون صفحهٔ کسب‌وکار</small>
           </span>
         </button>
 
