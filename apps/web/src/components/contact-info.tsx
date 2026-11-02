@@ -2,7 +2,7 @@ import { SITE_CONTACT } from '@/lib/site-contact';
 
 /**
  * Public contact block used by «تماس با ما»: tap-to-call phone and
- * selectable (copyable) address / postal code — Persian, RTL, mobile-first.
+ * selectable (copyable) address — Persian, RTL, mobile-first.
  */
 export function ContactInfo() {
   return (
@@ -32,14 +32,6 @@ export function ContactInfo() {
         <p className="contact-card__hint">برای کپی، روی متن نگه دارید و «کپی» را انتخاب کنید.</p>
       </section>
 
-      <section className="contact-card">
-        <h2>
-          <span aria-hidden>✉️</span> کد پستی
-        </h2>
-        <p className="contact-card__value contact-card__value--ltr" dir="ltr" data-testid="contact-postal">
-          {SITE_CONTACT.postalCode}
-        </p>
-      </section>
     </div>
   );
 }

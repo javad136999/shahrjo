@@ -6,13 +6,12 @@
  * These are contact details for display and support only. They are not
  * presented anywhere as identity/verification credentials (e.g. اینماد).
  */
-const phone = '09174057031';
+const phone = '۰۹۰۲۵۴۳۳۶۶۵';
 
 export const SITE_CONTACT = {
-  /** Displayed number (Latin digits, LTR inside RTL layout). */
+  /** Displayed number (Persian digits, LTR inside RTL layout). */
   phone,
   /** Clickable link so mobile visitors can call directly. */
-  phoneHref: `tel:${phone}`,
-  address: 'استان فارس، شهر جم، خیابان فرهنگ ۱۲',
-  postalCode: '7511764181',
+  phoneHref: 'tel:09025433665',
+  address: 'شهر جم',
 } as const;

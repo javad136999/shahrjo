@@ -732,6 +732,11 @@ export async function updateMyBusiness(
   return api.patch<ManagedBusiness>(`/my-businesses/${id}`, patch);
 }
 
+/** Deletes only a business owned by the authenticated caller. */
+export async function deleteMyBusiness(id: number): Promise<{ id: number; status: string }> {
+  return api.delete<{ id: number; status: string }>(`/my-businesses/${id}`);
+}
+
 export interface ProductInput {
   name: string;
   /** Menu group («نوشیدنی»، «غذاهای اصلی»…) — empty = بدون دسته. */

@@ -502,6 +502,17 @@ export class BusinessesService {
     return this.manage(user, id);
   }
 
+  /** Mark an owned business as deleted; a different owner's id is never accepted. */
+  async remove(user: User, id: number): Promise<{ id: number; status: string }> {
+    await this.assertOwned(user, id);
+    const updated = await this.prisma.business.update({
+      where: { id },
+      data: { status: 'DELETED', logoUrl: null, coverUrl: null },
+      select: { id: true, status: true },
+    });
+    return { ...updated, status: String(updated.status) };
+  }
+
   /** Add one menu/product row to an owned business. */
   async addProduct(user: User, id: number, dto: CreateProductDto): Promise<ManagedProduct> {
     await this.assertOwned(user, id);

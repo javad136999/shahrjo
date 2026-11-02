@@ -12,18 +12,15 @@ describe('ContactInfo', () => {
     render(<ContactInfo />);
     const link = screen.getByTestId('contact-phone');
     expect(link).toHaveAttribute('href', SITE_CONTACT.phoneHref);
-    expect(link).toHaveAttribute('href', `tel:${SITE_CONTACT.phone}`);
     expect(link).toHaveTextContent(SITE_CONTACT.phone);
     // comfortable touch target for mobile (48px guideline)
     expect(link.className).toContain('contact-card__phone');
   });
 
-  it('shows the address and postal code as selectable (copyable) text', () => {
+  it('shows only the requested city as the selectable address', () => {
     render(<ContactInfo />);
     expect(screen.getByTestId('contact-address')).toHaveTextContent(SITE_CONTACT.address);
-    const postal = screen.getByTestId('contact-postal');
-    expect(postal).toHaveTextContent(SITE_CONTACT.postalCode);
-    expect(postal).toHaveAttribute('dir', 'ltr');
+    expect(screen.queryByTestId('contact-postal')).not.toBeInTheDocument();
   });
 
   it('never presents the details as identity/verification credentials', () => {

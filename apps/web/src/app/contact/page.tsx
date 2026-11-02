@@ -3,7 +3,7 @@ import { ContactInfo } from '@/components/contact-info';
 
 export const metadata: Metadata = {
   title: 'تماس با ما',
-  description: 'راه‌های تماس با پشتیبانی شهرجو؛ شماره تماس، نشانی و کد پستی',
+  description: 'راه‌های تماس با پشتیبانی شهرجو؛ شماره تماس و نشانی شهر جم',
 };
 
 /** «تماس با ما» — راه‌های ارتباطی پشتیبانی (منبع واحد: lib/site-contact). */

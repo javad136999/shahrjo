@@ -82,6 +82,15 @@ export class BusinessesController {
     return this.businesses.update(user, id, dto);
   }
 
+  /** Delete one of the caller's own businesses; other users receive 404. */
+  @Delete('my-businesses/:id')
+  remove(
+    @CurrentUser() user: User,
+    @Param('id', ParseIntPipe) id: number,
+  ): ReturnType<BusinessesService['remove']> {
+    return this.businesses.remove(user, id);
+  }
+
   /** Add one menu/product row (name, group, price, photo). */
   @Post('my-businesses/:id/products')
   addProduct(

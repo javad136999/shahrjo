@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ApiError, CITY_CHANGED_EVENT, getLocalCity, getMyBusinesses, getProfile, getTokens } from '@/lib/api';
+import { ApiError, CITY_CHANGED_EVENT, deleteMyBusiness, getLocalCity, getMyBusinesses, getProfile, getTokens } from '@/lib/api';
 import { formatRating } from '@/lib/format';
 import type { MyBusiness } from '@/lib/types';
 
@@ -34,6 +34,21 @@ export function MyBusinesses() {
   const router = useRouter();
   const [items, setItems] = useState<MyBusiness[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const removeBusiness = async (business: MyBusiness) => {
+    if (!window.confirm(`«${business.name}» حذف شود؟ این کار قابل بازگشت نیست.`)) return;
+    setDeletingId(business.id);
+    setError(null);
+    try {
+      await deleteMyBusiness(business.id);
+      setItems((current) => current?.filter((item) => item.id !== business.id) ?? current);
+    } catch (err: unknown) {
+      setError(err instanceof ApiError ? err.message : 'حذف کسب‌وکار ناموفق بود');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   useEffect(() => {
     if (!getTokens()) {
@@ -160,6 +175,16 @@ export function MyBusinesses() {
                     <Link href={`/business/${business.id}`} className="btn btn-ghost">
                       مشاهدهٔ صفحهٔ عمومی
                     </Link>
+                    <button
+                      type="button"
+                      className="btn btn-ghost admin-action admin-action--err"
+                      disabled={deletingId === business.id}
+                      onClick={() => void removeBusiness(business)}
+                      aria-label={`حذف ${business.name}`}
+                      data-testid={`my-business-delete-${business.id}`}
+                    >
+                      {deletingId === business.id ? 'در حال حذف…' : '🗑 حذف'}
+                    </button>
                     {suspended && (
                       <Link
                         href={`/plans?business=${business.id}`}
