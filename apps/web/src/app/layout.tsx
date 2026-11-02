@@ -9,7 +9,6 @@ import { VisitBeacon } from '@/components/visit-beacon';
 import './globals.css';
 import './mobile-home-fixes.css';
 import { SITE_URL } from '@/lib/site';
-import { SITE_CONTACT } from '@/lib/site-contact';
 
 export const metadata: Metadata = {
   // one canonical host (shahrju.ir): metadataBase feeds every relative URL below —
@@ -108,12 +107,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/contact" className="footer-link" data-testid="footer-contact">
                 تماس با ما
               </Link>
-              <address className="footer-contact-details" aria-label="اطلاعات تماس">
-                <span>نشانی: {SITE_CONTACT.address}</span>
-                <a href={SITE_CONTACT.phoneHref}>
-                  تلفن: <bdi dir="ltr">{SITE_CONTACT.phone}</bdi>
-                </a>
-              </address>
               <Link href="/privacy">حریم خصوصی</Link>
               <Link href="/terms">شرایط استفاده</Link>
             </div>
