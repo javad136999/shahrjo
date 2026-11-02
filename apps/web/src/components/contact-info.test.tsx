@@ -4,12 +4,14 @@ import { SITE_CONTACT } from '@/lib/site-contact';
 
 /**
  * Contact block (تماس با ما). Assertions read the central source instead of
- * restating the phone/address/postal values, so the values exist in exactly
- * one place (lib/site-contact.ts).
+ * restating the phone/address values, so they exist in exactly one place.
  */
 describe('ContactInfo', () => {
   it('renders a tappable tel: link from the central source', () => {
     render(<ContactInfo />);
+    expect(SITE_CONTACT.phone).toBe('۰۹۰۲۵۴۳۳۶۶۵');
+    expect(SITE_CONTACT.phoneHref).toBe('tel:09025433665');
+    expect(SITE_CONTACT.address).toBe('جم');
     const link = screen.getByTestId('contact-phone');
     expect(link).toHaveAttribute('href', SITE_CONTACT.phoneHref);
     expect(link).toHaveTextContent(SITE_CONTACT.phone);

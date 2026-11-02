@@ -13,5 +13,5 @@ export const SITE_CONTACT = {
   phone,
   /** Clickable link so mobile visitors can call directly. */
   phoneHref: 'tel:09025433665',
-  address: 'شهر جم',
+  address: 'جم',
 } as const;
