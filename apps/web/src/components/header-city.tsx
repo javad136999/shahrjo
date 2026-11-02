@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { CITY_CHANGED_EVENT, getLocalCity } from '@/lib/api';
 import type { LocalCity } from '@/lib/types';
 
@@ -36,9 +37,7 @@ export function HeaderCity() {
   if (!city) {
     return (
       <Link href="/" className="brand" data-testid="header-city-none">
-        <span className="brand-mark" aria-hidden>
-          🏙
-        </span>
+        <Image src="/site-logo.png" alt="لوگوی شهرجو" width={32} height={32} className="brand-logo" />
         انتخاب شهر
       </Link>
     );
@@ -51,9 +50,7 @@ export function HeaderCity() {
       data-testid="header-city"
       aria-label={`شهر ${city.name}`}
     >
-      <span className="brand-mark" aria-hidden>
-        🏙
-      </span>
+      <Image src="/site-logo.png" alt="لوگوی شهرجو" width={32} height={32} className="brand-logo" />
       <span className="brand-cityname">{city.name}</span>
     </span>
   );

@@ -36,7 +36,7 @@ export function openGraphFor(input: {
 }) {
   const image = input.imageUrl
     ? { url: input.imageUrl, width: 640, height: 420, alt: input.title }
-    : { url: '/icon-512x512.png?v=2', width: 512, height: 512, alt: 'لوگوی شهرجو' };
+    : { url: '/icon-512x512.png?v=4', width: 512, height: 512, alt: 'لوگوی شهرجو' };
   return {
     type: 'website' as const,
     locale: 'fa_IR',

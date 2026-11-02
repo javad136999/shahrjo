@@ -230,6 +230,14 @@ a:hover {
 .brand-mark {
   font-size: 18px;
 }
+.brand-logo {
+  display: block;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  border-radius: 8px;
+}
 
 /* The header's first slot shows where you are, not a destination: a fixed
    label (no hover, no cursor change, no navigation). */

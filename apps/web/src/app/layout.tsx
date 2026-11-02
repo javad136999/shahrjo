@@ -22,23 +22,23 @@ export const metadata: Metadata = {
     'آگهی‌های محلی، خدمات، کسب‌وکارها و اخبار شهر خود را در شهرجو پیدا کنید؛ یا کسب‌وکار و آگهی‌تان را برای همشهری‌ها معرفی کنید.',
   applicationName: 'شهرجو',
   manifest: '/site.webmanifest',
-  // The `?v=3` suffix busts whatever the previous icon set cached under the
+  // The `?v=4` suffix busts whatever the previous icon set cached under the
   // same filename — without it browsers keep serving the old favicon for the
   // length of its max-age even though the bytes changed on disk.
   icons: {
     icon: [
-      { url: '/favicon-16x16.png?v=3', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon-32x32.png?v=3', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png?v=4', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png?v=4', sizes: '32x32', type: 'image/png' },
     ],
-    shortcut: '/favicon-32x32.png?v=3',
-    apple: '/apple-touch-icon.png?v=3',
+    shortcut: '/favicon-32x32.png?v=4',
+    apple: '/apple-touch-icon.png?v=4',
     // The maskable variants are deliberately NOT listed here: `purpose` is a
     // manifest-only concept, and Next's IconDescriptor has no such field. A
     // full-bleed maskable bitmap also looks wrong as a plain tab icon. Chrome
     // and Android read them from site.webmanifest, where they are declared.
     other: [
-      { url: '/icon-192x192.png?v=3', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512x512.png?v=3', sizes: '512x512', type: 'image/png' },
+      { url: '/icon-192x192.png?v=4', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512x512.png?v=4', sizes: '512x512', type: 'image/png' },
     ],
   },
   appleWebApp: {
@@ -53,18 +53,18 @@ export const metadata: Metadata = {
     siteName: 'شهرجو',
     title: 'شهرجو | همه‌چیز شهر شما',
     description: 'شهرجو؛ اخبار، آگهی‌ها و کسب‌وکارهای شهر شما',
-    images: [{ url: '/icon-512x512.png?v=2', width: 512, height: 512, alt: 'لوگوی شهرجو' }],
+    images: [{ url: '/icon-512x512.png?v=4', width: 512, height: 512, alt: 'لوگوی شهرجو' }],
   },
   twitter: {
     card: 'summary',
     title: 'شهرجو | همه‌چیز شهر شما',
     description: 'شهرجو؛ اخبار، آگهی‌ها و کسب‌وکارهای شهر شما',
-    images: ['/icon-512x512.png?v=2'],
+    images: ['/icon-512x512.png?v=4'],
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#014934',
+  themeColor: '#0647C8',
   colorScheme: 'light',
   width: 'device-width',
   initialScale: 1,

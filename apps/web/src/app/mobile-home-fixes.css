@@ -614,5 +614,6 @@
   .site-header .header-pills > .pill { min-width: 58px; padding-inline: 5px; }
   .site-header .header-pills > .pill .pill__label { font-size: 9px; }
   .site-header .brand { gap: 3px; font-size: 14px; }
+  .site-header .brand-logo { width: 24px; height: 24px; }
   .site-header .brand-cityname { max-width: 24vw; }
 }
