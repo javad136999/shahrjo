@@ -27,6 +27,9 @@ const m = api as unknown as Record<string, jest.Mock>;
 const cats = [
   { id: 90, name: 'تعمیرکار کولر', slug: 'svc_ac_repair', icon: '❄️' },
   { id: 91, name: 'کابینت‌ساز', slug: 'svc_cabinet_maker', icon: '🪚' },
+  { id: 92, name: 'باربری و حمل بار', slug: 'svc_mover', icon: '🚚' },
+  { id: 93, name: 'حمل فاضلاب و تخلیه چاه', slug: 'svc_septic_service', icon: '🚛' },
+  { id: 94, name: 'حمل آب شرب', slug: 'svc_drinking_water', icon: '💧' },
 ];
 
 const listings = [
@@ -98,6 +101,9 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     expect((list as HTMLSelectElement).options.length).toBe(cats.length + 1);
     expect(list).toHaveTextContent('تعمیرکار کولر');
     expect(list).toHaveTextContent('کابینت‌ساز');
+    expect(list).toHaveTextContent('باربری و حمل بار');
+    expect(list).toHaveTextContent('حمل فاضلاب و تخلیه چاه');
+    expect(list).toHaveTextContent('حمل آب شرب');
     expect(screen.getByTestId('service-register')).toHaveTextContent('پروفایل کسب‌وکار، منو یا محصولی ساخته نمی‌شود');
   });
 
