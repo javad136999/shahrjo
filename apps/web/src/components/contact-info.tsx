@@ -31,7 +31,6 @@ export function ContactInfo() {
         </p>
         <p className="contact-card__hint">برای کپی، روی متن نگه دارید و «کپی» را انتخاب کنید.</p>
       </section>
-
     </div>
   );
 }
