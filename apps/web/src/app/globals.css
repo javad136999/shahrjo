@@ -1040,6 +1040,10 @@ a:hover {
   align-items: center;
   gap: 8px;
 }
+.service-tile__hint-row small {
+  font-size: 10px;
+  line-height: 1.4;
+}
 .service-tile__copy .service-tile__free {
   color: var(--brand-dark, #0e7a5f);
   font-weight: 800;
@@ -1346,7 +1350,7 @@ a:hover {
     line-height: 1.5;
   }
   .wall-cta__copy small,
-  .service-tile__copy small,
+  .service-tile__descriptor,
   .wall-cta__tick,
   .wall-cta__arrow {
     display: none;
