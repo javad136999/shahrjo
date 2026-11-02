@@ -58,7 +58,10 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     expect(tiles).toHaveLength(2);
     expect(tiles[0]).toHaveAttribute('data-testid', 'service-tile-register');
     expect(tiles[1]).toHaveAttribute('data-testid', 'service-tile-find');
-    expect(tiles[0]).toHaveTextContent('شغلتو ثبت کن');
+    expect(tiles[0]).toHaveTextContent('ثبت شغل');
+    expect(tiles[0]).toHaveTextContent('کلیک کنید');
+    expect(tiles[0]).toHaveTextContent('رایگان');
+    expect(tiles[0]).toHaveTextContent('بدون صفحهٔ کسب‌وکار');
     expect(tiles[1]).toHaveTextContent('چه خدماتی در شهر شهر نمونه نیاز داری');
     expect(screen.queryByTestId('service-register')).not.toBeInTheDocument();
     expect(screen.queryByTestId('service-find')).not.toBeInTheDocument();

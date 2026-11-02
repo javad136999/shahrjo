@@ -243,11 +243,15 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
           onClick={() => toggle('register')}
         >
           <span className="service-tile__icon" aria-hidden>
-            🛠️
+            👷
           </span>
           <span className="service-tile__copy">
-            <b>شغلتو ثبت کن</b>
-            <small>فقط شغل، خدمات و شماره تماس</small>
+            <b>ثبت شغل</b>
+            <span className="service-tile__hint-row">
+              <small>کلیک کنید</small>
+              <small className="service-tile__free">رایگان</small>
+            </span>
+            <small>فقط معرفی شغل، بدون صفحهٔ کسب‌وکار</small>
           </span>
         </button>
 

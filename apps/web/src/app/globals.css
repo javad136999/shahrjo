@@ -1035,6 +1035,15 @@ a:hover {
   font-size: 11.5px;
   font-weight: 600;
 }
+.service-tile__hint-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.service-tile__copy .service-tile__free {
+  color: var(--brand-dark, #0e7a5f);
+  font-weight: 800;
+}
 
 /* The panel that opens under the tiles — same card language as form-card. */
 .service-panel {
@@ -4145,17 +4154,6 @@ a.my-ads__item:hover {
   text-decoration: none;
   border-bottom: 1px dashed currentColor;
   padding-bottom: 1px;
-}
-.footer-contact-details {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  font-style: normal;
-}
-.footer-contact-details a {
-  color: inherit;
-  text-decoration: none;
 }
 .footer-trust {
   display: flex;
