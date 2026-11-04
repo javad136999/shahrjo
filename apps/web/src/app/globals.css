@@ -2769,7 +2769,27 @@ a.my-ads__item:hover {
   .ad-page > * { min-width: 0; max-width: 100%; }
   .ad-page .plans-hero > div { min-width: 0; }
   .ad-page .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ad-page .stat-card { min-width: 0; overflow-wrap: anywhere; }
+  .ad-page .stat-card {
+    min-width: 0;
+    gap: 5px;
+    padding: 8px;
+    overflow-wrap: anywhere;
+  }
+  .ad-page .stat-card > span[aria-hidden] {
+    flex: 0 0 auto;
+    font-size: 13px;
+  }
+  .ad-page .stat-card > strong {
+    flex: 0 0 auto;
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .ad-page .stat-card > .small {
+    min-width: 0;
+    font-size: 9px;
+    line-height: 1.25;
+  }
   .ad-page .admin-tabs { width: 100%; min-width: 0; }
   .ad-page .admin-status-select { max-width: 100%; min-width: 0; }
   .admin-reward-users__head { align-items: stretch; flex-direction: column; }
