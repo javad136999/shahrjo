@@ -129,6 +129,16 @@ const visitStats = {
   yearly: { total: 900, series: [ { key: '2025', visits: 400 }, { key: '2026', visits: 900 } ] },
 };
 
+const rewardUser = {
+  id: 5,
+  phone: '09123456789',
+  fullName: 'کاربر نمونه',
+  createdAt: '2026-11-01T10:00:00.000Z',
+  rewardGiven: false,
+  rewardGivenAt: null,
+  city: { id: 1, name: 'شهر نمونه' },
+};
+
 describe('AdminPanel', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -179,6 +189,21 @@ describe('AdminPanel', () => {
     expect(screen.getByTestId('row-7')).toHaveTextContent('آگهی در انتظار');
     expect(screen.getByTestId('row-7')).toHaveTextContent('شهر نمونه');
     expect(mockGetAdminAds).toHaveBeenCalledWith('PENDING');
+  });
+
+  it('offers a phone-list shortcut and records reward delivery with its checkbox', async () => {
+    mockGetAdminRewardUsers.mockResolvedValue([rewardUser]);
+    render(<AdminPanel />);
+
+    const shortcut = await screen.findByTestId('admin-reward-shortcut');
+    expect(shortcut).toHaveAttribute('href', '#admin-reward-users');
+    const checkbox = await screen.findByRole('checkbox', { name: 'ثبت تحویل جایزه برای 09123456789' });
+    expect(screen.getByTestId('admin-reward-users')).toHaveTextContent('۱ شماره ثبت‌شده');
+
+    fireEvent.click(checkbox);
+
+    await waitFor(() => expect(mockGiveAdminReward).toHaveBeenCalledWith(5));
+    expect(await screen.findByRole('checkbox', { name: 'جایزه تحویل‌شده برای 09123456789' })).toBeChecked();
   });
 
   it('approves an ad and refreshes the queue + counters', async () => {

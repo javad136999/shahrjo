@@ -285,9 +285,7 @@ export class AdminService {
   async rewardUsers(user: User): Promise<RewardUser[]> {
     const adminId = await this.adminRowId(user.id);
     const rows = await this.prisma.user.findMany({
-      where: { status: 'ACTIVE' },
       orderBy: { createdAt: 'desc' },
-      take: 1000,
       select: {
         id: true,
         phone: true,

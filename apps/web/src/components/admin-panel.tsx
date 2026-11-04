@@ -66,6 +66,8 @@ const STATUS_LABEL: Record<string, string> = {
 export function AdminPanel() {
   const router = useRouter();
   const [allowed, setAllowed] = useState<boolean | null>(null);
+  const [canViewRewardUsers, setCanViewRewardUsers] = useState(false);
+  const [canManageRewardUsers, setCanManageRewardUsers] = useState(false);
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [visits, setVisits] = useState<VisitStats | null>(null);
   const [visitPeriod, setVisitPeriod] = useState<VisitPeriod>('daily');
@@ -120,7 +122,11 @@ export function AdminPanel() {
         const me = await getProfile();
         if (!alive) return;
         const isAdmin = me.roles.some((r) => r !== 'USER');
+        const canViewRewards = me.roles.some((role) => ['SUPER_ADMIN', 'PROVINCE_ADMIN', 'CITY_ADMIN'].includes(role));
+        const canManageRewards = me.roles.some((role) => ['SUPER_ADMIN', 'PROVINCE_ADMIN'].includes(role));
         setAllowed(isAdmin);
+        setCanViewRewardUsers(canViewRewards);
+        setCanManageRewardUsers(canManageRewards);
         if (isAdmin) {
           await Promise.all([loadOverview(), loadVisits()]);
           await loadQueue('ads', 'PENDING');
@@ -213,6 +219,17 @@ export function AdminPanel() {
         </div>
       </section>
 
+      {canViewRewardUsers && (
+        <a className="admin-reward-shortcut" href="#admin-reward-users" data-testid="admin-reward-shortcut">
+          <span className="admin-reward-shortcut__icon" aria-hidden>☎</span>
+          <span className="admin-reward-shortcut__text">
+            <strong>شماره کاربران و جایزه‌ها</strong>
+            <small>دیدن فهرست شماره‌ها و ثبت تحویل جایزه</small>
+          </span>
+          <span className="admin-reward-shortcut__arrow" aria-hidden>←</span>
+        </a>
+      )}
+
       {overview && (
         <div className="stats-row" data-testid="admin-stats">
           <div className="stat-card">
@@ -296,7 +313,7 @@ export function AdminPanel() {
         </section>
       )}
 
-      <AdminRewardUsers />
+      {canViewRewardUsers && <AdminRewardUsers canManage={canManageRewardUsers} />}
 
       <div className="admin-tabs" role="tablist">
         {TABS.map((t) => (

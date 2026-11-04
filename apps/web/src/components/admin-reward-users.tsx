@@ -5,7 +5,11 @@ import { ApiError, getAdminRewardUsers, giveAdminReward } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import type { AdminRewardUser } from '@/lib/types';
 
-export function AdminRewardUsers() {
+interface AdminRewardUsersProps {
+  canManage: boolean;
+}
+
+export function AdminRewardUsers({ canManage }: AdminRewardUsersProps) {
   const [users, setUsers] = useState<AdminRewardUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -27,7 +31,7 @@ export function AdminRewardUsers() {
   });
 
   async function give(user: AdminRewardUser) {
-    if (user.rewardGiven || busyId !== null) return;
+    if (!canManage || user.rewardGiven || busyId !== null) return;
     setBusyId(user.id);
     setError(null);
     try {
@@ -43,11 +47,14 @@ export function AdminRewardUsers() {
   }
 
   return (
-    <section className="admin-reward-users" data-testid="admin-reward-users">
+    <section id="admin-reward-users" className="admin-reward-users" data-testid="admin-reward-users">
       <div className="admin-reward-users__head">
         <div>
-          <h2>🎁 کاربران و کارت شارژ</h2>
-          <p className="muted small">فهرست کاربران فعال؛ پس از تحویل کارت، تیک همان ردیف را بزنید.</p>
+          <h2>شماره کاربران و پیگیری جایزه</h2>
+          <p className="muted small">
+            {users.length.toLocaleString('fa-IR')} شماره ثبت‌شده؛ شماره‌ها با وضعیت‌های مختلف حساب نمایش داده می‌شوند.
+            {canManage ? ' بعد از تحویل جایزه، checkbox همان ردیف را بزنید.' : ' ثبت تحویل فقط برای مدیر کل و مدیر استان فعال است.'}
+          </p>
         </div>
         <input
           className="admin-reward-users__search"
@@ -59,10 +66,10 @@ export function AdminRewardUsers() {
         />
       </div>
       {error && <p className="banner banner--error" role="alert">{error}</p>}
-      {loading ? <p className="muted">در حال دریافت کاربران…</p> : (
+      {loading ? <p className="muted" aria-busy="true">در حال دریافت شماره‌ها…</p> : (
         <div className="admin-reward-users__table-wrap">
           <table className="admin-reward-users__table">
-            <thead><tr><th>کاربر</th><th>شماره موبایل</th><th>شهر</th><th>تاریخ ورود</th><th>کارت شارژ</th></tr></thead>
+            <thead><tr><th>کاربر</th><th>شماره موبایل</th><th>شهر</th><th>تاریخ ثبت‌نام</th><th>جایزه تحویل شد</th></tr></thead>
             <tbody>
               {visible.map((user) => (
                 <tr key={user.id}>
@@ -71,18 +78,20 @@ export function AdminRewardUsers() {
                   <td>{user.city?.name ?? '—'}</td>
                   <td>{formatDate(user.createdAt)}</td>
                   <td>
-                    {user.rewardGiven ? (
-                      <span className="admin-reward-users__given" title={user.rewardGivenAt ? formatDate(user.rewardGivenAt) : undefined}>✓ تحویل شد</span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn btn-primary admin-reward-users__give"
-                        disabled={busyId !== null}
-                        onClick={() => void give(user)}
-                      >
-                        {busyId === user.id ? 'در حال ثبت…' : 'ثبت تحویل ✓'}
-                      </button>
-                    )}
+                    <label className={`admin-reward-users__check${user.rewardGiven ? ' is-given' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={user.rewardGiven}
+                        disabled={user.rewardGiven || busyId !== null || !canManage}
+                        aria-label={user.rewardGiven
+                          ? `جایزه تحویل‌شده برای ${user.phone}`
+                          : `ثبت تحویل جایزه برای ${user.phone}`}
+                        onChange={() => void give(user)}
+                        title={!canManage && !user.rewardGiven ? 'ثبت تحویل فقط برای مدیر کل و مدیر استان مجاز است' : undefined}
+                      />
+                      <span>{user.rewardGiven ? '✓ تحویل شد' : busyId === user.id ? 'در حال ثبت…' : 'ثبت تحویل'}</span>
+                    </label>
+                    {user.rewardGivenAt && <small className="admin-reward-users__date">{formatDate(user.rewardGivenAt)}</small>}
                   </td>
                 </tr>
               ))}

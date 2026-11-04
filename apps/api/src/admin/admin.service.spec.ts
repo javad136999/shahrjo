@@ -9,7 +9,7 @@ function makePrisma() {
     ad: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     business: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     subscription: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
-    user: { count: jest.fn() },
+    user: { count: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     city: { findFirst: jest.fn(), update: jest.fn() },
     adminUser: { findUnique: jest.fn() },
     auditLog: { create: jest.fn() },
@@ -37,6 +37,21 @@ function makeService(scope: { role: string; provinceId: number | null; cityId: n
 const admin = { id: 1, phone: '09174057031', cityId: null } as User;
 
 describe('AdminService scope enforcement', () => {
+  it('lists every registered phone for reward tracking, regardless of account status or list size', async () => {
+    const { service, prisma } = makeService({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+    prisma.user.findMany.mockResolvedValue([]);
+
+    await service.rewardUsers(admin);
+
+    const query = prisma.user.findMany.mock.calls[0][0];
+    expect(query.orderBy).toEqual({ createdAt: 'desc' });
+    expect(query).not.toHaveProperty('where');
+    expect(query).not.toHaveProperty('take');
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ action: 'campaign.users.view', entityId: 'all' }),
+    }));
+  });
+
   it('rejects a non-operator even with forged permissions', async () => {
     const { service } = makeService(null); // no admin_users row => getScope null
     await expect(service.overview(admin)).rejects.toMatchObject({ status: 403 });
@@ -327,7 +342,7 @@ describe('AdminService.createBusiness — manual signup (ثبت دستی)', () =
       business: { create: jest.Mock; findUnique: jest.Mock };
     };
     prisma.businessCategory = { findFirst: jest.fn().mockResolvedValue({ id: 3 }) };
-    prisma.user = { count: jest.fn(), findFirst: jest.fn() };
+    prisma.user.findFirst = jest.fn();
     prisma.business.create = jest.fn().mockResolvedValue({ id: 50, name: 'نانوایی تست', status: 'APPROVED' });
     prisma.business.findUnique = jest.fn().mockResolvedValue(null);
     return { ...ctx, prisma };
