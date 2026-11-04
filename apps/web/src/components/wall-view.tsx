@@ -150,6 +150,8 @@ export function WallView({ city }: WallViewProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pagingRef = useRef(false);
+  const feedLoadingSlugsRef = useRef(new Set<string>());
+  const activeCitySlugRef = useRef(city.slug);
   const restoreRef = useRef<number | null>(null);
   const pressTimerRef = useRef<number | null>(null);
 
@@ -167,18 +169,26 @@ export function WallView({ city }: WallViewProps) {
   const newestRef = useRef<number | null>(null);
 
   const load = useCallback(async () => {
+    const citySlug = city.slug;
+    if (feedLoadingSlugsRef.current.has(citySlug)) return;
+    feedLoadingSlugsRef.current.add(citySlug);
     try {
-      const next = await getWall(city.slug);
+      const next = await getWall(citySlug);
+      if (activeCitySlugRef.current !== citySlug) return;
       setFeed(next);
       setGate(false);
       setError(null);
     } catch (err) {
+      if (activeCitySlugRef.current !== citySlug) return;
       if (err instanceof ApiError && err.status === 401) setGate(true);
       else setError(err instanceof Error ? err.message : 'دریافت دیوار شهر ناموفق بود');
+    } finally {
+      feedLoadingSlugsRef.current.delete(citySlug);
     }
   }, [city.slug]);
 
   useEffect(() => {
+    activeCitySlugRef.current = city.slug;
     setFeed(null);
     setGate(false);
     void load();

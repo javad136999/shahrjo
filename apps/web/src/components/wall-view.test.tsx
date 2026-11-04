@@ -728,6 +728,29 @@ describe('WallView', () => {
     }
   });
 
+  it('does not overlap wall polling while a feed request is still pending', async () => {
+    jest.useFakeTimers();
+    let resolveFeed!: (value: WallFeed) => void;
+    mockGetWall.mockReturnValue(new Promise<WallFeed>((resolve) => { resolveFeed = resolve; }));
+    try {
+      const { unmount } = render(<WallView city={city} />);
+      expect(mockGetWall).toHaveBeenCalledTimes(1);
+
+      act(() => {
+        jest.advanceTimersByTime(15_000);
+      });
+      expect(mockGetWall).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        resolveFeed(feed);
+        await Promise.resolve();
+      });
+      unmount();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('hold-to-edit: releasing early does nothing', async () => {
     jest.useFakeTimers();
     try {

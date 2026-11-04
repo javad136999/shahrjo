@@ -4,57 +4,65 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { WallView } from '@/components/wall-view';
 import { api, getLocalCity, getTokens, setLocalCity } from '@/lib/api';
-import type { City, MeResponse } from '@/lib/types';
+import type { City, LocalCity, MeResponse } from '@/lib/types';
 
-type State = { city: City | null | undefined } ; // undefined = loading, null = no city chosen
+type State = { city: LocalCity | null | undefined }; // undefined = loading, null = no city chosen
 
-/** دیوار شهر (Phase 8b): resolves the active city, then renders its wall. */
+/** دیوار شهر: شهر ذخیره‌شده را فوری نشان می‌دهد و پروفایل را در پس‌زمینه تطبیق می‌دهد. */
 export default function WallPage() {
   const [state, setState] = useState<State>({ city: undefined });
 
   useEffect(() => {
     let alive = true;
+    const local = getLocalCity();
+
+    // A remembered city already contains the room's id/slug/name. Render it now;
+    // do not wait for /users/me and the full /cities list before fetching the wall.
+    if (local?.name) {
+      setState({ city: local });
+      if (getTokens()) {
+        void api
+          .get<MeResponse>('/users/me')
+          .then(async (me) => {
+            if (!alive || !me.cityId || me.cityId === local.id) return;
+            const list = await api.get<City[]>('/cities');
+            const city = list.find((item) => item.id === me.cityId);
+            if (!city || !alive) return;
+            const remembered = { id: city.id, slug: city.slug, name: city.name };
+            setLocalCity(remembered);
+            setState({ city: remembered });
+          })
+          .catch(() => {
+            // Keep the cached city if profile revalidation is offline/unavailable.
+          });
+      }
+      return () => {
+        alive = false;
+      };
+    }
+
     (async () => {
       try {
-        // local selection first (instant), profile second (authoritative)
-        const local = getLocalCity();
-        if (local && getTokens()) {
-          try {
-            const me = await api.get<MeResponse>('/users/me');
-            if (me.cityId && me.cityId !== local.id) {
-              const list = await api.get<City[]>('/cities');
-              const city = list.find((c) => c.id === me.cityId);
-              if (city) {
-                setLocalCity({ id: city.id, slug: city.slug, name: city.name });
-                if (alive) setState({ city });
-                return;
-              }
-            }
-          } catch {
-            // keep the local selection
-          }
-        }
+        // Older local-city records without a name need the directory lookup.
         if (local) {
           const list = await api.get<City[]>('/cities');
-          const city = list.find((c) => c.id === local.id) ?? null;
-          if (alive) setState({ city });
+          const city = list.find((item) => item.id === local.id) ?? null;
+          if (alive) setState({ city: city ? { id: city.id, slug: city.slug, name: city.name } : null });
           return;
         }
-        // no local city: try the profile city (logged in) before giving up
+
+        // No local city: try the profile city (logged in) before showing the picker.
         if (getTokens()) {
-          try {
-            const me = await api.get<MeResponse>('/users/me');
-            if (me.cityId) {
-              const list = await api.get<City[]>('/cities');
-              const city = list.find((c) => c.id === me.cityId);
-              if (city) {
-                setLocalCity({ id: city.id, slug: city.slug, name: city.name });
-                if (alive) setState({ city });
-                return;
-              }
+          const me = await api.get<MeResponse>('/users/me');
+          if (me.cityId) {
+            const list = await api.get<City[]>('/cities');
+            const city = list.find((item) => item.id === me.cityId);
+            if (city) {
+              const remembered = { id: city.id, slug: city.slug, name: city.name };
+              setLocalCity(remembered);
+              if (alive) setState({ city: remembered });
+              return;
             }
-          } catch {
-            // fall through to the picker
           }
         }
         if (alive) setState({ city: null });

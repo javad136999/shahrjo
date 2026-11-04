@@ -286,13 +286,9 @@ export class WallService {
     limit: number = DEFAULT_WALL_LIMIT,
     before?: string,
   ): Promise<WallFeed> {
-    const city = await this.resolveCity(citySlug);
+    const [city, scope] = await Promise.all([this.resolveCity(citySlug), this.scopeOf(user.id)]);
     const cityId = city.id;
-    const scope = await this.scopeOf(user.id);
     const visibleWallPosts = this.visiblePosts;
-    // Every feed load means the caller is looking at the wall — bump the
-    // read pointer so the bottom-nav badge resets (pagination included).
-    await this.touchRead(user.id, cityId);
 
     const [pinnedRow, rows, realMembers, messageCount] = await Promise.all([
       this.prisma.wallPost.findFirst({
@@ -312,6 +308,9 @@ export class WallService {
       // members of the wall = residents who chose this city
       this.prisma.user.count({ where: { cityId, status: 'ACTIVE' } }),
       this.prisma.wallPost.count({ where: { cityId, ...visibleWallPosts } }),
+      // Independent from feed reads; write it in parallel rather than adding a
+      // full database round trip before the wall can render.
+      this.touchRead(user.id, cityId),
     ]);
 
     // گروه دیوار: کف تصادفی ثابت شهر (۱ تا ۱۰۰۰) + کاربران واقعی همان شهر؛
