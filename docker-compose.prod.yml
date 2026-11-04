@@ -45,6 +45,10 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4000
+      # Keep regular ad reposts off so production publishes only the two daily
+      # GOLD business promo messages below. Override stale host .env values.
+      ENABLE_WALL_REPOSTS: "false"
+      ENABLE_GOLD_BUSINESS_PROMOS: "true"
     volumes:
       - shahrjo_uploads:/repo/apps/api/uploads
     # Bound to localhost only: the existing Caddy reverse-proxies shahrju.ir to it.

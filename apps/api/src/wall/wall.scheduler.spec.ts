@@ -76,12 +76,12 @@ describe('tehranClock / tehranDayStart', () => {
 });
 
 describe('WallRepostScheduler.tick', () => {
-  it('keeps the external timer disabled by default', () => {
+  it('keeps ordinary ad reposts off by default while retaining GOLD promos', () => {
     expect(WALL_REPOSTS_ENABLED).toBe(false);
     expect(GOLD_BUSINESS_PROMOS_ENABLED).toBe(true);
   });
 
-  it('keeps GOLD business promotions running when ordinary ad reposts are stopped', async () => {
+  it('keeps two GOLD business promotions when ordinary ad reposts are stopped', async () => {
     const { scheduler, prisma } = makeScheduler({ ads: false, promo: true });
     prisma.business.findMany.mockResolvedValue([
       {
@@ -331,6 +331,18 @@ describe('GOLD business promos — 2 attractive messages a day', () => {
 
     expect(posted).toBe(1);
     expect(prisma.wallPost.create.mock.calls[0][0].data.businessId).toBe(31);
+  });
+
+  it('enforces a persistent maximum of two GOLD promo posts per Tehran day', async () => {
+    const { scheduler, prisma } = makeScheduler();
+    // Existing morning/evening promo rows survive an API restart.
+    prisma.wallPost.findMany.mockResolvedValueOnce([{ businessId: 30 }, { businessId: 31 }]);
+
+    const posted = await scheduler.publishPromo(DAY, WALL_REPOST_SLOTS[2]);
+
+    expect(posted).toBe(0);
+    expect(prisma.business.findMany).not.toHaveBeenCalled();
+    expect(prisma.wallPost.create).not.toHaveBeenCalled();
   });
 
   it('publishes nothing without an eligible GOLD business or a promo slot', async () => {

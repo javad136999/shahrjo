@@ -228,6 +228,9 @@ export class WallRepostScheduler implements OnModuleInit {
       where: { businessId: { not: null }, createdAt: { gte: since } },
       select: { businessId: true },
     });
+    // Persist the daily cap in wall_posts so API restarts cannot catch up a slot
+    // repeatedly and publish more than two GOLD promo messages in one day.
+    if (todayRows.length >= 2) return 0;
     const usedToday = new Set(
       todayRows.map((row) => row.businessId).filter((id): id is number => id !== null),
     );

@@ -68,6 +68,7 @@ for (const marker of [
   'shuffle', // random selection
   'doneSlots', // each slot fires once per Tehran day
   'REPOST_CHECK_MS',
+  'todayRows.length >= 2', // persistent two-promo daily cap across API restarts
 ]) {
   if (!scheduler.includes(marker)) { console.error(`SCHEDULER: missing ${marker}`); fail++; }
 }
@@ -80,6 +81,13 @@ for (const marker of [
   if (!scheduler.includes('صبح') || !scheduler.includes('عصر')) {
     console.error('SCHEDULER: GOLD slots must cover morning + evening'); fail++;
   }
+}
+const prodCompose = read('docker-compose.prod.yml');
+if (!prodCompose.includes('ENABLE_WALL_REPOSTS: "false"')) {
+  console.error('SCHEDULER: ordinary ad reposts must be disabled in production'); fail++;
+}
+if (!prodCompose.includes('ENABLE_GOLD_BUSINESS_PROMOS: "true"')) {
+  console.error('SCHEDULER: production must retain GOLD business promos'); fail++;
 }
 
 // --- Schema + migration ---
