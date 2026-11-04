@@ -47,6 +47,10 @@ jobs:
         run: |
           set -euo pipefail
           cd "$DEPLOY_PATH"
+          # The production runner may not have a GitHub deploy key. The
+          # repository is public, so use HTTPS for the read-only fetch/pull
+          # and keep deployment independent of a stale server SSH key.
+          git remote set-url origin https://github.com/javad136999/shahrjo.git
           git fetch origin main
 
           # workflow_dispatch is an explicit manual deployment; otherwise only
