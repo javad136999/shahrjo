@@ -38,10 +38,13 @@ export function HeaderPills() {
     // The published Android app is an Android System WebView. Its UA contains
     // `; wv)` (and the legacy `Version/4.0` marker), unlike normal Chrome.
     // This keeps the Bazaar install CTA in the browser only, without requiring
-    // a new Android APK just to hide a web-rendered header item.
+    // a new Android APK just to hide a web-rendered header item. Instagram's
+    // in-app browser can also advertise itself as an Android WebView, but it is
+    // still a web browser where the install CTA must remain visible.
     const userAgent = navigator.userAgent;
+    const isInstagramBrowser = /Instagram/i.test(userAgent);
     const isAndroidWebView = /Android/i.test(userAgent) && (/[;\s]wv\)/i.test(userAgent) || /Version\/4\.0/i.test(userAgent));
-    setShowInstall(!isAndroidWebView);
+    setShowInstall(!isAndroidWebView || isInstagramBrowser);
   }, []);
 
   return (

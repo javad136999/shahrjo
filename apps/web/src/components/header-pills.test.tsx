@@ -82,6 +82,19 @@ describe('HeaderPills', () => {
     Object.defineProperty(navigator, 'userAgent', { configurable: true, value: originalUserAgent });
   });
 
+  it('keeps the install button in Instagram in-app browser', async () => {
+    const originalUserAgent = navigator.userAgent;
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (Linux; Android 13; wv) AppleWebKit/537.36 Instagram 350.0.0.0.1 Mobile Safari/537.36',
+    });
+
+    render(<HeaderPills />);
+    expect(await screen.findByTestId('header-install-pill')).toBeInTheDocument();
+
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: originalUserAgent });
+  });
+
   it('sends the tourism button to the city picker when no city is remembered', async () => {
     mockGetLocalCity.mockReturnValue(null);
     render(<HeaderPills />);
