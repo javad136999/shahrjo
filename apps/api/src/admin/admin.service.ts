@@ -213,6 +213,16 @@ export interface QueueSubscription {
   payer: { id: number; phone: string; fullName: string | null };
 }
 
+export interface RewardUser {
+  id: number;
+  phone: string;
+  fullName: string | null;
+  createdAt: Date;
+  rewardGiven: boolean;
+  rewardGivenAt: Date | null;
+  city: { id: number; name: string } | null;
+}
+
 /**
  * Admin panel backend (Phase 8): moderation queues for ads, businesses and
  * paid subscriptions, scoped by the operator's role (SUPER_ADMIN sees
@@ -269,6 +279,56 @@ export class AdminService {
     await this.prisma.auditLog.create({
       data: { adminUserId, action, entity, entityId, after: after as object },
     });
+  }
+
+  /** User list for the reward campaign. Access is protected by users.view. */
+  async rewardUsers(user: User): Promise<RewardUser[]> {
+    const adminId = await this.adminRowId(user.id);
+    const rows = await this.prisma.user.findMany({
+      where: { status: 'ACTIVE' },
+      orderBy: { createdAt: 'desc' },
+      take: 1000,
+      select: {
+        id: true,
+        phone: true,
+        fullName: true,
+        createdAt: true,
+        rewardGiven: true,
+        rewardGivenAt: true,
+        city: { select: { id: true, name: true } },
+      },
+    });
+    await this.audit(adminId, 'campaign.users.view', 'user', 'all', { count: rows.length });
+    return rows;
+  }
+
+  /** Mark one reward as delivered; idempotent and fully audited. */
+  async markRewardGiven(user: User, id: number): Promise<{ id: number; rewardGiven: boolean; rewardGivenAt: Date }> {
+    const adminId = await this.adminRowId(user.id);
+    const target = await this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, rewardGiven: true, phone: true },
+    });
+    if (!target) throw new NotFoundException('کاربر یافت نشد');
+    if (target.rewardGiven) {
+      const existing = await this.prisma.user.findUnique({
+        where: { id },
+        select: { id: true, rewardGiven: true, rewardGivenAt: true },
+      });
+      return { id: existing!.id, rewardGiven: true, rewardGivenAt: existing!.rewardGivenAt! };
+    }
+    const rewardGivenAt = new Date();
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: { rewardGiven: true, rewardGivenAt, rewardGivenByAdminId: adminId },
+      select: { id: true, rewardGiven: true, rewardGivenAt: true },
+    });
+    await this.audit(adminId, 'campaign.reward.give', 'user', String(id), {
+      phone: target.phone,
+      rewardGiven: true,
+      rewardGivenAt: rewardGivenAt.toISOString(),
+    });
+    return { id: updated.id, rewardGiven: updated.rewardGiven, rewardGivenAt: updated.rewardGivenAt! };
   }
 
   /** Notifications are best-effort: a notification write must never undo moderation. */

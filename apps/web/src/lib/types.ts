@@ -177,6 +177,16 @@ export interface AdminOverview {
   verifiedUsers: number;
 }
 
+export interface AdminRewardUser {
+  id: number;
+  phone: string;
+  fullName: string | null;
+  createdAt: string;
+  rewardGiven: boolean;
+  rewardGivenAt: string | null;
+  city: { id: number; name: string } | null;
+}
+
 /** Site visits (Phase 13): one point per day / month / year bucket. */
 export interface VisitPoint {
   key: string; // 2026-10-07 | 2026-10 | 2026

@@ -34,6 +34,19 @@ export class AdminController {
     return this.analytics.stats();
   }
 
+  /** User phones and reward status for the authorized campaign operator. */
+  @Get('campaign/reward-users')
+  @RequirePermissions('users.view')
+  rewardUsers(@CurrentUser() user: User) {
+    return this.admin.rewardUsers(user);
+  }
+
+  @Post('campaign/reward-users/:id/give')
+  @RequirePermissions('users.manage')
+  giveReward(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number) {
+    return this.admin.markRewardGiven(user, id);
+  }
+
   /** Ad moderation queue: ?status=PENDING|APPROVED|REJECTED (default PENDING). */
   @Get('ads')
   @RequirePermissions('ads.view')

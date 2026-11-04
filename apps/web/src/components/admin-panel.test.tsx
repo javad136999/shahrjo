@@ -14,6 +14,8 @@ const mockGetAdminVisits = jest.fn();
 const mockGetAdminAds = jest.fn();
 const mockGetAdminBusinesses = jest.fn();
 const mockGetAdminSubscriptions = jest.fn();
+const mockGetAdminRewardUsers = jest.fn();
+const mockGiveAdminReward = jest.fn();
 const mockApproveAdminAd = jest.fn();
 const mockRejectAdminAd = jest.fn();
 const mockApproveAdminBusiness = jest.fn();
@@ -41,6 +43,8 @@ jest.mock('@/lib/api', () => ({
   getAdminAds: (status: string) => mockGetAdminAds(status),
   getAdminBusinesses: (status: string) => mockGetAdminBusinesses(status),
   getAdminSubscriptions: (status: string) => mockGetAdminSubscriptions(status),
+  getAdminRewardUsers: () => mockGetAdminRewardUsers(),
+  giveAdminReward: (id: number) => mockGiveAdminReward(id),
   approveAdminAd: (id: number) => mockApproveAdminAd(id),
   rejectAdminAd: (id: number, reason: string) => mockRejectAdminAd(id, reason),
   approveAdminBusiness: (id: number, body: unknown) => mockApproveAdminBusiness(id, body),
@@ -136,6 +140,8 @@ describe('AdminPanel', () => {
     mockGetAdminAds.mockResolvedValue([pendingAd]);
     mockGetAdminBusinesses.mockResolvedValue([]);
     mockGetAdminSubscriptions.mockResolvedValue([pendingSub]);
+    mockGetAdminRewardUsers.mockResolvedValue([]);
+    mockGiveAdminReward.mockResolvedValue({ id: 1, rewardGiven: true, rewardGivenAt: '2026-11-04T00:00:00.000Z' });
     mockApproveAdminAd.mockResolvedValue({ id: 7, status: 'APPROVED' });
     mockRejectAdminAd.mockResolvedValue({ id: 7, status: 'REJECTED' });
     mockApproveAdminSubscription.mockResolvedValue({ id: 44, status: 'ACTIVE' });

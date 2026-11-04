@@ -24,6 +24,7 @@ import {
 } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import type { AdminOverview, QueueAd, QueueBusiness, QueueSubscription, VisitStats } from '@/lib/types';
+import { AdminRewardUsers } from '@/components/admin-reward-users';
 
 type Tab = 'ads' | 'businesses' | 'subscriptions';
 type VisitPeriod = 'daily' | 'monthly' | 'yearly';
@@ -294,6 +295,8 @@ export function AdminPanel() {
           </p>
         </section>
       )}
+
+      <AdminRewardUsers />
 
       <div className="admin-tabs" role="tablist">
         {TABS.map((t) => (

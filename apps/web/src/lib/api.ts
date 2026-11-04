@@ -7,6 +7,7 @@ import type {
   AdItem,
   AdDetail,
   AdminOverview,
+  AdminRewardUser,
   BusinessDetail,
   BusinessListingItem,
   BusinessItem,
@@ -375,6 +376,14 @@ export async function getMySubscriptions(): Promise<MySubscription[]> {
 
 export async function getAdminOverview(): Promise<AdminOverview> {
   return api.get<AdminOverview>('/admin/overview');
+}
+
+export async function getAdminRewardUsers(): Promise<AdminRewardUser[]> {
+  return api.get<AdminRewardUser[]>('/admin/campaign/reward-users');
+}
+
+export async function giveAdminReward(id: number): Promise<{ id: number; rewardGiven: boolean; rewardGivenAt: string }> {
+  return api.post<{ id: number; rewardGiven: boolean; rewardGivenAt: string }>(`/admin/campaign/reward-users/${id}/give`);
 }
 
 /** Site visits (daily / monthly / yearly) for the admin panel. */
