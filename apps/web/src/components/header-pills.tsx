@@ -16,7 +16,10 @@ import type { LocalCity } from '@/lib/types';
  */
 export function HeaderPills() {
   const [city, setCity] = useState<LocalCity | null>(null);
-  const [showInstall, setShowInstall] = useState(false);
+  // Web pages and the PWA must show the Bazaar CTA immediately. It is hidden
+  // only after the Android WebView marker is positively detected; starting at
+  // false made the CTA disappear on some cached/hydrated city pages.
+  const [showInstall, setShowInstall] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
   const pathname = usePathname();
 
