@@ -2596,6 +2596,14 @@ a.my-ads__item:hover {
 .admin-visits__totals {
   margin-bottom: 10px;
 }
+.admin-visits__totals .stat-card strong,
+.admin-stats__verified-users strong {
+  font-size: 14px;
+}
+.admin-visits__totals .stat-card .small,
+.admin-stats__verified-users .small {
+  font-size: 10.5px;
+}
 .admin-visits__chart {
   display: flex;
   align-items: flex-end;

@@ -247,7 +247,7 @@ export function AdminPanel() {
             <strong>{overview.pendingSubscriptions.toLocaleString('fa-IR')}</strong>
             <span className="muted small">اشتراک در انتظار</span>
           </div>
-          <div className="stat-card">
+          <div className="stat-card admin-stats__verified-users" data-testid="admin-verified-users">
             <span aria-hidden>📱</span>
             <strong>{overview.verifiedUsers.toLocaleString('fa-IR')}</strong>
             <span className="muted small">کاربر واقعی با ورود موبایلی</span>
