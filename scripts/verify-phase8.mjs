@@ -8,6 +8,7 @@ const mustExist = [
   'apps/api/src/admin/admin.service.spec.ts',
   'apps/web/src/components/admin-panel.tsx',
   'apps/web/src/components/admin-panel.test.tsx',
+  'apps/web/src/components/admin-reward-users.tsx',
   'apps/web/src/app/admin/page.tsx',
 ];
 
@@ -36,6 +37,8 @@ const endpoints = [
   "@Get('storage/overview')",
   "@Post('storage/sweep')",
   "@Get('analytics/visits')",
+  "@Get('campaign/reward-users')",
+  "@Post('campaign/reward-users/:id/give')",
 ];
 for (const endpoint of endpoints) {
   if (!controller.includes(endpoint)) { console.error('MISSING endpoint:', endpoint); fail++; }
@@ -70,6 +73,9 @@ for (const marker of [
   'auditLog.create', // every decision is audited
   'subscriptionExpiresAt', // approval never shortens an active period
   'showcasePriority', // gold/silver feed the showcase order
+  'rewardGiven', // campaign reward delivery is stored against the user
+  'campaign.users.view', // viewing phone numbers is audited
+  'campaign.reward.give', // reward delivery is audited
 ]) {
   if (!service.includes(marker)) { console.error(`ADMIN: missing ${marker}`); fail++; }
 }
@@ -96,7 +102,7 @@ for (const marker of ['getTokens', '/login?next=/admin', 'getProfile', 'roles', 
   if (!panel.includes(marker)) { console.error(`WEB: admin panel missing ${marker}`); fail++; }
 }
 const apiClient = read('apps/web/src/lib/api.ts');
-for (const helper of ['getAdminOverview', 'getAdminAds', 'approveAdminAd', 'rejectAdminAd', 'getAdminBusinesses', 'approveAdminBusiness', 'getAdminSubscriptions', 'approveAdminSubscription']) {
+for (const helper of ['getAdminOverview', 'getAdminAds', 'approveAdminAd', 'rejectAdminAd', 'getAdminBusinesses', 'approveAdminBusiness', 'getAdminSubscriptions', 'approveAdminSubscription', 'getAdminRewardUsers', 'giveAdminReward']) {
   if (!apiClient.includes(helper)) { console.error(`WEB: api client missing ${helper}`); fail++; }
 }
 // Entry: the admin panel lives in the profile only (role-gated there) — it
@@ -136,7 +142,7 @@ if (!read('package.json').includes('verify:phase8')) { console.error('ROOT: veri
 const phase8Row = read('docs/architecture.md').split('\n').find((l) => /^\|\s*8\s*\|/.test(l));
 if (!phase8Row || !phase8Row.includes('✅')) { console.error('DOCS: phase 8 must be marked ✅ in docs/architecture.md'); fail++; }
 const apiDoc = read('docs/api.md');
-for (const endpoint of ['GET `/admin/overview`', 'POST `/admin/ads/:id/approve`', 'POST `/admin/businesses/:id/approve`', 'POST `/admin/subscriptions/:id/approve`']) {
+for (const endpoint of ['GET `/admin/overview`', 'POST `/admin/ads/:id/approve`', 'POST `/admin/businesses/:id/approve`', 'POST `/admin/subscriptions/:id/approve`', 'GET `/admin/campaign/reward-users`', 'POST `/admin/campaign/reward-users/:id/give`']) {
   if (!apiDoc.includes(endpoint)) { console.error(`DOCS: ${endpoint} missing from docs/api.md`); fail++; }
 }
 
