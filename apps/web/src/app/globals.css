@@ -2672,6 +2672,8 @@ a.my-ads__item:hover {
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
+  min-width: 0;
   margin: 14px 0;
   padding: 13px 15px;
   border: 1px solid var(--gold-line);
@@ -2692,11 +2694,13 @@ a.my-ads__item:hover {
   color: var(--brand-dark);
   font-size: 22px;
 }
-.admin-reward-shortcut__text { display: grid; gap: 3px; }
+.admin-reward-shortcut__text { display: grid; min-width: 0; gap: 3px; overflow-wrap: anywhere; }
 .admin-reward-shortcut__text small { color: var(--muted); }
 .admin-reward-shortcut__arrow { margin-inline-start: auto; color: var(--brand-dark); font-size: 20px; }
 
 .admin-reward-users {
+  width: 100%;
+  min-width: 0;
   margin: 14px 0;
   padding: 16px;
   background: var(--gold-soft);
@@ -2710,7 +2714,8 @@ a.my-ads__item:hover {
   gap: 12px;
   margin-bottom: 12px;
 }
-.admin-reward-users__head h2 { margin: 0; font-size: 18px; }
+.admin-reward-users__head > div { min-width: 0; }
+.admin-reward-users__head h2 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
 .admin-reward-users__head p { margin: 3px 0 0; }
 .admin-reward-users__search {
   width: min(260px, 100%);
@@ -2720,7 +2725,14 @@ a.my-ads__item:hover {
   background: var(--surface);
   font: inherit;
 }
-.admin-reward-users__table-wrap { overflow-x: auto; }
+.admin-reward-users__table-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
 .admin-reward-users__table {
   width: 100%;
   min-width: 650px;
@@ -2745,6 +2757,13 @@ a.my-ads__item:hover {
 .admin-reward-users__check.is-given { color: var(--brand-dark); }
 .admin-reward-users__date { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
 @media (max-width: 680px) {
+  .ad-page { width: 100%; min-width: 0; }
+  .ad-page > * { min-width: 0; max-width: 100%; }
+  .ad-page .plans-hero > div { min-width: 0; }
+  .ad-page .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ad-page .stat-card { min-width: 0; overflow-wrap: anywhere; }
+  .ad-page .admin-tabs { width: 100%; min-width: 0; }
+  .ad-page .admin-status-select { max-width: 100%; min-width: 0; }
   .admin-reward-users__head { align-items: stretch; flex-direction: column; }
   .admin-reward-users__search { width: 100%; }
   .admin-reward-shortcut { padding: 11px; }
