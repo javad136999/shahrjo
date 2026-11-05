@@ -20,7 +20,7 @@ function makePrisma() {
     wallPostLike: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn(), delete: jest.fn() },
     wallRead: { findUnique: jest.fn(), upsert: jest.fn() },
     media: { updateMany: jest.fn(), findUnique: jest.fn() },
-    ad: { findMany: jest.fn() },
+    ad: { findMany: jest.fn(), update: jest.fn() },
     $transaction: jest.fn(),
   };
   prisma.$transaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma));
@@ -398,6 +398,21 @@ describe('WallService.remove / setPinned (moderation)', () => {
     const { service, prisma } = makeService({ role: 'MODERATOR', provinceId: null, cityId: 1 });
     prisma.wallPost.findFirst.mockResolvedValue({ id: 3, userId: 99 });
     await expect(service.remove(user, 3)).resolves.toEqual({ id: 3, deleted: true });
+  });
+
+  it('deletes the attached ad too, so it cannot return to category pages or republish', async () => {
+    const { service, prisma, uploads } = makeService(null);
+    prisma.wallPost.findFirst.mockResolvedValue({
+      id: 3,
+      userId: user.id,
+      ad: { id: 42, userId: user.id, status: 'APPROVED' },
+    });
+
+    await service.remove(user, 3);
+
+    expect(prisma.ad.update).toHaveBeenCalledWith({ where: { id: 42 }, data: { status: 'DELETED' } });
+    expect(prisma.wallPost.delete).toHaveBeenCalledWith({ where: { id: 3 } });
+    expect(uploads.purgeEntity).toHaveBeenCalledWith('AD', 42);
   });
 
   it('403s pinning without an operator scope', async () => {

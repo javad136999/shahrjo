@@ -544,16 +544,29 @@ export class WallService {
   async remove(user: User, id: number): Promise<{ id: number; deleted: boolean }> {
     const post = await this.prisma.wallPost.findFirst({
       where: { id },
-      select: { id: true, userId: true },
+      select: {
+        id: true,
+        userId: true,
+        ad: { select: { id: true, userId: true, status: true } },
+      },
     });
     if (!post) throw new NotFoundException('پیام یافت نشد');
     if (post.userId !== user.id) {
       const scope = await this.scopeOf(user.id);
       if (!scope) throw new ForbiddenException('فقط نویسنده یا ناظر می‌تواند پیام را پاک کند');
     }
-    await this.prisma.wallPost.delete({ where: { id } });
+    // An ad card is also a real ad. Removing only wall_posts leaves the ad
+    // APPROVED, so it remains in category pages and can be republished later.
+    // Treat deletion of an attached ad post as deletion of the ad itself.
+    await this.prisma.$transaction(async (tx) => {
+      if (post.ad && post.ad.status !== 'DELETED') {
+        await tx.ad.update({ where: { id: post.ad.id }, data: { status: 'DELETED' } });
+      }
+      await tx.wallPost.delete({ where: { id } });
+    });
     // files follow their post immediately — no waiting for the storage sweep
     await this.uploads.purgeEntity('WALL', id).catch(() => undefined);
+    if (post.ad) await this.uploads.purgeEntity('AD', post.ad.id).catch(() => undefined);
     return { id, deleted: true };
   }
 

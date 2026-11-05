@@ -4538,6 +4538,45 @@ a.my-ads__item:hover {
   flex-wrap: wrap;
   overflow: visible;
   margin-bottom: 14px;
+  max-width: none;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgb(14 122 95 / 12%);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fbfefc, #f1f8f3);
+}
+.wall-cats--page .wall-cat {
+  min-width: 82px;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 11px;
+  border-color: transparent;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 78%);
+  box-shadow: 0 4px 12px -10px rgb(21 59 45 / 70%);
+  transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.wall-cats--page .wall-cat > span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--brand-soft);
+  font-size: 19px;
+}
+.wall-cats--page .wall-cat:hover,
+.wall-cats--page .wall-cat:focus-visible,
+.wall-cats--page .wall-cat.is-active {
+  transform: translateY(-2px);
+  background: #fff;
+  border-color: rgb(14 122 95 / 28%);
+  box-shadow: 0 9px 18px -13px rgb(14 122 95 / 65%);
+}
+.wall-cats--page .wall-cat.is-active > span {
+  background: var(--brand);
+  color: #fff;
 }
 .catad-grid {
   display: grid;
