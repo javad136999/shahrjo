@@ -4544,6 +4544,33 @@ a.my-ads__item:hover {
   grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
   gap: 10px;
 }
+.catad-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-height: 150px;
+  padding: 24px;
+  border: 1px solid rgb(14 122 95 / 16%);
+  border-radius: 20px;
+  background: linear-gradient(135deg, #f7fcf8 0%, #eef8f1 100%);
+  box-shadow: 0 12px 30px -24px rgb(21 59 45 / 55%);
+}
+.catad-empty__icon {
+  display: grid;
+  flex: 0 0 60px;
+  width: 60px;
+  height: 60px;
+  place-items: center;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 18px -14px rgb(21 59 45 / 60%);
+  font-size: 29px;
+}
+.catad-empty__copy { min-width: 0; flex: 1; }
+.catad-empty__copy strong { display: block; color: var(--ink); font-size: 15px; line-height: 1.8; }
+.catad-empty__copy p { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.catad-empty__cta { flex: 0 0 auto; white-space: nowrap; }
 .catad-card {
   display: flex;
   flex-direction: column;
@@ -4588,6 +4615,11 @@ a.my-ads__item:hover {
 .catad-card__price {
   font-size: 13px;
   color: var(--brand-dark);
+}
+@media (max-width: 560px) {
+  .catad-empty { align-items: flex-start; flex-wrap: wrap; padding: 18px; }
+  .catad-empty__copy { flex-basis: calc(100% - 78px); }
+  .catad-empty__cta { width: 100%; margin-inline-start: 75px; }
 }
 
 /* ---- Business registration (steps + map picker) ---- */

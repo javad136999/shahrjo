@@ -108,7 +108,16 @@ export function CategoryAds({ category }: CategoryAdsProps) {
             در حال بارگذاری آگهی‌ها…
           </p>
         ) : ads.length === 0 ? (
-          <p className="empty-state">فعلاً آگهی تأییدشده‌ای در این دسته برای {city.name} نیست.</p>
+          <section className="catad-empty" data-testid="catad-empty" aria-live="polite">
+            <span className="catad-empty__icon" aria-hidden>{active?.icon ?? '📭'}</span>
+            <div className="catad-empty__copy">
+              <strong>{active ? `هنوز آگهی‌ای در دستهٔ «${active.name}» ثبت نشده` : 'هنوز آگهی‌ای ثبت نشده'}</strong>
+              <p>اولین نفر باشید که آگهی خود را در {city.name} منتشر می‌کند.</p>
+            </div>
+            <Link href="/ads/new" className="btn btn-primary catad-empty__cta">
+              ثبت اولین آگهی
+            </Link>
+          </section>
         ) : (
           ads.map((a) => (
             <Link key={a.id} href={`/ad/${a.id}`} className="catad-card" data-testid={`catad-card-${a.id}`}>

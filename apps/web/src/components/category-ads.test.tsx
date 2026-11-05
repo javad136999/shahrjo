@@ -56,4 +56,16 @@ describe('CategoryAds (میانبر دسته‌بندی چت روم)', () => {
     expect(screen.getByRole('link', { name: 'انتخاب شهر' })).toHaveAttribute('href', '/');
     expect(mockAds).not.toHaveBeenCalled();
   });
+
+  it('shows a polished empty state when the selected category has no ads', async () => {
+    mockCity.mockReturnValue({ id: 1, slug: 'sample-city', name: 'شهر نمونه' });
+    mockCats.mockResolvedValue(CATS);
+    mockAds.mockResolvedValue([]);
+
+    render(<CategoryAds category="services" />);
+
+    expect(await screen.findByTestId('catad-empty')).toBeTruthy();
+    expect(screen.getByText('هنوز آگهی‌ای در دستهٔ «خدمات» ثبت نشده')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'ثبت اولین آگهی' })).toHaveAttribute('href', '/ads/new');
+  });
 });

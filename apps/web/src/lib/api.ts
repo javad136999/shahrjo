@@ -193,7 +193,7 @@ async function requestForm<T>(path: string, form: FormData): Promise<T> {
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>('GET', path),
+  get: <T>(path: string, options: Pick<RequestOptions, 'cache'> = {}) => request<T>('GET', path, options),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, { body }),
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, { body }),
   patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, { body }),
@@ -495,7 +495,8 @@ export async function getCityNews(slug: string, limit = 6): Promise<NewsItem[]> 
 
 export async function getCityAds(slug: string, limit = 8, category?: string): Promise<AdItem[]> {
   const cat = category ? `&category=${encodeURIComponent(category)}` : '';
-  return api.get<AdItem[]>(`/ads?${cityQS(slug, limit)}${cat}`);
+  // Ads can be deleted from the wall; never show a browser-cached category result.
+  return api.get<AdItem[]>(`/ads?${cityQS(slug, limit)}${cat}`, { cache: 'no-store' });
 }
 
 export async function getCityBusinesses(
