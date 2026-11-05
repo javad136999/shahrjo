@@ -236,6 +236,9 @@ export class ContentService {
       where: {
         cityId,
         status: 'APPROVED',
+        // An ad removed from the wall has no active wall post anymore. Keep
+        // legacy/orphaned ads (such as old deleted listings) out of categories.
+        wallPosts: { some: {} },
         // category shortcut of the chat room (optional filter)
         ...(categorySlug ? { category: { slug: categorySlug } } : {}),
         // never surface expired listings even if the nightly sweep has not run yet

@@ -293,6 +293,9 @@ export class WallRepostScheduler implements OnModuleInit {
     const valid = [{ expiresAt: null }, { expiresAt: { gt: now } }];
     const where: Prisma.AdWhereInput = {
       status: 'APPROVED',
+      // Ads whose wall post was removed are legacy deleted listings; never
+      // resurrect them through the daily republication scheduler.
+      wallPosts: { some: {} },
       OR: valid,
       ...(kind === 'old' ? { createdAt: { lte: new Date(now.getTime() - OLD_AD_MIN_AGE_MS) } } : {}),
       ...(kind === 'gold'
