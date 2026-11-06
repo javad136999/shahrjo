@@ -26,6 +26,13 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
 
   useEffect(() => {
     let alive = true;
+    // Keep the route resilient to lightweight host mocks that only provide city APIs.
+    if (typeof getAdCategories !== 'function') {
+      setCategories([]);
+      return () => {
+        alive = false;
+      };
+    }
     getAdCategories().then((items) => {
       if (alive) setCategories(items);
     }).catch(() => {

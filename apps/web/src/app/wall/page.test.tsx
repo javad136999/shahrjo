@@ -5,16 +5,20 @@ const mockApiGet = jest.fn();
 const mockGetLocalCity = jest.fn();
 const mockGetTokens = jest.fn();
 const mockSetLocalCity = jest.fn();
+const mockGetCityAds = jest.fn();
+const mockGetAdCategories = jest.fn();
 
 jest.mock('@/lib/api', () => ({
   api: { get: (...args: unknown[]) => mockApiGet(...args) },
   getLocalCity: () => mockGetLocalCity(),
   getTokens: () => mockGetTokens(),
   setLocalCity: (...args: unknown[]) => mockSetLocalCity(...args),
+  getCityAds: (...args: unknown[]) => mockGetCityAds(...args),
+  getAdCategories: (...args: unknown[]) => mockGetAdCategories(...args),
 }));
 
-jest.mock('@/components/wall-view', () => ({
-  WallView: ({ city }: { city: { name: string } }) => <div data-testid="wall-view">{city.name}</div>,
+jest.mock('@/components/city-classifieds', () => ({
+  CityClassifieds: ({ city }: { city: { name: string } }) => <div data-testid="city-classifieds">{city.name}</div>,
 }));
 
 const localCity = { id: 1, slug: 'sample-city', name: 'شهر ذخیره‌شده' };
@@ -33,7 +37,7 @@ describe('WallPage', () => {
 
     render(<WallPage />);
 
-    expect(screen.getByTestId('wall-view')).toHaveTextContent('شهر ذخیره‌شده');
+    expect(screen.getByTestId('city-classifieds')).toHaveTextContent('شهر ذخیره‌شده');
     expect(mockApiGet).toHaveBeenCalledWith('/users/me');
     expect(mockApiGet).not.toHaveBeenCalledWith('/cities');
   });
@@ -49,8 +53,8 @@ describe('WallPage', () => {
 
     render(<WallPage />);
 
-    expect(screen.getByTestId('wall-view')).toHaveTextContent('شهر ذخیره‌شده');
-    await waitFor(() => expect(screen.getByTestId('wall-view')).toHaveTextContent('شهر پروفایل'));
+    expect(screen.getByTestId('city-classifieds')).toHaveTextContent('شهر ذخیره‌شده');
+    await waitFor(() => expect(screen.getByTestId('city-classifieds')).toHaveTextContent('شهر پروفایل'));
     expect(mockSetLocalCity).toHaveBeenCalledWith(profileCity);
   });
 });
