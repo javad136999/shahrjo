@@ -490,6 +490,7 @@ model ServiceListing {
   category BusinessCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   owner    User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ratings  ServiceListingRating[]
+  wallPosts WallPost[]
 
   @@index([cityId, categoryId, isActive, createdAt])
   @@index([ownerId])
@@ -952,6 +953,7 @@ model WallPost {
   voiceUrl  String?  @map("voice_url") // voice note (Phase 10 chat room)
   adId      Int?     @map("ad_id") // daily promoted-ad republication
   businessId Int?    @map("business_id") // daily GOLD-business promo (2/day)
+  serviceListingId Int? @map("service_listing_id") // daily service-directory promo
   replyToId Int?     @map("reply_to_id")
   editedAt  DateTime? @map("edited_at") // set when the author edits their message
   isPinned  Boolean  @default(false) @map("is_pinned")
@@ -963,6 +965,7 @@ model WallPost {
   user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   ad      Ad?            @relation(fields: [adId], references: [id], onDelete: Cascade)
   business Business?     @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  serviceListing ServiceListing? @relation(fields: [serviceListingId], references: [id], onDelete: SetNull)
   replyTo WallPost?      @relation("WallReplies", fields: [replyToId], references: [id], onDelete: SetNull)
   replies WallPost[]     @relation("WallReplies")
   likes   WallPostLike[]
@@ -970,6 +973,7 @@ model WallPost {
   @@index([cityId, createdAt])
   @@index([adId, createdAt])
   @@index([businessId, createdAt])
+  @@index([serviceListingId, createdAt])
   @@map("wall_posts")
 }
 

@@ -849,6 +849,28 @@ export function WallView({ city }: WallViewProps) {
                 />
               )}
 
+              {post.serviceListing && (
+                <div
+                  className="wall-promocard wall-promocard--service"
+                  data-testid={`wall-service-promocard-${post.id}`}
+                >
+                  <span className="wall-promocard__thumb" aria-hidden>
+                    {post.serviceListing.category.icon ?? '🛠️'}
+                  </span>
+                  <span className="wall-promocard__body">
+                    <b>{post.serviceListing.name}</b>
+                    <small>
+                      {post.serviceListing.category.icon ?? '◆'} {post.serviceListing.category.name}
+                    </small>
+                    {post.serviceListing.description && <small>{post.serviceListing.description}</small>}
+                    <a className="wall-promocard__phone" href={`tel:${post.serviceListing.phone}`}>
+                      📞 {post.serviceListing.phone}
+                    </a>
+                  </span>
+                  <span className="wall-promocard__badge">معرفی امروز</span>
+                </div>
+              )}
+
               {post.business && (
                 <Link
                   href={`/business/${post.business.id}`}
@@ -877,6 +899,9 @@ export function WallView({ city }: WallViewProps) {
                       {post.business.category.icon ?? '◆'} {post.business.category.name}
                       {post.business.address ? ` · 📍 ${post.business.address}` : ''}
                     </small>
+                    {post.business.phone && (
+                      <span className="wall-promocard__phone">📞 {post.business.phone}</span>
+                    )}
                     <span className="wall-promocard__cta">مشاهدهٔ صفحه و منوی کسب‌وکار ↗</span>
                   </span>
                   <span className="wall-promocard__badge">👑 طلایی</span>

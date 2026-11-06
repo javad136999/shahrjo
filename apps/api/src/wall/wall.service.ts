@@ -42,9 +42,18 @@ export interface WallRoomMeta {
 export interface WallBusinessRef {
   id: number;
   name: string;
+  phone: string | null;
   address: string | null;
   /** Owner photo — read live so freeing it never leaves a broken card. */
   logoUrl: string | null;
+  category: { name: string; icon: string | null; color: string | null };
+}
+
+export interface WallServiceListingRef {
+  id: number;
+  name: string;
+  phone: string;
+  description: string | null;
   category: { name: string; icon: string | null; color: string | null };
 }
 
@@ -57,6 +66,8 @@ export interface WallPostView {
   ad: WallAdRef | null;
   /** Daily GOLD-business promo — null for ordinary posts. */
   business: WallBusinessRef | null;
+  /** Daily service-directory promo — null for ordinary posts. */
+  serviceListing: WallServiceListingRef | null;
   isPinned: boolean;
   likeCount: number;
   likedByMe: boolean;
@@ -102,8 +113,16 @@ type PostWithRel = {
   business: {
     id: number;
     name: string;
+    phone: string | null;
     address: string | null;
     logoUrl: string | null;
+    category: { name: string; icon: string | null; color: string | null };
+  } | null;
+  serviceListing: {
+    id: number;
+    name: string;
+    phone: string;
+    description: string | null;
     category: { name: string; icon: string | null; color: string | null };
   } | null;
 };
@@ -171,9 +190,19 @@ export class WallService {
         ? {
             id: post.business.id,
             name: post.business.name,
+            phone: post.business.phone,
             address: post.business.address,
             logoUrl: post.business.logoUrl,
             category: post.business.category,
+        }
+        : null,
+      serviceListing: post.serviceListing
+        ? {
+            id: post.serviceListing.id,
+            name: post.serviceListing.name,
+            phone: post.serviceListing.phone,
+            description: post.serviceListing.description,
+            category: post.serviceListing.category,
           }
         : null,
       isPinned: post.isPinned,
@@ -227,8 +256,18 @@ export class WallService {
       select: {
         id: true,
         name: true,
+        phone: true,
         address: true,
         logoUrl: true,
+        category: { select: { name: true, icon: true, color: true } },
+      },
+    },
+    serviceListing: {
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        description: true,
         category: { select: { name: true, icon: true, color: true } },
       },
     },

@@ -362,9 +362,18 @@ export interface WallAdRef {
 export interface WallBusinessRef {
   id: number;
   name: string;
+  phone?: string | null;
   address: string | null;
   /** Read live from the business row — never a stale stored copy. */
   logoUrl: string | null;
+  category: { name: string; icon: string | null; color: string | null };
+}
+
+export interface WallServiceListingRef {
+  id: number;
+  name: string;
+  phone: string;
+  description: string | null;
   category: { name: string; icon: string | null; color: string | null };
 }
 
@@ -384,6 +393,7 @@ export interface WallPost {
   ad: WallAdRef | null;
   /** Daily GOLD-business promo card — null for ordinary posts. */
   business: WallBusinessRef | null;
+  serviceListing?: WallServiceListingRef | null;
   isPinned: boolean;
   likeCount: number;
   likedByMe: boolean;

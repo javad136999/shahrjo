@@ -18,6 +18,7 @@ function makePrisma() {
     },
     ad: { findMany: jest.fn().mockResolvedValue([]) },
     business: { findMany: jest.fn().mockResolvedValue([]) },
+    serviceListing: { findMany: jest.fn().mockResolvedValue([]) },
   };
 }
 

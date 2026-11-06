@@ -50,6 +50,9 @@ export const REPOST_CHECK_MS = 60_000;
 export const WALL_REPOSTS_ENABLED = process.env.ENABLE_WALL_REPOSTS === 'true';
 /** GOLD business promotions remain on unless explicitly disabled by the operator. */
 export const GOLD_BUSINESS_PROMOS_ENABLED = process.env.ENABLE_GOLD_BUSINESS_PROMOS !== 'false';
+/** Daily directory promotions remain on unless explicitly disabled. */
+export const SERVICE_LISTING_PROMOS_ENABLED = process.env.ENABLE_SERVICE_LISTING_PROMOS !== 'false';
+export const SERVICE_LISTING_PROMO_MINUTES = 10 * 60;
 /** «اگهی قدیمی» = at least this old. */
 export const OLD_AD_MIN_AGE_MS = 7 * 86_400_000;
 /** Upper bound of the candidate pool sampled per slot. */
@@ -139,12 +142,13 @@ export class WallRepostScheduler implements OnModuleInit {
   private readonly automation = {
     ads: WALL_REPOSTS_ENABLED,
     promo: GOLD_BUSINESS_PROMOS_ENABLED,
+    servicePromo: SERVICE_LISTING_PROMOS_ENABLED,
   };
 
   constructor(private readonly prisma: PrismaService) {}
 
   onModuleInit(): void {
-    if (!this.automation.ads && !this.automation.promo) {
+    if (!this.automation.ads && !this.automation.promo && !this.automation.servicePromo) {
       this.logger.log('wall repost and GOLD business promo automation disabled');
       return;
     }
@@ -171,6 +175,11 @@ export class WallRepostScheduler implements OnModuleInit {
     }
 
     let posted = 0;
+    const serviceKey = 'service-listing-promo';
+    if (this.automation.servicePromo && minutes >= SERVICE_LISTING_PROMO_MINUTES && !this.doneSlots.has(serviceKey)) {
+      this.doneSlots.set(serviceKey, day);
+      posted += await this.publishServicePromos(day);
+    }
     for (const slot of WALL_REPOST_SLOTS) {
       const key = `${slot.hour}:${slot.minute}`;
       if (this.doneSlots.has(key)) continue;
@@ -280,6 +289,56 @@ export class WallRepostScheduler implements OnModuleInit {
     });
     this.logger.log(`wall promo ${slot.label}: business #${pick.id} → city #${pick.cityId}`);
     return 1;
+  }
+
+  /**
+   * Publishes one random active directory job in every active city once a day.
+   * These are entries created from the «ثبت شغل» tile, not paid Business profiles.
+   */
+  async publishServicePromos(day: string): Promise<number> {
+    const since = tehranDayStart(day);
+    const usedRows = await this.prisma.wallPost.findMany({
+      where: { serviceListingId: { not: null }, createdAt: { gte: since } },
+      select: { serviceListingId: true },
+    });
+    const used = new Set(usedRows.map((row) => row.serviceListingId).filter((id): id is number => id !== null));
+    const rows = await this.prisma.serviceListing.findMany({
+      where: {
+        isActive: true,
+        city: { isActive: true, province: { isActive: true } },
+        category: { isActive: true, isService: true },
+      },
+      select: {
+        id: true, cityId: true, ownerId: true, name: true, phone: true, description: true,
+        category: { select: { name: true, icon: true } },
+      },
+    });
+    const byCity = new Map<number, typeof rows>();
+    for (const row of rows) {
+      if (used.has(row.id)) continue;
+      const cityRows = byCity.get(row.cityId) ?? [];
+      cityRows.push(row);
+      byCity.set(row.cityId, cityRows);
+    }
+    let posted = 0;
+    for (const cityRows of byCity.values()) {
+      const pick = shuffle(cityRows)[0];
+      if (!pick) continue;
+      const description = (pick.description ?? '').replace(/\s+/g, ' ').trim();
+      const body = description.length > 140 ? `${description.slice(0, 140)}…` : description;
+      const content = [
+        `📣 معرفی شغل امروز: ${pick.name}`,
+        `${pick.category.icon ?? '🛠️'} ${pick.category.name}`,
+        `📞 شماره تماس: ${pick.phone}`,
+        body,
+      ].filter(Boolean).join('\n');
+      await this.prisma.wallPost.create({
+        data: { cityId: pick.cityId, userId: pick.ownerId, content, serviceListingId: pick.id },
+      });
+      posted += 1;
+      this.logger.log(`service promo: listing #${pick.id} → city #${pick.cityId}`);
+    }
+    return posted;
   }
 
   /** Random eligible ads, never reusing anything already used today. */
