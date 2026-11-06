@@ -43,6 +43,12 @@ export class CreateAdDto {
   @MaxLength(300)
   address?: string;
 
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  neighborhood?: string;
+
   // Media ids returned by POST /uploads — ownership is re-checked in the service.
   @IsOptional()
   @IsArray()
@@ -89,6 +95,12 @@ export class UpdateAdDto {
   @IsString()
   @MaxLength(300)
   address?: string;
+
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  neighborhood?: string;
 
   // Replaces the gallery wholesale; ownership of every id is re-checked.
   @IsOptional()

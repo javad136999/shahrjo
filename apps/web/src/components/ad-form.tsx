@@ -80,6 +80,7 @@ export function AdForm() {
   const [price, setPrice] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
 
@@ -190,6 +191,8 @@ export function AdForm() {
       if (p) body.phone = p;
       const a = address.trim();
       if (a) body.address = a;
+      const n = neighborhood.trim();
+      if (n) body.neighborhood = n;
       if (imageIds.length) body.imageIds = imageIds;
 
       const created = await createAd(body);
@@ -200,6 +203,7 @@ export function AdForm() {
       setDescription('');
       setPrice('');
       setAddress('');
+      setNeighborhood('');
       setFiles([]);
       getMyAds()
         .then(setMyAds)
@@ -353,7 +357,7 @@ export function AdForm() {
               <span className="ad-form__extras-icon" aria-hidden="true">＋</span>
               <span className="ad-form__extras-copy">
                 <strong>جزئیات اختیاری آگهی</strong>
-                <small>قیمت، شماره تماس و آدرس</small>
+                <small>قیمت، محله، شماره تماس و آدرس</small>
               </span>
             </summary>
             <div className="ad-form__extras-grid">
@@ -381,6 +385,19 @@ export function AdForm() {
                   placeholder="09xxxxxxxxx"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+
+              <div className="ad-form__field ad-form__field--wide">
+                <label htmlFor="neighborhood">محله — اختیاری</label>
+                <input
+                  id="neighborhood"
+                  name="neighborhood"
+                  type="text"
+                  maxLength={120}
+                  placeholder="مثال: محله مرکزی"
+                  value={neighborhood}
+                  onChange={(e) => setNeighborhood(e.target.value)}
                 />
               </div>
 

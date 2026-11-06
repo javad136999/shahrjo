@@ -131,6 +131,7 @@ export class AdsService {
           price: dto.price === undefined ? null : BigInt(dto.price),
           phone: dto.phone ?? user.phone,
           address: dto.address ?? null,
+          neighborhood: dto.neighborhood ?? null,
           // Self-serve publishing: the owner's ad goes live immediately
           // (moderation stays available through the admin queue afterwards).
           status: 'APPROVED',
@@ -282,6 +283,7 @@ export class AdsService {
     if (dto.price !== undefined) data.price = dto.price === null ? null : BigInt(dto.price);
     if (dto.phone !== undefined) data.phone = dto.phone;
     if (dto.address !== undefined) data.address = dto.address;
+    if (dto.neighborhood !== undefined) data.neighborhood = dto.neighborhood || null;
 
     let imageUrls: string[] | null = null;
     if (dto.imageIds !== undefined) {

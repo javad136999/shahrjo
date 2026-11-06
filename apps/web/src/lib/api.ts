@@ -217,6 +217,7 @@ export interface CreateAdInput {
   price?: number;
   phone?: string;
   address?: string;
+  neighborhood?: string;
   /** ids returned by uploadImage(), in display order. */
   imageIds?: number[];
 }
@@ -234,6 +235,7 @@ export interface UpdateAdInput {
   price?: number | null;
   phone?: string;
   address?: string;
+  neighborhood?: string;
   /** Replaces the whole gallery; ids returned by uploadImage(). */
   imageIds?: number[];
 }
@@ -493,10 +495,24 @@ export async function getCityNews(slug: string, limit = 6): Promise<NewsItem[]> 
   return api.get<NewsItem[]>(`/news?${cityQS(slug, limit)}`);
 }
 
-export async function getCityAds(slug: string, limit = 8, category?: string): Promise<AdItem[]> {
+export async function getCityAds(
+  slug: string,
+  limit = 8,
+  category?: string,
+  neighborhood?: string,
+  minPrice?: number,
+  maxPrice?: number,
+): Promise<AdItem[]> {
   const cat = category ? `&category=${encodeURIComponent(category)}` : '';
+  const area = neighborhood ? `&neighborhood=${encodeURIComponent(neighborhood)}` : '';
+  const min = minPrice === undefined ? '' : `&minPrice=${encodeURIComponent(minPrice)}`;
+  const max = maxPrice === undefined ? '' : `&maxPrice=${encodeURIComponent(maxPrice)}`;
   // Ads can be deleted from the wall; never show a browser-cached category result.
-  return api.get<AdItem[]>(`/ads?${cityQS(slug, limit)}${cat}`, { cache: 'no-store' });
+  return api.get<AdItem[]>(`/ads?${cityQS(slug, limit)}${cat}${area}${min}${max}`, { cache: 'no-store' });
+}
+
+export async function getCityAdNeighborhoods(slug: string): Promise<string[]> {
+  return api.get<string[]>(`/ads/neighborhoods?city=${encodeURIComponent(slug)}`, { cache: 'no-store' });
 }
 
 export async function getCityBusinesses(

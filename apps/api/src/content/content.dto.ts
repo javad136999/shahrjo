@@ -26,4 +26,23 @@ export class CityContentQueryDto {
   @IsString()
   @MaxLength(100)
   category?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  neighborhood?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(9_000_000_000_000_000)
+  minPrice?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(9_000_000_000_000_000)
+  maxPrice?: number;
 }

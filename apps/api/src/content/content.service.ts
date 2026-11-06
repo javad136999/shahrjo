@@ -36,6 +36,7 @@ export interface AdItem {
   coverUrl: string | null;
   viewCount: number;
   publishedAt: Date | null;
+  neighborhood: string | null;
   category: { name: string; slug: string; icon: string | null; color: string | null };
 }
 
@@ -230,6 +231,9 @@ export class ContentService {
     citySlug: string,
     limit: number = DEFAULT_CONTENT_LIMIT,
     categorySlug?: string,
+    neighborhood?: string,
+    minPrice?: number,
+    maxPrice?: number,
   ): Promise<AdItem[]> {
     const cityId = await this.resolveCity(citySlug);
     const rows = await this.prisma.ad.findMany({
@@ -241,6 +245,10 @@ export class ContentService {
         wallPosts: { some: {} },
         // category shortcut of the chat room (optional filter)
         ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+        ...(neighborhood ? { neighborhood: { equals: neighborhood.trim(), mode: 'insensitive' as const } } : {}),
+        ...(minPrice !== undefined || maxPrice !== undefined
+          ? { price: { ...(minPrice !== undefined ? { gte: BigInt(minPrice) } : {}), ...(maxPrice !== undefined ? { lte: BigInt(maxPrice) } : {}) } }
+          : {}),
         // never surface expired listings even if the nightly sweep has not run yet
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
@@ -252,6 +260,7 @@ export class ContentService {
         price: true,
         viewCount: true,
         publishedAt: true,
+        neighborhood: true,
         category: { select: { name: true, slug: true, icon: true, color: true } },
         images: { orderBy: { sortOrder: 'asc' }, take: 1, select: { url: true } },
       },
@@ -270,6 +279,24 @@ export class ContentService {
    * single category — the city-home service desk («چه خدماتی نیاز داری») uses
    * that filter to list the trades of the chosen service.
    */
+  /** Unique neighborhood labels for the active ads of one city. */
+  async adNeighborhoods(citySlug: string): Promise<string[]> {
+    const cityId = await this.resolveCity(citySlug);
+    const rows = await this.prisma.ad.findMany({
+      where: {
+        cityId,
+        status: 'APPROVED',
+        wallPosts: { some: {} },
+        neighborhood: { not: null },
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      distinct: ['neighborhood'],
+      orderBy: { neighborhood: 'asc' },
+      select: { neighborhood: true },
+    });
+    return rows.map((row) => row.neighborhood).filter((value): value is string => Boolean(value?.trim()));
+  }
+
   async businesses(
     citySlug: string,
     limit: number = DEFAULT_CONTENT_LIMIT,

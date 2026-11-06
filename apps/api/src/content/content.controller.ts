@@ -18,7 +18,14 @@ export class ContentController {
   @Public()
   @Get('ads')
   ads(@Query() query: CityContentQueryDto): ReturnType<ContentService['ads']> {
-    return this.content.ads(query.city, query.limit, query.category);
+    return this.content.ads(query.city, query.limit, query.category, query.neighborhood, query.minPrice, query.maxPrice);
+  }
+
+  /** Distinct neighborhood labels available in the city's active ads. */
+  @Public()
+  @Get('ads/neighborhoods')
+  adNeighborhoods(@Query() query: CityContentQueryDto): ReturnType<ContentService['adNeighborhoods']> {
+    return this.content.adNeighborhoods(query.city);
   }
 
   /** Approved businesses of one city (showcase order; optional category filter). */

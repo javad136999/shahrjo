@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { getAdCategories, getCityAds } from '@/lib/api';
+import { getAdCategories, getCityAdNeighborhoods, getCityAds } from '@/lib/api';
 import { formatPrice, thumbFallback, thumbUrlFor } from '@/lib/format';
 import type { AdCategoryOption, AdItem } from '@/lib/types';
 
@@ -18,7 +18,12 @@ type SortMode = 'newest' | 'oldest' | 'price-low' | 'price-high';
  */
 export function CityClassifieds({ city }: CityClassifiedsProps) {
   const [categories, setCategories] = useState<AdCategoryOption[]>([]);
+  const [neighborhoods, setNeighborhoods] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [ads, setAds] = useState<AdItem[] | null>(null);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortMode>('newest');
@@ -45,9 +50,25 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
 
   useEffect(() => {
     let alive = true;
+    if (typeof getCityAdNeighborhoods !== 'function') {
+      setNeighborhoods([]);
+      return () => { alive = false; };
+    }
+    getCityAdNeighborhoods(city.slug).then((items) => {
+      if (alive) setNeighborhoods(items);
+    }).catch(() => {
+      if (alive) setNeighborhoods([]);
+    });
+    return () => { alive = false; };
+  }, [city.slug]);
+
+  useEffect(() => {
+    let alive = true;
     setAds(null);
     setError(null);
-    getCityAds(city.slug, 100, selectedCategory || undefined)
+    const min = minPrice.trim() ? Number(minPrice.replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[,٬\s]/g, '')) : undefined;
+    const max = maxPrice.trim() ? Number(maxPrice.replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[,٬\s]/g, '')) : undefined;
+    getCityAds(city.slug, 100, selectedCategory || undefined, selectedNeighborhood || undefined, Number.isFinite(min) ? min : undefined, Number.isFinite(max) ? max : undefined)
       .then((items) => {
         if (alive) setAds(items);
       })
@@ -57,7 +78,7 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
     return () => {
       alive = false;
     };
-  }, [city.slug, selectedCategory]);
+  }, [city.slug, selectedCategory, selectedNeighborhood, minPrice, maxPrice]);
 
   const visibleAds = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
@@ -74,6 +95,13 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
   }, [ads, query, sort]);
 
   const activeCategory = categories.find((category) => category.slug === selectedCategory);
+  const activeFilterCount = [selectedCategory, selectedNeighborhood, minPrice, maxPrice].filter(Boolean).length;
+  const clearFilters = () => {
+    setSelectedCategory('');
+    setSelectedNeighborhood('');
+    setMinPrice('');
+    setMaxPrice('');
+  };
 
   return (
     <main className="classifieds" data-testid="city-classifieds">
@@ -109,7 +137,31 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
             <option value="price-high">گران‌ترین</option>
           </select>
         </label>
+        <button type="button" className={`classifieds__advanced-toggle ${advancedOpen ? 'is-active' : ''}`} onClick={() => setAdvancedOpen((open) => !open)}>
+          ⚙ فیلتر پیشرفته {activeFilterCount > 0 && <b>{activeFilterCount.toLocaleString('fa-IR')}</b>}
+        </button>
       </section>
+
+      {advancedOpen && (
+        <section className="classifieds__advanced" aria-label="فیلترهای پیشرفته آگهی">
+          <div className="classifieds__filter-field">
+            <label htmlFor="classified-neighborhood">محله</label>
+            <select id="classified-neighborhood" value={selectedNeighborhood} onChange={(event) => setSelectedNeighborhood(event.target.value)}>
+              <option value="">همه محله‌های شهر</option>
+              {neighborhoods.map((item) => <option value={item} key={item}>{item}</option>)}
+            </select>
+          </div>
+          <div className="classifieds__filter-field">
+            <label htmlFor="classified-min-price">حداقل قیمت (ریال)</label>
+            <input id="classified-min-price" inputMode="numeric" value={minPrice} onChange={(event) => setMinPrice(event.target.value)} placeholder="مثلاً ۱۰۰٬۰۰۰" />
+          </div>
+          <div className="classifieds__filter-field">
+            <label htmlFor="classified-max-price">حداکثر قیمت (ریال)</label>
+            <input id="classified-max-price" inputMode="numeric" value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} placeholder="مثلاً ۵۰۰٬۰۰۰" />
+          </div>
+          {activeFilterCount > 0 && <button type="button" className="classifieds__clear-filters" onClick={clearFilters}>پاک کردن فیلترها</button>}
+        </section>
+      )}
 
       <section className="classifieds__categories" aria-label="دسته‌بندی آگهی‌ها">
         <button type="button" className={!selectedCategory ? 'is-active' : ''} onClick={() => setSelectedCategory('')}>
@@ -166,7 +218,7 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
                 <h2>{ad.title}</h2>
                 <p>{ad.viewCount.toLocaleString('fa-IR')} بازدید · آگهی فعال در {city.name}</p>
                 <strong>{ad.price !== null ? formatPrice(ad.price) : 'توافقی'}</strong>
-                <small>{city.name} · مشاهده جزئیات آگهی ←</small>
+                <small>{ad.neighborhood ? `${ad.neighborhood} · ` : ''}{city.name} · مشاهده جزئیات آگهی ←</small>
               </div>
             </Link>
           ))}
