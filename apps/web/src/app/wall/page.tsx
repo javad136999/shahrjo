@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { WallView } from '@/components/wall-view';
+import { CityClassifieds } from '@/components/city-classifieds';
 import { api, getLocalCity, getTokens, setLocalCity } from '@/lib/api';
 import type { City, LocalCity, MeResponse } from '@/lib/types';
 
@@ -94,6 +94,6 @@ export default function WallPage() {
     );
   }
 
-  // The room header (wall name + member count + actions) lives inside WallView.
-  return <WallView city={{ id: state.city.id, slug: state.city.slug, name: state.city.name }} />;
+  // دیوار شهر اکنون بازار آگهی است؛ کاربران در این صفحه چت نمی‌کنند.
+  return <CityClassifieds city={{ id: state.city.id, slug: state.city.slug, name: state.city.name }} />;
 }
