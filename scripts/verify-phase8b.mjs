@@ -119,7 +119,17 @@ for (const marker of [
   if (!wallView.includes(marker)) { console.error(`WALL UI: missing ${marker}`); fail++; }
 }
 const wallPage = read('apps/web/src/app/wall/page.tsx');
-if (!wallPage.includes('WallView')) { console.error('WALL PAGE: does not render WallView'); fail++; }
+if (!wallPage.includes('CityClassifieds')) { console.error('WALL PAGE: does not render CityClassifieds marketplace'); fail++; }
+const classifieds = read('apps/web/src/components/city-classifieds.tsx');
+for (const marker of [
+  'data-testid="city-classifieds"',
+  'getCityAds',
+  'ثبت آگهی',
+  'جست‌وجو در آگهی‌های شهر',
+  'classifieds__grid',
+]) {
+  if (!classifieds.includes(marker)) { console.error(`CLASSIFIEDS UI: missing ${marker}`); fail++; }
+}
 
 // --- Web: dashboard order — welcome + wall CTA + service tiles, showcase, map ---
 const dashboard = read('apps/web/src/components/dashboard.tsx');
