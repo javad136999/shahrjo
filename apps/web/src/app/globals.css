@@ -9450,3 +9450,22 @@ button.pill {
 .classifieds__clear-filters { min-height: 42px; padding: 0 12px; border: 0; border-radius: 10px; background: #fff; color: #a15a45; cursor: pointer; font: inherit; font-size: 11px; font-weight: 800; }
 @media (max-width: 800px) { .classifieds__advanced { grid-template-columns: repeat(2, minmax(0, 1fr)); } .classifieds__clear-filters { grid-column: 1 / -1; } }
 @media (max-width: 640px) { .classifieds__advanced-toggle { min-height: 44px; justify-content: center; } .classifieds__advanced { grid-template-columns: minmax(0, 1fr); margin-top: 0; } .classifieds__clear-filters { grid-column: auto; } }
+
+/* User-friendly classifieds controls */
+.classifieds__category-panel { margin: 3px 0 15px; padding: 14px; border: 1px solid #dce9df; border-radius: 20px; background: #fff; box-shadow: 0 10px 24px -25px #17352a; }
+.classifieds__category-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 11px; }
+.classifieds__category-head > div { display: flex; flex-direction: column; gap: 1px; }
+.classifieds__category-head strong { color: #214c38; font-size: 14px; }
+.classifieds__category-head small { color: #809589; font-size: 11px; }
+.classifieds__category-search { display: flex; align-items: center; gap: 5px; width: min(210px, 45%); min-height: 36px; padding: 0 9px; border: 1px solid #dbe8de; border-radius: 10px; background: #f8fbf8; color: #779184; }
+.classifieds__category-search span { font-size: 18px; }
+.classifieds__category-search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: #244b37; font: inherit; font-size: 11px; }
+.classifieds__category-panel .classifieds__categories { padding: 0; margin: 0; }
+.classifieds__no-category { padding: 9px 4px; color: #84958b; font-size: 12px; }
+.classifieds__active-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin: -3px 0 15px; color: #6e8275; font-size: 11px; }
+.classifieds__active-filters button { min-height: 29px; padding: 3px 9px; border: 1px solid #c9e2d1; border-radius: 999px; background: #edf8f0; color: #17664b; cursor: pointer; font: inherit; font-size: 11px; }
+.classifieds__active-filters .classifieds__active-clear { border-color: transparent; background: transparent; color: #a15a45; font-weight: 800; }
+.classifieds__advanced-actions { display: flex; align-items: center; gap: 7px; }
+.classifieds__apply-filters { min-height: 42px; padding: 0 15px; border: 0; border-radius: 10px; background: #16795d; color: #fff; cursor: pointer; font: inherit; font-size: 11px; font-weight: 900; white-space: nowrap; }
+.classifieds__apply-filters:hover { background: #0d624b; }
+@media (max-width: 640px) { .classifieds__category-panel { padding: 12px 10px; border-radius: 17px; } .classifieds__category-head { align-items: flex-start; flex-direction: column; } .classifieds__category-search { width: 100%; } .classifieds__active-filters { margin-top: 0; } .classifieds__advanced-actions { justify-content: space-between; } .classifieds__advanced-actions button { flex: 1; } }

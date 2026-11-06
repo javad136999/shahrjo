@@ -23,6 +23,9 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
   const [selectedNeighborhood, setSelectedNeighborhood] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [draftMinPrice, setDraftMinPrice] = useState('');
+  const [draftMaxPrice, setDraftMaxPrice] = useState('');
+  const [categoryQuery, setCategoryQuery] = useState('');
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [ads, setAds] = useState<AdItem[] | null>(null);
   const [query, setQuery] = useState('');
@@ -95,12 +98,29 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
   }, [ads, query, sort]);
 
   const activeCategory = categories.find((category) => category.slug === selectedCategory);
+  const filteredCategories = categories.filter((category) =>
+    `${category.name} ${category.slug}`.toLocaleLowerCase().includes(categoryQuery.trim().toLocaleLowerCase()),
+  );
   const activeFilterCount = [selectedCategory, selectedNeighborhood, minPrice, maxPrice].filter(Boolean).length;
+  const applyAdvancedFilters = () => {
+    setMinPrice(draftMinPrice);
+    setMaxPrice(draftMaxPrice);
+    setAdvancedOpen(false);
+  };
   const clearFilters = () => {
     setSelectedCategory('');
     setSelectedNeighborhood('');
     setMinPrice('');
     setMaxPrice('');
+    setDraftMinPrice('');
+    setDraftMaxPrice('');
+    setCategoryQuery('');
+  };
+  const removeFilter = (type: 'category' | 'neighborhood' | 'min' | 'max') => {
+    if (type === 'category') setSelectedCategory('');
+    if (type === 'neighborhood') setSelectedNeighborhood('');
+    if (type === 'min') { setMinPrice(''); setDraftMinPrice(''); }
+    if (type === 'max') { setMaxPrice(''); setDraftMaxPrice(''); }
   };
 
   return (
@@ -109,7 +129,7 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
         <div>
           <span className="classifieds__eyebrow">بازار محلی شهر</span>
           <h1>دیوار {city.name}</h1>
-          <p>آگهی‌های خرید، فروش و خدمات مردم {city.name} را یکجا ببینید.</p>
+          <p>آگهی‌های خرید، فروش و خدمات مردم {city.name} را راحت پیدا کنید.</p>
         </div>
         <Link href="/ads/new" className="classifieds__post-btn" data-testid="classifieds-new-ad">
           <span aria-hidden>＋</span>
@@ -137,8 +157,12 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
             <option value="price-high">گران‌ترین</option>
           </select>
         </label>
-        <button type="button" className={`classifieds__advanced-toggle ${advancedOpen ? 'is-active' : ''}`} onClick={() => setAdvancedOpen((open) => !open)}>
-          ⚙ فیلتر پیشرفته {activeFilterCount > 0 && <b>{activeFilterCount.toLocaleString('fa-IR')}</b>}
+        <button type="button" className={`classifieds__advanced-toggle ${advancedOpen ? 'is-active' : ''}`} onClick={() => {
+          setDraftMinPrice(minPrice);
+          setDraftMaxPrice(maxPrice);
+          setAdvancedOpen((open) => !open);
+        }}>
+          ☷ فیلترها {activeFilterCount > 0 && <b>{activeFilterCount.toLocaleString('fa-IR')}</b>}
         </button>
       </section>
 
@@ -153,21 +177,29 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
           </div>
           <div className="classifieds__filter-field">
             <label htmlFor="classified-min-price">حداقل قیمت (ریال)</label>
-            <input id="classified-min-price" inputMode="numeric" value={minPrice} onChange={(event) => setMinPrice(event.target.value)} placeholder="مثلاً ۱۰۰٬۰۰۰" />
+            <input id="classified-min-price" inputMode="numeric" value={draftMinPrice} onChange={(event) => setDraftMinPrice(event.target.value)} placeholder="مثلاً ۱۰۰٬۰۰۰" />
           </div>
           <div className="classifieds__filter-field">
             <label htmlFor="classified-max-price">حداکثر قیمت (ریال)</label>
-            <input id="classified-max-price" inputMode="numeric" value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} placeholder="مثلاً ۵۰۰٬۰۰۰" />
+            <input id="classified-max-price" inputMode="numeric" value={draftMaxPrice} onChange={(event) => setDraftMaxPrice(event.target.value)} placeholder="مثلاً ۵۰۰٬۰۰۰" />
           </div>
-          {activeFilterCount > 0 && <button type="button" className="classifieds__clear-filters" onClick={clearFilters}>پاک کردن فیلترها</button>}
+          <div className="classifieds__advanced-actions">
+            <button type="button" className="classifieds__apply-filters" onClick={applyAdvancedFilters}>نمایش آگهی‌ها</button>
+            {activeFilterCount > 0 && <button type="button" className="classifieds__clear-filters" onClick={clearFilters}>پاک کردن همه</button>}
+          </div>
         </section>
       )}
 
-      <section className="classifieds__categories" aria-label="دسته‌بندی آگهی‌ها">
+      <section className="classifieds__category-panel" aria-label="دسته‌بندی آگهی‌ها">
+        <div className="classifieds__category-head">
+          <div><strong>دسته‌بندی آگهی‌ها</strong><small>دسته موردنظر را انتخاب کنید</small></div>
+          {categories.length > 5 && <label className="classifieds__category-search"><span aria-hidden>⌕</span><input value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder="جست‌وجوی دسته…" aria-label="جست‌وجوی دسته‌بندی" /></label>}
+        </div>
+        <div className="classifieds__categories">
         <button type="button" className={!selectedCategory ? 'is-active' : ''} onClick={() => setSelectedCategory('')}>
-          <span aria-hidden>✨</span><b>همه آگهی‌ها</b>
+          <span aria-hidden>✨</span><b>همه</b>
         </button>
-        {categories.map((category) => (
+        {filteredCategories.map((category) => (
           <button
             type="button"
             key={category.slug}
@@ -178,7 +210,18 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
             <b>{category.name}</b>
           </button>
         ))}
+        {filteredCategories.length === 0 && <span className="classifieds__no-category">دسته‌ای پیدا نشد</span>}
+        </div>
       </section>
+
+      {activeFilterCount > 0 && <div className="classifieds__active-filters" aria-label="فیلترهای فعال">
+        <span>فیلترهای فعال:</span>
+        {activeCategory && <button type="button" onClick={() => removeFilter('category')}>{activeCategory.name} ×</button>}
+        {selectedNeighborhood && <button type="button" onClick={() => removeFilter('neighborhood')}>{selectedNeighborhood} ×</button>}
+        {minPrice && <button type="button" onClick={() => removeFilter('min')}>از {minPrice} ×</button>}
+        {maxPrice && <button type="button" onClick={() => removeFilter('max')}>تا {maxPrice} ×</button>}
+        <button type="button" className="classifieds__active-clear" onClick={clearFilters}>حذف همه</button>
+      </div>}
 
       <div className="classifieds__toolbar">
         <div>
