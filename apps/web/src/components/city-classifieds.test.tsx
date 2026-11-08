@@ -4,13 +4,13 @@ import { CityClassifieds } from '@/components/city-classifieds';
 const mockGetAdCategories = jest.fn();
 const mockGetCityAdNeighborhoods = jest.fn();
 const mockGetCityAds = jest.fn();
-const mockGetShowcase = jest.fn();
+const mockGetCityBusinesses = jest.fn();
 
 jest.mock('@/lib/api', () => ({
   getAdCategories: (...args: unknown[]) => mockGetAdCategories(...args),
   getCityAdNeighborhoods: (...args: unknown[]) => mockGetCityAdNeighborhoods(...args),
   getCityAds: (...args: unknown[]) => mockGetCityAds(...args),
-  getShowcase: (...args: unknown[]) => mockGetShowcase(...args),
+  getCityBusinesses: (...args: unknown[]) => mockGetCityBusinesses(...args),
 }));
 
 const ad = (id: number, title: string) => ({
@@ -42,7 +42,7 @@ describe('CityClassifieds (دیوار شهر)', () => {
     mockGetAdCategories.mockResolvedValue([]);
     mockGetCityAdNeighborhoods.mockResolvedValue([]);
     mockGetCityAds.mockResolvedValue([ad(1, 'دوچرخه شهری'), ad(2, 'گوشی سالم')]);
-    mockGetShowcase.mockResolvedValue([promo]);
+    mockGetCityBusinesses.mockResolvedValue([promo]);
   });
 
   it('lists the city ads as vertical rows and keeps ad posting at the bottom action', async () => {
@@ -57,13 +57,16 @@ describe('CityClassifieds (دیوار شهر)', () => {
     expect(postLink).toHaveAttribute('aria-label', 'ثبت آگهی جدید در دیوار شهر');
     expect(postLink).toHaveTextContent('ثبت آگهی');
     expect(screen.queryByRole('link', { name: /^ثبت آگهی$/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'آگهی‌های محلی' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /دیوار شهر/ })).not.toBeInTheDocument();
+    expect(document.querySelector('.classifieds__hero--compact')).toBeInTheDocument();
   });
 
   it('shows one compact sponsored business from this city on the daily wall', async () => {
     render(<CityClassifieds city={{ id: 1, slug: 'sample-city', name: 'شهر نمونه' }} />);
 
     const dailyPromo = await screen.findByTestId('classifieds-daily-promo');
-    await waitFor(() => expect(mockGetShowcase).toHaveBeenCalledWith('sample-city', 100));
+    await waitFor(() => expect(mockGetCityBusinesses).toHaveBeenCalledWith('sample-city', 200));
     expect(dailyPromo).toHaveAttribute('href', '/business/30');
     expect(dailyPromo).toHaveTextContent('تبلیغ امروز');
     expect(dailyPromo).toHaveTextContent('کافه محلی');
@@ -71,18 +74,19 @@ describe('CityClassifieds (دیوار شهر)', () => {
   });
 
   it('hides the sponsored slot when no eligible local business is available', async () => {
-    mockGetShowcase.mockResolvedValue([]);
+    mockGetCityBusinesses.mockResolvedValue([]);
     render(<CityClassifieds city={{ id: 1, slug: 'sample-city', name: 'شهر نمونه' }} />);
 
     await screen.findByTestId('classified-card-1');
     expect(screen.queryByTestId('classifieds-daily-promo')).not.toBeInTheDocument();
   });
 
-  it('reserves the daily wall advertisement for GOLD businesses', async () => {
-    mockGetShowcase.mockResolvedValue([{ ...promo, subscriptionTier: 'SILVER' }]);
+  it('can choose any approved business in the city directory, not only a GOLD showcase item', async () => {
+    mockGetCityBusinesses.mockResolvedValue([{ ...promo, subscriptionTier: 'FREE' }]);
     render(<CityClassifieds city={{ id: 1, slug: 'sample-city', name: 'شهر نمونه' }} />);
 
-    await screen.findByTestId('classified-card-1');
-    expect(screen.queryByTestId('classifieds-daily-promo')).not.toBeInTheDocument();
+    const dailyPromo = await screen.findByTestId('classifieds-daily-promo');
+    expect(dailyPromo).toHaveTextContent('تبلیغ امروز');
+    expect(dailyPromo).toHaveTextContent('کافه محلی');
   });
 });

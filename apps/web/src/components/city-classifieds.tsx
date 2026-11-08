@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { getAdCategories, getCityAdNeighborhoods, getCityAds, getShowcase } from '@/lib/api';
+import { getAdCategories, getCityAdNeighborhoods, getCityAds, getCityBusinesses } from '@/lib/api';
 import { formatPrice, thumbFallback, thumbUrlFor } from '@/lib/format';
-import type { AdCategoryOption, AdItem, ShowcaseItem } from '@/lib/types';
+import type { AdCategoryOption, AdItem, BusinessItem } from '@/lib/types';
 
 export interface CityClassifiedsProps {
   city: { id: number; slug: string; name: string };
@@ -12,15 +12,14 @@ export interface CityClassifiedsProps {
 
 type SortMode = 'newest' | 'oldest' | 'price-low' | 'price-high';
 
-function dailyBusiness(items: ShowcaseItem[], citySlug: string): ShowcaseItem | null {
-  const eligibleBusinesses = items.filter((item) => item.subscriptionTier === 'GOLD');
-  if (!eligibleBusinesses.length) return null;
+function dailyBusiness(items: BusinessItem[], citySlug: string): BusinessItem | null {
+  if (!items.length) return null;
   const day = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit',
   }).format(new Date());
   const cityHash = [...citySlug].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7);
   const dayNumber = Number(day.replace(/-/g, ''));
-  return eligibleBusinesses[(cityHash + dayNumber) % eligibleBusinesses.length];
+  return items[(cityHash + dayNumber) % items.length];
 }
 
 /**
@@ -39,14 +38,14 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
   const [categoryQuery, setCategoryQuery] = useState('');
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [ads, setAds] = useState<AdItem[] | null>(null);
-  const [dailyPromo, setDailyPromo] = useState<ShowcaseItem | null>(null);
+  const [dailyPromo, setDailyPromo] = useState<BusinessItem | null>(null);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortMode>('newest');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
-    getShowcase(city.slug, 100)
+    getCityBusinesses(city.slug, 200)
       .then((items) => { if (alive) setDailyPromo(dailyBusiness(items, city.slug)); })
       .catch(() => { if (alive) setDailyPromo(null); });
     return () => { alive = false; };
@@ -145,11 +144,10 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
 
   return (
     <main className="classifieds" data-testid="city-classifieds">
-      <section className="classifieds__hero">
-        <div>
-          <span className="classifieds__eyebrow">بازار محلی شهر</span>
-          <h1>دیوار {city.name}</h1>
-          <p>آگهی‌های خرید، فروش و خدمات مردم {city.name} را راحت پیدا کنید.</p>
+      <section className="classifieds__hero classifieds__hero--compact" aria-label={`آگهی‌های شهر ${city.name}`}>
+        <div className="classifieds__hero-copy">
+          <span className="classifieds__eyebrow">شهر {city.name}</span>
+          <h1>آگهی‌های محلی</h1>
         </div>
       </section>
 

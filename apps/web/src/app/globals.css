@@ -9493,3 +9493,34 @@ button.pill {
   .classifieds { padding-bottom: calc(148px + env(safe-area-inset-bottom)); }
   .classifieds__floating-post-btn { bottom: calc(72px + env(safe-area-inset-bottom)); }
 }
+
+/* Compact city wall top area; the daily promo card styles above stay unchanged. */
+.classifieds__hero--compact {
+  min-height: 52px;
+  justify-content: flex-start;
+  padding: 9px 15px;
+  border-radius: 15px;
+  box-shadow: none;
+  background: linear-gradient(110deg, #f6fbf7, #edf6ef);
+}
+.classifieds__hero--compact .classifieds__hero-copy {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px 11px;
+}
+.classifieds__hero--compact .classifieds__eyebrow {
+  margin: 0;
+  font-size: 11px;
+}
+.classifieds__hero--compact h1 {
+  color: #214c38;
+  font-size: 15px;
+  font-weight: 850;
+  letter-spacing: 0;
+}
+.classifieds__search { margin-top: 10px; }
+@media (max-width: 640px) {
+  .classifieds__hero--compact { min-height: 44px; padding: 7px 11px; border-radius: 12px; }
+  .classifieds__hero--compact h1 { font-size: 13px; }
+}
