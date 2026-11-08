@@ -106,6 +106,7 @@ describe('per-page SEO (city pages)', () => {
       expect(page).toContain('generateMetadata');
       expect(page).toMatch(/alternates:\s*{\s*canonical:/);
       expect(page).toContain('absoluteUrl');
+      expect(page).not.toMatch(/const title = .*\| شهرجو/);
     }
     expect(category).toContain('categorySlug');
     expect(serviceCategory).toContain('categorySlug');

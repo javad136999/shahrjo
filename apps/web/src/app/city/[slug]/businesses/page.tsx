@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const city = await cityBySlug(slug);
   if (!city) return city === null ? { title: 'شهر پیدا نشد', robots: { index: false } } : { robots: { index: false } };
-  const title = `کسب‌وکارهای ${city.name} | شهرجو`;
+  const title = `کسب‌وکارهای ${city.name}`;
   const description = directoryDescription(city);
   const url = absoluteUrl(`/city/${city.slug}/businesses`);
   return { title, description, alternates: { canonical: url }, openGraph: openGraphFor({ url, title, description }) };

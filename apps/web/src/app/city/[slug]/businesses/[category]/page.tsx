@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!data) return { robots: { index: false } };
   const category = data.businesses.find((business) => business.category.slug === categorySlug)?.category;
   if (!category) return { title: 'دسته‌بندی پیدا نشد', robots: { index: false } };
-  const title = `${category.name} در ${data.city.name} | شهرجو`;
+  const title = `${category.name} در ${data.city.name}`;
   const description = `فهرست کسب‌وکارهای ${category.name} در شهر ${data.city.name}؛ اطلاعات تماس و نشانی ثبت‌شده را در شهرجو ببینید.`;
   const url = absoluteUrl(`/city/${data.city.slug}/businesses/${encodeURIComponent(category.slug)}`);
   return { title, description, alternates: { canonical: url }, openGraph: openGraphFor({ url, title, description }) };

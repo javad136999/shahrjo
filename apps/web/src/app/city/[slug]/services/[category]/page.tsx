@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!data) return { robots: { index: false } };
   const category = data.categories.find((item) => item.slug === categorySlug);
   if (!category) return { title: 'دستهٔ خدمات پیدا نشد', robots: { index: false } };
-  const title = `${category.name} در ${data.city.name} | شهرجو`;
+  const title = `${category.name} در ${data.city.name}`;
   const description = `فهرست ${category.name}های ثبت‌شده در شهر ${data.city.name}؛ توضیحات و راه تماس ارائه‌دهندگان خدمت را ببینید.`;
   const url = absoluteUrl(`/city/${data.city.slug}/services/${encodeURIComponent(category.slug)}`);
   return { title, description, alternates: { canonical: url }, openGraph: openGraphFor({ url, title, description }) };

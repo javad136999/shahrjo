@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const data = await loadCityServices(slug);
   if (data === null) return { title: 'شهر پیدا نشد', robots: { index: false } };
   if (!data) return { robots: { index: false } };
-  const title = `استادکارها و خدمات ${data.city.name} | شهرجو`;
+  const title = `استادکارها و خدمات ${data.city.name}`;
   const description = `فهرست استادکارها و ارائه‌دهندگان خدمات ثبت‌شده در ${data.city.name}؛ دسته‌بندی، توضیحات و راه تماس را ببینید.`;
   const url = absoluteUrl(`/city/${data.city.slug}/services`);
   return { title, description, alternates: { canonical: url }, openGraph: openGraphFor({ url, title, description }) };
