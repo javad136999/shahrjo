@@ -2,15 +2,26 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { getAdCategories, getCityAdNeighborhoods, getCityAds } from '@/lib/api';
+import { getAdCategories, getCityAdNeighborhoods, getCityAds, getShowcase } from '@/lib/api';
 import { formatPrice, thumbFallback, thumbUrlFor } from '@/lib/format';
-import type { AdCategoryOption, AdItem } from '@/lib/types';
+import type { AdCategoryOption, AdItem, ShowcaseItem } from '@/lib/types';
 
 export interface CityClassifiedsProps {
   city: { id: number; slug: string; name: string };
 }
 
 type SortMode = 'newest' | 'oldest' | 'price-low' | 'price-high';
+
+function dailyBusiness(items: ShowcaseItem[], citySlug: string): ShowcaseItem | null {
+  const eligibleBusinesses = items.filter((item) => item.subscriptionTier === 'GOLD');
+  if (!eligibleBusinesses.length) return null;
+  const day = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+  const cityHash = [...citySlug].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7);
+  const dayNumber = Number(day.replace(/-/g, ''));
+  return eligibleBusinesses[(cityHash + dayNumber) % eligibleBusinesses.length];
+}
 
 /**
  * دیوار شهر — بازار آگهی محلی، نه اتاق گفتگو.
@@ -28,9 +39,18 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
   const [categoryQuery, setCategoryQuery] = useState('');
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [ads, setAds] = useState<AdItem[] | null>(null);
+  const [dailyPromo, setDailyPromo] = useState<ShowcaseItem | null>(null);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortMode>('newest');
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    getShowcase(city.slug, 100)
+      .then((items) => { if (alive) setDailyPromo(dailyBusiness(items, city.slug)); })
+      .catch(() => { if (alive) setDailyPromo(null); });
+    return () => { alive = false; };
+  }, [city.slug]);
 
   useEffect(() => {
     let alive = true;
@@ -131,10 +151,6 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
           <h1>دیوار {city.name}</h1>
           <p>آگهی‌های خرید، فروش و خدمات مردم {city.name} را راحت پیدا کنید.</p>
         </div>
-        <Link href="/ads/new" className="classifieds__post-btn" data-testid="classifieds-new-ad">
-          <span aria-hidden>＋</span>
-          ثبت آگهی
-        </Link>
       </section>
 
       <section className="classifieds__search" aria-label="جست‌وجو و فیلتر آگهی‌ها">
@@ -231,6 +247,25 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
         <Link href="/businesses" className="classifieds__business-link">کسب‌وکارهای شهر ←</Link>
       </div>
 
+      {dailyPromo && (
+        <Link
+          href={`/business/${dailyPromo.id}`}
+          className="classifieds__daily-promo"
+          data-testid="classifieds-daily-promo"
+          aria-label={`تبلیغ امروز: ${dailyPromo.name}، ${dailyPromo.category.name}`}
+        >
+          <span className="classifieds__daily-promo-icon" aria-hidden="true">
+            {dailyPromo.category.icon ?? '🏪'}
+          </span>
+          <span className="classifieds__daily-promo-copy">
+            <small><b>تبلیغ امروز</b><span>از کسب‌وکارهای شهر {city.name}</span></small>
+            <strong>{dailyPromo.name}</strong>
+            <span>{dailyPromo.category.name}{dailyPromo.address ? ` · ${dailyPromo.address}` : ''}</span>
+          </span>
+          <span className="classifieds__daily-promo-cta">مشاهده <span aria-hidden="true">←</span></span>
+        </Link>
+      )}
+
       {error && <div className="banner banner--error" role="alert">{error}</div>}
 
       {ads === null ? (
@@ -267,6 +302,17 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
           ))}
         </section>
       )}
+
+      <Link
+        href="/ads/new"
+        className="classifieds__floating-post-btn"
+        data-testid="classifieds-new-ad"
+        aria-label="ثبت آگهی جدید در دیوار شهر"
+        title="ثبت آگهی جدید"
+      >
+        <span aria-hidden="true">＋</span>
+        <strong>ثبت آگهی</strong>
+      </Link>
     </main>
   );
 }

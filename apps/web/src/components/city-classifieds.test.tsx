@@ -1,0 +1,88 @@
+import { render, screen, waitFor } from '@testing-library/react';
+import { CityClassifieds } from '@/components/city-classifieds';
+
+const mockGetAdCategories = jest.fn();
+const mockGetCityAdNeighborhoods = jest.fn();
+const mockGetCityAds = jest.fn();
+const mockGetShowcase = jest.fn();
+
+jest.mock('@/lib/api', () => ({
+  getAdCategories: (...args: unknown[]) => mockGetAdCategories(...args),
+  getCityAdNeighborhoods: (...args: unknown[]) => mockGetCityAdNeighborhoods(...args),
+  getCityAds: (...args: unknown[]) => mockGetCityAds(...args),
+  getShowcase: (...args: unknown[]) => mockGetShowcase(...args),
+}));
+
+const ad = (id: number, title: string) => ({
+  id,
+  title,
+  price: id * 1_000_000,
+  coverUrl: null,
+  viewCount: 8,
+  publishedAt: `2026-10-${String(id).padStart(2, '0')}`,
+  neighborhood: 'مرکز شهر',
+  category: { name: 'کالای دیجیتال', slug: 'digital', icon: '📱', color: '#2563eb' },
+});
+
+const promo = {
+  id: 30,
+  name: 'کافه محلی',
+  slug: 'local-cafe',
+  logoUrl: null,
+  address: 'خیابان اصلی',
+  rating: 4.8,
+  ratingCount: 40,
+  subscriptionTier: 'GOLD',
+  category: { name: 'کافه و رستوران', slug: 'food', icon: '☕', color: '#a56d0b' },
+};
+
+describe('CityClassifieds (دیوار شهر)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetAdCategories.mockResolvedValue([]);
+    mockGetCityAdNeighborhoods.mockResolvedValue([]);
+    mockGetCityAds.mockResolvedValue([ad(1, 'دوچرخه شهری'), ad(2, 'گوشی سالم')]);
+    mockGetShowcase.mockResolvedValue([promo]);
+  });
+
+  it('lists the city ads as vertical rows and keeps ad posting at the bottom action', async () => {
+    render(<CityClassifieds city={{ id: 1, slug: 'sample-city', name: 'شهر نمونه' }} />);
+
+    expect(await screen.findByTestId('classified-card-1')).toHaveAttribute('href', '/ad/1');
+    expect(screen.getByTestId('classified-card-2')).toHaveAttribute('href', '/ad/2');
+    expect(screen.getByTestId('classifieds-grid').children).toHaveLength(2);
+
+    const postLink = screen.getByTestId('classifieds-new-ad');
+    expect(postLink).toHaveAttribute('href', '/ads/new');
+    expect(postLink).toHaveAttribute('aria-label', 'ثبت آگهی جدید در دیوار شهر');
+    expect(postLink).toHaveTextContent('ثبت آگهی');
+    expect(screen.queryByRole('link', { name: /^ثبت آگهی$/ })).not.toBeInTheDocument();
+  });
+
+  it('shows one compact sponsored business from this city on the daily wall', async () => {
+    render(<CityClassifieds city={{ id: 1, slug: 'sample-city', name: 'شهر نمونه' }} />);
+
+    const dailyPromo = await screen.findByTestId('classifieds-daily-promo');
+    await waitFor(() => expect(mockGetShowcase).toHaveBeenCalledWith('sample-city', 100));
+    expect(dailyPromo).toHaveAttribute('href', '/business/30');
+    expect(dailyPromo).toHaveTextContent('تبلیغ امروز');
+    expect(dailyPromo).toHaveTextContent('کافه محلی');
+    expect(dailyPromo).toHaveTextContent('کافه و رستوران');
+  });
+
+  it('hides the sponsored slot when no eligible local business is available', async () => {
+    mockGetShowcase.mockResolvedValue([]);
+    render(<CityClassifieds city={{ id: 1, slug: 'sample-city', name: 'شهر نمونه' }} />);
+
+    await screen.findByTestId('classified-card-1');
+    expect(screen.queryByTestId('classifieds-daily-promo')).not.toBeInTheDocument();
+  });
+
+  it('reserves the daily wall advertisement for GOLD businesses', async () => {
+    mockGetShowcase.mockResolvedValue([{ ...promo, subscriptionTier: 'SILVER' }]);
+    render(<CityClassifieds city={{ id: 1, slug: 'sample-city', name: 'شهر نمونه' }} />);
+
+    await screen.findByTestId('classified-card-1');
+    expect(screen.queryByTestId('classifieds-daily-promo')).not.toBeInTheDocument();
+  });
+});

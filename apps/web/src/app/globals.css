@@ -9423,20 +9423,34 @@ button.pill {
 .classifieds__empty h2 { margin: 0; font-size: 16px; }
 .classifieds__empty p { margin: 6px 0 0; color: #718679; font-size: 13px; }
 .classifieds__empty .btn { margin-inline-start: auto; white-space: nowrap; }
-.classifieds__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
-.classified-card { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: 1px solid #e0e9e2; border-radius: 17px; background: #fff; color: inherit; box-shadow: 0 9px 24px -22px #17352a; transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
-.classified-card:hover { border-color: #a8ceb5; color: inherit; text-decoration: none; transform: translateY(-3px); box-shadow: 0 16px 28px -21px #17352a; }
-.classified-card__media { position: relative; aspect-ratio: 1.15; overflow: hidden; background: linear-gradient(135deg, #eaf5ed, #f7f8ed); }
+.classifieds__grid { display: flex; flex-direction: column; gap: 10px; padding-bottom: 24px; }
+.classified-card { display: flex; min-width: 0; min-height: 122px; flex-direction: row; overflow: hidden; border: 1px solid #e0e9e2; border-radius: 17px; background: #fff; color: inherit; box-shadow: 0 9px 24px -22px #17352a; transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
+.classified-card:hover { border-color: #a8ceb5; color: inherit; text-decoration: none; transform: translateY(-2px); box-shadow: 0 16px 28px -21px #17352a; }
+.classified-card__media { position: relative; flex: 0 0 clamp(112px, 20vw, 190px); min-height: 122px; overflow: hidden; background: linear-gradient(135deg, #eaf5ed, #f7f8ed); }
 .classified-card__media img { width: 100%; height: 100%; object-fit: cover; }
 .classified-card__media > span:not(.classified-card__category) { display: grid; height: 100%; place-items: center; color: #6f9a7b; font-size: 42px; }
 .classified-card__category { position: absolute; inset: 9px auto auto 9px; padding: 5px 8px; border-radius: 8px; background: rgb(255 255 255 / 91%); color: #2b6747; font-size: 10px; font-weight: 800; }
-.classified-card__body { display: flex; min-height: 135px; flex-direction: column; gap: 5px; padding: 12px; }
+.classified-card__body { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 5px; padding: 12px 15px; }
 .classified-card__body h2 { overflow: hidden; margin: 0; font-size: 14px; font-weight: 900; line-height: 1.65; text-overflow: ellipsis; white-space: nowrap; }
 .classified-card__body p { display: -webkit-box; overflow: hidden; margin: 0; color: #718679; font-size: 11px; line-height: 1.7; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .classified-card__body strong { margin-top: auto; color: #a56d0b; font-size: 13px; }
 .classified-card__body small { color: #91a197; font-size: 10px; }
-@media (max-width: 900px) { .classifieds__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 640px) { .classifieds { padding: 8px 10px 40px; } .classifieds__hero { align-items: flex-start; flex-direction: column; gap: 18px; padding: 24px 19px; border-radius: 22px; } .classifieds__post-btn { width: 100%; justify-content: center; } .classifieds__search { flex-direction: column; } .classifieds__sort { min-height: 44px; justify-content: space-between; } .classifieds__toolbar { align-items: flex-start; flex-direction: column; } .classifieds__empty { align-items: flex-start; flex-wrap: wrap; padding: 19px; } .classifieds__empty .btn { width: 100%; margin: 2px 0 0; text-align: center; } .classifieds__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; } .classified-card__body { min-height: 128px; padding: 9px; } .classified-card__body h2 { font-size: 12px; } }
+@media (max-width: 640px) { .classifieds { padding: 8px 10px calc(104px + env(safe-area-inset-bottom)); } .classifieds__hero { align-items: flex-start; flex-direction: column; gap: 18px; padding: 24px 19px; border-radius: 22px; } .classifieds__search { flex-direction: column; } .classifieds__sort { min-height: 44px; justify-content: space-between; } .classifieds__toolbar { align-items: flex-start; flex-direction: column; } .classifieds__empty { align-items: flex-start; flex-wrap: wrap; padding: 19px; } .classifieds__empty .btn { width: 100%; margin: 2px 0 0; text-align: center; } .classified-card { min-height: 104px; border-radius: 14px; } .classified-card__media { flex-basis: 112px; min-height: 104px; } .classified-card__body { min-height: 104px; gap: 3px; padding: 8px 10px; } .classified-card__body h2 { font-size: 12px; } .classified-card__body p { font-size: 10px; } .classified-card__body strong { font-size: 12px; } .classified-card__body small { font-size: 9px; } }
+
+.classifieds__daily-promo { display: flex; align-items: center; gap: 12px; min-width: 0; margin: 0 0 16px; padding: 12px 14px; border: 1px solid #ead59b; border-radius: 16px; background: linear-gradient(100deg, #fffdf7, #fff7df); color: #493b1e; box-shadow: 0 8px 20px -17px #80631f; }
+.classifieds__daily-promo:hover { color: #493b1e; text-decoration: none; border-color: #d8bb6b; }
+.classifieds__daily-promo-icon { display: grid; flex: 0 0 42px; width: 42px; height: 42px; place-items: center; border-radius: 13px; background: #fff0c2; font-size: 21px; }
+.classifieds__daily-promo-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 2px; }
+.classifieds__daily-promo-copy > small { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; color: #88713b; font-size: 10px; }
+.classifieds__daily-promo-copy > small b { padding: 2px 6px; border-radius: 5px; background: #f4e3ae; color: #765a11; }
+.classifieds__daily-promo-copy > strong { overflow: hidden; color: #493b1e; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.classifieds__daily-promo-copy > span { overflow: hidden; color: #82724d; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.classifieds__daily-promo-cta { display: flex; flex: 0 0 auto; align-items: center; gap: 5px; color: #856612; font-size: 11px; font-weight: 850; }
+.classifieds__floating-post-btn { position: fixed; z-index: 80; inset-inline-end: max(20px, calc((100vw - 1180px) / 2 + 20px)); bottom: calc(22px + env(safe-area-inset-bottom)); display: inline-flex; align-items: center; gap: 9px; min-height: 54px; padding: 0 19px 0 15px; border: 1px solid rgb(13 105 69 / 25%); border-radius: 999px; background: linear-gradient(135deg, #16865a, #0d6945); color: #fff; box-shadow: 0 9px 25px rgb(13 105 69 / 28%); }
+.classifieds__floating-post-btn:hover { color: #fff; text-decoration: none; transform: translateY(-2px); }
+.classifieds__floating-post-btn > span { display: grid; width: 27px; height: 27px; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 19%); font-size: 23px; line-height: 1; }
+.classifieds__floating-post-btn strong { font-size: 13px; font-weight: 900; }
+@media (max-width: 640px) { .classifieds__floating-post-btn { inset-inline: 50% auto; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(50%); min-height: 50px; padding-inline: 17px; } .classifieds__floating-post-btn:hover { transform: translate(50%, -2px); } .classifieds__daily-promo { gap: 8px; padding: 10px; } .classifieds__daily-promo-icon { flex-basis: 36px; width: 36px; height: 36px; } .classifieds__daily-promo-copy > strong { font-size: 12px; } .classifieds__daily-promo-copy > span { font-size: 10px; } .classifieds__daily-promo-cta { font-size: 10px; } }
 
 /* Advanced classifieds filters: neighborhood + price range */
 .classifieds__advanced-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 52px; padding: 0 14px; border: 1px solid #d8e5dc; border-radius: 15px; background: #fff; color: #37604a; cursor: pointer; font: inherit; font-size: 12px; font-weight: 800; white-space: nowrap; }
@@ -9469,3 +9483,13 @@ button.pill {
 .classifieds__apply-filters { min-height: 42px; padding: 0 15px; border: 0; border-radius: 10px; background: #16795d; color: #fff; cursor: pointer; font: inherit; font-size: 11px; font-weight: 900; white-space: nowrap; }
 .classifieds__apply-filters:hover { background: #0d624b; }
 @media (max-width: 640px) { .classifieds__category-panel { padding: 12px 10px; border-radius: 17px; } .classifieds__category-head { align-items: flex-start; flex-direction: column; } .classifieds__category-search { width: 100%; } .classifieds__active-filters { margin-top: 0; } .classifieds__advanced-actions { justify-content: space-between; } .classifieds__advanced-actions button { flex: 1; } }
+
+/* Center the fixed action in either writing direction. */
+@media (max-width: 640px) {
+  .classifieds__floating-post-btn { transform: translateX(-50%); }
+  .classifieds__floating-post-btn:hover { transform: translate(-50%, -2px); }
+}
+@media (max-width: 640px) {
+  .classifieds { padding-bottom: calc(148px + env(safe-area-inset-bottom)); }
+  .classifieds__floating-post-btn { bottom: calc(72px + env(safe-area-inset-bottom)); }
+}
