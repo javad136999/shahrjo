@@ -29,6 +29,7 @@ const cats = [
   { id: 90, name: 'تعمیر و نصب انواع کولر', slug: 'svc_ac_repair', icon: '❄️' },
   { id: 91, name: 'کابینت و کمد', slug: 'svc_cabinet_maker', icon: '🪚' },
   { id: 96, name: 'تعمیر تلویزیون، نصب آنتن و رسیور', slug: 'svc_tv_repair', icon: '📺' },
+  { id: 97, name: 'خیاط و تعمیر لباس', slug: 'svc_tailor', icon: '🧵' },
   { id: 92, name: 'باربری و حمل بار', slug: 'svc_mover', icon: '🚚' },
   { id: 93, name: 'حمل چاه و تخلیه چاه و فنرزنی', slug: 'svc_septic_service', icon: '🚛' },
   { id: 94, name: 'حمل آب شرب', slug: 'svc_drinking_water', icon: '💧' },
@@ -110,6 +111,31 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     expect(list).toHaveTextContent('حمل چاه و تخلیه چاه و فنرزنی');
     expect(list).toHaveTextContent('حمل آب شرب');
     expect(screen.getByTestId('service-register')).toHaveTextContent('پروفایل کسب‌وکار، منو یا محصولی ساخته نمی‌شود');
+  });
+
+  it('suggests a category from the job title and lets the user override it', async () => {
+    render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
+    fireEvent.click(screen.getByTestId('service-tile-register'));
+    const category = await screen.findByTestId('service-category');
+    await waitFor(() => expect(m.getServiceCategories).toHaveBeenCalledTimes(1));
+
+    fireEvent.change(screen.getByTestId('service-name'), { target: { value: 'خیاط و تعمیر لباس' } });
+    await waitFor(() => expect(category).toHaveValue('97'));
+    expect(screen.getByTestId('category-suggestion')).toHaveTextContent('خیاط و تعمیر لباس');
+
+    fireEvent.change(category, { target: { value: '90' } });
+    fireEvent.change(screen.getByTestId('service-name'), { target: { value: 'تعمیر کولر ساختمان' } });
+    expect(category).toHaveValue('90');
+    expect(screen.queryByTestId('category-suggestion')).not.toBeInTheDocument();
+  });
+
+  it('does not guess a category when the job title does not match known services', async () => {
+    render(<CityServices cityName="شهر نمونه" citySlug="sample-city" />);
+    fireEvent.click(screen.getByTestId('service-tile-register'));
+    const category = await screen.findByTestId('service-category');
+    fireEvent.change(screen.getByTestId('service-name'), { target: { value: 'برنامه‌نویس' } });
+    expect(category).toHaveValue('');
+    expect(screen.queryByTestId('category-suggestion')).not.toBeInTheDocument();
   });
 
   it('creates a separate service listing, not a business profile', async () => {

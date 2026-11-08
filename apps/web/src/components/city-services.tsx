@@ -52,11 +52,61 @@ const normalizePersianSearch = (value: string) =>
     .trim()
     .toLocaleLowerCase('fa-IR');
 
+const SERVICE_TITLE_KEYWORDS: [string, string[]][] = [
+  ['svc_beauty_services', ['خدمات زیبایی', 'زیبایی', 'ناخن', 'مژه', 'میکاپ', 'فیشال', 'پاکسازی پوست', 'اپیلاسیون']],
+  ['svc_septic_service', ['تخلیه چاه', 'فنرزنی', 'لوله بازکنی', 'چاه', 'سپتیک']],
+  ['svc_tv_repair', ['تلویزیون', 'آنتن', 'انتن', 'رسیور', 'ریسیور']],
+  ['svc_ac_repair', ['کولر', 'اسپلیت', 'چیلر', 'تهویه']],
+  ['svc_cabinet_maker', ['کابینت', 'کمد', 'ام دی اف', 'امدیاف']],
+  ['svc_tailor', ['خیاط', 'تعمیر لباس', 'لباس', 'دوخت', 'خیاطی']],
+  ['svc_barber', ['آرایشگر مرد', 'آرایشگاه مردانه', 'سلمانی', 'پیرایش', 'اصلاح سر']],
+  ['svc_fridge_repair', ['یخچال', 'فریزر']],
+  ['svc_plumber', ['لوله کش', 'لوله کشی', 'تاسیسات']],
+  ['svc_house_painter', ['نقاش ساختمان', 'نقاشی ساختمان', 'رنگ ساختمان']],
+  ['svc_electrician', ['برقکار', 'برق کاری', 'سیم کشی', 'برق ساختمان']],
+  ['svc_mason', ['بنایی', 'بازسازی ساختمان', 'بنا']],
+  ['svc_plasterer', ['گچ کار', 'گچ کاری']],
+  ['svc_tiler', ['کاشی', 'سرامیک']],
+  ['svc_welder', ['جوشکار', 'جوشکاری', 'آهنگر']],
+  ['svc_washer_repair', ['لباسشویی', 'ماشین لباسشویی']],
+  ['svc_stove_repair', ['ظرفشویی', 'اجاق گاز', 'اجاقگاز']],
+  ['svc_heating_repair', ['پکیج', 'شوفاژ', 'آبگرمکن']],
+  ['svc_phone_repair', ['موبایل', 'گوشی', 'تلفن همراه']],
+  ['svc_pc_repair', ['لپ تاپ', 'لپتاپ', 'کامپیوتر', 'رایانه']],
+  ['svc_elevator_service', ['آسانسور']],
+  ['svc_cleaner', ['نظافت', 'نظافتچی', 'مبل شویی', 'فرش شویی']],
+  ['svc_mover', ['باربری', 'اسباب کشی', 'حمل بار']],
+  ['svc_drinking_water', ['آب شرب', 'آبرسان', 'آب رسان']],
+  ['svc_pest_control', ['سمپاشی', 'آفت', 'حشرات']],
+  ['svc_gardener', ['باغبانی', 'باغبان', 'فضای سبز', 'درخت']],
+  ['svc_car_wash', ['کارواش', 'شستشوی خودرو']],
+  ['svc_tire_repair', ['آپارات', 'لاستیک', 'پنچری']],
+  ['svc_motorcycle_repair', ['موتورسیکلت', 'موتور سیکلت']],
+  ['svc_auto_body', ['صافکاری', 'نقاشی خودرو', 'بدنه خودرو']],
+  ['svc_shoe_repair', ['کفاش', 'کفش', 'کیف']],
+  ['svc_watch_repair', ['ساعت']],
+  ['svc_babysitter', ['پرستار کودک', 'نگهداری کودک']],
+  ['svc_elder_care', ['پرستار سالمند', 'مراقبت سالمند']],
+  ['svc_private_tutor', ['معلم خصوصی', 'تدریس', 'آموزگار']],
+  ['svc_photographer', ['عکاس', 'عکاسی', 'فیلمبردار', 'فیلم بردار']],
+  ['svc_sign_maker', ['تابلوساز']],
+  ['svc_translator', ['مترجم', 'ترجمه']],
+];
+
+function inferServiceCategorySlug(title: string): string | null {
+  const normalizedTitle = normalizePersianSearch(title);
+  if (normalizedTitle.length < 2) return null;
+  return SERVICE_TITLE_KEYWORDS.find(([, keywords]) =>
+    keywords.some((keyword) => normalizedTitle.includes(normalizePersianSearch(keyword))),
+  )?.[0] ?? null;
+}
+
 export function CityServices({ cityName, citySlug, onRegistered }: CityServicesProps) {
   const router = useRouter();
   const [panel, setPanel] = useState<Panel>(null);
   const [categories, setCategories] = useState<BusinessCategoryOption[] | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
+  const [categoryManuallySelected, setCategoryManuallySelected] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +154,15 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
       alive = false;
     };
   }, [panel, categories]);
+
+  const inferredCategorySlug = inferServiceCategorySlug(form.name);
+  const suggestedCategory = categories?.find((category) => category.slug === inferredCategorySlug) ?? null;
+
+  useEffect(() => {
+    if (categoryManuallySelected) return;
+    const nextCategoryId = suggestedCategory ? String(suggestedCategory.id) : '';
+    setForm((current) => current.categoryId === nextCategoryId ? current : { ...current, categoryId: nextCategoryId });
+  }, [categoryManuallySelected, suggestedCategory]);
 
   useEffect(() => {
     if (!resultsOpen) return;
@@ -193,6 +252,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
         description: form.description.trim() || undefined,
       });
       setForm({ ...emptyForm });
+      setCategoryManuallySelected(false);
       setDone('ثبت شد؛ شغل شما در فهرست خدمات شهر قرار گرفت. صفحهٔ کسب‌وکار یا منو ساخته نشد.');
       void getCityServiceListingCount(citySlug).then(setCityServiceCount).catch(() => undefined);
       setCategoryCounts(null);
@@ -299,7 +359,10 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
           <select
             id="svc-cat"
             value={form.categoryId}
-            onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
+            onChange={(e) => {
+              setCategoryManuallySelected(true);
+              setForm((f) => ({ ...f, categoryId: e.target.value }));
+            }}
             required
             data-testid="service-category"
           >
@@ -311,6 +374,11 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
               </option>
             ))}
           </select>
+          {suggestedCategory && !categoryManuallySelected && (
+            <p className="muted small" role="status" data-testid="category-suggestion">
+              بر اساس عنوان شغل، «{suggestedCategory.name}» خودکار انتخاب شد؛ اگر مناسب نیست از همین فهرست تغییرش بده.
+            </p>
+          )}
 
           <label htmlFor="svc-phone">شماره تماس</label>
           <input
