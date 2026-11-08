@@ -375,10 +375,10 @@ describe('service-listing wall promotions', () => {
   it('posts one idempotent initial promotion for each target city only', async () => {
     const { scheduler, prisma } = makeScheduler();
     prisma.city.findMany.mockResolvedValue([
-      { id: 1, name: 'جم', slug: 'jam' },
-      { id: 5, name: 'بوشهر', slug: 'bushehr-city' },
-      { id: 3, name: 'کنگان', slug: 'kangan' },
-      { id: 6, name: 'شیراز', slug: 'shiraz' },
+      { id: 1, name: 'City One', slug: 'jam' },
+      { id: 5, name: 'City Two', slug: 'bushehr-city' },
+      { id: 3, name: 'City Three', slug: 'kangan' },
+      { id: 6, name: 'City Four', slug: 'shiraz' },
     ]);
     prisma.serviceListing.findMany.mockResolvedValue([
       listing(101, 1), listing(102, 5), listing(103, 3), listing(104, 6), listing(199, 9),
@@ -423,7 +423,7 @@ describe('service-listing wall promotions', () => {
     const { scheduler, prisma } = makeScheduler();
     prisma.wallPost.findMany.mockResolvedValue([
       { serviceListingId: 700, cityId: 1, content: '📣 معرفی شغل امروز: مورد قبلی' },
-      { serviceListingId: 701, cityId: 9, content: '📣 معرفی ویژهٔ مشاغل شهرجو شیراز' },
+      { serviceListingId: 701, cityId: 9, content: '📣 معرفی ویژهٔ مشاغل شهرجو City Four' },
     ]);
     prisma.serviceListing.findMany.mockResolvedValue([listing(601, 1), listing(602, 9)]);
 
