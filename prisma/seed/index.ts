@@ -165,6 +165,7 @@ const permissions = [
   { code: 'businesses.view', title: 'مشاهده کسب‌وکارها' },
   { code: 'businesses.create', title: 'ایجاد کسب‌وکار' },
   { code: 'businesses.moderate', title: 'تایید/رد کسب‌وکار' },
+  { code: 'service-listings.delete', title: 'حذف مشاغل ثبت‌شده' },
   { code: 'subscriptions.manage', title: 'مدیریت اشتراک‌ها و تایید پرداخت' },
   { code: 'showcase.manage', title: 'مدیریت ویترین طلایی (ترتیب/اولویت)' },
   { code: 'payments.view', title: 'مشاهده پرداخت‌ها' },
@@ -183,7 +184,7 @@ const rolePermissions: Record<string, string[]> = {
   PROVINCE_ADMIN: [
     'dashboard.view', 'users.view', 'users.manage',
     'ads.view', 'ads.moderate',
-    'businesses.view', 'businesses.moderate',
+    'businesses.view', 'businesses.moderate', 'service-listings.delete',
     'subscriptions.manage', 'payments.view', 'showcase.manage',
     'news.manage', 'chat.moderate', 'reports.handle',
     'banners.manage', 'map.manage', 'audit.view',
@@ -191,7 +192,7 @@ const rolePermissions: Record<string, string[]> = {
   CITY_ADMIN: [
     'dashboard.view', 'users.view',
     'ads.view', 'ads.moderate',
-    'businesses.view', 'businesses.moderate',
+    'businesses.view', 'businesses.moderate', 'service-listings.delete',
     'subscriptions.manage', 'payments.view', 'showcase.manage',
     'news.manage', 'chat.moderate', 'reports.handle',
     'banners.manage', 'map.manage',

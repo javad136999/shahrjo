@@ -53,8 +53,8 @@ export const GOLD_BUSINESS_PROMOS_ENABLED = process.env.ENABLE_GOLD_BUSINESS_PRO
 /** Daily directory promotions remain on unless explicitly disabled. */
 export const SERVICE_LISTING_PROMOS_ENABLED = process.env.ENABLE_SERVICE_LISTING_PROMOS !== 'false';
 export const SERVICE_LISTING_PROMO_MINUTES = 10 * 60;
-/** Cities with an initial wall promotion and immediate promotion for new service registrations. */
-export const IMMEDIATE_SERVICE_PROMO_CITY_SLUGS = ['jam', 'bushehr-city', 'kangan', 'shiraz'] as const;
+/** Cities included in the one-time backfill of existing service listings. */
+export const INITIAL_SERVICE_PROMO_CITY_SLUGS = ['jam', 'bushehr-city', 'kangan', 'shiraz'] as const;
 const INITIAL_SERVICE_PROMO_MARKER = '📣 معرفی ویژهٔ مشاغل شهرجو';
 /** «اگهی قدیمی» = at least this old. */
 export const OLD_AD_MIN_AGE_MS = 7 * 86_400_000;
@@ -150,12 +150,12 @@ export class WallRepostScheduler implements OnModuleInit {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  onModuleInit(): void {
+  async onModuleInit(): Promise<void> {
     if (!this.automation.ads && !this.automation.promo && !this.automation.servicePromo) {
       this.logger.log('wall repost and GOLD business promo automation disabled');
       return;
     }
-    void this.initializeAndSchedule();
+    await this.initializeAndSchedule();
   }
 
   private async initializeAndSchedule(): Promise<void> {
@@ -314,12 +314,9 @@ export class WallRepostScheduler implements OnModuleInit {
       where: { serviceListingId: { not: null }, createdAt: { gte: since } },
       select: { serviceListingId: true, cityId: true, content: true },
     });
-    const used = new Set(usedRows.map((row) => row.serviceListingId).filter((id): id is number => id !== null));
-    const dailyPostedCityIds = new Set(
-      usedRows
-        .filter((row) => row.content.startsWith('📣 معرفی شغل امروز:'))
-        .map((row) => row.cityId),
-    );
+    const usedToday = new Set(usedRows.map((row) => row.serviceListingId).filter((id): id is number => id !== null));
+    const dailyRows = usedRows.filter((row) => row.content.startsWith('📣 معرفی شغل امروز:'));
+    const dailyPostedCityIds = new Set(dailyRows.map((row) => row.cityId));
     const rows = await this.prisma.serviceListing.findMany({
       where: {
         isActive: true,
@@ -333,7 +330,6 @@ export class WallRepostScheduler implements OnModuleInit {
     });
     const byCity = new Map<number, typeof rows>();
     for (const row of rows) {
-      if (used.has(row.id)) continue;
       const cityRows = byCity.get(row.cityId) ?? [];
       cityRows.push(row);
       byCity.set(row.cityId, cityRows);
@@ -341,7 +337,10 @@ export class WallRepostScheduler implements OnModuleInit {
     let posted = 0;
     for (const cityRows of byCity.values()) {
       if (dailyPostedCityIds.has(cityRows[0]?.cityId ?? -1)) continue;
-      const pick = shuffle(cityRows)[0];
+      // Prefer a listing not already promoted today; if the one-time backfill
+      // featured every listing in the city, still keep the separate daily slot.
+      const notFeaturedToday = cityRows.filter((listing) => !usedToday.has(listing.id));
+      const pick = shuffle(notFeaturedToday.length > 0 ? notFeaturedToday : cityRows)[0];
       if (!pick) continue;
       const description = (pick.description ?? '').replace(/\s+/g, ' ').trim();
       const body = description.length > 140 ? `${description.slice(0, 140)}…` : description;
@@ -360,11 +359,11 @@ export class WallRepostScheduler implements OnModuleInit {
     return posted;
   }
 
-  /** One-time, idempotent featured service post in the four requested cities. */
+  /** One-time idempotent backfill: post every active listing in the four requested cities. */
   async publishInitialCityServicePromos(): Promise<number> {
     const cities = await this.prisma.city.findMany({
       where: {
-        slug: { in: [...IMMEDIATE_SERVICE_PROMO_CITY_SLUGS] },
+        slug: { in: [...INITIAL_SERVICE_PROMO_CITY_SLUGS] },
         isActive: true,
         province: { isActive: true },
       },
@@ -372,15 +371,6 @@ export class WallRepostScheduler implements OnModuleInit {
     });
     if (cities.length === 0) return 0;
 
-    const existing = await this.prisma.wallPost.findMany({
-      where: {
-        cityId: { in: cities.map((city) => city.id) },
-        serviceListingId: { not: null },
-        content: { startsWith: INITIAL_SERVICE_PROMO_MARKER },
-      },
-      select: { cityId: true },
-    });
-    const completedCityIds = new Set(existing.map((post) => post.cityId));
     const listings = await this.prisma.serviceListing.findMany({
       where: {
         cityId: { in: cities.map((city) => city.id) },
@@ -392,47 +382,45 @@ export class WallRepostScheduler implements OnModuleInit {
         category: { select: { name: true, icon: true } },
       },
     });
-    const { day } = tehranClock();
-    const usedTodayRows = await this.prisma.wallPost.findMany({
-      where: { serviceListingId: { not: null }, createdAt: { gte: tehranDayStart(day) } },
+    if (listings.length === 0) return 0;
+
+    // A daily random promo already fulfils the “one ad per registered job”
+    // requirement for that listing. Skip it rather than duplicating its card.
+    const existingRows = await this.prisma.wallPost.findMany({
+      where: { serviceListingId: { in: listings.map((listing) => listing.id) } },
       select: { serviceListingId: true },
     });
-    const usedToday = new Set(usedTodayRows.map((post) => post.serviceListingId).filter((id): id is number => id !== null));
-
-    let posted = 0;
-    for (const city of cities) {
-      if (completedCityIds.has(city.id)) continue;
-      const cityListings = listings.filter((listing) => listing.cityId === city.id);
-      if (cityListings.length === 0) continue;
-      const notFeaturedToday = cityListings.filter((listing) => !usedToday.has(listing.id));
-      const pool = notFeaturedToday.length > 0 ? notFeaturedToday : cityListings;
-      const pick = shuffle(pool)[0];
-      const description = (pick.description ?? '').replace(/\s+/g, ' ').trim();
+    const alreadyFeatured = new Set(existingRows.map((post) => post.serviceListingId).filter((id): id is number => id !== null));
+    const cityById = new Map(cities.map((city) => [city.id, city]));
+    const missing = listings.filter((listing) => !alreadyFeatured.has(listing.id));
+    const data = missing.flatMap((listing) => {
+      const city = cityById.get(listing.cityId);
+      if (!city) return [];
+      const description = (listing.description ?? '').replace(/\s+/g, ' ').trim();
       const body = description.length > 140 ? `${description.slice(0, 140)}…` : description;
       const content = [
         `${INITIAL_SERVICE_PROMO_MARKER} ${city.name}`,
-        `${pick.category.icon ?? '🛠️'} ${pick.category.name}`,
-        `🧰 ${pick.name}`,
-        `📞 شماره تماس: ${pick.phone}`,
+        `${listing.category.icon ?? '🛠️'} ${listing.category.name}`,
+        `🧰 ${listing.name}`,
+        `📞 شماره تماس: ${listing.phone}`,
         body,
       ].filter(Boolean).join('\n');
-      await this.prisma.wallPost.create({
-        data: { cityId: city.id, userId: pick.ownerId, content, serviceListingId: pick.id },
-      });
-      usedToday.add(pick.id);
-      posted += 1;
-      this.logger.log(`initial service promo: city ${city.slug}, listing #${pick.id}`);
-    }
-    return posted;
+      return [{ cityId: city.id, userId: listing.ownerId, content, serviceListingId: listing.id }];
+    });
+    if (data.length === 0) return 0;
+
+    const result = await this.prisma.wallPost.createMany({ data });
+    this.logger.log(`initial service promo backfill: published ${result.count} listing(s) in requested cities`);
+    return result.count;
   }
 
-  /** Immediately features a newly registered service in the same supported city wall. */
+  /** Immediately features a newly registered service in its own city wall. */
   async publishServiceListingImmediately(listingId: number): Promise<number> {
     const listing = await this.prisma.serviceListing.findFirst({
       where: {
         id: listingId,
         isActive: true,
-        city: { slug: { in: [...IMMEDIATE_SERVICE_PROMO_CITY_SLUGS] }, isActive: true, province: { isActive: true } },
+        city: { isActive: true, province: { isActive: true } },
         category: { isActive: true, isService: true },
       },
       select: {

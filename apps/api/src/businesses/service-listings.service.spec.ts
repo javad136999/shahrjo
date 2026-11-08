@@ -79,11 +79,11 @@ describe('ServiceListingsService', () => {
       }),
     );
     expect('business' in prisma).toBe(false);
-    expect(wallRepost.publishServiceListingImmediately).not.toHaveBeenCalled();
+    expect(wallRepost.publishServiceListingImmediately).toHaveBeenCalledWith(11);
   });
 
-  it('publishes a new listing immediately on one of the four selected city walls', async () => {
-    await service.create(user, { ...dto, citySlug: 'jam' });
+  it('publishes a new listing immediately even outside the one-time backfill cities', async () => {
+    await service.create(user, { ...dto, citySlug: 'sample-city' });
 
     expect(wallRepost.publishServiceListingImmediately).toHaveBeenCalledWith(11);
   });

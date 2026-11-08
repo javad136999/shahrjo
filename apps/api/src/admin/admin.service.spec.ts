@@ -9,6 +9,7 @@ function makePrisma() {
     ad: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     business: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     serviceListing: { findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
+    wallPost: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
     subscription: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     user: { count: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     city: { findFirst: jest.fn(), update: jest.fn() },
@@ -80,7 +81,7 @@ describe('AdminService scope enforcement', () => {
     });
   });
 
-  it('lists and deactivates service entries only inside the operator city scope', async () => {
+  it('lists and deletes service entries and their wall promos only inside the operator city scope', async () => {
     const { service, prisma } = makeService({ role: 'CITY_ADMIN', provinceId: null, cityId: 1 });
     prisma.serviceListing.findMany.mockResolvedValue([]);
     await service.serviceListings(admin);
@@ -88,13 +89,17 @@ describe('AdminService scope enforcement', () => {
 
     prisma.serviceListing.findFirst.mockResolvedValue({ id: 68, name: 'خدمات نمونه', cityId: 1 });
     prisma.serviceListing.update.mockResolvedValue({ id: 68, isActive: false });
+    prisma.wallPost.deleteMany.mockResolvedValue({ count: 2 });
     await expect(service.deleteServiceListing(admin, 68)).resolves.toEqual({ id: 68, isActive: false });
     expect(prisma.serviceListing.findFirst.mock.calls[0][0].where).toEqual({ id: 68, isActive: true, cityId: 1 });
     expect(prisma.serviceListing.update).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: 68 }, data: { isActive: false },
     }));
+    expect(prisma.wallPost.deleteMany).toHaveBeenCalledWith({ where: { serviceListingId: 68 } });
     expect(prisma.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ action: 'service-listing.delete', entityId: '68' }),
+      data: expect.objectContaining({
+        action: 'service-listing.delete', entityId: '68', after: expect.objectContaining({ removedWallPosts: 2 }),
+      }),
     }));
   });
 

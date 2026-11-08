@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { IMMEDIATE_SERVICE_PROMO_CITY_SLUGS, WallRepostScheduler } from '../wall/wall.scheduler';
+import { WallRepostScheduler } from '../wall/wall.scheduler';
 import { CreateServiceListingDto } from './service-listings.dto';
 
 const normalizePhone = (value: string) => value
@@ -159,12 +159,10 @@ export class ServiceListingsService {
       throw error;
     }
 
-    if (IMMEDIATE_SERVICE_PROMO_CITY_SLUGS.some((slug) => slug === dto.citySlug)) {
-      try {
-        await this.wallRepost.publishServiceListingImmediately(listing.id);
-      } catch (error) {
-        this.logger.warn(`service #${listing.id} was saved but its immediate wall promo failed: ${String(error)}`);
-      }
+    try {
+      await this.wallRepost.publishServiceListingImmediately(listing.id);
+    } catch (error) {
+      this.logger.warn(`service #${listing.id} was saved but its immediate wall promo failed: ${String(error)}`);
     }
     return listing;
   }

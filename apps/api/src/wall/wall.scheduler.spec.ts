@@ -16,6 +16,7 @@ function makePrisma() {
       findFirst: jest.fn().mockResolvedValue(null),
       groupBy: jest.fn().mockResolvedValue([]),
       create: jest.fn().mockResolvedValue({ id: 1 }),
+      createMany: jest.fn().mockImplementation(async ({ data }: { data: unknown[] }) => ({ count: data.length })),
     },
     city: { findMany: jest.fn().mockResolvedValue([]) },
     ad: { findMany: jest.fn().mockResolvedValue([]) },
@@ -372,7 +373,7 @@ describe('service-listing wall promotions', () => {
     category: { name: 'تعمیر و نصب انواع کولر', icon: '❄️' },
   });
 
-  it('posts one idempotent initial promotion for each target city only', async () => {
+  it('backfills every service listing in the four target cities, skipping listings already advertised', async () => {
     const { scheduler, prisma } = makeScheduler();
     prisma.city.findMany.mockResolvedValue([
       { id: 1, name: 'City One', slug: 'jam' },
@@ -381,28 +382,39 @@ describe('service-listing wall promotions', () => {
       { id: 6, name: 'City Four', slug: 'shiraz' },
     ]);
     prisma.serviceListing.findMany.mockResolvedValue([
-      listing(101, 1), listing(102, 5), listing(103, 3), listing(104, 6), listing(199, 9),
+      listing(101, 1), listing(105, 1), listing(102, 5), listing(103, 3), listing(104, 6),
     ]);
+    prisma.wallPost.findMany
+      .mockResolvedValueOnce([{ serviceListingId: 101 }])
+      .mockResolvedValueOnce([
+        { serviceListingId: 101 }, { serviceListingId: 102 }, { serviceListingId: 103 },
+        { serviceListingId: 104 }, { serviceListingId: 105 },
+      ]);
 
     expect(await scheduler.publishInitialCityServicePromos()).toBe(4);
     expect(prisma.city.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({ slug: { in: ['jam', 'bushehr-city', 'kangan', 'shiraz'] } }),
     }));
-    expect(prisma.wallPost.create).toHaveBeenCalledTimes(4);
-    expect(prisma.wallPost.create.mock.calls.map((call) => call[0].data.cityId).sort()).toEqual([1, 3, 5, 6]);
-    expect(prisma.wallPost.create.mock.calls[0][0].data.content).toContain('معرفی ویژهٔ مشاغل شهرجو');
+    expect(prisma.wallPost.createMany).toHaveBeenCalledTimes(1);
+    const firstBatch = prisma.wallPost.createMany.mock.calls[0][0].data;
+    expect(firstBatch.map((post: { cityId: number }) => post.cityId).sort()).toEqual([1, 3, 5, 6]);
+    expect(firstBatch.map((post: { serviceListingId: number }) => post.serviceListingId).sort()).toEqual([102, 103, 104, 105]);
+    expect(firstBatch[0].content).toContain('معرفی ویژهٔ مشاغل شهرجو');
 
-    prisma.wallPost.findMany.mockResolvedValueOnce([{ cityId: 1 }, { cityId: 5 }, { cityId: 3 }, { cityId: 6 }]);
     expect(await scheduler.publishInitialCityServicePromos()).toBe(0);
+    expect(prisma.wallPost.createMany).toHaveBeenCalledTimes(1);
   });
 
-  it('immediately posts a new service listing to its supported city wall once', async () => {
+  it('immediately posts a new service listing in any active city wall once', async () => {
     const { scheduler, prisma } = makeScheduler();
-    prisma.serviceListing.findFirst.mockResolvedValue(listing(501, 1, 70));
+    prisma.serviceListing.findFirst.mockResolvedValue(listing(501, 9, 70));
 
     expect(await scheduler.publishServiceListingImmediately(501)).toBe(1);
+    expect(prisma.serviceListing.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ city: { isActive: true, province: { isActive: true } } }),
+    }));
     expect(prisma.wallPost.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ cityId: 1, userId: 70, serviceListingId: 501 }),
+      data: expect.objectContaining({ cityId: 9, userId: 70, serviceListingId: 501 }),
     });
     expect(prisma.wallPost.create.mock.calls[0][0].data.content).toContain('شغل تازه در دیوار شهر');
 
@@ -417,6 +429,19 @@ describe('service-listing wall promotions', () => {
 
     expect(await scheduler.publishServicePromos(DAY)).toBe(2);
     expect(prisma.wallPost.create.mock.calls.map((call) => call[0].data.cityId).sort()).toEqual([1, 9]);
+  });
+
+  it('keeps the separate daily promotion active when every listing got the one-time backfill today', async () => {
+    const { scheduler, prisma } = makeScheduler();
+    prisma.wallPost.findMany.mockResolvedValue([
+      { serviceListingId: 601, cityId: 1, content: '📣 معرفی ویژهٔ مشاغل شهرجو' },
+      { serviceListingId: 602, cityId: 9, content: '📣 معرفی ویژهٔ مشاغل شهرجو' },
+    ]);
+    prisma.serviceListing.findMany.mockResolvedValue([listing(601, 1), listing(602, 9)]);
+
+    expect(await scheduler.publishServicePromos(DAY)).toBe(2);
+    expect(prisma.wallPost.create).toHaveBeenCalledTimes(2);
+    expect(prisma.wallPost.create.mock.calls.every((call) => call[0].data.content.startsWith('📣 معرفی شغل امروز:'))).toBe(true);
   });
 
   it('does not repeat the daily random post after restart, but ignores initial and instant promos for the daily cap', async () => {

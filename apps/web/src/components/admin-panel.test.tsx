@@ -324,8 +324,18 @@ describe('AdminPanel', () => {
     fireEvent.click(screen.getByTestId('delete-service-68'));
     await waitFor(() => expect(mockDeleteAdminServiceListing).toHaveBeenCalledWith(68));
     expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('خدمات نمونه'));
-    expect(await screen.findByRole('status')).toHaveTextContent('مورد خدمات از فهرست عمومی حذف شد');
+    expect(await screen.findByRole('status')).toHaveTextContent('شغل و آگهی‌های دیواری آن حذف شد');
     confirmSpy.mockRestore();
+  });
+
+  it('does not show the service-delete action to non-manager moderators', async () => {
+    mockGetProfile.mockResolvedValue({ ...adminProfile, roles: ['MODERATOR'] });
+    mockGetAdminServiceListings.mockResolvedValue([serviceListing]);
+    render(<AdminPanel />);
+
+    fireEvent.click(await screen.findByTestId('tab-services'));
+    expect(await screen.findByTestId('row-68')).toBeInTheDocument();
+    expect(screen.queryByTestId('delete-service-68')).not.toBeInTheDocument();
   });
 
   it('shows site visits daily, monthly and yearly with a period switch', async () => {

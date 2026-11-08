@@ -71,6 +71,7 @@ const STATUS_LABEL: Record<string, string> = {
 export function AdminPanel() {
   const router = useRouter();
   const [allowed, setAllowed] = useState<boolean | null>(null);
+  const [canDeleteServiceListings, setCanDeleteServiceListings] = useState(false);
   const [canViewRewardUsers, setCanViewRewardUsers] = useState(false);
   const [canManageRewardUsers, setCanManageRewardUsers] = useState(false);
   const [overview, setOverview] = useState<AdminOverview | null>(null);
@@ -131,7 +132,9 @@ export function AdminPanel() {
         const isAdmin = me.roles.some((r) => r !== 'USER');
         const canViewRewards = me.roles.some((role) => ['SUPER_ADMIN', 'PROVINCE_ADMIN', 'CITY_ADMIN'].includes(role));
         const canManageRewards = me.roles.some((role) => ['SUPER_ADMIN', 'PROVINCE_ADMIN'].includes(role));
+        const canDeleteServices = me.roles.some((role) => ['SUPER_ADMIN', 'PROVINCE_ADMIN', 'CITY_ADMIN'].includes(role));
         setAllowed(isAdmin);
+        setCanDeleteServiceListings(canDeleteServices);
         setCanViewRewardUsers(canViewRewards);
         setCanManageRewardUsers(canManageRewards);
         if (isAdmin) {
@@ -563,14 +566,14 @@ export function AdminPanel() {
                     🗑 حذف
                   </button>
                 )}
-                {'phone' in row && 'description' in row && (
+                {'phone' in row && 'description' in row && canDeleteServiceListings && (
                   <button
                     type="button"
                     className="btn btn-ghost admin-action admin-action--err"
                     disabled={busyId === row.id}
                     onClick={async () => {
-                      if (!window.confirm(`«${row.name}» از دفتر خدمات ${row.city.name} حذف شود؟`)) return;
-                      await run(() => deleteAdminServiceListing(row.id), 'مورد خدمات از فهرست عمومی حذف شد', row.id);
+                      if (!window.confirm(`«${row.name}» از دفتر خدمات ${row.city.name} و آگهی‌های دیواری آن حذف شود؟`)) return;
+                      await run(() => deleteAdminServiceListing(row.id), 'شغل و آگهی‌های دیواری آن حذف شد', row.id);
                     }}
                     data-testid={`delete-service-${row.id}`}
                     aria-label={`حذف خدمت «${row.name}»`}

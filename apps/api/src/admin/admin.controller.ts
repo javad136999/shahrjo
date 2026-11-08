@@ -88,7 +88,7 @@ export class AdminController {
 
   /** Hide a service listing from public city directories; scoped and audit logged. */
   @Post('service-listings/:id/delete')
-  @RequirePermissions('businesses.moderate')
+  @RequirePermissions('service-listings.delete')
   deleteServiceListing(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number) {
     return this.admin.deleteServiceListing(user, id);
   }

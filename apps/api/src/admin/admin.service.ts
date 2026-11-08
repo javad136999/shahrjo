@@ -538,15 +538,19 @@ export class AdminService {
       select: { id: true, name: true, cityId: true },
     });
     if (!listing) throw new NotFoundException('مورد خدمات پیدا نشد');
-    await this.prisma.serviceListing.update({
-      where: { id },
-      data: { isActive: false },
-      select: { id: true, isActive: true },
+    const removedWallPosts = await this.prisma.$transaction(async (tx) => {
+      await tx.serviceListing.update({
+        where: { id },
+        data: { isActive: false },
+        select: { id: true, isActive: true },
+      });
+      return tx.wallPost.deleteMany({ where: { serviceListingId: id } });
     });
     await this.audit(adminId, 'service-listing.delete', 'service-listing', String(id), {
       name: listing.name,
       cityId: listing.cityId,
       isActive: false,
+      removedWallPosts: removedWallPosts.count,
     });
     return { id, isActive: false };
   }
