@@ -15,6 +15,7 @@ import type {
   BusinessReview,
   SavedBusinessReview,
   ServiceListingItem,
+  ServiceListingWallPromos,
   CheckoutSession,
   CityMapData,
   DmConversation,
@@ -554,6 +555,10 @@ export async function getCityServiceListings(
   const cat = category ? `&category=${encodeURIComponent(category)}` : '';
   const q = query ? `&q=${encodeURIComponent(query)}` : '';
   return api.get<ServiceListingItem[]>(`/service-listings?${cityQS(slug, limit)}${cat}${q}`);
+}
+
+export async function getCityServiceWallPromos(slug: string): Promise<ServiceListingWallPromos> {
+  return api.get<ServiceListingWallPromos>(`/service-listings/wall-promos?city=${encodeURIComponent(slug)}`);
 }
 
 // ---------- city wall (دیوار شهر — Phase 8b) ----------

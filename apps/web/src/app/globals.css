@@ -9452,6 +9452,13 @@ button.pill {
 .classifieds__daily-promo-copy > strong { overflow: hidden; color: #493b1e; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .classifieds__daily-promo-copy > span { overflow: hidden; color: #82724d; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .classifieds__daily-promo-cta { display: flex; flex: 0 0 auto; align-items: center; gap: 5px; color: #856612; font-size: 11px; font-weight: 850; }
+.classifieds__daily-promo--service { border-color: #cde3d2; background: linear-gradient(100deg, #f8fff9, #eaf7ed); color: #234b34; box-shadow: 0 8px 20px -17px #2d7148; }
+.classifieds__daily-promo--service:hover { border-color: #9cc9a8; color: #234b34; }
+.classifieds__daily-promo--service .classifieds__daily-promo-icon { background: #def1e2; }
+.classifieds__daily-promo--service .classifieds__daily-promo-copy > small b { background: #d8efdc; color: #23613a; }
+.classifieds__daily-promo--service .classifieds__daily-promo-cta { color: #23613a; }
+.classifieds__toolbar .classifieds__service-post-count { padding: 3px 8px; border: 1px solid #cfe4d3; border-radius: 999px; background: #f1faf2; color: #27683f; font-size: 10px; font-weight: 800; white-space: nowrap; }
+.classifieds__toolbar .classifieds__service-post-count--incomplete { border-color: #efc8c0; background: #fff4f1; color: #a43f35; }
 .classifieds__floating-post-btn { position: fixed; z-index: 80; inset-inline-end: max(20px, calc((100vw - 1180px) / 2 + 20px)); bottom: calc(22px + env(safe-area-inset-bottom)); display: inline-flex; align-items: center; gap: 9px; min-height: 54px; padding: 0 19px 0 15px; border: 1px solid rgb(13 105 69 / 25%); border-radius: 999px; background: linear-gradient(135deg, #16865a, #0d6945); color: #fff; box-shadow: 0 9px 25px rgb(13 105 69 / 28%); }
 .classifieds__floating-post-btn:hover { color: #fff; text-decoration: none; transform: translateY(-2px); }
 .classifieds__floating-post-btn > span { display: grid; width: 27px; height: 27px; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 19%); font-size: 23px; line-height: 1; }

@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { deleteAdminAd, getAdCategories, getCityAdNeighborhoods, getCityAds, getCityBusinesses, getProfile, getShowcase, getTokens } from '@/lib/api';
+import { deleteAdminAd, getAdCategories, getCityAdNeighborhoods, getCityAds, getCityBusinesses, getCityServiceWallPromos, getProfile, getShowcase, getTokens } from '@/lib/api';
 import { formatPrice, thumbFallback, thumbUrlFor } from '@/lib/format';
-import type { AdCategoryOption, AdItem, BusinessItem, ShowcaseItem } from '@/lib/types';
+import type { AdCategoryOption, AdItem, BusinessItem, ServiceListingWallPromo, ServiceListingWallPromos, ShowcaseItem } from '@/lib/types';
 
 export interface CityClassifiedsProps {
   city: { id: number; slug: string; name: string };
@@ -47,6 +47,8 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
   const [ads, setAds] = useState<AdItem[] | null>(null);
   const [dailyBusinessAd, setDailyBusinessAd] = useState<BusinessItem | null>(null);
   const [dailyPromo, setDailyPromo] = useState<ShowcaseItem | null>(null);
+  const [serviceWallPromos, setServiceWallPromos] = useState<ServiceListingWallPromos | null>(null);
+  const [servicePromosError, setServicePromosError] = useState(false);
   const [businessesLoaded, setBusinessesLoaded] = useState(false);
   const [canManageAds, setCanManageAds] = useState(false);
   const [refreshAds, setRefreshAds] = useState(0);
@@ -92,6 +94,16 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
     getShowcase(city.slug, 100)
       .then((items) => { if (alive) setDailyPromo(dailyGoldPromo(items, city.slug)); })
       .catch(() => { if (alive) setDailyPromo(null); });
+    return () => { alive = false; };
+  }, [city.slug]);
+
+  useEffect(() => {
+    let alive = true;
+    setServiceWallPromos(null);
+    setServicePromosError(false);
+    getCityServiceWallPromos(city.slug)
+      .then((promos) => { if (alive) setServiceWallPromos(promos); })
+      .catch(() => { if (alive) setServicePromosError(true); });
     return () => { alive = false; };
   }, [city.slug]);
 
@@ -170,6 +182,27 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
     if (minPrice || maxPrice) return null;
     return dailyBusinessAd;
   }, [dailyBusinessAd, query, selectedCategory, selectedNeighborhood, minPrice, maxPrice]);
+
+  const visibleServicePromos = useMemo(() => {
+    if (!serviceWallPromos || (selectedCategory && selectedCategory !== 'services') || selectedNeighborhood || minPrice || maxPrice) return [];
+    const normalized = query.trim().toLocaleLowerCase();
+    const filtered = serviceWallPromos.listings.filter(({ listing }) =>
+      !normalized || `${listing.name} ${listing.category.name} ${listing.description ?? ''} ${listing.phone}`.toLocaleLowerCase().includes(normalized),
+    );
+    return [...filtered].sort((a, b) => {
+      const aTime = new Date(a.createdAt).getTime();
+      const bTime = new Date(b.createdAt).getTime();
+      return sort === 'oldest' ? aTime - bTime : bTime - aTime;
+    });
+  }, [serviceWallPromos, selectedCategory, selectedNeighborhood, minPrice, maxPrice, query, sort]);
+
+  const visibleDailyServicePromo = useMemo<ServiceListingWallPromo | null>(() => {
+    const daily = serviceWallPromos?.daily;
+    if (!daily || (selectedCategory && selectedCategory !== 'services') || selectedNeighborhood || minPrice || maxPrice) return null;
+    const normalized = query.trim().toLocaleLowerCase();
+    const searchable = `${daily.listing.name} ${daily.listing.category.name} ${daily.listing.description ?? ''} ${daily.listing.phone}`.toLocaleLowerCase();
+    return normalized && !searchable.includes(normalized) ? null : daily;
+  }, [serviceWallPromos, selectedCategory, selectedNeighborhood, minPrice, maxPrice, query]);
 
   const activeCategory = categories.find((category) => category.slug === selectedCategory);
   const activeFilterCount = [selectedCategory, selectedNeighborhood, minPrice, maxPrice].filter(Boolean).length;
@@ -253,7 +286,15 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
       <div className="classifieds__toolbar">
         <div>
           <strong>{activeCategory ? `آگهی‌های ${activeCategory.name}` : 'همه آگهی‌های شهر'}</strong>
-          {ads && <span>{(visibleAds.length + (visibleDailyBusiness ? 1 : 0)).toLocaleString('fa-IR')} آگهی</span>}
+          {ads && serviceWallPromos && <span>{(visibleAds.length + (visibleDailyBusiness ? 1 : 0) + visibleServicePromos.length).toLocaleString('fa-IR')} آگهی</span>}
+          {serviceWallPromos && (
+            <span
+              className={`classifieds__service-post-count${serviceWallPromos.missingCount > 0 ? ' classifieds__service-post-count--incomplete' : ''}`}
+              data-testid="service-promo-status"
+            >
+              {serviceWallPromos.publishedCount.toLocaleString('fa-IR')} از {serviceWallPromos.activeCount.toLocaleString('fa-IR')} شغل در دیوار
+            </span>
+          )}
         </div>
         <div className="classifieds__toolbar-actions">
           <label className="classifieds__sort">
@@ -319,11 +360,31 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
         </Link>
       )}
 
-      {error && <div className="banner banner--error" role="alert">{error}</div>}
+      {visibleDailyServicePromo && (
+        <Link
+          href={`/city/${city.slug}/services/${visibleDailyServicePromo.listing.category.slug}`}
+          className="classifieds__daily-promo classifieds__daily-promo--service"
+          data-testid="classifieds-daily-service-promo"
+          aria-label={`معرفی روز: ${visibleDailyServicePromo.listing.name}، ${visibleDailyServicePromo.listing.category.name}`}
+        >
+          <span className="classifieds__daily-promo-icon" aria-hidden="true">
+            {visibleDailyServicePromo.listing.category.icon ?? '🛠️'}
+          </span>
+          <span className="classifieds__daily-promo-copy">
+            <small><b>معرفی روز</b><span>از مشاغل ثبت‌شدهٔ شهر {city.name}</span></small>
+            <strong>{visibleDailyServicePromo.listing.name}</strong>
+            <span>{visibleDailyServicePromo.listing.category.name} · {visibleDailyServicePromo.listing.phone}</span>
+          </span>
+          <span className="classifieds__daily-promo-cta">مشاهده <span aria-hidden="true">←</span></span>
+        </Link>
+      )}
 
-      {ads === null || (visibleAds.length === 0 && !visibleDailyBusiness && !businessesLoaded) ? (
+      {error && <div className="banner banner--error" role="alert">{error}</div>}
+      {servicePromosError && <div className="banner banner--error" role="alert">تأیید انتشار آگهی‌های خدمات در این شهر ممکن نشد؛ لطفاً بعداً دوباره تلاش کنید.</div>}
+
+      {ads === null || (visibleAds.length === 0 && !visibleDailyBusiness && visibleServicePromos.length === 0 && !visibleDailyServicePromo && (!businessesLoaded || (!serviceWallPromos && !servicePromosError))) ? (
         <div className="classifieds__loading" aria-busy="true">در حال دریافت آگهی‌های {city.name}…</div>
-      ) : visibleAds.length === 0 && !visibleDailyBusiness ? (
+      ) : visibleAds.length === 0 && !visibleDailyBusiness && visibleServicePromos.length === 0 && !visibleDailyServicePromo ? (
         <section className="classifieds__empty" data-testid="classifieds-empty">
           <span aria-hidden>{activeCategory?.icon ?? '📭'}</span>
           <div>
@@ -353,6 +414,25 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
               </div>
             </Link>
           )}
+          {visibleServicePromos.map((promo) => (
+            <Link
+              key={promo.postId}
+              href={`/city/${city.slug}/services/${promo.listing.category.slug}`}
+              className="classified-card"
+              data-testid={`classified-service-${promo.listing.id}`}
+            >
+              <div className="classified-card__media">
+                <span aria-hidden>{promo.listing.category.icon ?? '🛠️'}</span>
+                <span className="classified-card__category">{promo.listing.category.icon ?? '◆'} {promo.listing.category.name}</span>
+              </div>
+              <div className="classified-card__body">
+                <h2>{promo.listing.name}</h2>
+                <p>معرفی شغل ثبت‌شده · {promo.listing.category.name}</p>
+                <strong>{promo.listing.phone}</strong>
+                <small>{promo.listing.description ? `${promo.listing.description} · ` : ''}{city.name} · مشاهده فهرست خدمات ←</small>
+              </div>
+            </Link>
+          ))}
           {visibleAds.map((ad) => (
             <article className="classifieds__ad-row" key={ad.id} data-testid={`classified-row-${ad.id}`}>
               <Link href={`/ad/${ad.id}`} className="classified-card" data-testid={`classified-card-${ad.id}`}>

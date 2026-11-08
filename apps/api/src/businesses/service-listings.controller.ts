@@ -19,6 +19,12 @@ export class ServiceListingsController {
   count(@Query() query: CityContentQueryDto): ReturnType<ServiceListingsService['count']> {
     return this.serviceListings.count(query.city);
   }
+  /** Public snapshot of service promotions actually present on the classifieds wall. */
+  @Public()
+  @Get('wall-promos')
+  wallPromos(@Query() query: CityContentQueryDto): ReturnType<ServiceListingsService['wallPromos']> {
+    return this.serviceListings.wallPromos(query.city);
+  }
   /** Search public, lightweight service entries by city and optional trade. */
   @Public()
   @Get()

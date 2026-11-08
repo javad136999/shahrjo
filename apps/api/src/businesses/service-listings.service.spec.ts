@@ -19,6 +19,7 @@ function makePrisma() {
     businessCategory: { findFirst: jest.fn(), findMany: jest.fn() },
     serviceListing: { create: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), count: jest.fn(), groupBy: jest.fn() },
     serviceListingRating: { upsert: jest.fn(), aggregate: jest.fn() },
+    wallPost: { findMany: jest.fn() },
   };
 }
 
@@ -43,6 +44,7 @@ describe('ServiceListingsService', () => {
     });
     prisma.serviceListing.findMany.mockResolvedValue([]);
     prisma.serviceListing.count.mockResolvedValue(123);
+    prisma.wallPost.findMany.mockResolvedValue([]);
     prisma.serviceListing.groupBy.mockResolvedValue([{ categoryId: 90, _count: { _all: 2 } }]);
     prisma.serviceListing.findFirst.mockResolvedValue(null);
     prisma.serviceListingRating.aggregate.mockResolvedValue({ _avg: { rating: 4.5 }, _count: { _all: 2 } });
@@ -59,6 +61,42 @@ describe('ServiceListingsService', () => {
   it('counts all active listings in a city without applying the search page limit', async () => {
     await expect(service.count('sample-city')).resolves.toBe(123);
     expect(prisma.serviceListing.count).toHaveBeenCalledWith({ where: { cityId: 5, isActive: true } });
+  });
+  it('reports unique service listings actually promoted to the wall and the separate daily promo', async () => {
+    const now = new Date();
+    const dailyListing = {
+      id: 11,
+      name: 'تعمیرکار کولر',
+      phone: dto.phone,
+      description: dto.description,
+      category: { name: 'تعمیر و نصب انواع کولر', slug: 'svc_ac_repair', icon: '❄️' },
+    };
+    const olderListing = {
+      id: 12,
+      name: 'کابینت‌کار',
+      phone: '09121112244',
+      description: 'ساخت کابینت',
+      category: { name: 'کابینت و کمد', slug: 'svc_cabinet_maker', icon: '🪚' },
+    };
+    prisma.serviceListing.count.mockResolvedValue(2);
+    prisma.wallPost.findMany.mockResolvedValue([
+      { id: 103, createdAt: now, content: '📣 معرفی شغل امروز: تعمیرکار کولر', serviceListing: dailyListing },
+      { id: 102, createdAt: new Date(now.getTime() - 1_000), content: 'معرفی شغل: کابینت‌کار', serviceListing: olderListing },
+      { id: 101, createdAt: new Date(now.getTime() - 2_000), content: 'معرفی قدیمی: تعمیرکار کولر', serviceListing: dailyListing },
+    ]);
+
+    const result = await service.wallPromos('sample-city');
+
+    expect(result).toMatchObject({
+      activeCount: 2,
+      publishedCount: 2,
+      missingCount: 0,
+      listings: [
+        { postId: 103, listing: { id: 11, name: 'تعمیرکار کولر' } },
+        { postId: 102, listing: { id: 12, name: 'کابینت‌کار' } },
+      ],
+      daily: { postId: 103, listing: { id: 11, name: 'تعمیرکار کولر' } },
+    });
   });
   it('creates a service-listing row only, with the entered contact and service details', async () => {
     const result = await service.create(user, dto);

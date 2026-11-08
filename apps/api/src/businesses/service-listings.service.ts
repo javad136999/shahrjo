@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { WallRepostScheduler } from '../wall/wall.scheduler';
+import { tehranClock, tehranDayStart, WallRepostScheduler } from '../wall/wall.scheduler';
 import { CreateServiceListingDto } from './service-listings.dto';
 
 const normalizePhone = (value: string) => value
@@ -27,6 +27,65 @@ export class ServiceListingsService {
     });
     if (!city) throw new NotFoundException('شهر انتخاب‌شده یافت نشد');
     return this.prisma.serviceListing.count({ where: { cityId: city.id, isActive: true } });
+  }
+
+  /** Public classifieds-wall promos only; never exposes the members' chat posts. */
+  async wallPromos(citySlug: string) {
+    const city = await this.prisma.city.findFirst({
+      where: { slug: citySlug, isActive: true, province: { isActive: true } },
+      select: { id: true },
+    });
+    if (!city) throw new NotFoundException('شهر انتخاب‌شده یافت نشد');
+
+    const [activeCount, rows] = await Promise.all([
+      this.prisma.serviceListing.count({ where: { cityId: city.id, isActive: true } }),
+      this.prisma.wallPost.findMany({
+        where: {
+          cityId: city.id,
+          serviceListingId: { not: null },
+          serviceListing: { is: { isActive: true } },
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        select: {
+          id: true,
+          createdAt: true,
+          content: true,
+          serviceListing: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              description: true,
+              category: { select: { name: true, slug: true, icon: true } },
+            },
+          },
+        },
+      }),
+    ]);
+
+    const latestByListing = new Map<number, (typeof rows)[number]>();
+    const dailyStart = tehranDayStart(tehranClock().day);
+    let dailyRow: (typeof rows)[number] | null = null;
+    for (const row of rows) {
+      if (!row.serviceListing) continue;
+      if (!latestByListing.has(row.serviceListing.id)) latestByListing.set(row.serviceListing.id, row);
+      if (!dailyRow && row.content.startsWith('📣 معرفی شغل امروز:') && row.createdAt >= dailyStart) dailyRow = row;
+    }
+
+    const listings = [...latestByListing.values()].map((row) => ({
+      postId: row.id,
+      createdAt: row.createdAt,
+      listing: row.serviceListing!,
+    }));
+    return {
+      activeCount,
+      publishedCount: listings.length,
+      missingCount: Math.max(0, activeCount - listings.length),
+      listings,
+      daily: dailyRow?.serviceListing
+        ? { postId: dailyRow.id, createdAt: dailyRow.createdAt, listing: dailyRow.serviceListing }
+        : null,
+    };
   }
 
   /** Active listing count for each service category in the city, including zeroes. */

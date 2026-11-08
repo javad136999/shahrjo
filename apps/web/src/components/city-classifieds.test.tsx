@@ -5,6 +5,7 @@ const mockGetAdCategories = jest.fn();
 const mockGetCityAdNeighborhoods = jest.fn();
 const mockGetCityAds = jest.fn();
 const mockGetCityBusinesses = jest.fn();
+const mockGetCityServiceWallPromos = jest.fn();
 const mockGetShowcase = jest.fn();
 const mockGetTokens = jest.fn();
 const mockGetProfile = jest.fn();
@@ -15,6 +16,7 @@ jest.mock('@/lib/api', () => ({
   getCityAdNeighborhoods: (...args: unknown[]) => mockGetCityAdNeighborhoods(...args),
   getCityAds: (...args: unknown[]) => mockGetCityAds(...args),
   getCityBusinesses: (...args: unknown[]) => mockGetCityBusinesses(...args),
+  getCityServiceWallPromos: (...args: unknown[]) => mockGetCityServiceWallPromos(...args),
   getShowcase: (...args: unknown[]) => mockGetShowcase(...args),
   getTokens: () => mockGetTokens(),
   getProfile: () => mockGetProfile(),
@@ -53,6 +55,7 @@ describe('CityClassifieds (دیوار شهر)', () => {
     mockGetCityAdNeighborhoods.mockResolvedValue([]);
     mockGetCityAds.mockResolvedValue([ad(1, 'دوچرخه شهری'), ad(2, 'گوشی سالم')]);
     mockGetCityBusinesses.mockResolvedValue([freeBusiness]);
+    mockGetCityServiceWallPromos.mockResolvedValue({ activeCount: 0, publishedCount: 0, missingCount: 0, listings: [], daily: null });
     mockGetShowcase.mockResolvedValue([promo]);
     mockGetTokens.mockReturnValue(null);
     mockGetProfile.mockResolvedValue({ roles: ['USER'] });
@@ -111,6 +114,40 @@ describe('CityClassifieds (دیوار شهر)', () => {
     expect(dailyBusinessAd).toHaveTextContent('نانوایی محلی');
     expect(dailyBusinessAd).not.toHaveTextContent('تبلیغ امروز');
     expect(screen.queryByTestId('classifieds-daily-promo')).not.toBeInTheDocument();
+  });
+
+  it('shows published service promos as individual wall cards and separates today\'s promo', async () => {
+    const cabinet = {
+      id: 701,
+      name: 'کابینت‌کار احمدی',
+      phone: '09121112233',
+      description: 'ساخت کابینت آشپزخانه',
+      category: { name: 'کابینت و کمد', slug: 'svc_cabinet_maker', icon: '🪚' },
+    };
+    const electrician = {
+      id: 702,
+      name: 'برق‌کار محلی',
+      phone: '09121112244',
+      description: 'تعمیرات برق ساختمان',
+      category: { name: 'برق‌کاری', slug: 'svc_electrician', icon: '⚡' },
+    };
+    const featured = { postId: 91, createdAt: '2026-11-08T17:00:00.000Z', listing: cabinet };
+    mockGetCityServiceWallPromos.mockResolvedValue({
+      activeCount: 2,
+      publishedCount: 2,
+      missingCount: 0,
+      listings: [featured, { postId: 90, createdAt: '2026-11-08T16:00:00.000Z', listing: electrician }],
+      daily: featured,
+    });
+    render(<CityClassifieds city={{ id: 1, slug: 'sample-city', name: 'شهر نمونه' }} />);
+
+    expect(await screen.findByTestId('service-promo-status')).toHaveTextContent('۲ از ۲ شغل در دیوار');
+    expect(screen.getByTestId('classified-service-701')).toHaveAttribute('href', '/city/sample-city/services/svc_cabinet_maker');
+    expect(screen.getByTestId('classified-service-702')).toHaveTextContent('برق‌کار محلی');
+    expect(screen.getByTestId('classified-service-701')).toHaveTextContent('09121112233');
+    expect(screen.getByTestId('classifieds-daily-service-promo')).toHaveTextContent('معرفی روز');
+    expect(screen.getByTestId('classifieds-daily-service-promo')).toHaveTextContent('کابینت‌کار احمدی');
+    expect(screen.getByTestId('classifieds-grid').children).toHaveLength(5);
   });
 
   it('shows a delete button beside each ad for managers and refreshes after confirmed deletion', async () => {

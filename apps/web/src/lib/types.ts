@@ -84,6 +84,20 @@ export interface ServiceListingItem {
   userRating?: number;
 }
 
+export interface ServiceListingWallPromo {
+  postId: number;
+  createdAt: string;
+  listing: Pick<ServiceListingItem, 'id' | 'name' | 'phone' | 'description' | 'category'>;
+}
+
+export interface ServiceListingWallPromos {
+  activeCount: number;
+  publishedCount: number;
+  missingCount: number;
+  listings: ServiceListingWallPromo[];
+  daily: ServiceListingWallPromo | null;
+}
+
 export interface LocalCity {
   id: number;
   slug: string;
