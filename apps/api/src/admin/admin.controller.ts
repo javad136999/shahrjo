@@ -79,6 +79,20 @@ export class AdminController {
     return this.admin.businesses(user, status ?? 'PENDING');
   }
 
+  /** Active public entries from the city service directory. */
+  @Get('service-listings')
+  @RequirePermissions('businesses.view')
+  serviceListings(@CurrentUser() user: User) {
+    return this.admin.serviceListings(user);
+  }
+
+  /** Hide a service listing from public city directories; scoped and audit logged. */
+  @Post('service-listings/:id/delete')
+  @RequirePermissions('businesses.moderate')
+  deleteServiceListing(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number) {
+    return this.admin.deleteServiceListing(user, id);
+  }
+
   /** Manual signup: the operator publishes a business directly (no payment, no queue). */
   @Post('businesses')
   @RequirePermissions('businesses.moderate')

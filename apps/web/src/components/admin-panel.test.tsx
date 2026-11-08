@@ -13,6 +13,7 @@ const mockGetAdminOverview = jest.fn();
 const mockGetAdminVisits = jest.fn();
 const mockGetAdminAds = jest.fn();
 const mockGetAdminBusinesses = jest.fn();
+const mockGetAdminServiceListings = jest.fn();
 const mockGetAdminSubscriptions = jest.fn();
 const mockGetAdminRewardUsers = jest.fn();
 const mockGiveAdminReward = jest.fn();
@@ -25,6 +26,7 @@ const mockApproveAdminSubscription = jest.fn();
 const mockRejectAdminSubscription = jest.fn();
 const mockSuspendAdminBusiness = jest.fn();
 const mockDeleteAdminBusiness = jest.fn();
+const mockDeleteAdminServiceListing = jest.fn();
 const mockAdminCreateBusiness = jest.fn();
 const mockGetBusinessCategories = jest.fn();
 const mockApiGet = jest.fn();
@@ -43,6 +45,7 @@ jest.mock('@/lib/api', () => ({
   getAdminVisits: () => mockGetAdminVisits(),
   getAdminAds: (status: string) => mockGetAdminAds(status),
   getAdminBusinesses: (status: string) => mockGetAdminBusinesses(status),
+  getAdminServiceListings: () => mockGetAdminServiceListings(),
   getAdminSubscriptions: (status: string) => mockGetAdminSubscriptions(status),
   getAdminRewardUsers: () => mockGetAdminRewardUsers(),
   giveAdminReward: (id: number) => mockGiveAdminReward(id),
@@ -55,6 +58,7 @@ jest.mock('@/lib/api', () => ({
   rejectAdminSubscription: (id: number, reason: string) => mockRejectAdminSubscription(id, reason),
   suspendAdminBusiness: (id: number, reason: string) => mockSuspendAdminBusiness(id, reason),
   deleteAdminBusiness: (id: number) => mockDeleteAdminBusiness(id),
+  deleteAdminServiceListing: (id: number) => mockDeleteAdminServiceListing(id),
   adminCreateBusiness: (body: unknown) => mockAdminCreateBusiness(body),
   getBusinessCategories: () => mockGetBusinessCategories(),
   api: { get: (path: string) => mockApiGet(path) },
@@ -115,6 +119,17 @@ const approvedBusiness = {
   category: { name: 'رستوران', icon: '🍽' },
 };
 
+const serviceListing = {
+  id: 68,
+  name: 'خدمات نمونه',
+  phone: '09172697619',
+  description: 'توضیحات خدمات نمونه',
+  createdAt: '2026-11-08T15:00:00.000Z',
+  city: { id: 1, name: 'شهر نمونه' },
+  owner: { id: 5, phone: '09123456789', fullName: null },
+  category: { name: 'نظافت منزل و محل کار', icon: '🧼' },
+};
+
 const overview = {
   pendingAds: 1,
   pendingBusinesses: 0,
@@ -152,6 +167,7 @@ describe('AdminPanel', () => {
     mockGetAdminAds.mockResolvedValue([pendingAd]);
     mockGetAdminBusinesses.mockResolvedValue([]);
     mockGetAdminSubscriptions.mockResolvedValue([pendingSub]);
+    mockGetAdminServiceListings.mockResolvedValue([]);
     mockGetAdminRewardUsers.mockResolvedValue([]);
     mockGiveAdminReward.mockResolvedValue({ id: 1, rewardGiven: true, rewardGivenAt: '2026-11-04T00:00:00.000Z' });
     mockApproveAdminAd.mockResolvedValue({ id: 7, status: 'APPROVED' });
@@ -161,6 +177,7 @@ describe('AdminPanel', () => {
     mockRejectAdminSubscription.mockResolvedValue({ id: 44, status: 'REJECTED' });
     mockSuspendAdminBusiness.mockResolvedValue({ id: 21, status: 'CLOSED' });
     mockDeleteAdminBusiness.mockResolvedValue({ id: 21, status: 'DELETED', removedFiles: 2 });
+    mockDeleteAdminServiceListing.mockResolvedValue({ id: 68, isActive: false });
     mockGetBusinessCategories.mockResolvedValue([{ id: 3, name: 'کافه', slug: 'cafe', icon: '☕' }]);
     mockApiGet.mockResolvedValue([{ id: 1, name: 'شهر نمونه', slug: 'sample-city' }]);
     mockAdminCreateBusiness.mockResolvedValue({ id: 50, name: 'نانوایی مرکزی', status: 'APPROVED' });
@@ -296,6 +313,19 @@ describe('AdminPanel', () => {
 
     fireEvent.click(screen.getByTestId('tab-businesses'));
     expect(await screen.findByTestId('empty-queue')).toHaveTextContent('در این فهرست موردی نیست');
+  });
+
+  it('lets a manager remove an active service-directory entry after confirmation', async () => {
+    mockGetAdminServiceListings.mockResolvedValue([serviceListing]);
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<AdminPanel />);
+    fireEvent.click(await screen.findByTestId('tab-services'));
+    expect(await screen.findByTestId('row-68')).toHaveTextContent('شهر نمونه');
+    fireEvent.click(screen.getByTestId('delete-service-68'));
+    await waitFor(() => expect(mockDeleteAdminServiceListing).toHaveBeenCalledWith(68));
+    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('خدمات نمونه'));
+    expect(await screen.findByRole('status')).toHaveTextContent('مورد خدمات از فهرست عمومی حذف شد');
+    confirmSpy.mockRestore();
   });
 
   it('shows site visits daily, monthly and yearly with a period switch', async () => {

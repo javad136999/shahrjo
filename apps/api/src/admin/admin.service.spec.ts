@@ -8,6 +8,7 @@ function makePrisma() {
   const prisma = {
     ad: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     business: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
+    serviceListing: { findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     subscription: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     user: { count: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     city: { findFirst: jest.fn(), update: jest.fn() },
@@ -77,6 +78,24 @@ describe('AdminService scope enforcement', () => {
       status: 'PENDING',
       city: { provinceId: 3 },
     });
+  });
+
+  it('lists and deactivates service entries only inside the operator city scope', async () => {
+    const { service, prisma } = makeService({ role: 'CITY_ADMIN', provinceId: null, cityId: 1 });
+    prisma.serviceListing.findMany.mockResolvedValue([]);
+    await service.serviceListings(admin);
+    expect(prisma.serviceListing.findMany.mock.calls[0][0].where).toEqual({ isActive: true, cityId: 1 });
+
+    prisma.serviceListing.findFirst.mockResolvedValue({ id: 68, name: 'خدمات نمونه', cityId: 1 });
+    prisma.serviceListing.update.mockResolvedValue({ id: 68, isActive: false });
+    await expect(service.deleteServiceListing(admin, 68)).resolves.toEqual({ id: 68, isActive: false });
+    expect(prisma.serviceListing.findFirst.mock.calls[0][0].where).toEqual({ id: 68, isActive: true, cityId: 1 });
+    expect(prisma.serviceListing.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 68 }, data: { isActive: false },
+    }));
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ action: 'service-listing.delete', entityId: '68' }),
+    }));
   });
 
   it('lets SUPER_ADMIN (unscoped) see everything', async () => {

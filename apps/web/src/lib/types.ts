@@ -235,6 +235,17 @@ export interface QueueBusiness {
   category: { name: string; icon: string | null };
 }
 
+export interface QueueServiceListing {
+  id: number;
+  name: string;
+  phone: string;
+  description: string | null;
+  createdAt: string;
+  city: { id: number; name: string };
+  owner: { id: number; phone: string; fullName: string | null };
+  category: { name: string; icon: string | null };
+}
+
 export interface QueueSubscription {
   id: number;
   tier: string;

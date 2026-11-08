@@ -12,6 +12,7 @@ import {
   approveAdminSubscription,
   getAdminAds,
   getAdminBusinesses,
+  getAdminServiceListings,
   getAdminOverview,
   getAdminSubscriptions,
   getAdminVisits,
@@ -22,14 +23,15 @@ import {
   rejectAdminSubscription,
   suspendAdminBusiness,
   deleteAdminBusiness,
+  deleteAdminServiceListing,
 } from '@/lib/api';
 import { formatDate } from '@/lib/format';
-import type { AdminOverview, QueueAd, QueueBusiness, QueueSubscription, VisitStats } from '@/lib/types';
+import type { AdminOverview, QueueAd, QueueBusiness, QueueServiceListing, QueueSubscription, VisitStats } from '@/lib/types';
 import { AdminRewardUsers } from '@/components/admin-reward-users';
 
-type Tab = 'ads' | 'businesses' | 'subscriptions';
+type Tab = 'ads' | 'businesses' | 'services' | 'subscriptions';
 type VisitPeriod = 'daily' | 'monthly' | 'yearly';
-type QueueStatus = { ads: string; businesses: string; subscriptions: string };
+type QueueStatus = { ads: string; businesses: string; services: string; subscriptions: string };
 
 const VISIT_PERIODS: { key: VisitPeriod; label: string }[] = [
   { key: 'daily', label: 'روزانه' },
@@ -40,12 +42,14 @@ const VISIT_PERIODS: { key: VisitPeriod; label: string }[] = [
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: 'ads', label: 'آگهی‌ها', icon: '📝' },
   { key: 'businesses', label: 'کسب‌وکارها', icon: '🏬' },
+  { key: 'services', label: 'مشاغل و خدمات', icon: '🧰' },
   { key: 'subscriptions', label: 'اشتراک‌ها', icon: '👑' },
 ];
 
 const STATUS_OPTIONS: Record<Tab, string[]> = {
   ads: ['PENDING', 'APPROVED', 'REJECTED'],
   businesses: ['PENDING', 'APPROVED', 'REJECTED', 'CLOSED'],
+  services: [],
   subscriptions: ['PENDING_REVIEW', 'ACTIVE', 'REJECTED'],
 };
 
@@ -73,9 +77,10 @@ export function AdminPanel() {
   const [visits, setVisits] = useState<VisitStats | null>(null);
   const [visitPeriod, setVisitPeriod] = useState<VisitPeriod>('daily');
   const [tab, setTab] = useState<Tab>('ads');
-  const [status, setStatus] = useState<QueueStatus>({ ads: 'PENDING', businesses: 'PENDING', subscriptions: 'PENDING_REVIEW' });
+  const [status, setStatus] = useState<QueueStatus>({ ads: 'PENDING', businesses: 'PENDING', services: '', subscriptions: 'PENDING_REVIEW' });
   const [ads, setAds] = useState<QueueAd[]>([]);
   const [businesses, setBusinesses] = useState<QueueBusiness[]>([]);
+  const [serviceListings, setServiceListings] = useState<QueueServiceListing[]>([]);
   const [subs, setSubs] = useState<QueueSubscription[]>([]);
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -104,6 +109,7 @@ export function AdminPanel() {
     try {
       if (activeTab === 'ads') setAds(await getAdminAds(activeStatus));
       else if (activeTab === 'businesses') setBusinesses(await getAdminBusinesses(activeStatus));
+      else if (activeTab === 'services') setServiceListings(await getAdminServiceListings());
       else setSubs(await getAdminSubscriptions(activeStatus));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'دریافت فهرست ممکن نشد');
@@ -200,8 +206,8 @@ export function AdminPanel() {
     );
   }
 
-  const queue: (QueueAd | QueueBusiness | QueueSubscription)[] =
-    tab === 'ads' ? ads : tab === 'businesses' ? businesses : subs;
+  const queue: (QueueAd | QueueBusiness | QueueServiceListing | QueueSubscription)[] =
+    tab === 'ads' ? ads : tab === 'businesses' ? businesses : tab === 'services' ? serviceListings : subs;
 
   // visit chart of the selected period (30 days / 12 months / 3 years)
   const visitSeries = visits ? visits[visitPeriod].series : [];
@@ -330,7 +336,7 @@ export function AdminPanel() {
             <span aria-hidden>{t.icon}</span> {t.label}
           </button>
         ))}
-        <select
+        {STATUS_OPTIONS[tab].length > 0 && <select
           className="admin-status-select"
           aria-label="فیلتر وضعیت"
           value={status[tab]}
@@ -342,7 +348,7 @@ export function AdminPanel() {
               {STATUS_LABEL[s] ?? s}
             </option>
           ))}
-        </select>
+        </select>}
       </div>
 
       {tab === 'businesses' && (
@@ -404,6 +410,15 @@ export function AdminPanel() {
                       {row.city.name} · {row.owner.phone} · {formatDate(row.createdAt)}
                       {row.address && ` · 📍 ${row.address}`}
                       {row.latitude !== null && row.longitude !== null && ' · 📌 مختصات ثبت شده'}
+                    </span>
+                  </>
+                )}
+                {'phone' in row && 'description' in row && (
+                  <>
+                    <strong>{row.category.icon} {row.name}</strong>
+                    <span className="muted small">
+                      {row.city.name} · {row.phone} · {formatDate(row.createdAt)}
+                      {row.description && ` · ${row.description}`}
                     </span>
                   </>
                 )}
@@ -544,6 +559,20 @@ export function AdminPanel() {
                       );
                     }}
                     data-testid={`delete-${row.id}`}
+                  >
+                    🗑 حذف
+                  </button>
+                )}
+                {'phone' in row && 'description' in row && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost admin-action admin-action--err"
+                    disabled={busyId === row.id}
+                    onClick={async () => {
+                      if (!window.confirm(`«${row.name}» از دفتر خدمات ${row.city.name} حذف شود؟`)) return;
+                      await run(() => deleteAdminServiceListing(row.id), 'مورد خدمات از فهرست عمومی حذف شد', row.id);
+                    }}
+                    data-testid={`delete-service-${row.id}`}
                   >
                     🗑 حذف
                   </button>

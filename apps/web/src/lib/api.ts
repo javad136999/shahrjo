@@ -34,6 +34,7 @@ import type {
   PublicProfile,
   QueueAd,
   QueueBusiness,
+  QueueServiceListing,
   QueueSubscription,
   ShowcaseItem,
   Tokens,
@@ -420,6 +421,14 @@ export async function deleteAdminAd(id: number): Promise<{ id: number; status: s
 
 export async function getAdminBusinesses(status: string): Promise<QueueBusiness[]> {
   return api.get<QueueBusiness[]>(`/admin/businesses?status=${encodeURIComponent(status)}`);
+}
+
+export async function getAdminServiceListings(): Promise<QueueServiceListing[]> {
+  return api.get<QueueServiceListing[]>('/admin/service-listings');
+}
+
+export async function deleteAdminServiceListing(id: number): Promise<{ id: number; isActive: false }> {
+  return api.post<{ id: number; isActive: false }>(`/admin/service-listings/${id}/delete`);
 }
 
 /**

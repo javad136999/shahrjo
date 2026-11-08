@@ -203,6 +203,17 @@ export interface QueueBusiness {
   category: { name: string; icon: string | null };
 }
 
+export interface QueueServiceListing {
+  id: number;
+  name: string;
+  phone: string;
+  description: string | null;
+  createdAt: Date;
+  city: { id: number; name: string };
+  owner: { id: number; phone: string; fullName: string | null };
+  category: { name: string; icon: string | null };
+}
+
 export interface QueueSubscription {
   id: number;
   tier: string;
@@ -497,6 +508,47 @@ export class AdminService {
       },
     });
     return rows.map(({ owner, ...rest }) => ({ ...rest, owner }));
+  }
+
+  /** Active city service-directory entries, limited to the operator's scope. */
+  async serviceListings(user: User): Promise<QueueServiceListing[]> {
+    const scope = await this.scopeOf(user.id);
+    const adminId = await this.adminRowId(user.id);
+    const rows = await this.prisma.serviceListing.findMany({
+      where: { isActive: true, ...this.cityFilter(scope) },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      select: {
+        id: true, name: true, phone: true, description: true, createdAt: true,
+        city: { select: { id: true, name: true } },
+        owner: { select: { id: true, phone: true, fullName: true } },
+        category: { select: { name: true, icon: true } },
+      },
+    });
+    await this.audit(adminId, 'service-listings.view', 'service-listing', 'scoped', { count: rows.length });
+    return rows;
+  }
+
+  /** Soft-remove a service listing from every public city directory. */
+  async deleteServiceListing(user: User, id: number): Promise<{ id: number; isActive: false }> {
+    const scope = await this.scopeOf(user.id);
+    const adminId = await this.adminRowId(user.id);
+    const listing = await this.prisma.serviceListing.findFirst({
+      where: { id, isActive: true, ...this.cityFilter(scope) },
+      select: { id: true, name: true, cityId: true },
+    });
+    if (!listing) throw new NotFoundException('مورد خدمات پیدا نشد');
+    await this.prisma.serviceListing.update({
+      where: { id },
+      data: { isActive: false },
+      select: { id: true, isActive: true },
+    });
+    await this.audit(adminId, 'service-listing.delete', 'service-listing', String(id), {
+      name: listing.name,
+      cityId: listing.cityId,
+      isActive: false,
+    });
+    return { id, isActive: false };
   }
 
   async approveBusiness(user: User, id: number, dto: BusinessDecisionDto): Promise<{ id: number; status: string }> {
