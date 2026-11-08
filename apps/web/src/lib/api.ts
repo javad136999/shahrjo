@@ -414,6 +414,10 @@ export async function rejectAdminAd(id: number, reason: string): Promise<{ id: n
   return api.post<{ id: number; status: string }>(`/admin/ads/${id}/reject`, { reason });
 }
 
+export async function deleteAdminAd(id: number): Promise<{ id: number; status: string; removedFiles: number }> {
+  return api.post<{ id: number; status: string; removedFiles: number }>(`/admin/ads/${id}/delete`);
+}
+
 export async function getAdminBusinesses(status: string): Promise<QueueBusiness[]> {
   return api.get<QueueBusiness[]>(`/admin/businesses?status=${encodeURIComponent(status)}`);
 }

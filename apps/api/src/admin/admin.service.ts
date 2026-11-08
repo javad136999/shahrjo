@@ -449,6 +449,28 @@ export class AdminService {
     return updated;
   }
 
+  /** Soft-delete an ad from every feed; moderators can only remove ads in their area. */
+  async deleteAd(user: User, id: number): Promise<{ id: number; status: string; removedFiles: number }> {
+    const scope = await this.scopeOf(user.id);
+    const adminId = await this.adminRowId(user.id);
+    const ad = await this.prisma.ad.findFirst({
+      where: { id, ...this.cityFilter(scope), status: { not: 'DELETED' } },
+      select: { id: true, title: true, userId: true },
+    });
+    if (!ad) throw new NotFoundException('آگهی یافت نشد');
+
+    await this.prisma.ad.update({ where: { id }, data: { status: 'DELETED' } });
+    const purged = await this.uploads.purgeEntity('AD', id).catch(() => ({ removed: 0 }));
+    await this.audit(adminId, 'ad.delete', 'ad', String(id), {
+      status: 'DELETED',
+      title: ad.title,
+      ownerId: ad.userId,
+      removedFiles: purged.removed,
+    });
+    await this.notify(ad.userId, 'SYSTEM', 'آگهی شما حذف شد', `آگهی «${ad.title}» توسط مدیر از فهرست عمومی برداشته شد.`);
+    return { id, status: 'DELETED', removedFiles: purged.removed };
+  }
+
   // ---------- businesses ----------
 
   async businesses(user: User, status: string): Promise<QueueBusiness[]> {

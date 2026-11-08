@@ -66,6 +66,12 @@ export class AdminController {
     return this.admin.rejectAd(user, id, dto);
   }
 
+  @Post('ads/:id/delete')
+  @RequirePermissions('ads.moderate')
+  deleteAd(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number) {
+    return this.admin.deleteAd(user, id);
+  }
+
   /** Business queue: ?status=PENDING|APPROVED|REJECTED (default PENDING). */
   @Get('businesses')
   @RequirePermissions('businesses.view')

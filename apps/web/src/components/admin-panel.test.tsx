@@ -18,6 +18,7 @@ const mockGetAdminRewardUsers = jest.fn();
 const mockGiveAdminReward = jest.fn();
 const mockApproveAdminAd = jest.fn();
 const mockRejectAdminAd = jest.fn();
+const mockDeleteAdminAd = jest.fn();
 const mockApproveAdminBusiness = jest.fn();
 const mockRejectAdminBusiness = jest.fn();
 const mockApproveAdminSubscription = jest.fn();
@@ -47,6 +48,7 @@ jest.mock('@/lib/api', () => ({
   giveAdminReward: (id: number) => mockGiveAdminReward(id),
   approveAdminAd: (id: number) => mockApproveAdminAd(id),
   rejectAdminAd: (id: number, reason: string) => mockRejectAdminAd(id, reason),
+  deleteAdminAd: (id: number) => mockDeleteAdminAd(id),
   approveAdminBusiness: (id: number, body: unknown) => mockApproveAdminBusiness(id, body),
   rejectAdminBusiness: (id: number, reason: string) => mockRejectAdminBusiness(id, reason),
   approveAdminSubscription: (id: number) => mockApproveAdminSubscription(id),
@@ -154,6 +156,7 @@ describe('AdminPanel', () => {
     mockGiveAdminReward.mockResolvedValue({ id: 1, rewardGiven: true, rewardGivenAt: '2026-11-04T00:00:00.000Z' });
     mockApproveAdminAd.mockResolvedValue({ id: 7, status: 'APPROVED' });
     mockRejectAdminAd.mockResolvedValue({ id: 7, status: 'REJECTED' });
+    mockDeleteAdminAd.mockResolvedValue({ id: 7, status: 'DELETED', removedFiles: 2 });
     mockApproveAdminSubscription.mockResolvedValue({ id: 44, status: 'ACTIVE' });
     mockRejectAdminSubscription.mockResolvedValue({ id: 44, status: 'REJECTED' });
     mockSuspendAdminBusiness.mockResolvedValue({ id: 21, status: 'CLOSED' });
@@ -229,6 +232,24 @@ describe('AdminPanel', () => {
 
     await waitFor(() => expect(mockRejectAdminAd).toHaveBeenCalledWith(7, 'محتوای نامناسب'));
     expect(promptSpy).toHaveBeenCalled();
+  });
+
+  it('requires confirmation before a manager deletes a user ad', async () => {
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<AdminPanel />);
+    fireEvent.click(await screen.findByTestId('delete-ad-7'));
+
+    await waitFor(() => expect(mockDeleteAdminAd).toHaveBeenCalledWith(7));
+    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('آگهی «آگهی در انتظار» حذف شود؟'));
+    expect(await screen.findByRole('status')).toHaveTextContent('آگهی حذف شد');
+  });
+
+  it('does not delete an ad when the manager cancels confirmation', async () => {
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<AdminPanel />);
+    fireEvent.click(await screen.findByTestId('delete-ad-7'));
+
+    expect(mockDeleteAdminAd).not.toHaveBeenCalled();
   });
 
   it('does nothing when the operator cancels the rejection reason', async () => {

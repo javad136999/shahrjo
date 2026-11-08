@@ -13,6 +13,7 @@ function makePrisma() {
     city: { findFirst: jest.fn(), update: jest.fn() },
     adminUser: { findUnique: jest.fn() },
     auditLog: { create: jest.fn() },
+    notification: { create: jest.fn() },
     $transaction: jest.fn(),
   };
   prisma.$transaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma));
@@ -30,7 +31,8 @@ function makeService(scope: { role: string; provinceId: number | null; cityId: n
   );
   prisma.adminUser.findUnique.mockResolvedValue({ id: 77, isActive: true });
   prisma.user.count.mockResolvedValue(42);
-  prisma.auditLog.create.mockResolvedValue({});
+    prisma.auditLog.create.mockResolvedValue({});
+    prisma.notification.create.mockResolvedValue({});
   return { service, prisma, uploads };
 }
 
@@ -142,6 +144,37 @@ describe('AdminService ad moderation', () => {
 
     await expect(service.approveAd(admin, 9)).rejects.toMatchObject({ status: 404 });
     expect(prisma.ad.update).not.toHaveBeenCalled();
+  });
+
+  it('soft-deletes an ad in the operator scope, purges its images and audits the action', async () => {
+    const { service, prisma, uploads } = makeService({ role: 'CITY_ADMIN', provinceId: null, cityId: 5 });
+    prisma.ad.findFirst.mockResolvedValue({ id: 9, title: 'آگهی نمونه', userId: 22 });
+    prisma.ad.update.mockResolvedValue({ id: 9, status: 'DELETED' });
+    uploads.purgeEntity.mockResolvedValue({ removed: 2 });
+
+    const result = await service.deleteAd(admin, 9);
+
+    expect(prisma.ad.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 9, cityId: 5, status: { not: 'DELETED' } },
+    }));
+    expect(prisma.ad.update).toHaveBeenCalledWith({ where: { id: 9 }, data: { status: 'DELETED' } });
+    expect(uploads.purgeEntity).toHaveBeenCalledWith('AD', 9);
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ action: 'ad.delete', entityId: '9', after: expect.objectContaining({ ownerId: 22, removedFiles: 2 }) }),
+    }));
+    expect(prisma.notification.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ userId: 22, type: 'SYSTEM', title: 'آگهی شما حذف شد' }),
+    }));
+    expect(result).toEqual({ id: 9, status: 'DELETED', removedFiles: 2 });
+  });
+
+  it('does not delete an ad outside the operator scope', async () => {
+    const { service, prisma, uploads } = makeService({ role: 'CITY_ADMIN', provinceId: null, cityId: 5 });
+    prisma.ad.findFirst.mockResolvedValue(null);
+
+    await expect(service.deleteAd(admin, 9)).rejects.toMatchObject({ status: 404 });
+    expect(prisma.ad.update).not.toHaveBeenCalled();
+    expect(uploads.purgeEntity).not.toHaveBeenCalled();
   });
 });
 

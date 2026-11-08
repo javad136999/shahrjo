@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import {
   ApiError,
   approveAdminAd,
+  deleteAdminAd,
   approveAdminBusiness,
   approveAdminSubscription,
   getAdminAds,
@@ -448,6 +449,20 @@ export function AdminPanel() {
                       رد
                     </button>
                   </>
+                )}
+                {'title' in row && row.status !== 'DELETED' && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost admin-action admin-action--err"
+                    disabled={busyId === row.id}
+                    onClick={async () => {
+                      if (!window.confirm(`آگهی «${row.title}» حذف شود؟ از دیوار و فهرست آگهی‌ها برداشته می‌شود و عکس‌هایش پاک خواهند شد.`)) return;
+                      await run(() => deleteAdminAd(row.id), 'آگهی حذف شد و از فهرست عمومی برداشته شد', row.id);
+                    }}
+                    data-testid={`delete-ad-${row.id}`}
+                  >
+                    🗑 حذف آگهی
+                  </button>
                 )}
                 {'slug' in row && row.status === 'PENDING' && (
                   <>
