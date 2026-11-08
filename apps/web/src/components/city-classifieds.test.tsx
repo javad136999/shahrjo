@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { CityClassifieds } from '@/components/city-classifieds';
 
 const mockGetAdCategories = jest.fn();
@@ -6,6 +6,9 @@ const mockGetCityAdNeighborhoods = jest.fn();
 const mockGetCityAds = jest.fn();
 const mockGetCityBusinesses = jest.fn();
 const mockGetShowcase = jest.fn();
+const mockGetTokens = jest.fn();
+const mockGetProfile = jest.fn();
+const mockDeleteAdminAd = jest.fn();
 
 jest.mock('@/lib/api', () => ({
   getAdCategories: (...args: unknown[]) => mockGetAdCategories(...args),
@@ -13,6 +16,9 @@ jest.mock('@/lib/api', () => ({
   getCityAds: (...args: unknown[]) => mockGetCityAds(...args),
   getCityBusinesses: (...args: unknown[]) => mockGetCityBusinesses(...args),
   getShowcase: (...args: unknown[]) => mockGetShowcase(...args),
+  getTokens: () => mockGetTokens(),
+  getProfile: () => mockGetProfile(),
+  deleteAdminAd: (...args: unknown[]) => mockDeleteAdminAd(...args),
 }));
 
 const ad = (id: number, title: string) => ({
@@ -48,6 +54,9 @@ describe('CityClassifieds (دیوار شهر)', () => {
     mockGetCityAds.mockResolvedValue([ad(1, 'دوچرخه شهری'), ad(2, 'گوشی سالم')]);
     mockGetCityBusinesses.mockResolvedValue([freeBusiness]);
     mockGetShowcase.mockResolvedValue([promo]);
+    mockGetTokens.mockReturnValue(null);
+    mockGetProfile.mockResolvedValue({ roles: ['USER'] });
+    mockDeleteAdminAd.mockResolvedValue({ id: 1, status: 'DELETED', removedFiles: 1 });
   });
 
   it('lists the city ads as vertical rows and keeps ad posting at the bottom action', async () => {
@@ -102,5 +111,30 @@ describe('CityClassifieds (دیوار شهر)', () => {
     expect(dailyBusinessAd).toHaveTextContent('نانوایی محلی');
     expect(dailyBusinessAd).not.toHaveTextContent('تبلیغ امروز');
     expect(screen.queryByTestId('classifieds-daily-promo')).not.toBeInTheDocument();
+  });
+
+  it('shows a delete button beside each ad for managers and refreshes after confirmed deletion', async () => {
+    mockGetTokens.mockReturnValue({ accessToken: 'admin-token', refreshToken: 'refresh-token' });
+    mockGetProfile.mockResolvedValue({ roles: ['CITY_ADMIN'] });
+    mockGetCityAds.mockResolvedValueOnce([ad(1, 'دوچرخه شهری')]).mockResolvedValueOnce([]);
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<CityClassifieds city={{ id: 1, slug: 'sample-city', name: 'شهر نمونه' }} />);
+
+    const deleteButton = await screen.findByTestId('admin-delete-ad-1');
+    expect(screen.getByTestId('classified-row-1')).toContainElement(deleteButton);
+    fireEvent.click(deleteButton);
+
+    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('آگهی «دوچرخه شهری» حذف شود؟'));
+    await waitFor(() => expect(mockDeleteAdminAd).toHaveBeenCalledWith(1));
+    await waitFor(() => expect(screen.queryByTestId('admin-delete-ad-1')).not.toBeInTheDocument());
+  });
+
+  it('does not show the inline delete button to regular users', async () => {
+    mockGetTokens.mockReturnValue({ accessToken: 'user-token', refreshToken: 'refresh-token' });
+    mockGetProfile.mockResolvedValue({ roles: ['USER'] });
+    render(<CityClassifieds city={{ id: 1, slug: 'sample-city', name: 'شهر نمونه' }} />);
+
+    await screen.findByTestId('classified-card-1');
+    expect(screen.queryByTestId('admin-delete-ad-1')).not.toBeInTheDocument();
   });
 });

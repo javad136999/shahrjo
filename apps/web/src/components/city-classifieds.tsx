@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { getAdCategories, getCityAdNeighborhoods, getCityAds, getCityBusinesses, getShowcase } from '@/lib/api';
+import { deleteAdminAd, getAdCategories, getCityAdNeighborhoods, getCityAds, getCityBusinesses, getProfile, getShowcase, getTokens } from '@/lib/api';
 import { formatPrice, thumbFallback, thumbUrlFor } from '@/lib/format';
 import type { AdCategoryOption, AdItem, BusinessItem, ShowcaseItem } from '@/lib/types';
 
@@ -48,9 +48,25 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
   const [dailyBusinessAd, setDailyBusinessAd] = useState<BusinessItem | null>(null);
   const [dailyPromo, setDailyPromo] = useState<ShowcaseItem | null>(null);
   const [businessesLoaded, setBusinessesLoaded] = useState(false);
+  const [canManageAds, setCanManageAds] = useState(false);
+  const [refreshAds, setRefreshAds] = useState(0);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortMode>('newest');
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    if (!getTokens()) {
+      setCanManageAds(false);
+      return () => { alive = false; };
+    }
+    getProfile().then((profile) => {
+      if (alive) setCanManageAds(profile.roles.some((role) => ['SUPER_ADMIN', 'PROVINCE_ADMIN', 'CITY_ADMIN', 'MODERATOR'].includes(role)));
+    }).catch(() => {
+      if (alive) setCanManageAds(false);
+    });
+    return () => { alive = false; };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -128,7 +144,7 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
     return () => {
       alive = false;
     };
-  }, [city.slug, selectedCategory, selectedNeighborhood, minPrice, maxPrice]);
+  }, [city.slug, selectedCategory, selectedNeighborhood, minPrice, maxPrice, refreshAds]);
 
   const visibleAds = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
@@ -175,6 +191,17 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
     if (type === 'neighborhood') setSelectedNeighborhood('');
     if (type === 'min') { setMinPrice(''); setDraftMinPrice(''); }
     if (type === 'max') { setMaxPrice(''); setDraftMaxPrice(''); }
+  };
+
+  const removeAd = async (ad: AdItem) => {
+    if (!window.confirm(`آگهی «${ad.title}» حذف شود؟ از دیوار و فهرست آگهی‌ها برداشته می‌شود.`)) return;
+    setError(null);
+    try {
+      await deleteAdminAd(ad.id);
+      setRefreshAds((version) => version + 1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'حذف آگهی ناموفق بود');
+    }
   };
 
   return (
@@ -327,23 +354,37 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
             </Link>
           )}
           {visibleAds.map((ad) => (
-            <Link href={`/ad/${ad.id}`} className="classified-card" key={ad.id} data-testid={`classified-card-${ad.id}`}>
-              <div className="classified-card__media">
-                {ad.coverUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- API media URL
-                  <img src={thumbUrlFor(ad.coverUrl) ?? ad.coverUrl} alt="" loading="lazy" onError={thumbFallback(ad.coverUrl)} />
-                ) : (
-                  <span aria-hidden>{ad.category.icon ?? '◆'}</span>
-                )}
-                <span className="classified-card__category">{ad.category.icon ?? '◆'} {ad.category.name}</span>
-              </div>
-              <div className="classified-card__body">
-                <h2>{ad.title}</h2>
-                <p>{ad.viewCount.toLocaleString('fa-IR')} بازدید · آگهی فعال در {city.name}</p>
-                <strong>{ad.price !== null ? formatPrice(ad.price) : 'توافقی'}</strong>
-                <small>{ad.neighborhood ? `${ad.neighborhood} · ` : ''}{city.name} · مشاهده جزئیات آگهی ←</small>
-              </div>
-            </Link>
+            <article className="classifieds__ad-row" key={ad.id} data-testid={`classified-row-${ad.id}`}>
+              <Link href={`/ad/${ad.id}`} className="classified-card" data-testid={`classified-card-${ad.id}`}>
+                <div className="classified-card__media">
+                  {ad.coverUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- API media URL
+                    <img src={thumbUrlFor(ad.coverUrl) ?? ad.coverUrl} alt="" loading="lazy" onError={thumbFallback(ad.coverUrl)} />
+                  ) : (
+                    <span aria-hidden>{ad.category.icon ?? '◆'}</span>
+                  )}
+                  <span className="classified-card__category">{ad.category.icon ?? '◆'} {ad.category.name}</span>
+                </div>
+                <div className="classified-card__body">
+                  <h2>{ad.title}</h2>
+                  <p>{ad.viewCount.toLocaleString('fa-IR')} بازدید · آگهی فعال در {city.name}</p>
+                  <strong>{ad.price !== null ? formatPrice(ad.price) : 'توافقی'}</strong>
+                  <small>{ad.neighborhood ? `${ad.neighborhood} · ` : ''}{city.name} · مشاهده جزئیات آگهی ←</small>
+                </div>
+              </Link>
+              {canManageAds && (
+                <button
+                  type="button"
+                  className="classifieds__admin-delete"
+                  aria-label={`حذف آگهی ${ad.title}`}
+                  title="حذف آگهی"
+                  data-testid={`admin-delete-ad-${ad.id}`}
+                  onClick={() => void removeAd(ad)}
+                >
+                  🗑<span>حذف</span>
+                </button>
+              )}
+            </article>
           ))}
         </section>
       )}

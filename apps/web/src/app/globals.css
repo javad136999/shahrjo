@@ -9424,6 +9424,12 @@ button.pill {
 .classifieds__empty p { margin: 6px 0 0; color: #718679; font-size: 13px; }
 .classifieds__empty .btn { margin-inline-start: auto; white-space: nowrap; }
 .classifieds__grid { display: flex; flex-direction: column; gap: 10px; padding-bottom: 24px; }
+.classifieds__ad-row { display: flex; align-items: stretch; gap: 8px; min-width: 0; }
+.classifieds__ad-row > .classified-card { flex: 1; }
+.classifieds__admin-delete { display: flex; flex: 0 0 52px; align-items: center; justify-content: center; flex-direction: column; gap: 3px; align-self: center; min-height: 48px; border: 1px solid #f0d6d2; border-radius: 13px; background: #fff8f7; color: #b4473c; cursor: pointer; font: inherit; font-size: 17px; transition: background .15s ease, border-color .15s ease, transform .15s ease; }
+.classifieds__admin-delete span { font-size: 10px; font-weight: 850; }
+.classifieds__admin-delete:hover { transform: translateY(-1px); border-color: #dca29b; background: #fff0ed; }
+.classifieds__admin-delete:focus-visible { outline: 3px solid rgb(180 71 60 / 25%); outline-offset: 2px; }
 .classified-card { display: flex; min-width: 0; min-height: 122px; flex-direction: row; overflow: hidden; border: 1px solid #e0e9e2; border-radius: 17px; background: #fff; color: inherit; box-shadow: 0 9px 24px -22px #17352a; transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
 .classified-card:hover { border-color: #a8ceb5; color: inherit; text-decoration: none; transform: translateY(-2px); box-shadow: 0 16px 28px -21px #17352a; }
 .classified-card__media { position: relative; flex: 0 0 clamp(112px, 20vw, 190px); min-height: 122px; overflow: hidden; background: linear-gradient(135deg, #eaf5ed, #f7f8ed); }
