@@ -9468,21 +9468,15 @@ button.pill {
 /* User-friendly classifieds controls */
 .classifieds__category-panel { margin: 3px 0 15px; padding: 14px; border: 1px solid #dce9df; border-radius: 20px; background: #fff; box-shadow: 0 10px 24px -25px #17352a; }
 .classifieds__category-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 11px; }
-.classifieds__category-head > div { display: flex; flex-direction: column; gap: 1px; }
 .classifieds__category-head strong { color: #214c38; font-size: 14px; }
-.classifieds__category-head small { color: #809589; font-size: 11px; }
-.classifieds__category-search { display: flex; align-items: center; gap: 5px; width: min(210px, 45%); min-height: 36px; padding: 0 9px; border: 1px solid #dbe8de; border-radius: 10px; background: #f8fbf8; color: #779184; }
-.classifieds__category-search span { font-size: 18px; }
-.classifieds__category-search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: #244b37; font: inherit; font-size: 11px; }
 .classifieds__category-panel .classifieds__categories { padding: 0; margin: 0; }
-.classifieds__no-category { padding: 9px 4px; color: #84958b; font-size: 12px; }
 .classifieds__active-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin: -3px 0 15px; color: #6e8275; font-size: 11px; }
 .classifieds__active-filters button { min-height: 29px; padding: 3px 9px; border: 1px solid #c9e2d1; border-radius: 999px; background: #edf8f0; color: #17664b; cursor: pointer; font: inherit; font-size: 11px; }
 .classifieds__active-filters .classifieds__active-clear { border-color: transparent; background: transparent; color: #a15a45; font-weight: 800; }
 .classifieds__advanced-actions { display: flex; align-items: center; gap: 7px; }
 .classifieds__apply-filters { min-height: 42px; padding: 0 15px; border: 0; border-radius: 10px; background: #16795d; color: #fff; cursor: pointer; font: inherit; font-size: 11px; font-weight: 900; white-space: nowrap; }
 .classifieds__apply-filters:hover { background: #0d624b; }
-@media (max-width: 640px) { .classifieds__category-panel { padding: 12px 10px; border-radius: 17px; } .classifieds__category-head { align-items: flex-start; flex-direction: column; } .classifieds__category-search { width: 100%; } .classifieds__active-filters { margin-top: 0; } .classifieds__advanced-actions { justify-content: space-between; } .classifieds__advanced-actions button { flex: 1; } }
+@media (max-width: 640px) { .classifieds__category-panel { padding: 12px 10px; border-radius: 17px; } .classifieds__category-head { align-items: flex-start; } .classifieds__active-filters { margin-top: 0; } .classifieds__advanced-actions { justify-content: space-between; } .classifieds__advanced-actions button { flex: 1; } }
 
 /* Center the fixed action in either writing direction. */
 @media (max-width: 640px) {
@@ -9494,33 +9488,73 @@ button.pill {
   .classifieds__floating-post-btn { bottom: calc(72px + env(safe-area-inset-bottom)); }
 }
 
-/* Compact city wall top area; the daily promo card styles above stay unchanged. */
-.classifieds__hero--compact {
-  min-height: 52px;
-  justify-content: flex-start;
-  padding: 9px 15px;
+/* Compact city-wall entrance: search first, then the selectable categories. */
+.classifieds__search { margin: 0 0 8px; }
+.classifieds__searchbox {
+  min-height: 48px;
+  border-color: #cfdfd4;
   border-radius: 15px;
-  box-shadow: none;
-  background: linear-gradient(110deg, #f6fbf7, #edf6ef);
+  background: linear-gradient(110deg, #fff, #f8fcf9);
+  box-shadow: 0 8px 20px -17px rgb(23 75 53 / 70%);
+  transition: border-color .16s ease, box-shadow .16s ease;
 }
-.classifieds__hero--compact .classifieds__hero-copy {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 5px 11px;
+.classifieds__searchbox:focus-within {
+  border-color: #338b68;
+  box-shadow: 0 0 0 3px rgb(22 121 93 / 10%), 0 8px 20px -17px rgb(23 75 53 / 70%);
 }
-.classifieds__hero--compact .classifieds__eyebrow {
-  margin: 0;
+.classifieds__category-panel {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-color: #e0ebe3;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #fbfdfb, #f3f8f4);
+  box-shadow: 0 8px 18px -18px rgb(23 75 53 / 65%);
+}
+.classifieds__category-head { margin-bottom: 7px; }
+.classifieds__category-head strong { font-size: 12px; font-weight: 900; }
+.classifieds__category-panel .classifieds__categories {
+  gap: 7px;
+  padding: 0 0 2px;
+  scrollbar-width: none;
+}
+.classifieds__category-panel .classifieds__categories::-webkit-scrollbar { display: none; }
+.classifieds__category-panel .classifieds__categories button {
+  min-height: 36px;
+  gap: 7px;
+  padding: 4px 10px;
+  border-color: #dce8df;
+  border-radius: 999px;
+  background: #fff;
   font-size: 11px;
+  transition: background .15s ease, border-color .15s ease, transform .15s ease;
 }
-.classifieds__hero--compact h1 {
-  color: #214c38;
-  font-size: 15px;
-  font-weight: 850;
-  letter-spacing: 0;
+.classifieds__category-panel .classifieds__categories button:hover { border-color: #79b394; transform: translateY(-1px); }
+.classifieds__category-panel .classifieds__categories button span {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  font-size: 14px;
 }
-.classifieds__search { margin-top: 10px; }
+.classifieds__category-panel .classifieds__categories button.is-active {
+  border-color: #16795d;
+  background: linear-gradient(135deg, #198261, #116a4d);
+  color: #fff;
+  box-shadow: 0 7px 14px -11px #0d624b;
+}
+.classifieds__toolbar { margin-top: 0; }
+.classifieds__toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.classifieds__toolbar-actions .classifieds__sort { min-height: 36px; border-radius: 10px; }
+.classifieds__toolbar-actions .classifieds__advanced-toggle { min-height: 36px; padding: 0 10px; border-radius: 10px; }
 @media (max-width: 640px) {
-  .classifieds__hero--compact { min-height: 44px; padding: 7px 11px; border-radius: 12px; }
-  .classifieds__hero--compact h1 { font-size: 13px; }
+  .classifieds__search { margin-bottom: 7px; }
+  .classifieds__searchbox { min-height: 44px; padding-inline: 12px; border-radius: 13px; }
+  .classifieds__category-panel { margin-bottom: 8px; padding: 8px 9px; border-radius: 14px; }
+  .classifieds__category-head { margin-bottom: 6px; }
+  .classifieds__category-panel .classifieds__categories { gap: 6px; }
+  .classifieds__category-panel .classifieds__categories button { min-height: 33px; padding: 3px 8px; }
+  .classifieds__category-panel .classifieds__categories button span { width: 23px; height: 23px; }
+  .classifieds__toolbar { align-items: center; flex-direction: row; flex-wrap: wrap; margin-bottom: 8px; }
+  .classifieds__toolbar-actions { width: 100%; justify-content: space-between; gap: 6px; }
+  .classifieds__toolbar-actions .classifieds__sort { min-height: 34px; padding-inline: 8px; }
+  .classifieds__toolbar-actions .classifieds__advanced-toggle { min-height: 34px; }
 }

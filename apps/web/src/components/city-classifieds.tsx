@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { getAdCategories, getCityAdNeighborhoods, getCityAds, getCityBusinesses } from '@/lib/api';
+import { getAdCategories, getCityAdNeighborhoods, getCityAds, getCityBusinesses, getShowcase } from '@/lib/api';
 import { formatPrice, thumbFallback, thumbUrlFor } from '@/lib/format';
-import type { AdCategoryOption, AdItem, BusinessItem } from '@/lib/types';
+import type { AdCategoryOption, AdItem, BusinessItem, ShowcaseItem } from '@/lib/types';
 
 export interface CityClassifiedsProps {
   city: { id: number; slug: string; name: string };
@@ -12,7 +12,7 @@ export interface CityClassifiedsProps {
 
 type SortMode = 'newest' | 'oldest' | 'price-low' | 'price-high';
 
-function dailyBusiness(items: BusinessItem[], citySlug: string): BusinessItem | null {
+function dailyChoice<T>(items: T[], citySlug: string): T | null {
   if (!items.length) return null;
   const day = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -20,6 +20,14 @@ function dailyBusiness(items: BusinessItem[], citySlug: string): BusinessItem | 
   const cityHash = [...citySlug].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7);
   const dayNumber = Number(day.replace(/-/g, ''));
   return items[(cityHash + dayNumber) % items.length];
+}
+
+function dailyBusiness(items: BusinessItem[], citySlug: string): BusinessItem | null {
+  return dailyChoice(items.filter((item) => item.subscriptionTier === 'FREE'), citySlug);
+}
+
+function dailyGoldPromo(items: ShowcaseItem[], citySlug: string): ShowcaseItem | null {
+  return dailyChoice(items.filter((item) => item.subscriptionTier === 'GOLD'), citySlug);
 }
 
 /**
@@ -35,18 +43,38 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
   const [maxPrice, setMaxPrice] = useState('');
   const [draftMinPrice, setDraftMinPrice] = useState('');
   const [draftMaxPrice, setDraftMaxPrice] = useState('');
-  const [categoryQuery, setCategoryQuery] = useState('');
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [ads, setAds] = useState<AdItem[] | null>(null);
-  const [dailyPromo, setDailyPromo] = useState<BusinessItem | null>(null);
+  const [dailyBusinessAd, setDailyBusinessAd] = useState<BusinessItem | null>(null);
+  const [dailyPromo, setDailyPromo] = useState<ShowcaseItem | null>(null);
+  const [businessesLoaded, setBusinessesLoaded] = useState(false);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortMode>('newest');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
+    setBusinessesLoaded(false);
     getCityBusinesses(city.slug, 200)
-      .then((items) => { if (alive) setDailyPromo(dailyBusiness(items, city.slug)); })
+      .then((items) => {
+        if (alive) {
+          setDailyBusinessAd(dailyBusiness(items, city.slug));
+          setBusinessesLoaded(true);
+        }
+      })
+      .catch(() => {
+        if (alive) {
+          setDailyBusinessAd(null);
+          setBusinessesLoaded(true);
+        }
+      });
+    return () => { alive = false; };
+  }, [city.slug]);
+
+  useEffect(() => {
+    let alive = true;
+    getShowcase(city.slug, 100)
+      .then((items) => { if (alive) setDailyPromo(dailyGoldPromo(items, city.slug)); })
       .catch(() => { if (alive) setDailyPromo(null); });
     return () => { alive = false; };
   }, [city.slug]);
@@ -116,10 +144,18 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
     });
   }, [ads, query, sort]);
 
+  const visibleDailyBusiness = useMemo(() => {
+    if (!dailyBusinessAd) return null;
+    const normalized = query.trim().toLocaleLowerCase();
+    const searchable = `${dailyBusinessAd.name} ${dailyBusinessAd.category.name} ${dailyBusinessAd.address ?? ''}`.toLocaleLowerCase();
+    if (normalized && !searchable.includes(normalized)) return null;
+    if (selectedCategory && dailyBusinessAd.category.slug !== selectedCategory) return null;
+    if (selectedNeighborhood && !(dailyBusinessAd.address ?? '').includes(selectedNeighborhood)) return null;
+    if (minPrice || maxPrice) return null;
+    return dailyBusinessAd;
+  }, [dailyBusinessAd, query, selectedCategory, selectedNeighborhood, minPrice, maxPrice]);
+
   const activeCategory = categories.find((category) => category.slug === selectedCategory);
-  const filteredCategories = categories.filter((category) =>
-    `${category.name} ${category.slug}`.toLocaleLowerCase().includes(categoryQuery.trim().toLocaleLowerCase()),
-  );
   const activeFilterCount = [selectedCategory, selectedNeighborhood, minPrice, maxPrice].filter(Boolean).length;
   const applyAdvancedFilters = () => {
     setMinPrice(draftMinPrice);
@@ -133,7 +169,6 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
     setMaxPrice('');
     setDraftMinPrice('');
     setDraftMaxPrice('');
-    setCategoryQuery('');
   };
   const removeFilter = (type: 'category' | 'neighborhood' | 'min' | 'max') => {
     if (type === 'category') setSelectedCategory('');
@@ -144,14 +179,7 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
 
   return (
     <main className="classifieds" data-testid="city-classifieds">
-      <section className="classifieds__hero classifieds__hero--compact" aria-label={`آگهی‌های شهر ${city.name}`}>
-        <div className="classifieds__hero-copy">
-          <span className="classifieds__eyebrow">شهر {city.name}</span>
-          <h1>آگهی‌های محلی</h1>
-        </div>
-      </section>
-
-      <section className="classifieds__search" aria-label="جست‌وجو و فیلتر آگهی‌ها">
+      <section className="classifieds__search">
         <label className="classifieds__searchbox">
           <span aria-hidden>⌕</span>
           <input
@@ -162,23 +190,64 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
           />
           {query && <button type="button" onClick={() => setQuery('')} aria-label="پاک کردن جست‌وجو">×</button>}
         </label>
-        <label className="classifieds__sort">
-          <span>مرتب‌سازی</span>
-          <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)} aria-label="مرتب‌سازی آگهی‌ها">
-            <option value="newest">جدیدترین</option>
-            <option value="oldest">قدیمی‌ترین</option>
-            <option value="price-low">ارزان‌ترین</option>
-            <option value="price-high">گران‌ترین</option>
-          </select>
-        </label>
-        <button type="button" className={`classifieds__advanced-toggle ${advancedOpen ? 'is-active' : ''}`} onClick={() => {
-          setDraftMinPrice(minPrice);
-          setDraftMaxPrice(maxPrice);
-          setAdvancedOpen((open) => !open);
-        }}>
-          ☷ فیلترها {activeFilterCount > 0 && <b>{activeFilterCount.toLocaleString('fa-IR')}</b>}
-        </button>
       </section>
+
+      <section className="classifieds__category-panel" aria-label="دسته‌بندی آگهی‌ها">
+        <div className="classifieds__category-head">
+          <strong>دسته‌بندی آگهی‌ها</strong>
+        </div>
+        <div className="classifieds__categories">
+          <button type="button" className={!selectedCategory ? 'is-active' : ''} onClick={() => setSelectedCategory('')}>
+            <span aria-hidden>✨</span><b>همه</b>
+          </button>
+          {categories.map((category) => (
+          <button
+            type="button"
+            key={category.slug}
+            className={selectedCategory === category.slug ? 'is-active' : ''}
+            onClick={() => setSelectedCategory(category.slug)}
+          >
+            <span aria-hidden>{category.icon ?? '◆'}</span>
+            <b>{category.name}</b>
+          </button>
+          ))}
+        </div>
+      </section>
+
+      {activeFilterCount > 0 && <div className="classifieds__active-filters" aria-label="فیلترهای فعال">
+        <span>فیلترهای فعال:</span>
+        {activeCategory && <button type="button" onClick={() => removeFilter('category')}>{activeCategory.name} ×</button>}
+        {selectedNeighborhood && <button type="button" onClick={() => removeFilter('neighborhood')}>{selectedNeighborhood} ×</button>}
+        {minPrice && <button type="button" onClick={() => removeFilter('min')}>از {minPrice} ×</button>}
+        {maxPrice && <button type="button" onClick={() => removeFilter('max')}>تا {maxPrice} ×</button>}
+        <button type="button" className="classifieds__active-clear" onClick={clearFilters}>حذف همه</button>
+      </div>}
+
+      <div className="classifieds__toolbar">
+        <div>
+          <strong>{activeCategory ? `آگهی‌های ${activeCategory.name}` : 'همه آگهی‌های شهر'}</strong>
+          {ads && <span>{(visibleAds.length + (visibleDailyBusiness ? 1 : 0)).toLocaleString('fa-IR')} آگهی</span>}
+        </div>
+        <div className="classifieds__toolbar-actions">
+          <label className="classifieds__sort">
+            <span>مرتب‌سازی</span>
+            <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)} aria-label="مرتب‌سازی آگهی‌ها">
+              <option value="newest">جدیدترین</option>
+              <option value="oldest">قدیمی‌ترین</option>
+              <option value="price-low">ارزان‌ترین</option>
+              <option value="price-high">گران‌ترین</option>
+            </select>
+          </label>
+          <button type="button" className={`classifieds__advanced-toggle ${advancedOpen ? 'is-active' : ''}`} onClick={() => {
+            setDraftMinPrice(minPrice);
+            setDraftMaxPrice(maxPrice);
+            setAdvancedOpen((open) => !open);
+          }}>
+            ☷ فیلترها {activeFilterCount > 0 && <b>{activeFilterCount.toLocaleString('fa-IR')}</b>}
+          </button>
+          <Link href="/businesses" className="classifieds__business-link">کسب‌وکارهای شهر ←</Link>
+        </div>
+      </div>
 
       {advancedOpen && (
         <section className="classifieds__advanced" aria-label="فیلترهای پیشرفته آگهی">
@@ -204,47 +273,6 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
         </section>
       )}
 
-      <section className="classifieds__category-panel" aria-label="دسته‌بندی آگهی‌ها">
-        <div className="classifieds__category-head">
-          <div><strong>دسته‌بندی آگهی‌ها</strong><small>دسته موردنظر را انتخاب کنید</small></div>
-          {categories.length > 5 && <label className="classifieds__category-search"><span aria-hidden>⌕</span><input value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder="جست‌وجوی دسته…" aria-label="جست‌وجوی دسته‌بندی" /></label>}
-        </div>
-        <div className="classifieds__categories">
-        <button type="button" className={!selectedCategory ? 'is-active' : ''} onClick={() => setSelectedCategory('')}>
-          <span aria-hidden>✨</span><b>همه</b>
-        </button>
-        {filteredCategories.map((category) => (
-          <button
-            type="button"
-            key={category.slug}
-            className={selectedCategory === category.slug ? 'is-active' : ''}
-            onClick={() => setSelectedCategory(category.slug)}
-          >
-            <span aria-hidden>{category.icon ?? '◆'}</span>
-            <b>{category.name}</b>
-          </button>
-        ))}
-        {filteredCategories.length === 0 && <span className="classifieds__no-category">دسته‌ای پیدا نشد</span>}
-        </div>
-      </section>
-
-      {activeFilterCount > 0 && <div className="classifieds__active-filters" aria-label="فیلترهای فعال">
-        <span>فیلترهای فعال:</span>
-        {activeCategory && <button type="button" onClick={() => removeFilter('category')}>{activeCategory.name} ×</button>}
-        {selectedNeighborhood && <button type="button" onClick={() => removeFilter('neighborhood')}>{selectedNeighborhood} ×</button>}
-        {minPrice && <button type="button" onClick={() => removeFilter('min')}>از {minPrice} ×</button>}
-        {maxPrice && <button type="button" onClick={() => removeFilter('max')}>تا {maxPrice} ×</button>}
-        <button type="button" className="classifieds__active-clear" onClick={clearFilters}>حذف همه</button>
-      </div>}
-
-      <div className="classifieds__toolbar">
-        <div>
-          <strong>{activeCategory ? `آگهی‌های ${activeCategory.name}` : 'همه آگهی‌های شهر'}</strong>
-          {ads && <span>{visibleAds.length.toLocaleString('fa-IR')} آگهی</span>}
-        </div>
-        <Link href="/businesses" className="classifieds__business-link">کسب‌وکارهای شهر ←</Link>
-      </div>
-
       {dailyPromo && (
         <Link
           href={`/business/${dailyPromo.id}`}
@@ -266,9 +294,9 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
 
       {error && <div className="banner banner--error" role="alert">{error}</div>}
 
-      {ads === null ? (
+      {ads === null || (visibleAds.length === 0 && !visibleDailyBusiness && !businessesLoaded) ? (
         <div className="classifieds__loading" aria-busy="true">در حال دریافت آگهی‌های {city.name}…</div>
-      ) : visibleAds.length === 0 ? (
+      ) : visibleAds.length === 0 && !visibleDailyBusiness ? (
         <section className="classifieds__empty" data-testid="classifieds-empty">
           <span aria-hidden>{activeCategory?.icon ?? '📭'}</span>
           <div>
@@ -279,6 +307,25 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
         </section>
       ) : (
         <section className="classifieds__grid" data-testid="classifieds-grid">
+          {visibleDailyBusiness && (
+            <Link href={`/business/${visibleDailyBusiness.id}`} className="classified-card" data-testid="daily-business-ad">
+              <div className="classified-card__media">
+                {visibleDailyBusiness.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- public business logo URL
+                  <img src={thumbUrlFor(visibleDailyBusiness.logoUrl) ?? visibleDailyBusiness.logoUrl} alt="" loading="lazy" onError={thumbFallback(visibleDailyBusiness.logoUrl)} />
+                ) : (
+                  <span aria-hidden>{visibleDailyBusiness.category.icon ?? '🏪'}</span>
+                )}
+                <span className="classified-card__category">{visibleDailyBusiness.category.icon ?? '◆'} {visibleDailyBusiness.category.name}</span>
+              </div>
+              <div className="classified-card__body">
+                <h2>{visibleDailyBusiness.name}</h2>
+                <p>کسب‌وکار محلی ثبت‌شده · {visibleDailyBusiness.category.name}</p>
+                <strong>مشاهدهٔ اطلاعات کسب‌وکار</strong>
+                <small>{visibleDailyBusiness.address ? `${visibleDailyBusiness.address} · ` : ''}{city.name} · مشاهده جزئیات ←</small>
+              </div>
+            </Link>
+          )}
           {visibleAds.map((ad) => (
             <Link href={`/ad/${ad.id}`} className="classified-card" key={ad.id} data-testid={`classified-card-${ad.id}`}>
               <div className="classified-card__media">
