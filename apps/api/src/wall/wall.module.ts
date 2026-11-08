@@ -10,6 +10,6 @@ import { WallRepostScheduler } from './wall.scheduler';
   imports: [RbacModule, UploadsModule],
   controllers: [WallController],
   providers: [WallService, WallRepostScheduler],
-  exports: [WallService],
+  exports: [WallService, WallRepostScheduler],
 })
 export class WallModule {}

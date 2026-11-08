@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import type { PrismaService } from '../prisma/prisma.service';
+import type { WallRepostScheduler } from '../wall/wall.scheduler';
 import { ServiceListingsService } from './service-listings.service';
 
 const user = { id: 7, cityId: 5, phone: '09120000000' } as User;
@@ -24,10 +25,12 @@ function makePrisma() {
 describe('ServiceListingsService', () => {
   let prisma: ReturnType<typeof makePrisma>;
   let service: ServiceListingsService;
+  let wallRepost: { publishServiceListingImmediately: jest.Mock };
 
   beforeEach(() => {
     prisma = makePrisma();
-    service = new ServiceListingsService(prisma as unknown as PrismaService);
+    wallRepost = { publishServiceListingImmediately: jest.fn().mockResolvedValue(1) };
+    service = new ServiceListingsService(prisma as unknown as PrismaService, wallRepost as unknown as WallRepostScheduler);
     prisma.city.findFirst.mockResolvedValue({ id: 5 });
     prisma.businessCategory.findFirst.mockResolvedValue({ id: 90 });
     prisma.businessCategory.findMany.mockResolvedValue([{ id: 90, slug: 'svc_ac_repair' }, { id: 91, slug: 'svc_plumber' }]);
@@ -76,6 +79,19 @@ describe('ServiceListingsService', () => {
       }),
     );
     expect('business' in prisma).toBe(false);
+    expect(wallRepost.publishServiceListingImmediately).not.toHaveBeenCalled();
+  });
+
+  it('publishes a new listing immediately on one of the four selected city walls', async () => {
+    await service.create(user, { ...dto, citySlug: 'jam' });
+
+    expect(wallRepost.publishServiceListingImmediately).toHaveBeenCalledWith(11);
+  });
+
+  it('keeps a successful listing registration if immediate wall publishing fails', async () => {
+    wallRepost.publishServiceListingImmediately.mockRejectedValue(new Error('wall unavailable'));
+
+    await expect(service.create(user, { ...dto, citySlug: 'shiraz' })).resolves.toMatchObject({ id: 11 });
   });
 
   it('rejects a phone already used by an existing listing after normalizing Persian numerals', async () => {

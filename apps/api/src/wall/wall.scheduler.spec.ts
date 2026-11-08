@@ -13,12 +13,14 @@ function makePrisma() {
   return {
     wallPost: {
       findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue(null),
       groupBy: jest.fn().mockResolvedValue([]),
       create: jest.fn().mockResolvedValue({ id: 1 }),
     },
+    city: { findMany: jest.fn().mockResolvedValue([]) },
     ad: { findMany: jest.fn().mockResolvedValue([]) },
     business: { findMany: jest.fn().mockResolvedValue([]) },
-    serviceListing: { findMany: jest.fn().mockResolvedValue([]) },
+    serviceListing: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) },
   };
 }
 
@@ -356,5 +358,76 @@ describe('GOLD business promos — 2 attractive messages a day', () => {
     const calls = prisma.business.findMany.mock.calls.length;
     expect(await scheduler.publishPromo(DAY, WALL_REPOST_SLOTS[1])).toBe(0);
     expect(prisma.business.findMany).toHaveBeenCalledTimes(calls);
+  });
+});
+
+describe('service-listing wall promotions', () => {
+  const listing = (id: number, cityId: number, ownerId = 70) => ({
+    id,
+    cityId,
+    ownerId,
+    name: `خدمت ${id}`,
+    phone: '09121112233',
+    description: 'توضیح خدمت',
+    category: { name: 'تعمیر و نصب انواع کولر', icon: '❄️' },
+  });
+
+  it('posts one idempotent initial promotion for each target city only', async () => {
+    const { scheduler, prisma } = makeScheduler();
+    prisma.city.findMany.mockResolvedValue([
+      { id: 1, name: 'جم', slug: 'jam' },
+      { id: 5, name: 'بوشهر', slug: 'bushehr-city' },
+      { id: 3, name: 'کنگان', slug: 'kangan' },
+      { id: 6, name: 'شیراز', slug: 'shiraz' },
+    ]);
+    prisma.serviceListing.findMany.mockResolvedValue([
+      listing(101, 1), listing(102, 5), listing(103, 3), listing(104, 6), listing(199, 9),
+    ]);
+
+    expect(await scheduler.publishInitialCityServicePromos()).toBe(4);
+    expect(prisma.city.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ slug: { in: ['jam', 'bushehr-city', 'kangan', 'shiraz'] } }),
+    }));
+    expect(prisma.wallPost.create).toHaveBeenCalledTimes(4);
+    expect(prisma.wallPost.create.mock.calls.map((call) => call[0].data.cityId).sort()).toEqual([1, 3, 5, 6]);
+    expect(prisma.wallPost.create.mock.calls[0][0].data.content).toContain('معرفی ویژهٔ مشاغل شهرجو');
+
+    prisma.wallPost.findMany.mockResolvedValueOnce([{ cityId: 1 }, { cityId: 5 }, { cityId: 3 }, { cityId: 6 }]);
+    expect(await scheduler.publishInitialCityServicePromos()).toBe(0);
+  });
+
+  it('immediately posts a new service listing to its supported city wall once', async () => {
+    const { scheduler, prisma } = makeScheduler();
+    prisma.serviceListing.findFirst.mockResolvedValue(listing(501, 1, 70));
+
+    expect(await scheduler.publishServiceListingImmediately(501)).toBe(1);
+    expect(prisma.wallPost.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ cityId: 1, userId: 70, serviceListingId: 501 }),
+    });
+    expect(prisma.wallPost.create.mock.calls[0][0].data.content).toContain('شغل تازه در دیوار شهر');
+
+    prisma.wallPost.findFirst.mockResolvedValue({ id: 800 });
+    expect(await scheduler.publishServiceListingImmediately(501)).toBe(0);
+    expect(prisma.wallPost.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the daily random promotion active across all cities independently', async () => {
+    const { scheduler, prisma } = makeScheduler();
+    prisma.serviceListing.findMany.mockResolvedValue([listing(601, 1), listing(602, 9)]);
+
+    expect(await scheduler.publishServicePromos(DAY)).toBe(2);
+    expect(prisma.wallPost.create.mock.calls.map((call) => call[0].data.cityId).sort()).toEqual([1, 9]);
+  });
+
+  it('does not repeat the daily random post after restart, but ignores initial and instant promos for the daily cap', async () => {
+    const { scheduler, prisma } = makeScheduler();
+    prisma.wallPost.findMany.mockResolvedValue([
+      { serviceListingId: 700, cityId: 1, content: '📣 معرفی شغل امروز: مورد قبلی' },
+      { serviceListingId: 701, cityId: 9, content: '📣 معرفی ویژهٔ مشاغل شهرجو شیراز' },
+    ]);
+    prisma.serviceListing.findMany.mockResolvedValue([listing(601, 1), listing(602, 9)]);
+
+    expect(await scheduler.publishServicePromos(DAY)).toBe(1);
+    expect(prisma.wallPost.create.mock.calls.map((call) => call[0].data.cityId)).toEqual([9]);
   });
 });

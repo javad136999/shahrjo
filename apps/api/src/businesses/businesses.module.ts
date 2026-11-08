@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { WallModule } from '../wall/wall.module';
 import { BusinessesController } from './businesses.controller';
 import { BusinessesService } from './businesses.service';
 import { BusinessExpiryScheduler } from './businesses.scheduler';
@@ -11,6 +12,7 @@ import { BusinessListingsService } from './business-listings.service';
 
 /** Owner-submitted business registration (create → PENDING moderation queue). */
 @Module({
+  imports: [WallModule],
   controllers: [BusinessesController, ServiceListingsController, BusinessReviewsController, BusinessListingsController],
   providers: [BusinessesService, BusinessExpiryScheduler, ServiceListingsService, BusinessReviewsService, BusinessListingsService],
 })

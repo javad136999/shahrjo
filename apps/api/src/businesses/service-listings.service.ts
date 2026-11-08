@@ -1,6 +1,7 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { IMMEDIATE_SERVICE_PROMO_CITY_SLUGS, WallRepostScheduler } from '../wall/wall.scheduler';
 import { CreateServiceListingDto } from './service-listings.dto';
 
 const normalizePhone = (value: string) => value
@@ -11,7 +12,12 @@ const normalizePhone = (value: string) => value
 
 @Injectable()
 export class ServiceListingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(ServiceListingsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly wallRepost: WallRepostScheduler,
+  ) {}
 
   /** Count every active service entry in the city without paging/truncation. */
   async count(citySlug: string) {
@@ -125,8 +131,9 @@ export class ServiceListingsService {
     });
     if (!category) throw new NotFoundException('این دسته‌بندی در فهرست خدمات شهر نیست');
 
+    let listing;
     try {
-      return await this.prisma.serviceListing.create({
+      listing = await this.prisma.serviceListing.create({
       data: {
         ownerId: user.id,
         cityId: city.id,
@@ -151,5 +158,14 @@ export class ServiceListingsService {
       }
       throw error;
     }
+
+    if (IMMEDIATE_SERVICE_PROMO_CITY_SLUGS.some((slug) => slug === dto.citySlug)) {
+      try {
+        await this.wallRepost.publishServiceListingImmediately(listing.id);
+      } catch (error) {
+        this.logger.warn(`service #${listing.id} was saved but its immediate wall promo failed: ${String(error)}`);
+      }
+    }
+    return listing;
   }
 }
