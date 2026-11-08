@@ -8,13 +8,12 @@ import { SITE_URL } from '@/lib/site';
  *
  * - the static public pages,
  * - every city home that exists in the API (data-driven, never hardcoded),
- * - every public tourism guide for those cities,
+ * - every public tourism guide and city business/service directory,
  *
  * Deliberately absent: `priority` and `changeFrequency` (Google ignores both),
  * private/personal routes (/profile, /messages, /businesses, /login, /admin),
- * and detail URLs whose indexable content is not guaranteed yet — ad, business
- * and news detail pages should be added here once each has a stable, crawlable
- * page with real content.
+ * and detail URLs whose indexable content is not guaranteed yet — ad and news
+ * detail pages should be added once each has stable, crawlable content.
  */
 // The sitemap must reflect newly enabled cities immediately. A positive
 // route revalidation interval would cache the entire XML response even though
@@ -49,5 +48,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: `${SITE_URL}/city/${city.slug}/tourism`,
   }));
 
-  return [...fixed, ...cityEntries, ...tourismEntries];
+  const businessDirectories: MetadataRoute.Sitemap = (cities ?? []).map((city) => ({
+    url: `${SITE_URL}/city/${city.slug}/businesses`,
+  }));
+  const serviceDirectories: MetadataRoute.Sitemap = (cities ?? []).map((city) => ({
+    url: `${SITE_URL}/city/${city.slug}/services`,
+  }));
+
+  // Category pages are linked from their city directory HTML. Keep sitemap
+  // generation bounded to the already-required city lookup, with no per-city
+  // category fan-out that could delay crawlers.
+  return [...fixed, ...cityEntries, ...tourismEntries, ...businessDirectories, ...serviceDirectories];
 }

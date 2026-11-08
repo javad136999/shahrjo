@@ -50,9 +50,10 @@ describe('canonical host (shahrju.ir)', () => {
     const sitemap = code(read('sitemap.ts'));
     expect(sitemap).not.toMatch(/priority\s*:/);
     expect(sitemap).not.toMatch(/changeFrequency\s*:/);
-    for (const privatePath of ['/profile', '/messages', '/businesses', '/login']) {
+    for (const privatePath of ['/profile', '/messages', '/login']) {
       expect(sitemap).not.toContain(privatePath);
     }
+    expect(sitemap).not.toContain('url: `${SITE_URL}/businesses`');
     expect(sitemap).toContain('/city/');
     // The API fetch alone cannot prevent the route output itself being cached.
     expect(sitemap).toMatch(/export const revalidate = 0;/);
@@ -90,6 +91,33 @@ describe('per-page SEO (city pages)', () => {
     expect(page).toContain("'@type': 'BreadcrumbList'");
     expect(page).toContain("'@type': 'TouristAttraction'");
     expect(page).toContain("application/ld+json");
+  });
+
+  it('city business directories are server-rendered, city-specific, and listed in the sitemap', () => {
+    const directory = read('city', '[slug]', 'businesses', 'page.tsx');
+    const category = read('city', '[slug]', 'businesses', '[category]', 'page.tsx');
+    const services = read('city', '[slug]', 'services', 'page.tsx');
+    const serviceCategory = read('city', '[slug]', 'services', '[category]', 'page.tsx');
+    const component = read('..', 'components', 'city-business-directory.tsx');
+    const serviceComponent = read('..', 'components', 'city-service-directory.tsx');
+    const sitemap = code(read('sitemap.ts'));
+    for (const page of [directory, category, services, serviceCategory]) {
+      expect(page).not.toContain("'use client'");
+      expect(page).toContain('generateMetadata');
+      expect(page).toMatch(/alternates:\s*{\s*canonical:/);
+      expect(page).toContain('absoluteUrl');
+    }
+    expect(category).toContain('categorySlug');
+    expect(serviceCategory).toContain('categorySlug');
+    expect(component).toContain('شهر ${city.name}');
+    expect(component).toContain("'@type': 'LocalBusiness'");
+    expect(component).toContain('directoryPath}/${encodeURIComponent(category.slug)');
+    expect(serviceComponent).toContain("'@type': 'Service'");
+    expect(serviceComponent).toContain('path}/${encodeURIComponent(category.slug)');
+    expect(sitemap).toContain('/businesses');
+    expect(sitemap).toContain('/services');
+    expect(sitemap).toContain('businessDirectories');
+    expect(sitemap).toContain('serviceDirectories');
   });
 
   it('the landing page exposes the confirmed title and a canonical', () => {

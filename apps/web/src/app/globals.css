@@ -9564,3 +9564,45 @@ button.pill {
   .classifieds__toolbar-actions .classifieds__sort { min-height: 34px; padding-inline: 8px; }
   .classifieds__toolbar-actions .classifieds__advanced-toggle { min-height: 34px; }
 }
+
+
+/* SEO-friendly public directory of approved city businesses. */
+.city-business-directory { width: min(100% - 28px, 980px); margin: 0 auto; padding: 22px 0 60px; color: #183c2c; }
+.city-business-directory__breadcrumbs { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; color: #87998d; font-size: 12px; }
+.city-business-directory__breadcrumbs a { color: #4e765e; }
+.city-business-directory__header { position: relative; margin-bottom: 18px; padding: 26px; border: 1px solid #d8e8dc; border-radius: 22px; background: linear-gradient(120deg, #f0f8f1, #fffdf6); }
+.city-business-directory__eyebrow { color: #56836a; font-size: 11px; font-weight: 850; }
+.city-business-directory__header h1 { margin: 7px 0; color: #173f30; font-size: clamp(23px, 4vw, 34px); line-height: 1.5; }
+.city-business-directory__header p { max-width: 680px; margin: 0; color: #657c6d; font-size: 14px; line-height: 1.9; }
+.city-business-directory__city-tag { display: inline-flex; align-items: center; margin-top: 13px; padding: 6px 11px; border: 1px solid #d5e8d9; border-radius: 999px; background: #fff; color: #2c6d4c; font-size: 12px; font-weight: 850; }
+.city-business-directory__categories { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 12px; }
+.city-business-directory__categories a { flex: 0 0 auto; padding: 8px 12px; border: 1px solid #dce8df; border-radius: 999px; background: #fff; color: #476b54; font-size: 11px; font-weight: 800; }
+.city-business-directory__categories a.is-active, .city-business-directory__categories a:hover { border-color: #147357; background: #eaf5ed; color: #0e6548; text-decoration: none; }
+.city-business-directory__count { margin: 7px 0 10px; color: #74877a; font-size: 12px; }
+.city-business-directory__list { display: flex; flex-direction: column; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.city-business-directory__card { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 12px; border: 1px solid #e0e9e2; border-radius: 16px; background: #fff; box-shadow: 0 8px 20px -22px #17352a; }
+.city-business-directory__main { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; color: inherit; }
+.city-business-directory__main:hover { color: #147357; text-decoration: none; }
+.city-business-directory__logo { display: grid; flex: 0 0 54px; width: 54px; height: 54px; place-items: center; overflow: hidden; border-radius: 14px; background: #eff6f0; font-size: 25px; }
+.city-business-directory__logo img { width: 100%; height: 100%; object-fit: cover; }
+.city-business-directory__copy { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.city-business-directory__copy strong { overflow: hidden; color: #203f2e; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.city-business-directory__copy > span { color: #64806c; font-size: 11px; }
+.city-business-directory__copy small { overflow: hidden; color: #829388; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.city-business-directory__tag { flex: 0 0 auto; padding: 5px 9px; border-radius: 999px; background: #f0f7f1; color: #427252; font-size: 10px; font-weight: 800; }
+.city-business-directory__call { flex: 0 0 auto; padding: 8px 13px; border-radius: 10px; background: #147357; color: #fff; font-size: 11px; font-weight: 850; }
+.city-business-directory__call:hover { background: #0e5f47; color: #fff; text-decoration: none; }
+.city-business-directory__empty { padding: 32px 20px; border: 1px dashed #cbdccd; border-radius: 18px; background: #f9fcf9; text-align: center; }
+.city-business-directory__empty h2 { margin: 0; font-size: 17px; }
+.city-business-directory__empty p { color: #718679; font-size: 13px; }
+.city-business-directory__empty a, .city-business-directory__register a { color: #147357; font-weight: 850; }
+.city-business-directory__register { width: min(100% - 28px, 980px); margin: -34px auto 40px; padding: 10px 0; text-align: center; font-size: 12px; }
+@media (max-width: 640px) {
+  .city-business-directory { width: min(100% - 20px, 980px); padding-top: 14px; }
+  .city-business-directory__header { padding: 19px; border-radius: 17px; }
+  .city-business-directory__header p { font-size: 12px; }
+  .city-business-directory__card { gap: 7px; padding: 9px; }
+  .city-business-directory__logo { flex-basis: 44px; width: 44px; height: 44px; }
+  .city-business-directory__tag { padding: 5px 7px; font-size: 9px; }
+  .city-business-directory__call { padding: 7px 9px; }
+}
