@@ -573,8 +573,10 @@ export function AdminPanel() {
                       await run(() => deleteAdminServiceListing(row.id), 'مورد خدمات از فهرست عمومی حذف شد', row.id);
                     }}
                     data-testid={`delete-service-${row.id}`}
+                    aria-label={`حذف خدمت «${row.name}»`}
+                    title="حذف خدمت"
                   >
-                    🗑 حذف
+                    <span aria-hidden="true">🗑️</span>
                   </button>
                 )}
                 {'plan' in row && row.status === 'PENDING_REVIEW' && (
