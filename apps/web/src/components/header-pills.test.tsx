@@ -60,39 +60,10 @@ describe('HeaderPills', () => {
     expect(tourism).toHaveTextContent('گردشگری');
   });
 
-  it('links the compact install button to the Cafe Bazaar app page', async () => {
-    render(<HeaderPills />);
-    const install = await screen.findByTestId('header-install-pill');
-    expect(install).toHaveAttribute('href', 'http://cafebazaar.ir/app/?id=ir.shahrju.app&ref=share');
-    expect(install).toHaveAttribute('target', '_blank');
-    expect(install).toHaveTextContent('نصب');
-  });
-
-  it('hides the install button inside the Android app WebView', async () => {
-    const originalUserAgent = navigator.userAgent;
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: 'Mozilla/5.0 (Linux; Android 13; wv) AppleWebKit/537.36 Version/4.0 Chrome/120.0 Mobile Safari/537.36',
-    });
-
+  it('keeps the header uncluttered so the single install prompt is handled by the dismissible banner', async () => {
     render(<HeaderPills />);
     await screen.findByTestId('header-city-pill');
     expect(screen.queryByTestId('header-install-pill')).not.toBeInTheDocument();
-
-    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: originalUserAgent });
-  });
-
-  it('keeps the install button in Instagram in-app browser', async () => {
-    const originalUserAgent = navigator.userAgent;
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: 'Mozilla/5.0 (Linux; Android 13; wv) AppleWebKit/537.36 Instagram 350.0.0.0.1 Mobile Safari/537.36',
-    });
-
-    render(<HeaderPills />);
-    expect(await screen.findByTestId('header-install-pill')).toBeInTheDocument();
-
-    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: originalUserAgent });
   });
 
   it('sends the tourism button to the city picker when no city is remembered', async () => {

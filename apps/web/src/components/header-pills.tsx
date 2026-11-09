@@ -16,10 +16,6 @@ import type { LocalCity } from '@/lib/types';
  */
 export function HeaderPills() {
   const [city, setCity] = useState<LocalCity | null>(null);
-  // Web pages and the PWA must show the Bazaar CTA immediately. It is hidden
-  // only after the Android WebView marker is positively detected; starting at
-  // false made the CTA disappear on some cached/hydrated city pages.
-  const [showInstall, setShowInstall] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
   const pathname = usePathname();
 
@@ -34,19 +30,6 @@ export function HeaderPills() {
     };
   }, [pathname]);
 
-  useEffect(() => {
-    // The published Android app is an Android System WebView. Its UA contains
-    // `; wv)` (and the legacy `Version/4.0` marker), unlike normal Chrome.
-    // This keeps the Bazaar install CTA in the browser only, without requiring
-    // a new Android APK just to hide a web-rendered header item. Instagram's
-    // in-app browser can also advertise itself as an Android WebView, but it is
-    // still a web browser where the install CTA must remain visible.
-    const userAgent = navigator.userAgent;
-    const isInstagramBrowser = /Instagram/i.test(userAgent);
-    const isAndroidWebView = /Android/i.test(userAgent) && (/[;\s]wv\)/i.test(userAgent) || /Version\/4\.0/i.test(userAgent));
-    setShowInstall(!isAndroidWebView || isInstagramBrowser);
-  }, []);
-
   return (
     <div className="header-pills">
       <Link
@@ -59,20 +42,6 @@ export function HeaderPills() {
         <span aria-hidden>🧭</span>
         <span className="pill__label">گردشگری شهر</span>
       </Link>
-      {showInstall && (
-        <a
-          href="http://cafebazaar.ir/app/?id=ir.shahrju.app&ref=share"
-          className="pill header-install-pill"
-          title="نصب اپلیکیشن شهرجو"
-          aria-label="نصب اپلیکیشن شهرجو از بازار"
-          data-testid="header-install-pill"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span aria-hidden>📲</span>
-          <span className="pill__label">نصب</span>
-        </a>
-      )}
       {/* This is the ONLY way to change the city: it opens the picker with
           search in place — no page jump. It always reads «انتخاب شهر» rather
           than the current city, because the adjacent header slot already
