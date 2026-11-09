@@ -447,7 +447,17 @@ export function CityClassifieds({ city }: CityClassifiedsProps) {
                 </div>
                 <div className="classified-card__body">
                   <h2>{ad.title}</h2>
-                  <p>{ad.viewCount.toLocaleString('fa-IR')} بازدید · آگهی فعال در {city.name}</p>
+                  <p className="classified-card__views-line">
+                    <span className="classified-card__views" aria-label={`${ad.viewCount.toLocaleString('fa-IR')} بازدید`} data-testid={`classified-views-${ad.id}`}>
+                      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                        <path d="M2.2 12s3.5-6.1 9.8-6.1 9.8 6.1 9.8 6.1-3.5 6.1-9.8 6.1S2.2 12 2.2 12Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+                        <circle cx="12" cy="12" r="2.7" stroke="currentColor" strokeWidth="1.7" />
+                      </svg>
+                      <b>{ad.viewCount.toLocaleString('fa-IR')}</b>
+                      <span>بازدید</span>
+                    </span>
+                    <span className="classified-card__active-label">آگهی فعال در {city.name}</span>
+                  </p>
                   <strong>{ad.price !== null ? formatPrice(ad.price) : 'توافقی'}</strong>
                   <small>{ad.neighborhood ? `${ad.neighborhood} · ` : ''}{city.name} · مشاهده جزئیات آگهی ←</small>
                 </div>

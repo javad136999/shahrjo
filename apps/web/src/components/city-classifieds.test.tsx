@@ -67,6 +67,9 @@ describe('CityClassifieds (دیوار شهر)', () => {
 
     expect(await screen.findByTestId('classified-card-1')).toHaveAttribute('href', '/ad/1');
     expect(screen.getByTestId('classified-card-2')).toHaveAttribute('href', '/ad/2');
+    expect(screen.getByTestId('classified-views-1')).toHaveAttribute('aria-label', '۸ بازدید');
+    expect(screen.getByTestId('classified-views-1')).toHaveTextContent('۸');
+    expect(screen.getByTestId('classified-views-1').querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getByTestId('classifieds-grid').children).toHaveLength(3);
     expect(screen.getByTestId('daily-business-ad')).toHaveClass('classified-card');
 
