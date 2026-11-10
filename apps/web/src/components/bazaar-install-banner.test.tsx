@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 
 const mockPathname = jest.fn();
 let standaloneMode = false;
+let fullscreenMode = false;
 
 jest.mock('next/navigation', () => ({
   usePathname: () => mockPathname(),
@@ -17,12 +18,13 @@ describe('BazaarInstallBanner', () => {
     jest.clearAllMocks();
     localStorage.clear();
     standaloneMode = false;
+    fullscreenMode = false;
     mockPathname.mockReturnValue('/city/jam/services');
     Object.defineProperty(window, 'matchMedia', {
       configurable: true,
       writable: true,
       value: jest.fn((query: string) => ({
-        matches: standaloneMode && (query.includes('standalone') || query.includes('fullscreen')),
+        matches: (standaloneMode && query.includes('standalone')) || (fullscreenMode && query.includes('fullscreen')),
         addEventListener: jest.fn(),
         removeEventListener: jest.fn(),
       })),
@@ -42,11 +44,11 @@ describe('BazaarInstallBanner', () => {
     act(() => jest.advanceTimersByTime(6_000));
 
     expect(screen.getByTestId('bazaar-install-banner')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'دریافت از بازار' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'دانلود از بازار' })).toHaveAttribute(
       'href',
       'https://cafebazaar.ir/app/?id=ir.shahrju.app&ref=share',
     );
-    expect(screen.getByRole('link', { name: 'دریافت از بازار' })).toHaveAttribute('target', '_blank');
+    expect(screen.getByRole('link', { name: 'دانلود از بازار' })).toHaveAttribute('target', '_blank');
   });
 
   it('never shows inside the installed PWA', () => {
@@ -66,7 +68,26 @@ describe('BazaarInstallBanner', () => {
     expect(screen.queryByTestId('bazaar-install-banner')).not.toBeInTheDocument();
   });
 
-  it('does not cover the full-screen city wall', () => {
+  it('shows quickly in Instagram even when its Android browser reports fullscreen on the city wall', () => {
+    fullscreenMode = true;
+    mockPathname.mockReturnValue('/wall');
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (Linux; Android 13; wv) AppleWebKit/537.36 Version/4.0 Chrome/120.0 Instagram 350.0.0.0 Mobile Safari/537.36',
+    });
+    render(<BazaarInstallBanner />);
+
+    act(() => jest.advanceTimersByTime(2_000));
+
+    expect(screen.getByText('کاربر عزیز، به سایت شهرجو خوش آمدید')).toBeInTheDocument();
+    expect(screen.getByText('جهت دانلود اپلیکیشن از لینک زیر اقدام نمایید')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'دانلود از بازار' })).toHaveAttribute(
+      'href',
+      'https://cafebazaar.ir/app/?id=ir.shahrju.app&ref=share',
+    );
+  });
+
+  it('does not cover the full-screen city wall in a regular browser', () => {
     mockPathname.mockReturnValue('/wall');
     render(<BazaarInstallBanner />);
     act(() => jest.advanceTimersByTime(6_000));

@@ -197,7 +197,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-@media (display-mode: standalone), (display-mode: fullscreen) {
+@media (display-mode: standalone) {
   .bazaar-install-banner { display: none !important; }
 }
 
