@@ -10,6 +10,7 @@ const mockGetLocalCity = jest.fn();
 const mockGetTokens = jest.fn();
 const mockGetDmUnread = jest.fn();
 const mockGetWallUnread = jest.fn();
+const mockMarkWallRead = jest.fn();
 
 jest.mock('@/lib/api', () => ({
   CITY_CHANGED_EVENT: 'shahrjo:city-changed',
@@ -18,6 +19,7 @@ jest.mock('@/lib/api', () => ({
   getTokens: () => mockGetTokens(),
   getDmUnread: () => mockGetDmUnread(),
   getWallUnread: (slug: string) => mockGetWallUnread(slug),
+  markWallRead: (cityId: number) => mockMarkWallRead(cityId),
 }));
 
 import { BottomNav } from '@/components/bottom-nav';
@@ -30,6 +32,7 @@ describe('BottomNav', () => {
     mockGetTokens.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
     mockGetDmUnread.mockResolvedValue({ total: 0 });
     mockGetWallUnread.mockResolvedValue({ unseenCount: 0 });
+    mockMarkWallRead.mockResolvedValue({ lastSeenAt: new Date().toISOString() });
     window.location.hash = '';
   });
 
@@ -149,6 +152,24 @@ describe('BottomNav', () => {
     expect(await screen.findByTestId('bottom-nav-messages-badge')).toHaveTextContent('3');
     expect(await screen.findByTestId('bottom-nav-wall-badge')).toHaveTextContent('7');
     expect(mockGetWallUnread).toHaveBeenCalledWith('sample-city');
+  });
+
+  it('clears the wall badge immediately on entry and counts new unseen posts after leaving from one', async () => {
+    mockPathname.mockReturnValue('/city/sample-city');
+    mockGetWallUnread.mockResolvedValue({ unseenCount: 5 });
+    const { rerender } = render(<BottomNav />);
+    expect(await screen.findByTestId('bottom-nav-wall-badge')).toHaveTextContent('5');
+
+    mockPathname.mockReturnValue('/wall');
+    mockGetWallUnread.mockResolvedValue({ unseenCount: 5 });
+    rerender(<BottomNav />);
+    await waitFor(() => expect(screen.queryByTestId('bottom-nav-wall-badge')).not.toBeInTheDocument());
+    expect(mockMarkWallRead).toHaveBeenCalledWith(5);
+
+    mockPathname.mockReturnValue('/city/sample-city');
+    mockGetWallUnread.mockResolvedValue({ unseenCount: 1 });
+    rerender(<BottomNav />);
+    expect(await screen.findByTestId('bottom-nav-wall-badge')).toHaveTextContent('1');
   });
 
   it('fetches no unread counts for signed-out visitors', async () => {

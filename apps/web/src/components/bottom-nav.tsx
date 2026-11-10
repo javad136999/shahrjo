@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -10,6 +10,7 @@ import {
   getLocalCity,
   getTokens,
   getWallUnread,
+  markWallRead,
 } from '@/lib/api';
 import type { LocalCity } from '@/lib/types';
 
@@ -41,6 +42,7 @@ export function BottomNav() {
   const [city, setCity] = useState<LocalCity | null>(null);
   const [hash, setHash] = useState('');
   const [unread, setUnread] = useState<{ dm: number; wall: number }>({ dm: 0, wall: 0 });
+  const wallReadPending = useRef<Promise<unknown> | null>(null);
 
   useEffect(() => {
     const sync = () => setCity(getLocalCity());
@@ -64,20 +66,31 @@ export function BottomNav() {
     };
   }, [pathname]);
 
-  // red badges: private-message unread + wall posts unseen since last visit
+  // Clear the wall badge as soon as the user opens the wall. The server stores
+  // this visit marker; after leaving, the badge counts only posts created later.
   useEffect(() => {
     if (!getTokens()) {
       setUnread({ dm: 0, wall: 0 });
       return;
     }
+    const isWallPage = pathname === '/wall' || pathname.startsWith('/wall/');
+    if (isWallPage) {
+      setUnread((current) => ({ ...current, wall: 0 }));
+      if (city) wallReadPending.current = markWallRead(city.id).catch(() => undefined);
+    }
     let alive = true;
     const refresh = async () => {
+      const wallPromise = city && !isWallPage
+        ? (wallReadPending.current
+          ? wallReadPending.current.then(() => getWallUnread(city.slug)).catch(() => null)
+          : getWallUnread(city.slug).catch(() => null))
+        : Promise.resolve(null);
       const [dm, wall] = await Promise.all([
         getDmUnread().catch(() => null),
-        city ? getWallUnread(city.slug).catch(() => null) : Promise.resolve(null),
+        wallPromise,
       ]);
       if (!alive) return;
-      setUnread({ dm: dm?.total ?? 0, wall: wall?.unseenCount ?? 0 });
+      setUnread((current) => ({ dm: dm?.total ?? 0, wall: isWallPage ? 0 : wall?.unseenCount ?? 0 }));
     };
     void refresh();
     const timer = setInterval(() => void refresh(), BADGE_POLL_MS);
@@ -90,7 +103,7 @@ export function BottomNav() {
       window.removeEventListener('focus', onFocus);
       window.removeEventListener(DM_CHANGED_EVENT, refresh);
     };
-  }, [city?.slug]);
+  }, [city?.id, city?.slug, pathname]);
 
   /** /city/<slug> exactly — the city home page keeps the bar on screen. */
   const isCityHome = /^\/city\/[^/]+\/?$/.test(pathname);
