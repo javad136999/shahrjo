@@ -8,7 +8,6 @@ const DISMISS_KEY = 'shahrjo.bazaar-install-dismissed-until';
 const INSTAGRAM_DISMISS_KEY = `${DISMISS_KEY}:instagram`;
 const DISMISS_DAYS = 7;
 const SHOW_AFTER_MS = 6_000;
-const INSTAGRAM_SHOW_AFTER_MS = 2_000;
 
 function isInstalledExperience(isInstagramBrowser: boolean): boolean {
   const standalone =
@@ -37,7 +36,7 @@ function wasDismissedRecently(key: string): boolean {
   return false;
 }
 
-/** Delayed Bazaar install nudge for browser visitors; never shown in the installed app. */
+/** Bazaar install nudge for browser visitors; never shown in the installed app. */
 export function BazaarInstallBanner() {
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
@@ -56,8 +55,12 @@ export function BazaarInstallBanner() {
     const dismissKey = isInstagramBrowser ? INSTAGRAM_DISMISS_KEY : DISMISS_KEY;
     if (isInstalledExperience(isInstagramBrowser) || wasDismissedRecently(dismissKey)) return;
 
-    const delay = isInstagramBrowser ? INSTAGRAM_SHOW_AFTER_MS : SHOW_AFTER_MS;
-    const timer = window.setTimeout(() => setVisible(true), delay);
+    if (isInstagramBrowser) {
+      setVisible(true);
+      return;
+    }
+
+    const timer = window.setTimeout(() => setVisible(true), SHOW_AFTER_MS);
     return () => window.clearTimeout(timer);
   }, [pathname]);
 

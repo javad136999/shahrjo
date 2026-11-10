@@ -68,7 +68,7 @@ describe('BazaarInstallBanner', () => {
     expect(screen.queryByTestId('bazaar-install-banner')).not.toBeInTheDocument();
   });
 
-  it('shows quickly in Instagram even when its Android browser reports fullscreen on the city wall', () => {
+  it('shows immediately in Instagram even when its Android browser reports fullscreen on the city wall', () => {
     fullscreenMode = true;
     mockPathname.mockReturnValue('/wall');
     Object.defineProperty(navigator, 'userAgent', {
@@ -76,8 +76,6 @@ describe('BazaarInstallBanner', () => {
       value: 'Mozilla/5.0 (Linux; Android 13; wv) AppleWebKit/537.36 Version/4.0 Chrome/120.0 Instagram 350.0.0.0 Mobile Safari/537.36',
     });
     render(<BazaarInstallBanner />);
-
-    act(() => jest.advanceTimersByTime(2_000));
 
     expect(screen.getByText('کاربر عزیز، به سایت شهرجو خوش آمدید')).toBeInTheDocument();
     expect(screen.getByText('جهت دانلود اپلیکیشن از لینک زیر اقدام نمایید')).toBeInTheDocument();
