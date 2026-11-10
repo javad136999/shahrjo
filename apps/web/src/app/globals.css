@@ -7108,15 +7108,12 @@ button.pill {
 .biz-registration__eyebrow { margin:0 0 4px; color:#168052; font-size:12px; font-weight:800; }
 .biz-registration__hero h1 { margin:0 0 5px; color:#20372c; font-size:clamp(21px,3vw,28px); font-weight:900; }
 .biz-registration__hero p:last-child { margin:0; color:#708078; font-size:13px; line-height:1.9; }
-.biz-registration__progress { margin-bottom:16px; padding:13px 15px; border:1px solid #e4eee7; border-radius:16px; background:#fff; }
-.biz-registration__progress-copy { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:9px; color:#3d5146; font-size:12px; }
-.biz-registration__progress-copy span { color:#87958c; }
-.biz-registration__progress-track { height:6px; overflow:hidden; border-radius:999px; background:#edf3ef; }
-.biz-registration__progress-track span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#168052,#ee9db8); transition:width .2s ease; }
-.biz-registration--jam-style .biz-steps { gap:7px; margin-bottom:20px; }
-.biz-registration--jam-style .biz-steps__item { padding:7px 13px; border-radius:999px; background:#f4f8f5; border-color:#e3ece6; font-weight:750; }
-.biz-registration--jam-style .biz-steps__item.is-active { color:#fff; background:#168052; border-color:#168052; }
-.biz-registration--jam-style .biz-steps__item.is-done { color:#168052; border-color:#a8d8bd; background:#effaf3; }
+.biz-registration__quick-nav { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px; }
+.biz-registration__quick-nav a { display:inline-flex; align-items:center; min-height:38px; padding:7px 13px; border:1px solid #e3ece6; border-radius:999px; color:#168052; background:#f4f8f5; font-size:12px; font-weight:800; text-decoration:none; transition:background .15s,color .15s,border-color .15s; }
+.biz-registration__quick-nav a:hover,.biz-registration__quick-nav a:focus-visible { color:#fff; background:#168052; border-color:#168052; outline:none; }
+.biz-registration__step-panel + .biz-registration__step-panel { margin-top:14px; }
+.biz-registration__location-toggle { min-height:42px; margin-bottom:12px; border-color:#cbded1; color:#176c4a; background:#f7fbf8; font-weight:800; }
+.biz-registration__location-picker { margin-top:8px; }
 .biz-registration__section-heading { display:flex; align-items:flex-start; gap:12px; margin:8px 0 18px; }
 .biz-registration__section-heading > span { display:grid; place-items:center; flex:0 0 34px; width:34px; height:34px; border-radius:12px; color:#13794b; background:#e4f6eb; font-weight:900; }
 .biz-registration__section-heading h2 { margin:0 0 4px; color:#243a2e; font-size:18px; font-weight:900; }
@@ -7132,7 +7129,6 @@ button.pill {
 .biz-registration--jam-style .biz-image__picker { border-color:#cbded1; background:#fff; }
 .biz-registration--jam-style .biz-image__picker:hover { border-color:#168052; background:#f3faf6; }
 .biz-registration--jam-style .biz-image__picked { border-radius:12px; }
-.biz-registration__next { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; margin-top:22px; min-height:49px; border-radius:15px; background:#168052; box-shadow:0 8px 18px rgb(22 128 82 / 18%); font-weight:850; }
 .biz-registration__step-panel { padding:18px; border:1px solid #e4eee7; border-radius:20px; background:#fff; }
 .biz-registration--jam-style .biz-map { border:1px solid #e1ebe4; border-radius:17px; box-shadow:0 8px 22px rgb(35 68 48 / 7%); }
 .biz-registration--jam-style .plans-grid { gap:14px; margin-top:18px; }
@@ -8849,6 +8845,10 @@ button.pill {
   background: linear-gradient(145deg, #fff5d7, #f7e4b2);
 }
 @media (max-width: 600px) {
+  .biz-registration__quick-nav { flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-inline:contain; }
+  .biz-registration__quick-nav a { white-space:nowrap; }
+  .biz-registration__step-panel { padding:14px; }
+  .biz-registration__location-toggle { width:100%; justify-content:center; }
   .biz-registration__tier-section { padding: 12px 10px; border-radius: 18px; }
   .biz-registration__tier-section .biz-registration__plan { min-height: 148px; padding: 11px 8px 9px; gap: 7px; }
   .biz-registration__tier-section .biz-registration__plan--long { min-height: 166px; }

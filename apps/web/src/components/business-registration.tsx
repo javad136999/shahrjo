@@ -84,8 +84,6 @@ const popularRank = (c: BusinessCategoryOption): number => {
 const popularFirst = (list: BusinessCategoryOption[]): BusinessCategoryOption[] =>
   [...list].sort((a, b) => popularRank(a) - popularRank(b));
 
-type Step = 1 | 2 | 3;
-
 function SearchableBusinessCategory({
   categories,
   value,
@@ -163,8 +161,8 @@ function SearchableBusinessCategory({
 }
 
 /**
- * Three-step business registration: details → pin location on the city map →
- * pick a Gold/Silver plan and pay. On confirm it creates the business (PENDING
+ * Single-page business registration: details, optional map pin, and a plan are
+ * visible together. The map is loaded only when requested. On confirm it creates the business (PENDING
  * + FREE), then starts a Cafe Bazaar checkout bound to that business. The
  * Android bridge opens Poolakey. A verified payment applies the paid tier AND
  * approves the still-PENDING business server-side — there is no admin step
@@ -172,11 +170,12 @@ function SearchableBusinessCategory({
  */
 export function BusinessRegistration() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>(1);
   const [categories, setCategories] = useState<BusinessCategoryOption[] | null>(null);
   const [plans, setPlans] = useState<PlanItem[] | null>(null);
   const [mapData, setMapData] = useState<CityMapData | null>(null);
   const [mapCityName, setMapCityName] = useState<string | null>(null);
+  const [mapCitySlug, setMapCitySlug] = useState<string | null>(null);
+  const [locationOpen, setLocationOpen] = useState(false);
   const [mapStatus, setMapStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading');
 
   const [name, setName] = useState('');
@@ -207,7 +206,7 @@ export function BusinessRegistration() {
   const locationRef = useRef<{ lat: number; lng: number } | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
-  // Auth gate + load categories/plans and the exact city used by the API.
+  // Load form options and the exact profile city together; geometry is lazy.
   useEffect(() => {
     if (!getTokens()) {
       router.replace('/login?next=/business/new');
@@ -216,48 +215,35 @@ export function BusinessRegistration() {
     let alive = true;
     (async () => {
       try {
-        const [cats, pls] = await Promise.all([getBusinessCategories(), getPlans()]);
+        const [cats, pls, me, cities] = await Promise.all([
+          getBusinessCategories(),
+          getPlans(),
+          getProfile(),
+          api.get<City[]>('/cities'),
+        ]);
         if (!alive) return;
         setCategories(popularFirst(cats));
         setPlans(pls);
-      } catch (e) {
-        if (alive) setError(e instanceof ApiError ? e.message : 'خطا در بارگذاری اطلاعات');
-        return;
-      }
-
-      try {
-        // The API always writes under the authenticated PROFILE city. Never
-        // silently frame the map on localStorage, which can name another city.
-        const me = await getProfile();
         if (!me.cityId) {
-          if (alive) {
-            setMapStatus('unavailable');
-            setLocationError('برای ثبت کسب‌وکار، ابتدا شهر حساب کاربری‌ات را در پروفایل انتخاب کن.');
-          }
+          setMapStatus('unavailable');
+          setLocationError('برای ثبت کسب‌وکار، ابتدا شهر حساب کاربری‌ات را در پروفایل انتخاب کن.');
           return;
         }
-        const cities = await api.get<City[]>('/cities');
+        // The API always writes under the authenticated PROFILE city. Never
+        // silently use localStorage, which can name a different city.
         const profileCity = cities.find((city) => city.id === me.cityId);
         if (!profileCity) {
-          if (alive) {
-            setMapStatus('unavailable');
-            setLocationError('شهر ثبت‌شده در پروفایل پیدا نشد؛ شهر حساب را دوباره انتخاب کن.');
-          }
+          setMapStatus('unavailable');
+          setLocationError('شهر ثبت‌شده در پروفایل پیدا نشد؛ شهر حساب را دوباره انتخاب کن.');
           return;
         }
         setMapCityName(profileCity.name);
-        const data = await getCityMap(profileCity.slug);
-        if (!alive) return;
-        setMapData(data);
-        const hasGeo = normalizeCityBoundary(data.city.boundary) !== null ||
-          (data.city.latitude !== null && data.city.longitude !== null);
-        setMapStatus(hasGeo ? 'ready' : 'unavailable');
-        if (!hasGeo) setLocationError('محدودهٔ جغرافیایی این شهر هنوز تنظیم نشده است؛ موقعیت روی نقشه در دسترس نیست.');
-        else setLocationError(null);
+        setMapCitySlug(profileCity.slug);
       } catch {
         if (alive) {
+          setError('بارگذاری اطلاعات ثبت کسب‌وکار ممکن نشد؛ دوباره تلاش کن.');
           setMapStatus('unavailable');
-          setLocationError('نقشهٔ شهر حساب بارگذاری نشد؛ دوباره صفحه را باز کن یا بدون موقعیت ادامه بده.');
+          setLocationError('اطلاعات شهر حساب کاربری بارگذاری نشد؛ دوباره تلاش کن.');
         }
       }
     })();
@@ -266,6 +252,28 @@ export function BusinessRegistration() {
     };
   }, [router]);
 
+  // Fetch city geometry only if the user opens the optional location picker.
+  useEffect(() => {
+    if (!locationOpen || !mapCitySlug || mapData) return;
+    let alive = true;
+    setMapStatus('loading');
+    getCityMap(mapCitySlug).then((data) => {
+      if (!alive) return;
+      setMapData(data);
+      const hasGeo = normalizeCityBoundary(data.city.boundary) !== null ||
+        (data.city.latitude !== null && data.city.longitude !== null);
+      setMapStatus(hasGeo ? 'ready' : 'unavailable');
+      setLocationError(hasGeo ? null : 'محدودهٔ جغرافیایی این شهر هنوز تنظیم نشده است؛ موقعیت روی نقشه در دسترس نیست.');
+    }).catch(() => {
+      if (!alive) return;
+      setMapStatus('unavailable');
+      setLocationError('نقشهٔ شهر حساب بارگذاری نشد؛ می‌توانی بدون موقعیت ادامه بدهی.');
+    });
+    return () => {
+      alive = false;
+    };
+  }, [locationOpen, mapCitySlug, mapData]);
+
   // Latest framing data for the picker (read by the one-time map instance).
   useEffect(() => {
     mapDataRef.current = mapData;
@@ -273,12 +281,11 @@ export function BusinessRegistration() {
   }, [mapData, mapReady]);
 
   /**
-   * Leaflet picker — initialise only after the profile-city geometry is ready.
-   * This avoids showing Leaflet's empty dark/grey canvas while the city is still
-   * loading, then frame the instance in place when the user enters this step.
+   * Leaflet picker — initialise only after the user opens it and city geometry
+   * is ready, so the main registration page does not wait for map assets.
    */
   useEffect(() => {
-    if (step !== 2 || mapStatus !== 'ready') return;
+    if (!locationOpen || mapStatus !== 'ready') return;
     const container = mapEl.current;
     if (!container) return;
     let disposed = false;
@@ -288,7 +295,7 @@ export function BusinessRegistration() {
       const map = mapObj.current;
       const L = Lref.current;
       if (!map || !L) return;
-      // The step panel's final size settles after first paint — measure first,
+      // The location panel's final size settles after first paint — measure first,
       // otherwise the canvas keeps a stale size and its tiles stay grey.
       map.invalidateSize({ animate: false });
       boundaryObj.current?.remove();
@@ -416,9 +423,9 @@ export function BusinessRegistration() {
       mapObj.current = null;
       setMapReady(false);
     };
-    // `location` is read once when the picker opens; the click handler owns it after.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- init only on entering step 2
-  }, [step, mapStatus]);
+    // `location` is read once when the optional picker opens; handlers own it after.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- init once per picker open
+  }, [locationOpen, mapStatus]);
 
   const clearLocation = () => {
     setLocation(null);
@@ -486,7 +493,18 @@ export function BusinessRegistration() {
   };
 
   const confirmAndPay = async () => {
-    if (!selectedPlanId) return;
+    if (!detailsValid) {
+      setError('نام کسب‌وکار و دسته‌بندی را کامل کن.');
+      return;
+    }
+    if (logoBusy) {
+      setError('بارگذاری عکس کسب‌وکار هنوز کامل نشده است.');
+      return;
+    }
+    if (!selectedPlanId) {
+      setError('یک پلن اشتراک را انتخاب کن.');
+      return;
+    }
     if (!mapCityName) {
       setError(locationError ?? 'ابتدا شهر حساب کاربری‌ات را در پروفایل انتخاب کن.');
       return;
@@ -528,12 +546,6 @@ export function BusinessRegistration() {
     }
   };
 
-  const steps: { n: Step; label: string }[] = [
-    { n: 1, label: 'مشخصات' },
-    { n: 2, label: 'موقعیت' },
-    { n: 3, label: 'اشتراک' },
-  ];
-
   return (
     <section className="form-card biz-registration--jam-style" data-testid="business-registration">
       <header className="biz-registration__hero">
@@ -544,25 +556,11 @@ export function BusinessRegistration() {
           <p>مشخصات کسب‌وکارت را ثبت کن تا شهروندان راحت‌تر پیدایت کنند.</p>
         </div>
       </header>
-      <div className="biz-registration__progress">
-        <div className="biz-registration__progress-copy">
-          <strong>{steps.find((s) => s.n === step)?.label}</strong>
-          <span>مرحله {step.toLocaleString('fa-IR')} از ۳</span>
-        </div>
-        <div className="biz-registration__progress-track" aria-hidden>
-          <span style={{ width: `${(step / 3) * 100}%` }} />
-        </div>
-      </div>
-      <div className="biz-steps" aria-label="مراحل ثبت">
-        {steps.map((s) => (
-          <span
-            key={s.n}
-            className={`biz-steps__item${step === s.n ? ' is-active' : ''}${step > s.n ? ' is-done' : ''}`}
-          >
-            {step > s.n ? '✓' : s.n} {s.label}
-          </span>
-        ))}
-      </div>
+      <nav className="biz-registration__quick-nav" aria-label="بخش‌های ثبت کسب‌وکار">
+        <a href="#biz-details">۱. مشخصات</a>
+        <a href="#biz-location">۲. موقعیت اختیاری</a>
+        <a href="#biz-plan">۳. اشتراک</a>
+      </nav>
 
       {error && (
         <div className="banner banner--error" role="alert">
@@ -578,17 +576,16 @@ export function BusinessRegistration() {
         </div>
       )}
 
-      {step === 1 && (
-        <form
-          className="ad-form biz-registration__form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (detailsValid) setStep(2);
-          }}
-          noValidate
-        >
+      <form
+        className="biz-registration__form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void confirmAndPay();
+        }}
+      >
+      <section className="ad-form biz-registration__step-panel" id="biz-details" aria-labelledby="biz-details-heading">
           <div className="biz-registration__section-heading">
-            <span>۱</span><div><h2>مشخصات کسب‌وکار</h2><p>اطلاعات اصلی که در صفحه کسب‌وکار نمایش داده می‌شود.</p></div>
+            <span>۱</span><div><h2 id="biz-details-heading">مشخصات کسب‌وکار</h2><p>اطلاعات اصلی که در صفحه کسب‌وکار نمایش داده می‌شود.</p></div>
           </div>
           <div className="biz-registration__fields">
           <div className="biz-registration__field biz-registration__field--wide">
@@ -684,72 +681,70 @@ export function BusinessRegistration() {
           </div>
           </div>
 
-          <button className="btn btn-primary biz-registration__next" type="submit" disabled={!detailsValid}>
-            مرحله بعد: موقعیت
-          </button>
-        </form>
-      )}
+      </section>
 
-      {step === 2 && (
-        <div className="biz-registration__step-panel">
+      <section className="biz-registration__step-panel" id="biz-location" aria-labelledby="biz-location-heading">
           <div className="biz-registration__section-heading">
-            <span>۲</span><div><h2>موقعیت کسب‌وکار</h2><p>موقعیت روی نقشه اختیاری است و به مشتری‌ها کمک می‌کند راحت‌تر پیدایت کنند.</p></div>
+            <span>۲</span><div><h2 id="biz-location-heading">موقعیت کسب‌وکار — اختیاری</h2><p>اگر موقعیت را اضافه کنی، مشتری‌ها راحت‌تر پیدایت می‌کنند؛ ثبت بدون نقشه هم ممکن است.</p></div>
           </div>
           <p className="muted small biz-location-instructions">
-            شهر ثبت: <strong>{mapCityName ?? 'شهر حساب کاربری'}</strong>. برای گذاشتن سنجاق، روی محل دقیق کسب‌وکار در نقشه لمس یا کلیک کن؛
-            برای اصلاح، سنجاق قرمز را بکش یا نقطهٔ جدیدی انتخاب کن. اگر موقعیت را نمی‌دانی، می‌توانی بدون سنجاق ادامه بدهی.
+            شهر ثبت: <strong>{mapCityName ?? 'شهر حساب کاربری'}</strong>. لازم نیست بین صفحه‌ها جابه‌جا شوی؛ اگر می‌خواهی، نقشه را همین‌جا باز کن.
           </p>
-          {mapStatus === 'loading' && (
-            <div className="biz-map-placeholder" role="status" aria-live="polite">
-              <span className="biz-map-placeholder__pin" aria-hidden="true">📍</span>
-              <span>در حال آماده‌سازی نقشهٔ {mapCityName ?? 'شهر حساب کاربری'}…</span>
+          {!mapCityName && locationError && <p className="banner banner--error" role="alert">{locationError}</p>}
+          <button
+            type="button"
+            className="btn btn-ghost biz-registration__location-toggle"
+            aria-expanded={locationOpen}
+            aria-controls="biz-location-picker"
+            onClick={() => setLocationOpen((open) => !open)}
+          >
+            {locationOpen ? 'بستن نقشه' : location ? 'ویرایش موقعیت روی نقشه' : 'افزودن موقعیت روی نقشه (اختیاری)'}
+          </button>
+          {locationOpen && (
+            <div id="biz-location-picker" className="biz-registration__location-picker">
+              {mapStatus === 'loading' && (
+                <div className="biz-map-placeholder" role="status" aria-live="polite">
+                  <span className="biz-map-placeholder__pin" aria-hidden="true">📍</span>
+                  <span>در حال آماده‌سازی نقشهٔ {mapCityName ?? 'شهر حساب کاربری'}…</span>
+                </div>
+              )}
+              {mapStatus === 'unavailable' && locationError && mapCityName && <p className="banner banner--error" role="alert">{locationError}</p>}
+              {mapStatus === 'ready' && (
+                <>
+                  <div className="biz-map-toolbar">
+                    <span className="biz-map-toolbar__hint">برای ثبت محل، روی نقشه بزن یا نشانگر را جابه‌جا کن</span>
+                    <div className="biz-map-toolbar__actions">
+                      <button type="button" className="btn btn-ghost biz-map-toolbar__button" onClick={locateCurrentPosition} disabled={locating}>
+                        {locating ? 'در حال یافتن…' : 'موقعیت فعلی من'}
+                      </button>
+                      <button type="button" className="btn btn-ghost biz-map-toolbar__button" onClick={() => frameMapRef.current?.()}>
+                        نمایش محدودهٔ شهر
+                      </button>
+                    </div>
+                  </div>
+                  <div ref={mapEl} className="biz-map" role="application" aria-label={`انتخاب موقعیت کسب‌وکار در ${mapCityName ?? 'شهر حساب کاربری'}`} aria-disabled="false" data-testid="biz-map" />
+                </>
+              )}
+              {locationError && mapStatus === 'ready' && <p className="banner banner--error" role="alert">{locationError}</p>}
+              {location ? (
+                <p className="chip chip--ok">
+                  سنجاق روی مختصات {location.lat.toFixed(5)}, {location.lng.toFixed(5)} قرار دارد؛ برای جابه‌جایی آن را بکش.
+                </p>
+              ) : mapStatus === 'ready' ? (
+                <p className="chip chip--muted">هنوز موقعیتی انتخاب نشده؛ روی نقشه لمس کن.</p>
+              ) : null}
+              {location && (
+                <button type="button" className="btn btn-ghost" onClick={clearLocation}>
+                  حذف موقعیت
+                </button>
+              )}
             </div>
           )}
-          {mapStatus === 'unavailable' && locationError && <p className="banner banner--error" role="alert">{locationError}</p>}
-          {mapStatus === 'ready' && (
-            <>
-              <div className="biz-map-toolbar">
-                <span className="biz-map-toolbar__hint">برای ثبت محل، روی نقشه بزن یا نشانگر را جابه‌جا کن</span>
-                <div className="biz-map-toolbar__actions">
-                  <button type="button" className="btn btn-ghost biz-map-toolbar__button" onClick={locateCurrentPosition} disabled={locating}>
-                    {locating ? 'در حال یافتن…' : 'موقعیت فعلی من'}
-                  </button>
-                  <button type="button" className="btn btn-ghost biz-map-toolbar__button" onClick={() => frameMapRef.current?.()}>
-                    نمایش محدودهٔ شهر
-                  </button>
-                </div>
-              </div>
-              <div ref={mapEl} className="biz-map" role="application" aria-label={`انتخاب موقعیت کسب‌وکار در ${mapCityName ?? 'شهر حساب کاربری'}`} aria-disabled="false" data-testid="biz-map" />
-            </>
-          )}
-          {locationError && mapStatus === 'ready' && <p className="banner banner--error" role="alert">{locationError}</p>}
-          {location ? (
-            <p className="chip chip--ok">
-              سنجاق روی مختصات {location.lat.toFixed(5)}, {location.lng.toFixed(5)} قرار دارد؛ برای جابه‌جایی آن را بکش.
-            </p>
-          ) : (
-            <p className="chip chip--muted">هنوز موقعیتی انتخاب نشده؛ روی نقشه لمس کن.</p>
-          )}
-          <div className="auth-actions">
-            <button className="btn btn-primary" onClick={() => setStep(3)} disabled={!mapCityName}>
-              مرحله بعد: اشتراک
-            </button>
-            {location && (
-              <button className="btn btn-ghost" onClick={clearLocation}>
-                حذف موقعیت
-              </button>
-            )}
-            <button className="btn btn-ghost" onClick={() => setStep(1)}>
-              بازگشت
-            </button>
-          </div>
-        </div>
-      )}
+        </section>
 
-      {step === 3 && (
-        <div className="biz-registration__step-panel">
+      <section className="biz-registration__step-panel" id="biz-plan" aria-labelledby="biz-plan-heading">
           <div className="biz-registration__section-heading">
-            <span>۳</span><div><h2>انتخاب اشتراک</h2><p>طرح مناسب کسب‌وکارت را انتخاب کن؛ مبلغ و مدت هر طرح پیش از ادامه مشخص است.</p></div>
+            <span>۳</span><div><h2 id="biz-plan-heading">انتخاب اشتراک</h2><p>طرح مناسب کسب‌وکارت را انتخاب کن؛ مبلغ و مدت هر طرح را همین‌جا می‌بینی.</p></div>
           </div>
           <p className="muted">
             اشتراک کسب‌وکارت را انتخاب کن. با «تأیید و پرداخت»، کسب‌وکارت ثبت و پرداخت درون‌برنامه‌ای بازار برایت باز می‌شود؛ بلافاصله پس از پرداخت موفق، اشتراک فعال و کسب‌وکارت تأیید می‌شود.
@@ -838,15 +833,16 @@ export function BusinessRegistration() {
             </section>
           )}
           <div className="auth-actions">
-            <button className="btn btn-primary" disabled={!selectedPlanId || busy} onClick={confirmAndPay}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={!detailsValid || !mapCityName || !selectedPlanId || busy || logoBusy}
+            >
               {busy ? 'در حال ثبت…' : 'تأیید و پرداخت'}
             </button>
-            <button className="btn btn-ghost" onClick={() => setStep(2)} disabled={busy}>
-              بازگشت
-            </button>
           </div>
-        </div>
-      )}
+        </section>
+      </form>
     </section>
   );
 }

@@ -103,6 +103,7 @@ describe('BusinessRegistration', () => {
       { id: 1, slug: 'sample-city', name: 'شهر نمونه' },
     ]);
     render(<BusinessRegistration />);
+    fireEvent.click(await screen.findByRole('button', { name: /افزودن موقعیت روی نقشه/ }));
     await waitFor(() => expect(m.getCityMap).toHaveBeenCalledWith('profile-city'));
     expect(m.getCityMap).not.toHaveBeenCalledWith('sample-city');
   });
@@ -110,12 +111,8 @@ describe('BusinessRegistration', () => {
   it('does not fall back to a possibly different local city when profile city is missing', async () => {
     m.getProfile.mockResolvedValue({ cityId: null });
     render(<BusinessRegistration />);
-    fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
-    await chooseBusinessCategory(3);
-    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: موقعیت/ }));
-
     expect(await screen.findByRole('alert')).toHaveTextContent('ابتدا شهر حساب کاربری‌ات را');
-    expect(screen.getByRole('button', { name: /مرحله بعد: اشتراک/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /تأیید و پرداخت/ })).toBeDisabled();
     expect(m.getCityMap).not.toHaveBeenCalled();
   });
 
@@ -151,16 +148,23 @@ describe('BusinessRegistration', () => {
     expect(screen.getByTestId('biz-category-picker').querySelector('.biz-category-picker__options')).toBeInTheDocument();
   });
 
-  it('gates the details step until name and category are chosen', async () => {
+  it('shows the full one-page form and enables payment only after required details and a plan are selected', async () => {
     render(<BusinessRegistration />);
-    const next = await screen.findByRole('button', { name: /مرحله بعد: موقعیت/ });
-    expect(next).toBeDisabled();
+    const payment = await screen.findByRole('button', { name: /تأیید و پرداخت/ });
+    expect(await screen.findByRole('heading', { name: 'مشخصات کسب‌وکار' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /موقعیت کسب‌وکار/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'انتخاب اشتراک' })).toBeInTheDocument();
+    expect(screen.getByTestId('biz-plans')).toBeInTheDocument();
+    expect(m.getCityMap).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('biz-map')).not.toBeInTheDocument();
+    expect(payment).toBeDisabled();
     fireEvent.change(screen.getByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
     await chooseBusinessCategory(3);
-    expect(next).toBeEnabled();
+    fireEvent.click(screen.getByTestId('biz-plan-11'));
+    await waitFor(() => expect(payment).toBeEnabled());
   });
 
-  it('walks details → location → plan and opens Bazaar billing on confirm', async () => {
+  it('keeps details, optional location and plans on one page, then opens Bazaar billing with the mapped product', async () => {
     m.createBusiness.mockResolvedValue({ id: 77, name: 'قهوه‌خانه', slug: 'biz-77', status: 'PENDING', subscriptionTier: 'FREE' });
     m.checkoutPlan.mockResolvedValue({ paymentId: 1, productId: 'M1_GOLD', packageName: 'ir.shahrju.app', amount: 500_000 });
     m.verifyBazaarPurchase.mockResolvedValue('SUCCESS');
@@ -168,15 +172,9 @@ describe('BusinessRegistration', () => {
     render(<BusinessRegistration />);
     fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
     await chooseBusinessCategory(3);
-    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: موقعیت/ }));
-
-    // step 2: map picker shown
-    await screen.findByTestId('biz-map');
-    await waitFor(() => expect(screen.getByTestId('biz-map')).toHaveAttribute('aria-disabled', 'false'));
-    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: اشتراک/ }));
-
-    // step 3: pick GOLD plan then confirm
     const plansCard = await screen.findByTestId('biz-plans');
+    expect(screen.getByRole('heading', { name: /موقعیت کسب‌وکار/ })).toBeInTheDocument();
+    expect(m.getCityMap).not.toHaveBeenCalled();
     expect(plansCard).toContainElement(screen.getByTestId('biz-plan-10'));
     expect(plansCard).toContainElement(screen.getByTestId('biz-plan-11'));
     expect(plansCard).toHaveTextContent('ثبت کسب‌وکار در ویترین طلایی');
@@ -222,7 +220,7 @@ describe('BusinessRegistration', () => {
     render(<BusinessRegistration />);
     fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
     await chooseBusinessCategory(3);
-    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: موقعیت/ }));
+    fireEvent.click(screen.getByRole('button', { name: /افزودن موقعیت روی نقشه/ }));
     await screen.findByTestId('biz-map');
     fireEvent.click(screen.getByRole('button', { name: 'موقعیت فعلی من' }));
 
@@ -264,11 +262,6 @@ describe('BusinessRegistration', () => {
     expect(await screen.findByTestId('biz-logo-preview')).toBeInTheDocument();
     expect(m.uploadBusinessImage).toHaveBeenCalledWith(file);
 
-    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: موقعیت/ }));
-    await screen.findByTestId('biz-map');
-    await waitFor(() => expect(screen.getByTestId('biz-map')).toHaveAttribute('aria-disabled', 'false'));
-    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: اشتراک/ }));
-    await screen.findByTestId('biz-plans');
     fireEvent.click(screen.getByTestId('biz-plan-11'));
     fireEvent.click(screen.getByRole('button', { name: /تأیید و پرداخت/ }));
 
