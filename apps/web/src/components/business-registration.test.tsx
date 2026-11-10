@@ -151,9 +151,13 @@ describe('BusinessRegistration', () => {
   it('shows the full one-page form and enables payment only after required details and a plan are selected', async () => {
     render(<BusinessRegistration />);
     const payment = await screen.findByRole('button', { name: /تأیید و پرداخت/ });
-    expect(await screen.findByRole('heading', { name: 'مشخصات کسب‌وکار' })).toBeInTheDocument();
+    expect(await screen.findByTestId('business-registration')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'مشخصات کسب‌وکار' })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /موقعیت کسب‌وکار/ })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'انتخاب اشتراک' })).toBeInTheDocument();
+    expect(screen.queryByText(/اطلاعات اصلی که در صفحه کسب‌وکار نمایش داده می‌شود/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/عکس فشرده ذخیره می‌شود/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/بلافاصله پس از پرداخت موفق/)).not.toBeInTheDocument();
     expect(screen.getByTestId('biz-plans')).toBeInTheDocument();
     expect(m.getCityMap).not.toHaveBeenCalled();
     expect(screen.queryByTestId('biz-map')).not.toBeInTheDocument();

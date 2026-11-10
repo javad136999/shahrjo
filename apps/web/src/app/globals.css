@@ -144,6 +144,30 @@ a:hover {
 .header-annual-visits__icon { color: #178254; font-size: 13px; line-height: 1; }
 .header-annual-visits__count { font-size: 11px; font-variant-numeric: tabular-nums; }
 .header-annual-visits__label { color: #638370; font-size: 9px; font-weight: 750; }
+.app-update-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 34px;
+  padding: 5px 12px;
+  border-bottom: 1px solid #d7eadf;
+  background: linear-gradient(90deg, #effaf4, #fff);
+  color: #245c43;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.app-update-notice__link {
+  flex: 0 0 auto;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #07895f;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 750;
+  text-decoration: none;
+}
+.app-update-notice__link:hover { background: #06724f; color: #fff; }
 .site-header .btn {
   padding: 5px 11px;
   font-size: 12.5px;
@@ -217,6 +241,8 @@ a:hover {
 }
 
 @media (max-width: 760px) {
+  .app-update-notice { gap: 7px; padding-inline: 8px; font-size: 11px; }
+  .app-update-notice__link { padding: 3px 8px; font-size: 10px; }
   /* icons only — the city name and the tourism pill keep their labels */
   .header-pills .pill:not([data-testid='header-city-pill']):not([data-testid='header-news-pill'])
     .pill__label {

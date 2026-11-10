@@ -583,10 +583,7 @@ export function BusinessRegistration() {
           void confirmAndPay();
         }}
       >
-      <section className="ad-form biz-registration__step-panel" id="biz-details" aria-labelledby="biz-details-heading">
-          <div className="biz-registration__section-heading">
-            <span>۱</span><div><h2 id="biz-details-heading">مشخصات کسب‌وکار</h2><p>اطلاعات اصلی که در صفحه کسب‌وکار نمایش داده می‌شود.</p></div>
-          </div>
+      <section className="ad-form biz-registration__step-panel" id="biz-details" aria-label="مشخصات کسب‌وکار">
           <div className="biz-registration__fields">
           <div className="biz-registration__field biz-registration__field--wide">
           <label htmlFor="biz-name">نام کسب‌وکار</label>
@@ -652,12 +649,6 @@ export function BusinessRegistration() {
               </button>
             )}
           </div>
-          <p className="muted small">
-            {logoBusy
-              ? 'در حال بارگذاری و فشرده‌سازی عکس…'
-              : 'عکس فشرده ذخیره می‌شود و روی پین نقشه و در ویترین طلایی شهر (اگر اشتراک طلایی/نقره‌ای داشته باشی) جای آیکون نمایش داده می‌شود.'}
-          </p>
-
           </div>
           <div className="biz-registration__field biz-registration__field--wide">
           <label htmlFor="biz-desc">توضیحات — اختیاری</label>
@@ -744,11 +735,8 @@ export function BusinessRegistration() {
 
       <section className="biz-registration__step-panel" id="biz-plan" aria-labelledby="biz-plan-heading">
           <div className="biz-registration__section-heading">
-            <span>۳</span><div><h2 id="biz-plan-heading">انتخاب اشتراک</h2><p>طرح مناسب کسب‌وکارت را انتخاب کن؛ مبلغ و مدت هر طرح را همین‌جا می‌بینی.</p></div>
+            <span>۳</span><div><h2 id="biz-plan-heading">انتخاب اشتراک</h2></div>
           </div>
-          <p className="muted">
-            اشتراک کسب‌وکارت را انتخاب کن. با «تأیید و پرداخت»، کسب‌وکارت ثبت و پرداخت درون‌برنامه‌ای بازار برایت باز می‌شود؛ بلافاصله پس از پرداخت موفق، اشتراک فعال و کسب‌وکارت تأیید می‌شود.
-          </p>
           {!plans && !error && (
             <p className="loading muted" aria-busy>
               در حال بارگذاری پلن‌ها…

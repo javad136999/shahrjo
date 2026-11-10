@@ -79,6 +79,7 @@ class MainActivity : ComponentActivity() {
             settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             settings.javaScriptCanOpenWindowsAutomatically = false
             settings.setSupportMultipleWindows(false)
+            settings.userAgentString = "${settings.userAgentString} ShahrjoApp/${BuildConfig.VERSION_NAME}"
         }
         // Let Android place the WebView between the system bars. The web app
         // already handles its own safe-area CSS; applying navigation-bar

@@ -4,6 +4,7 @@ import { BottomNav } from '@/components/bottom-nav';
 import { HeaderActions } from '@/components/header-actions';
 import { HeaderCity } from '@/components/header-city';
 import { HeaderPills } from '@/components/header-pills';
+import { AppUpdateNotice } from '@/components/app-update-notice';
 import { SiteChrome } from '@/components/site-chrome';
 import { VisitBeacon } from '@/components/visit-beacon';
 import { BazaarInstallBanner } from '@/components/bazaar-install-banner';
@@ -99,6 +100,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <HeaderActions />
             </div>
           </header>
+          <AppUpdateNotice />
         </SiteChrome>
         <main className="container page">{children}</main>
         <SiteChrome>
