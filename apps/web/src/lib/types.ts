@@ -564,6 +564,8 @@ export interface MyBusiness {
   id: number;
   name: string;
   slug: string;
+  /** Total public business-detail page views recorded so far. */
+  viewCount: number;
   status: string;
   subscriptionTier: string;
   /** ACTIVE / EXPIRED / NONE — why a suspended row is suspended. */

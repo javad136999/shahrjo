@@ -125,6 +125,7 @@ describe('BusinessesService.mine — the owner’s working list', () => {
         id: 1,
         name: 'کافه',
         slug: 'cafe-1',
+        viewCount: 18,
         status: 'CLOSED',
         subscriptionTier: 'SILVER',
         subscriptionStatus: 'EXPIRED',
@@ -146,6 +147,8 @@ describe('BusinessesService.mine — the owner’s working list', () => {
     // …but a suspended one stays, so the owner can reactivate it via a purchase
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ status: 'CLOSED', subscriptionStatus: 'EXPIRED', productCount: 2, pinned: false });
+    expect(rows[0].viewCount).toBe(18);
+    expect(findMany.mock.calls[0][0].select.viewCount).toBe(true);
     expect(rows[0].subscriptionExpiresAt).toBeInstanceOf(Date);
   });
 

@@ -6098,6 +6098,22 @@ button.pill {
 .mybiz__body p {
   margin: 0;
 }
+.mybiz__views {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  margin-top: 2px !important;
+  padding: 4px 9px;
+  border: 1px solid #d8eadf;
+  border-radius: 999px;
+  background: #f1f8f3;
+  color: #286447;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.mybiz__views strong { font-size: 12px; font-variant-numeric: tabular-nums; }
+.mybiz__views > span:first-child { color: #188055; font-size: 13px; }
 .mybiz__actions {
   display: flex;
   gap: 8px;

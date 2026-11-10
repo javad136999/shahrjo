@@ -146,6 +146,11 @@ export function MyBusinesses() {
                     {business.productCount.toLocaleString('fa-IR')} محصول ·{' '}
                     {business.pinned ? '📍 روی نقشه' : 'بدون موقعیت روی نقشه'}
                   </p>
+                  <p className="mybiz__views" data-testid={`my-business-views-${business.id}`} aria-label={`بازدید صفحهٔ ${business.name}`}>
+                    <span aria-hidden="true">◉</span>
+                    <strong>{business.viewCount.toLocaleString('fa-IR')}</strong>
+                    <span>بازدید صفحه</span>
+                  </p>
                   {suspended && (
                     <p className="mybiz__suspended" data-testid={`my-business-suspended-${business.id}`}>
                       این کسب‌وکار تعلیق است {business.subscriptionStatus === 'EXPIRED' ? '(پایان مهلت اشتراک)' : ''} و از نقشه و جستجو خارج شده. با خرید اشتراک، به همان مدتی که انتخاب می‌کنی دوباره فعال می‌شود.

@@ -28,6 +28,8 @@ export interface MyBusiness {
   id: number;
   name: string;
   slug: string;
+  /** Total public business-detail page views recorded so far. */
+  viewCount: number;
   status: string;
   subscriptionTier: string;
   /** ACTIVE / EXPIRED / NONE — a suspended row tells the owner why + how to reactivate. */
@@ -333,6 +335,7 @@ export class BusinessesService {
         id: true,
         name: true,
         slug: true,
+        viewCount: true,
         status: true,
         subscriptionTier: true,
         subscriptionStatus: true,
@@ -367,6 +370,7 @@ export class BusinessesService {
         id: true,
         name: true,
         slug: true,
+        viewCount: true,
         status: true,
         subscriptionTier: true,
         subscriptionStatus: true,

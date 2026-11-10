@@ -24,6 +24,7 @@ const BUSINESSES = [
     id: 4,
     name: 'کافه آزمون',
     slug: 'cafe-1',
+    viewCount: 1234,
     status: 'PENDING',
     subscriptionTier: 'FREE',
     subscriptionStatus: 'NONE',
@@ -39,6 +40,7 @@ const BUSINESSES = [
     id: 9,
     name: 'فروشگاه بدون منو',
     slug: 'shop-1',
+    viewCount: 0,
     status: 'APPROVED',
     subscriptionTier: 'GOLD',
     subscriptionStatus: 'ACTIVE',
@@ -68,6 +70,8 @@ describe('MyBusinesses («کسب‌وکارهای من»)', () => {
     expect(screen.getByTestId('my-business-4')).toHaveTextContent('کافه آزمون');
     expect(screen.getByTestId('my-business-4')).toHaveTextContent('در انتظار تأیید');
     expect(screen.getByTestId('my-business-4')).toHaveTextContent('۳ محصول');
+    expect(screen.getByTestId('my-business-views-4')).toHaveTextContent('۱٬۲۳۴');
+    expect(screen.getByTestId('my-business-views-4')).toHaveTextContent('بازدید صفحه');
     expect(screen.getByTestId('my-business-4')).toHaveTextContent('📍 روی نقشه');
     expect(screen.getByTestId('my-business-edit-4')).toHaveAttribute('href', '/business/4/manage?tab=info');
     expect(screen.getByTestId('my-business-menu-4')).toHaveAttribute('href', '/business/4/manage?tab=menu');
@@ -86,6 +90,7 @@ describe('MyBusinesses («کسب‌وکارهای من»)', () => {
         id: 77,
         name: 'کسب‌وکار معلق',
         slug: 'suspended-1',
+        viewCount: 8,
         status: 'CLOSED',
         subscriptionTier: 'SILVER',
         subscriptionStatus: 'EXPIRED',
