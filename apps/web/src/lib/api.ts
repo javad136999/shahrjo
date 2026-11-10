@@ -395,6 +395,11 @@ export async function getAdminVisits(): Promise<VisitStats> {
   return api.get<VisitStats>('/admin/analytics/visits');
 }
 
+/** Whole-site daily / monthly / yearly totals for signed-in account panels. */
+export async function getSiteVisitStats(): Promise<VisitStats> {
+  return api.get<VisitStats>('/analytics/visits');
+}
+
 /** Visit beacon — fired once per page load; failures are ignored. */
 export async function recordVisit(): Promise<void> {
   try {

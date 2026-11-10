@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CITY_CHANGED_EVENT, getLocalCity } from '@/lib/api';
+import { CITY_CHANGED_EVENT, getLocalCity, getSiteVisitStats, getTokens } from '@/lib/api';
 import { CityPicker } from '@/components/city-picker';
 import type { LocalCity } from '@/lib/types';
 
@@ -17,6 +17,7 @@ import type { LocalCity } from '@/lib/types';
 export function HeaderPills() {
   const [city, setCity] = useState<LocalCity | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [yearlyVisits, setYearlyVisits] = useState<number | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -28,6 +29,18 @@ export function HeaderPills() {
       window.removeEventListener(CITY_CHANGED_EVENT, sync);
       window.removeEventListener('storage', sync);
     };
+  }, [pathname]);
+
+  useEffect(() => {
+    let alive = true;
+    if (!getTokens()) {
+      setYearlyVisits(null);
+      return () => { alive = false; };
+    }
+    getSiteVisitStats()
+      .then((stats) => alive && setYearlyVisits(stats.yearly.total))
+      .catch(() => alive && setYearlyVisits(null));
+    return () => { alive = false; };
   }, [pathname]);
 
   return (
@@ -42,6 +55,19 @@ export function HeaderPills() {
         <span aria-hidden>🧭</span>
         <span className="pill__label">گردشگری شهر</span>
       </Link>
+      {yearlyVisits !== null && (
+        <Link
+          href="/profile"
+          className="pill header-annual-visits"
+          title="بازدید کل سایت در سال جاری"
+          aria-label={`بازدید سایت امسال: ${yearlyVisits.toLocaleString('fa-IR')}`}
+          data-testid="header-annual-visits"
+        >
+          <span className="header-annual-visits__icon" aria-hidden="true">◉</span>
+          <span className="header-annual-visits__count">{yearlyVisits.toLocaleString('fa-IR')}</span>
+          <span className="header-annual-visits__label">امسال</span>
+        </Link>
+      )}
       {/* This is the ONLY way to change the city: it opens the picker with
           search in place — no page jump. It always reads «انتخاب شهر» rather
           than the current city, because the adjacent header slot already

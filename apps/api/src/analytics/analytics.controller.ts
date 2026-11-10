@@ -1,4 +1,4 @@
-import { Controller, HttpCode, Post } from '@nestjs/common';
+import { Controller, Get, HttpCode, Post } from '@nestjs/common';
 import { Public } from '../common/decorators';
 import { ClientIp } from '../common/client-ip.decorator';
 import { RateLimiterService } from '../redis/rate-limiter.service';
@@ -15,6 +15,12 @@ export class AnalyticsController {
     private readonly analytics: AnalyticsService,
     private readonly rateLimiter: RateLimiterService,
   ) {}
+
+  /** Whole-site daily / monthly / yearly totals for signed-in users. */
+  @Get('visits')
+  visits() {
+    return this.analytics.stats();
+  }
 
   @Public()
   @Post('visit')

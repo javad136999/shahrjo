@@ -10,6 +10,7 @@ const mockGetTokens = jest.fn();
 const mockGetProfile = jest.fn();
 const mockGetMyAds = jest.fn();
 const mockGetMyFavorites = jest.fn();
+const mockGetSiteVisitStats = jest.fn();
 const mockUpdateProfile = jest.fn();
 const mockApiGet = jest.fn();
 
@@ -26,6 +27,7 @@ jest.mock('@/lib/api', () => ({
   getProfile: () => mockGetProfile(),
   getMyAds: () => mockGetMyAds(),
   getMyFavorites: () => mockGetMyFavorites(),
+  getSiteVisitStats: () => mockGetSiteVisitStats(),
   updateProfile: (patch: unknown) => mockUpdateProfile(patch),
   logoutServer: () => Promise.resolve(),
 }));
@@ -63,6 +65,11 @@ describe('ProfileView', () => {
     mockGetProfile.mockResolvedValue(profile);
     mockGetMyAds.mockResolvedValue([adFixture(3, 'آگهی من')]);
     mockGetMyFavorites.mockResolvedValue([adFixture(9, 'آگهی ذخیره‌شده')]);
+    mockGetSiteVisitStats.mockResolvedValue({
+      daily: { total: 25, series: [] },
+      monthly: { total: 640, series: [] },
+      yearly: { total: 7200, series: [] },
+    });
     mockApiGet.mockResolvedValue([{ id: 7, name: 'شهر نمونه', slug: 'sample-city' }]);
   });
 
@@ -79,6 +86,19 @@ describe('ProfileView', () => {
     expect(screen.getByText(/09123456789/)).toBeInTheDocument();
     expect(screen.getByDisplayValue('کاربر نمونه')).toBeInTheDocument();
     expect(await screen.findByText(/شهر نمونه/)).toBeInTheDocument();
+  });
+
+  it('shows overall site visits today, this month, and this year to a regular account', async () => {
+    render(<ProfileView />);
+
+    const stats = await screen.findByTestId('profile-site-visits');
+    expect(stats).toHaveTextContent('بازدیدهای سایت');
+    expect(stats).toHaveTextContent('امروز');
+    expect(stats).toHaveTextContent('۲۵');
+    expect(stats).toHaveTextContent('این ماه');
+    expect(stats).toHaveTextContent('۶۴۰');
+    expect(stats).toHaveTextContent('امسال');
+    expect(stats).toHaveTextContent('۷٬۲۰۰');
   });
 
   it('keeps favorites but no longer lists or links the owner\u2019s ads', async () => {

@@ -132,6 +132,18 @@ a:hover {
   font-size: 12.5px;
   gap: 5px;
 }
+.site-header .header-annual-visits {
+  gap: 4px;
+  padding: 4px 8px;
+  border-color: #d7eadf;
+  background: linear-gradient(135deg, #f2faf5, #fff);
+  color: #226044;
+  font-size: 10px;
+  box-shadow: inset 0 1px 0 #fff;
+}
+.header-annual-visits__icon { color: #178254; font-size: 13px; line-height: 1; }
+.header-annual-visits__count { font-size: 11px; font-variant-numeric: tabular-nums; }
+.header-annual-visits__label { color: #638370; font-size: 9px; font-weight: 750; }
 .site-header .btn {
   padding: 5px 11px;
   font-size: 12.5px;
@@ -210,6 +222,8 @@ a:hover {
     .pill__label {
     display: none;
   }
+  .header-annual-visits__label { display: none; }
+  .site-header .header-annual-visits { gap: 3px; padding: 5px 7px; }
   .header-phone {
     display: none;
   }
@@ -4945,6 +4959,32 @@ a.my-ads__item:hover {
 .profile-card .btn {
   width: 100%;
 }
+
+.profile-visits {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #dcebe1;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #f5fbf7, #fff);
+}
+.profile-visits__heading { margin-bottom: 9px; }
+.profile-visits__heading h2 { margin: 0 0 2px; color: #245c41; font-size: 14px; }
+.profile-visits__heading p { margin: 0; color: var(--muted); font-size: 10px; }
+.profile-visits__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.profile-visits__grid article {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 7px;
+  border: 1px solid #e2eee6;
+  border-radius: 12px;
+  background: #fff;
+  text-align: center;
+}
+.profile-visits__grid article span { color: var(--muted); font-size: 10px; }
+.profile-visits__grid article strong { color: #176b46; font-size: clamp(14px, 3.2vw, 19px); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.profile-visits__message { margin: 0; color: var(--muted); font-size: 11px; }
 
 /* ---- private messages page (/messages) ---- */
 

@@ -2,6 +2,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const mockGetLocalCity = jest.fn();
 const mockGetCities = jest.fn();
+const mockGetTokens = jest.fn();
+const mockGetSiteVisitStats = jest.fn();
 
 jest.mock('next/navigation', () => ({
   usePathname: () => '/',
@@ -11,7 +13,8 @@ jest.mock('next/navigation', () => ({
 jest.mock('@/lib/api', () => ({
   CITY_CHANGED_EVENT: 'shahrjo:city-changed',
   getLocalCity: () => mockGetLocalCity(),
-  getTokens: () => null,
+  getTokens: () => mockGetTokens(),
+  getSiteVisitStats: () => mockGetSiteVisitStats(),
   setLocalCity: jest.fn(),
   api: { get: () => mockGetCities(), patch: jest.fn() },
 }));
@@ -23,6 +26,12 @@ describe('HeaderPills', () => {
     jest.clearAllMocks();
     mockGetLocalCity.mockReturnValue({ id: 5, slug: 'sample-city', name: 'شهر نمونه' });
     mockGetCities.mockResolvedValue([]);
+    mockGetTokens.mockReturnValue(null);
+    mockGetSiteVisitStats.mockResolvedValue({
+      daily: { total: 1, series: [] },
+      monthly: { total: 2, series: [] },
+      yearly: { total: 12345, series: [] },
+    });
   });
 
   it('reads «انتخاب شهر» and opens the picker in place (no page jump)', async () => {
@@ -51,6 +60,15 @@ describe('HeaderPills', () => {
     const pill = await screen.findByTestId('header-city-pill');
     expect(pill.tagName).toBe('BUTTON');
     expect(pill).toHaveTextContent('انتخاب شهر');
+  });
+
+  it('shows the current-year whole-site visit count to a signed-in user', async () => {
+    mockGetTokens.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
+    render(<HeaderPills />);
+    const visits = await screen.findByTestId('header-annual-visits');
+    expect(visits).toHaveAttribute('href', '/profile');
+    expect(visits).toHaveAttribute('aria-label', 'بازدید سایت امسال: ۱۲٬۳۴۵');
+    expect(visits).toHaveTextContent('۱۲٬۳۴۵');
   });
 
   it('links the tourism button to the remembered city tourism page', async () => {

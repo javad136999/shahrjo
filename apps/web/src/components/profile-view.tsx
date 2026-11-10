@@ -8,12 +8,13 @@ import {
   api,
   getMyFavorites,
   getProfile,
+  getSiteVisitStats,
   getTokens,
   logoutServer,
   updateProfile,
 } from '@/lib/api';
 import { formatDate } from '@/lib/format';
-import type { City, MeResponse, MyAdItem } from '@/lib/types';
+import type { City, MeResponse, MyAdItem, VisitStats } from '@/lib/types';
 import { MyAdsList } from './my-ads';
 
 /**
@@ -28,6 +29,8 @@ export function ProfileView() {
   const [me, setMe] = useState<MeResponse | null | undefined>(undefined); // undefined = loading
   const [cityName, setCityName] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<MyAdItem[]>([]);
+  const [siteVisits, setSiteVisits] = useState<VisitStats | null>(null);
+  const [siteVisitsUnavailable, setSiteVisitsUnavailable] = useState(false);
   const [fullName, setFullName] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -39,6 +42,9 @@ export function ProfileView() {
       return;
     }
     let alive = true;
+    getSiteVisitStats()
+      .then((stats) => alive && setSiteVisits(stats))
+      .catch(() => alive && setSiteVisitsUnavailable(true));
     (async () => {
       try {
         const [profile, favs] = await Promise.all([
@@ -108,6 +114,24 @@ export function ProfileView() {
         <p className="muted small">
           🏙 {cityName ?? (me.hasSelectedCity ? '—' : 'شهر انتخاب نشده')} · عضو از {formatDate(me.createdAt)}
         </p>
+
+        <section className="profile-visits" aria-label="آمار بازدید سایت" data-testid="profile-site-visits">
+          <div className="profile-visits__heading">
+            <h2>بازدیدهای سایت</h2>
+            <p>تعداد بازدیدهای ثبت‌شده از صفحات سایت</p>
+          </div>
+          {siteVisits ? (
+            <div className="profile-visits__grid">
+              <article><span>امروز</span><strong>{siteVisits.daily.total.toLocaleString('fa-IR')}</strong></article>
+              <article><span>این ماه</span><strong>{siteVisits.monthly.total.toLocaleString('fa-IR')}</strong></article>
+              <article><span>امسال</span><strong>{siteVisits.yearly.total.toLocaleString('fa-IR')}</strong></article>
+            </div>
+          ) : siteVisitsUnavailable ? (
+            <p className="profile-visits__message" role="status">آمار بازدید در حال حاضر در دسترس نیست.</p>
+          ) : (
+            <p className="profile-visits__message" role="status" aria-busy="true">در حال دریافت آمار بازدید…</p>
+          )}
+        </section>
 
         <form onSubmit={saveName} noValidate>
           <label htmlFor="fullName">نام نمایشی</label>
