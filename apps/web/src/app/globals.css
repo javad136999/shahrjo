@@ -9618,3 +9618,86 @@ button.pill {
   .city-business-directory__tag { padding: 5px 7px; font-size: 9px; }
   .city-business-directory__call { padding: 7px 9px; }
 }
+
+
+/* Compact, registration-only layout. Keep every selector within the signup page. */
+.biz-registration--jam-style {
+  width: min(100% - 24px, 920px);
+  margin-inline: auto;
+  padding: clamp(14px, 2.4vw, 24px);
+  border-radius: 22px;
+}
+.biz-registration--jam-style .biz-registration__hero {
+  gap: 12px;
+  padding: 4px 2px 14px;
+}
+.biz-registration--jam-style .biz-registration__hero-icon {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  font-size: 23px;
+}
+.biz-registration--jam-style .biz-registration__hero h1 { margin: 0 0 4px; font-size: clamp(19px, 3vw, 25px); }
+.biz-registration--jam-style .biz-registration__hero p { margin: 0; line-height: 1.7; }
+.biz-registration--jam-style .biz-registration__quick-nav { gap: 7px; margin: 0 0 12px; }
+.biz-registration--jam-style .biz-registration__quick-nav a { padding: 6px 10px; font-size: 11px; }
+.biz-registration--jam-style .biz-registration__step-panel {
+  margin-top: 12px;
+  padding: clamp(12px, 2vw, 18px);
+  border-radius: 17px;
+}
+.biz-registration--jam-style .biz-registration__section-heading { gap: 9px; margin-bottom: 12px; }
+.biz-registration--jam-style .biz-registration__section-heading > span { width: 28px; height: 28px; flex: 0 0 28px; }
+.biz-registration--jam-style .biz-registration__section-heading h2 { margin: 0 0 2px; font-size: 15px; }
+.biz-registration--jam-style .biz-registration__section-heading p { margin: 0; font-size: 11px; line-height: 1.7; }
+.biz-registration--jam-style .biz-registration__fields { gap: 10px 12px; }
+.biz-registration--jam-style .biz-registration__field label { margin-bottom: 5px; font-size: 11px; }
+.biz-registration--jam-style .biz-registration__field input,
+.biz-registration--jam-style .biz-registration__field textarea { min-height: 40px; padding: 9px 11px; font-size: 13px; }
+.biz-registration--jam-style .biz-registration__subscription-card { margin-top: 12px; padding: 14px; border-radius: 18px; }
+.biz-registration--jam-style .biz-registration__tier-section + .biz-registration__tier-section { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgb(68 91 75 / 12%); }
+.biz-registration--jam-style .biz-registration__tier-heading { gap: 8px; margin-bottom: 8px; }
+.biz-registration--jam-style .biz-registration__tier-icon { width: 30px; height: 30px; flex: 0 0 30px; font-size: 15px; }
+.biz-registration--jam-style .biz-registration__tier-heading h3 { margin: 0 0 2px; font-size: 13px; }
+.biz-registration--jam-style .biz-registration__tier-heading p { margin: 0; font-size: 10px; line-height: 1.6; }
+.biz-registration--jam-style .biz-registration__subscription-card .biz-registration__plans-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 7px;
+}
+.biz-registration--jam-style .biz-registration__subscription-card .biz-registration__plan {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 7px;
+  border-radius: 13px;
+  text-align: center;
+}
+.biz-registration--jam-style .biz-registration__plan .plan-card__tier { font-size: 11px; line-height: 1.5; }
+.biz-registration--jam-style .biz-registration__plan .plan-card__duration { font-size: 10px; }
+.biz-registration--jam-style .biz-registration__plan .plan-card__price { font-size: clamp(12px, 1.7vw, 16px); line-height: 1.5; overflow-wrap: anywhere; }
+.biz-registration--jam-style .biz-registration__plan .biz-registration__plan-monthly { font-size: 9px; line-height: 1.5; }
+.biz-registration--jam-style .biz-registration__plan-note { margin: 0; font-size: 9px; }
+.biz-registration--jam-style .biz-registration__selected { font-size: 9px; }
+.biz-registration--jam-style .biz-registration__tier-benefits { margin-top: 9px; padding-top: 8px; }
+.biz-registration--jam-style .biz-registration__tier-benefits h4 { margin: 0 0 6px; font-size: 11px; }
+.biz-registration--jam-style .biz-registration__tier-benefits ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 10px; margin: 0; padding: 0; list-style: none; }
+.biz-registration--jam-style .biz-registration__tier-benefits li { display: flex; align-items: flex-start; gap: 6px; min-width: 0; font-size: 10px; line-height: 1.65; }
+.biz-registration--jam-style .biz-registration__benefit-icon { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 7px; font-size: 12px; }
+.biz-registration--jam-style .auth-actions { margin-top: 12px; }
+.biz-registration--jam-style .auth-actions .btn { min-height: 42px; padding: 9px 18px; }
+@media (max-width: 560px) {
+  .biz-registration--jam-style { width: min(100% - 16px, 920px); padding: 12px; border-radius: 18px; }
+  .biz-registration--jam-style .biz-registration__step-panel { padding: 11px; }
+  .biz-registration--jam-style .biz-registration__subscription-card { padding: 10px 8px; }
+  .biz-registration--jam-style .biz-registration__subscription-card .biz-registration__plans-grid { gap: 6px; }
+  .biz-registration--jam-style .biz-registration__subscription-card .biz-registration__plan { padding: 9px 5px; }
+  .biz-registration--jam-style .biz-registration__tier-benefits ul { grid-template-columns: 1fr; }
+}
+@media (max-width: 350px) {
+  .biz-registration--jam-style { width: min(100% - 10px, 920px); padding: 9px; }
+  .biz-registration--jam-style .biz-registration__plan .plan-card__price { font-size: 11px; }
+}
