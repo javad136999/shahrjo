@@ -20,9 +20,9 @@ describe('BazaarService subscriptions', () => {
       text: async () => JSON.stringify({ purchaseState: 0, orderId: 'order-test', validUntilTimestampMsec: '1792867200000' }),
     } as Response);
 
-    const result = await service.verifyPurchase('M1_GOLD', 'test-purchase-token');
+    const result = await service.verifyPurchase('GOLD_1M', 'test-purchase-token');
 
-    expect(String(fetchMock.mock.calls[0][0])).toContain('/applications/ir.shahrju.app/subscriptions/M1_GOLD/purchases/test-purchase-token/');
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/applications/ir.shahrju.app/subscriptions/GOLD_1M/purchases/test-purchase-token/');
     expect(String(fetchMock.mock.calls[0][0])).toContain('access_token=test-access-token');
     expect(result.purchaseState).toBe(0);
     expect(result.orderId).toBe('order-test');
@@ -36,7 +36,7 @@ describe('BazaarService subscriptions', () => {
       text: async () => JSON.stringify({ purchaseState: 0 }),
     } as Response);
 
-    const result = await service.verifyPurchase('M1_SILVER', 'test-purchase-token');
+    const result = await service.verifyPurchase('SILVER_1M', 'test-purchase-token');
     expect(result.validUntilTimestampMsec).toBeNull();
   });
 
@@ -49,7 +49,7 @@ describe('BazaarService subscriptions', () => {
     } as Response);
 
     try {
-      await service.verifyPurchase('M1_GOLD', 'test-purchase-token');
+      await service.verifyPurchase('GOLD_1M', 'test-purchase-token');
       fail('Expected non-JSON Bazaar response to be rejected');
     } catch (error) {
       expect(error).toBeInstanceOf(HttpException);

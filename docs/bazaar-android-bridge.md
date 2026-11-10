@@ -15,7 +15,7 @@ window.ShahrjoBazaar = {
 };
 ```
 
-عملیات native فقط روی اشتراک‌های `M1_GOLD`, `M6_GOLD`, `M12_GOLD`, `M1_SILVER`, `M6_SILVER` و `M12_SILVER` اجازه داده می‌شود. شناسهٔ داخلی پلن در دیتابیس به همین شناسهٔ دقیق بازار نگاشت می‌شود. RSA public key بازار در build به `BuildConfig` تزریق می‌شود؛ access token بازار در اپ وجود ندارد و فقط سمت سرور استفاده می‌شود.
+عملیات native فقط روی اشتراک‌های `GOLD_1M`, `GOLD_6M`, `GOLD_12M`, `SILVER_1M`, `SILVER_6M` و `SILVER_12M` اجازه داده می‌شود. شناسهٔ پلن در دیتابیس با شناسهٔ دقیق محصول بازار یکسان است. RSA public key بازار در build به `BuildConfig` تزریق می‌شود؛ access token بازار در اپ وجود ندارد و فقط سمت سرور استفاده می‌شود.
 
 ## جریان خرید
 

@@ -166,7 +166,7 @@ describe('BusinessRegistration', () => {
 
   it('keeps details, optional location and plans on one page, then opens Bazaar billing with the mapped product', async () => {
     m.createBusiness.mockResolvedValue({ id: 77, name: 'قهوه‌خانه', slug: 'biz-77', status: 'PENDING', subscriptionTier: 'FREE' });
-    m.checkoutPlan.mockResolvedValue({ paymentId: 1, productId: 'M1_GOLD', packageName: 'ir.shahrju.app', amount: 500_000 });
+    m.checkoutPlan.mockResolvedValue({ paymentId: 1, productId: 'GOLD_1M', packageName: 'ir.shahrju.app', amount: 500_000 });
     m.verifyBazaarPurchase.mockResolvedValue('SUCCESS');
 
     render(<BusinessRegistration />);
@@ -203,8 +203,8 @@ describe('BusinessRegistration', () => {
       expect(m.checkoutPlan).toHaveBeenCalledWith({ planId: 11, businessId: 77 }),
     );
     await waitFor(() => {
-      expect(mockPurchaseWithBazaar).toHaveBeenCalledWith('M1_GOLD', 'ir.shahrju.app');
-      expect(m.verifyBazaarPurchase).toHaveBeenCalledWith({ paymentId: 1, productId: 'M1_GOLD', purchaseToken: 'bazaar-token' });
+      expect(mockPurchaseWithBazaar).toHaveBeenCalledWith('GOLD_1M', 'ir.shahrju.app');
+      expect(m.verifyBazaarPurchase).toHaveBeenCalledWith({ paymentId: 1, productId: 'GOLD_1M', purchaseToken: 'bazaar-token' });
     });
   });
 
@@ -243,7 +243,7 @@ describe('BusinessRegistration', () => {
       url: '/api/v1/files/media/2026/10/logo.webp',
     });
     m.createBusiness.mockResolvedValue({ id: 77, name: 'قهوه‌خانه', slug: 'biz-77', status: 'PENDING', subscriptionTier: 'FREE' });
-    m.checkoutPlan.mockResolvedValue({ paymentId: 1, productId: 'M1_GOLD', packageName: 'ir.shahrju.app', amount: 500_000 });
+    m.checkoutPlan.mockResolvedValue({ paymentId: 1, productId: 'GOLD_1M', packageName: 'ir.shahrju.app', amount: 500_000 });
     m.verifyBazaarPurchase.mockResolvedValue('SUCCESS');
 
     render(<BusinessRegistration />);

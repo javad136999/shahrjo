@@ -9,15 +9,15 @@ export interface BazaarSubscriptionPurchase {
   purchaseState: string;
 }
 
-/** Database plan codes are intentionally different from Bazaar product IDs. */
+/** Database plan codes match the exact product IDs in the Bazaar catalog. */
 export function bazaarProductIdForPlanCode(planCode: string): string {
   const ids: Record<string, string> = {
-    GOLD_1M: 'M1_GOLD',
-    GOLD_6M: 'M6_GOLD',
-    GOLD_12M: 'M12_GOLD',
-    SILVER_1M: 'M1_SILVER',
-    SILVER_6M: 'M6_SILVER',
-    SILVER_12M: 'M12_SILVER',
+    GOLD_1M: 'GOLD_1M',
+    GOLD_6M: 'GOLD_6M',
+    GOLD_12M: 'GOLD_12M',
+    SILVER_1M: 'SILVER_1M',
+    SILVER_6M: 'SILVER_6M',
+    SILVER_12M: 'SILVER_12M',
   };
   return ids[planCode] ?? planCode;
 }
