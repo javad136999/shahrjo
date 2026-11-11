@@ -69,6 +69,7 @@ describe('HeaderPills', () => {
     expect(visits).toHaveAttribute('href', '/profile');
     expect(visits).toHaveAttribute('aria-label', 'بازدید سایت امسال: ۱۲٬۳۴۵');
     expect(visits).toHaveTextContent('۱۲٬۳۴۵');
+    expect(visits).toHaveTextContent('بازدید از سایت');
   });
 
   it('links the tourism button to the remembered city tourism page', async () => {
