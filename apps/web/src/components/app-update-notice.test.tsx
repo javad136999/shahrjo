@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { AppUpdateNotice } from '@/components/app-update-notice';
 
 describe('AppUpdateNotice', () => {
@@ -6,6 +6,7 @@ describe('AppUpdateNotice', () => {
 
   afterEach(() => {
     Object.defineProperty(window.navigator, 'userAgent', { configurable: true, value: originalUserAgent });
+    delete (window as Window & { __SHAHRJO_APP_VERSION__?: string }).__SHAHRJO_APP_VERSION__;
   });
 
   function setUserAgent(userAgent: string) {
@@ -24,6 +25,27 @@ describe('AppUpdateNotice', () => {
   it('hides the notice automatically after the current app version is installed', () => {
     setUserAgent('Mozilla/5.0 (Linux; Android 13; Pixel; wv) Version/4.0 Chrome/130.0 Mobile Safari/537.36 ShahrjoApp/1.0.11');
     render(<AppUpdateNotice />);
+
+    expect(screen.queryByTestId('app-update-notice')).not.toBeInTheDocument();
+  });
+
+  it('hides the notice when the current app reports its version natively', () => {
+    setUserAgent('Mozilla/5.0 (Linux; Android 13; Pixel; wv) Version/4.0 Chrome/130.0 Mobile Safari/537.36');
+    (window as Window & { __SHAHRJO_APP_VERSION__?: string }).__SHAHRJO_APP_VERSION__ = '1.0.11';
+    render(<AppUpdateNotice />);
+
+    expect(screen.queryByTestId('app-update-notice')).not.toBeInTheDocument();
+  });
+
+  it('rechecks and hides the prompt if the native version arrives after page hydration', () => {
+    setUserAgent('Mozilla/5.0 (Linux; Android 13; Pixel; wv) Version/4.0 Chrome/130.0 Mobile Safari/537.36');
+    render(<AppUpdateNotice />);
+    expect(screen.getByTestId('app-update-notice')).toBeInTheDocument();
+
+    act(() => {
+      (window as Window & { __SHAHRJO_APP_VERSION__?: string }).__SHAHRJO_APP_VERSION__ = '1.0.11';
+      window.dispatchEvent(new Event('shahrjo:app-version'));
+    });
 
     expect(screen.queryByTestId('app-update-notice')).not.toBeInTheDocument();
   });

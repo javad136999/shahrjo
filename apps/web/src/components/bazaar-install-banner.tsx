@@ -21,8 +21,9 @@ function isInstalledExperience(isInstagramBrowser: boolean): boolean {
   const isInstalledAndroidWebView = /Android/i.test(userAgent) &&
     (/[;\s]wv\)/i.test(userAgent) || /Version\/4\.0/i.test(userAgent)) &&
     !isInstagramBrowser;
+  const nativeAppVersion = Boolean((window as Window & { __SHAHRJO_APP_VERSION__?: string }).__SHAHRJO_APP_VERSION__);
 
-  return Boolean(standalone || isFullscreenApp || isInstalledAndroidWebView);
+  return Boolean(standalone || isFullscreenApp || isInstalledAndroidWebView || nativeAppVersion);
 }
 
 function wasDismissedRecently(key: string): boolean {
@@ -43,25 +44,36 @@ export function BazaarInstallBanner() {
 
   useEffect(() => {
     setVisible(false);
+    let timer: number | undefined;
+    const onNativeAppVersion = () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+      setVisible(false);
+    };
+    window.addEventListener('shahrjo:app-version', onNativeAppVersion);
     const isInstagramBrowser = /Instagram/i.test(navigator.userAgent);
     const isPrivatePage =
       pathname === '/messages' || pathname.startsWith('/messages/') ||
       pathname === '/admin' || pathname.startsWith('/admin/') ||
       pathname === '/profile';
     const isCityWall = pathname === '/wall' || pathname.startsWith('/wall/');
-    if (
-      isPrivatePage || (isCityWall && !isInstagramBrowser)
-    ) return;
+    if (isPrivatePage || (isCityWall && !isInstagramBrowser)) {
+      return () => window.removeEventListener('shahrjo:app-version', onNativeAppVersion);
+    }
     const dismissKey = isInstagramBrowser ? INSTAGRAM_DISMISS_KEY : DISMISS_KEY;
-    if (isInstalledExperience(isInstagramBrowser) || wasDismissedRecently(dismissKey)) return;
+    if (isInstalledExperience(isInstagramBrowser) || wasDismissedRecently(dismissKey)) {
+      return () => window.removeEventListener('shahrjo:app-version', onNativeAppVersion);
+    }
 
     if (isInstagramBrowser) {
       setVisible(true);
-      return;
+      return () => window.removeEventListener('shahrjo:app-version', onNativeAppVersion);
     }
 
-    const timer = window.setTimeout(() => setVisible(true), SHOW_AFTER_MS);
-    return () => window.clearTimeout(timer);
+    timer = window.setTimeout(() => setVisible(true), SHOW_AFTER_MS);
+    return () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+      window.removeEventListener('shahrjo:app-version', onNativeAppVersion);
+    };
   }, [pathname]);
 
   const dismiss = () => {

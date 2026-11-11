@@ -19,6 +19,7 @@ describe('BazaarInstallBanner', () => {
     localStorage.clear();
     standaloneMode = false;
     fullscreenMode = false;
+    delete (window as Window & { __SHAHRJO_APP_VERSION__?: string }).__SHAHRJO_APP_VERSION__;
     mockPathname.mockReturnValue('/city/jam/services');
     Object.defineProperty(window, 'matchMedia', {
       configurable: true,
@@ -35,6 +36,7 @@ describe('BazaarInstallBanner', () => {
   afterEach(() => {
     jest.useRealTimers();
     Object.defineProperty(navigator, 'userAgent', { configurable: true, value: originalUserAgent });
+    delete (window as Window & { __SHAHRJO_APP_VERSION__?: string }).__SHAHRJO_APP_VERSION__;
   });
 
   it('shows a delayed Bazaar install link on browser pages', () => {
@@ -65,6 +67,23 @@ describe('BazaarInstallBanner', () => {
     });
     render(<BazaarInstallBanner />);
     act(() => jest.advanceTimersByTime(6_000));
+    expect(screen.queryByTestId('bazaar-install-banner')).not.toBeInTheDocument();
+  });
+
+  it('does not show inside a native app when version injection is available without WebView User-Agent markers', () => {
+    (window as Window & { __SHAHRJO_APP_VERSION__?: string }).__SHAHRJO_APP_VERSION__ = '1.0.12';
+    render(<BazaarInstallBanner />);
+    act(() => jest.advanceTimersByTime(6_000));
+    expect(screen.queryByTestId('bazaar-install-banner')).not.toBeInTheDocument();
+  });
+
+  it('cancels a pending browser install banner when the native version arrives', () => {
+    render(<BazaarInstallBanner />);
+    act(() => {
+      (window as Window & { __SHAHRJO_APP_VERSION__?: string }).__SHAHRJO_APP_VERSION__ = '1.0.12';
+      window.dispatchEvent(new Event('shahrjo:app-version'));
+      jest.advanceTimersByTime(6_000);
+    });
     expect(screen.queryByTestId('bazaar-install-banner')).not.toBeInTheDocument();
   });
 

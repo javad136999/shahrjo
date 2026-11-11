@@ -164,7 +164,14 @@ class MainActivity : ComponentActivity() {
 
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
-                if (paymentReady && isTrustedOrigin(Uri.parse(url))) exposePaymentBridge()
+                if (isTrustedOrigin(Uri.parse(url))) {
+                    val version = JSONObject.quote(BuildConfig.VERSION_NAME)
+                    view.evaluateJavascript(
+                        "window.__SHAHRJO_APP_VERSION__ = $version; window.dispatchEvent(new Event('shahrjo:app-version'));",
+                        null,
+                    )
+                    if (paymentReady) exposePaymentBridge()
+                }
             }
         }
     }
