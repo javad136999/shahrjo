@@ -59,13 +59,13 @@ export function HeaderPills() {
         <Link
           href="/profile"
           className="pill header-annual-visits"
-          title="بازدید کل سایت در سال جاری"
+          title="بازدید از سایت در سال جاری"
           aria-label={`بازدید سایت امسال: ${yearlyVisits.toLocaleString('fa-IR')}`}
           data-testid="header-annual-visits"
         >
           <span className="header-annual-visits__icon" aria-hidden="true">◉</span>
           <span className="header-annual-visits__count">{yearlyVisits.toLocaleString('fa-IR')}</span>
-          <span className="header-annual-visits__label">امسال</span>
+          <span className="header-annual-visits__label">بازدید از سایت</span>
         </Link>
       )}
       {/* This is the ONLY way to change the city: it opens the picker with

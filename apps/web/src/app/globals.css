@@ -133,17 +133,17 @@ a:hover {
   gap: 5px;
 }
 .site-header .header-annual-visits {
-  gap: 4px;
-  padding: 4px 8px;
+  gap: 3px;
+  padding: 3px 6px;
   border-color: #d7eadf;
   background: linear-gradient(135deg, #f2faf5, #fff);
   color: #226044;
-  font-size: 10px;
+  font-size: 9px;
   box-shadow: inset 0 1px 0 #fff;
 }
-.header-annual-visits__icon { color: #178254; font-size: 13px; line-height: 1; }
-.header-annual-visits__count { font-size: 11px; font-variant-numeric: tabular-nums; }
-.header-annual-visits__label { color: #638370; font-size: 9px; font-weight: 750; }
+.header-annual-visits__icon { color: #178254; font-size: 11px; line-height: 1; }
+.header-annual-visits__count { font-size: 10px; font-variant-numeric: tabular-nums; }
+.header-annual-visits__label { color: #638370; font-size: 8px; font-weight: 750; white-space: nowrap; }
 .app-update-notice {
   display: flex;
   align-items: center;
@@ -248,8 +248,8 @@ a:hover {
     .pill__label {
     display: none;
   }
-  .header-annual-visits__label { display: none; }
-  .site-header .header-annual-visits { gap: 3px; padding: 5px 7px; }
+  .site-header .header-annual-visits { gap: 2px; padding: 3px 5px; }
+  .header-annual-visits__label { font-size: 7.5px; }
   .header-phone {
     display: none;
   }
