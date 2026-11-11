@@ -2866,6 +2866,12 @@ a.my-ads__item:hover {
 .admin-row__body strong {
   font-size: 15px;
 }
+.admin-row__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
 .admin-row__actions {
   display: flex;
   gap: 8px;

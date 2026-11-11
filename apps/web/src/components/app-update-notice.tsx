@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react';
 
-const MINIMUM_APP_VERSION = '1.0.11';
+// Temporary floor: Bazaar currently serves 1.0.10. Raise this only after the
+// newer APK is published there, otherwise current Bazaar users see a dead-end
+// update prompt.
+const MINIMUM_APP_VERSION = '1.0.10';
 const BAZAAR_APP_URL = 'https://cafebazaar.ir/app/ir.shahrju.app';
 const APP_VERSION_EVENT = 'shahrjo:app-version';
 

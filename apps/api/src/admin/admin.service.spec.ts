@@ -10,6 +10,7 @@ function makePrisma() {
     business: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     serviceListing: { findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     wallPost: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
+    payment: { findMany: jest.fn().mockResolvedValue([]) },
     subscription: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     user: { count: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     city: { findFirst: jest.fn(), update: jest.fn() },
@@ -79,6 +80,65 @@ describe('AdminService scope enforcement', () => {
       status: 'PENDING',
       city: { provinceId: 3 },
     });
+  });
+
+  it('shows the latest Bazaar payment of every queued business so paid registrations are recognizable', async () => {
+    const { service, prisma } = makeService({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+    prisma.business.findMany.mockResolvedValue([
+      {
+        id: 31,
+        name: 'کافهٔ پرداخت‌شده',
+        slug: 'paid-cafe',
+        status: 'PENDING',
+        phone: '09170000000',
+        address: null,
+        latitude: null,
+        longitude: null,
+        subscriptionTier: 'GOLD',
+        subscriptionStatus: 'ACTIVE',
+        subscriptionExpiresAt: new Date('2026-12-11T00:00:00.000Z'),
+        createdAt: new Date('2026-11-11T00:00:00.000Z'),
+        city: { id: 1, name: 'شهر نمونه' },
+        owner: { id: 5, phone: '09123456789', fullName: null },
+        category: { name: 'کافه', icon: '☕' },
+      },
+    ]);
+    prisma.payment.findMany.mockResolvedValue([
+      {
+        id: 10,
+        businessId: 31,
+        provider: 'BAZAAR',
+        status: 'FAILED',
+        amount: BigInt(1_990_000),
+        paidAt: null,
+        createdAt: new Date('2026-11-11T02:00:00.000Z'),
+        plan: { code: 'GOLD_1M', label: '۱ ماهه', tier: 'GOLD', durationDays: 30 },
+      },
+      {
+        id: 9,
+        businessId: 31,
+        provider: 'BAZAAR',
+        status: 'SUCCESS',
+        amount: BigInt(1_990_000),
+        paidAt: new Date('2026-11-11T01:00:00.000Z'),
+        createdAt: new Date('2026-11-11T01:00:00.000Z'),
+        plan: { code: 'GOLD_1M', label: '۱ ماهه', tier: 'GOLD', durationDays: 30 },
+      },
+    ]);
+
+    const [row] = await service.businesses(admin, 'PENDING');
+
+    expect(prisma.payment.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { businessId: { in: [31] } },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    }));
+    expect(row.payment).toMatchObject({
+      provider: 'BAZAAR',
+      status: 'SUCCESS',
+      amount: 1_990_000,
+      plan: { label: '۱ ماهه', tier: 'GOLD' },
+    });
+    expect(row.subscriptionStatus).toBe('ACTIVE');
   });
 
   it('lists and deletes service entries and their wall promos only inside the operator city scope', async () => {

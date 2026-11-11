@@ -63,6 +63,21 @@ const STATUS_LABEL: Record<string, string> = {
   ACTIVE: 'فعال',
 };
 
+const PAYMENT_STATUS_LABEL: Record<string, string> = {
+  SUCCESS: 'موفق',
+  FAILED: 'ناموفق',
+  CANCELED: 'لغو‌شده',
+  CREATED: 'در انتظار پرداخت',
+  STARTED: 'در حال پرداخت',
+};
+
+const TIER_LABEL: Record<string, string> = { GOLD: 'طلایی', SILVER: 'نقره‌ای', FREE: 'رایگان' };
+
+/** Plan prices are stored in Rial; the operator reads Toman. */
+function formatToman(amount: number): string {
+  return `${Math.round(amount / 10).toLocaleString('fa-IR')} تومان`;
+}
+
 /**
  * Admin moderation panel (Phase 8): queues for ads, businesses and paid
  * subscriptions with approve/reject actions. The API enforces permissions
@@ -403,6 +418,45 @@ export function AdminPanel() {
                       {row.address && ` · 📍 ${row.address}`}
                       {row.latitude !== null && row.longitude !== null && ' · 📌 مختصات ثبت شده'}
                     </span>
+                    <span className="admin-row__chips">
+                      {row.subscriptionTier !== 'FREE' && (
+                        <span className="chip chip--warn" data-testid={`tier-chip-${row.id}`}>
+                          👑 اشتراک {TIER_LABEL[row.subscriptionTier] ?? row.subscriptionTier}
+                        </span>
+                      )}
+                      {row.payment ? (
+                        <span
+                          className={`chip ${
+                            row.payment.status === 'SUCCESS'
+                              ? 'chip--ok'
+                              : row.payment.status === 'FAILED' || row.payment.status === 'CANCELED'
+                                ? 'chip--err'
+                                : 'chip--warn'
+                          }`}
+                          data-testid={`payment-chip-${row.id}`}
+                        >
+                          💳 پرداخت بازار: {PAYMENT_STATUS_LABEL[row.payment.status] ?? row.payment.status}
+                          {' · '}
+                          {row.payment.plan.label} · {formatToman(row.payment.amount)}
+                          {row.payment.paidAt ? ` · ${formatDate(row.payment.paidAt)}` : ''}
+                        </span>
+                      ) : (
+                        <span className="chip chip--muted" data-testid={`payment-chip-${row.id}`}>
+                          بدون پرداخت بازار
+                        </span>
+                      )}
+                      {row.subscriptionStatus === 'ACTIVE' && row.subscriptionExpiresAt && (
+                        new Date(row.subscriptionExpiresAt) > new Date() ? (
+                          <span className="chip chip--ok" data-testid={`subscription-chip-${row.id}`}>
+                            اشتراک فعال تا {formatDate(row.subscriptionExpiresAt)}
+                          </span>
+                        ) : (
+                          <span className="chip chip--err" data-testid={`subscription-chip-${row.id}`}>
+                            اشتراک منقضی شده
+                          </span>
+                        )
+                      )}
+                    </span>
                   </>
                 )}
                 {'phone' in row && 'description' in row && (
@@ -477,10 +531,18 @@ export function AdminPanel() {
                       type="button"
                       className="btn btn-ghost admin-action admin-action--ok"
                       disabled={busyId === row.id}
-                      onClick={() => run(() => approveAdminBusiness(row.id), 'کسب‌وکار تأیید شد', row.id)}
+                      onClick={() =>
+                        run(
+                          () => approveAdminBusiness(row.id),
+                          row.payment?.status === 'SUCCESS'
+                            ? 'کسب‌وکار تأیید شد و با اشتراک پرداخت‌شده در نقشه و ویترین فعال شد'
+                            : 'کسب‌وکار تأیید شد',
+                          row.id,
+                        )
+                      }
                       data-testid={`approve-${row.id}`}
                     >
-                      تأیید
+                      {row.payment?.status === 'SUCCESS' ? 'تأیید و فعال‌سازی' : 'تأیید'}
                     </button>
                     <button
                       type="button"

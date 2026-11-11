@@ -14,7 +14,7 @@ describe('AppUpdateNotice', () => {
   }
 
   it('shows a Bazaar update link to an older Android app WebView', async () => {
-    setUserAgent('Mozilla/5.0 (Linux; Android 13; Pixel; wv) Version/4.0 Chrome/130.0 Mobile Safari/537.36 ShahrjoApp/1.0.10');
+    setUserAgent('Mozilla/5.0 (Linux; Android 13; Pixel; wv) Version/4.0 Chrome/130.0 Mobile Safari/537.36 ShahrjoApp/1.0.0');
     render(<AppUpdateNotice />);
 
     const notice = await screen.findByTestId('app-update-notice');
@@ -23,7 +23,7 @@ describe('AppUpdateNotice', () => {
   });
 
   it('hides the notice automatically after the current app version is installed', () => {
-    setUserAgent('Mozilla/5.0 (Linux; Android 13; Pixel; wv) Version/4.0 Chrome/130.0 Mobile Safari/537.36 ShahrjoApp/1.0.11');
+    setUserAgent('Mozilla/5.0 (Linux; Android 13; Pixel; wv) Version/4.0 Chrome/130.0 Mobile Safari/537.36 ShahrjoApp/1.0.10');
     render(<AppUpdateNotice />);
 
     expect(screen.queryByTestId('app-update-notice')).not.toBeInTheDocument();
@@ -31,7 +31,7 @@ describe('AppUpdateNotice', () => {
 
   it('hides the notice when the current app reports its version natively', () => {
     setUserAgent('Mozilla/5.0 (Linux; Android 13; Pixel; wv) Version/4.0 Chrome/130.0 Mobile Safari/537.36');
-    (window as Window & { __SHAHRJO_APP_VERSION__?: string }).__SHAHRJO_APP_VERSION__ = '1.0.11';
+    (window as Window & { __SHAHRJO_APP_VERSION__?: string }).__SHAHRJO_APP_VERSION__ = '1.0.10';
     render(<AppUpdateNotice />);
 
     expect(screen.queryByTestId('app-update-notice')).not.toBeInTheDocument();
@@ -43,7 +43,7 @@ describe('AppUpdateNotice', () => {
     expect(screen.getByTestId('app-update-notice')).toBeInTheDocument();
 
     act(() => {
-      (window as Window & { __SHAHRJO_APP_VERSION__?: string }).__SHAHRJO_APP_VERSION__ = '1.0.11';
+      (window as Window & { __SHAHRJO_APP_VERSION__?: string }).__SHAHRJO_APP_VERSION__ = '1.0.10';
       window.dispatchEvent(new Event('shahrjo:app-version'));
     });
 

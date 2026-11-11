@@ -66,7 +66,7 @@
 |---|---|---|
 | GET `/subscription-plans` | @Public | پلن‌های فعال (`GOLD`/`SILVER`، قیمت BigInt → عدد) برای صفحه /plans |
 | POST `/payments/checkout` | Bearer | `{ planId, businessId? }` → ایجاد پرداخت `CREATED` با `provider=BAZAAR` و بازگشت `{ paymentId, productId, packageName, amount }`؛ سقف ۱۰ checkout در ساعت |
-| POST `/payments/bazaar/verify` | Bearer | `{ paymentId, productId, purchaseToken }` → اعتبارسنجی server-to-server با Bazaar؛ فقط خرید محصول متناظر و تراکنش متعلق به همان کاربر پذیرفته می‌شود؛ فعال‌سازی در تراکنش اتمیک و تکرار امن (`ALREADY_PAID`) |
+| POST `/payments/bazaar/verify` | Bearer | `{ paymentId, productId, purchaseToken }` → اعتبارسنجی server-to-server با Bazaar؛ فقط خرید محصول متناظر و تراکنش متعلق به همان کاربر پذیرفته می‌شود؛ فعال‌سازی در تراکنش اتمیک و تکرار امن (`ALREADY_PAID`)؛ پرداخت موفق اشتراک را فعال می‌کند اما کسب‌وکار تازه‌ثبت‌شده تا تأیید مدیر در صف `PENDING` می‌ماند |
 | GET `/payments/mine` | Bearer | تاریخچه پرداخت‌های کاربر |
 | GET `/subscriptions/mine` | Bearer | اشتراک‌های کاربر و کسب‌وکار مرتبط |
 
@@ -105,7 +105,7 @@
 | POST `/admin/ads/:id/approve` | `ads.moderate` | `APPROVED` + `publishedAt` + تمدید انقضای ۳۰ روزه + audit |
 | POST `/admin/ads/:id/reject` | `ads.moderate` | `{ reason }` الزامی (حداقل ۳ حرف) → `REJECTED` + audit |
 | POST `/admin/ads/:id/delete` | `ads.moderate` | حذف نرم (`DELETED`) از فهرست‌های عمومی، محدود به شهر/استان مدیر؛ پاک‌سازی عکس‌ها + audit + اعلان به مالک |
-| GET `/admin/businesses?status=PENDING` | `businesses.view` | صف کسب‌وکارها |
+| GET `/admin/businesses?status=PENDING` | `businesses.view` | صف کسب‌وکارها به‌همراه آخرین پرداخت بازار (`provider/status/amount/plan/paidAt`) و وضعیت/انقضای اشتراک، تا مدیر پیش از تأیید از پرداخت مطمئن شود؛ تأیید همان ردیف، کسب‌وکار را روی نقشه و (برای اشتراک طلایی/نقره‌ای) در ویترین منتشر می‌کند |
 | GET `/admin/service-listings` | `businesses.view` | فهرست خدمات ثبت‌شده در دفتر خدمات شهر؛ محدود به شهر/استان مدیر، شامل ثبت ممیزی مشاهده |
 | POST `/admin/service-listings/:id/delete` | `businesses.moderate` | غیرفعال‌سازی نرم (`isActive=false`) تا خروج فوری از فهرست عمومی شهر؛ محدود به scope مدیر + audit، رکورد برای حفظ سابقه باقی می‌ماند |
 | POST `/admin/businesses` | `businesses.moderate` | **ثبت دستی کسب‌وکار توسط مدیر**: `{ cityId, categoryId, name, description?, phone?, address?, ownerPhone?, latitude?, longitude?, tier?, months?, logoUrl? }` → انتشار فوری (`APPROVED`، بدون صف و بدون پرداخت)؛ شهر و پین باید داخل محدودهٔ همان شهر باشند؛ `tier=GOLD/SILVER` + `months` (۱–۶۰) اشتراک را همان لحظه فعال می‌کند (پایانش را sweep ساعتی تعلیق می‌کند)؛ `logoUrl` باید آپلود خودِ مدیر باشد؛ مالک با `ownerPhone` (کاربر موجود) یا خودِ مدیر؛ + audit |

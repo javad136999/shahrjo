@@ -56,12 +56,14 @@ export type PaymentResultStatus = 'SUCCESS' | 'FAILED' | 'CANCELED' | 'ALREADY_P
  * client completes the product purchase and POSTs its token to verify, which
  * marks the payment SUCCESS and creates the Subscription ACTIVE. The same
  * transaction also promotes the business the plan was paid for: its tier,
- * expiry and showcase priority are set immediately, a business still waiting
- * in the moderation queue (PENDING) is approved right there — a paid
- * registration needs no admin step — and a suspended business (CLOSED, either
- * manually or after its subscription ran out) is brought back for the
- * purchased duration. An explicit admin REJECTED/DELETED is never overridden
- * by money (the tier is applied, the moderation decision is left alone).
+ * expiry and showcase priority are set immediately. A newly registered
+ * business (PENDING) keeps waiting in the moderation queue: the admin panel
+ * shows its successful Bazaar payment and publishes it only after an explicit
+ * approval — the same approval that puts it on the city map and, for a paid
+ * tier, in the golden showcase. A suspended business (CLOSED, either manually
+ * or after its subscription ran out) is brought back for the purchased
+ * duration. An explicit admin REJECTED/DELETED is never overridden by money
+ * (the tier is applied, the moderation decision is left alone).
  *
  * The client never reports success: the token is verified server-to-server
  * against the exact product and the Payment row owned by the authenticated user.
@@ -197,8 +199,18 @@ export class PaymentsService {
     });
     if (outcome === 'SUCCESS') {
       try {
+        let body = 'اشتراک شما فعال شد.';
+        if (payment.businessId !== null) {
+          const business = await this.prisma.business.findUnique({
+            where: { id: payment.businessId },
+            select: { status: true },
+          });
+          if (business?.status === 'PENDING') {
+            body = 'اشتراک شما فعال شد. کسب‌وکارتان پس از تأیید مدیریت در نقشه و ویترین شهر نمایش داده می‌شود.';
+          }
+        }
         await this.prisma.notification.create({
-          data: { userId: payment.userId, type: 'PAYMENT', title: 'پرداخت با موفقیت ثبت شد', body: 'اشتراک شما فعال شد.' },
+          data: { userId: payment.userId, type: 'PAYMENT', title: 'پرداخت با موفقیت ثبت شد', body },
         });
       } catch { /* payment remains active if notification delivery fails */ }
     }
@@ -226,7 +238,12 @@ export class PaymentsService {
         await tx.business.update({
           where: { id: payment.businessId },
           data: {
-            ...(business.status === 'PENDING' || business.status === 'CLOSED' ? { status: 'APPROVED' as const } : {}),
+            // A new registration (PENDING) must stay in the admin moderation
+            // queue even after a successful payment: the operator sees the
+            // Bazaar payment in the queue and approving it publishes the
+            // business on the map and showcase. Only a business suspended by
+            // the expiry sweep (CLOSED) is restored right away by a renewal.
+            ...(business.status === 'CLOSED' ? { status: 'APPROVED' as const } : {}),
             subscriptionTier: plan.tier,
             subscriptionStatus: 'ACTIVE',
             subscriptionExpiresAt: effective,

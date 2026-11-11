@@ -197,10 +197,27 @@ export interface QueueBusiness {
   latitude: number | null;
   longitude: number | null;
   subscriptionTier: string;
+  subscriptionStatus: string;
+  subscriptionExpiresAt: Date | null;
   createdAt: Date;
   city: { id: number; name: string };
   owner: { id: number; phone: string; fullName: string | null };
   category: { name: string; icon: string | null };
+  /**
+   * Newest payment attempt of this business (Bazaar). `null` means the owner
+   * never started a checkout — e.g. a free registration or an admin-created
+   * entry. A successful Bazaar payment is what the operator checks before
+   * approving a paid registration.
+   */
+  payment: {
+    id: number;
+    provider: string;
+    status: string;
+    amount: number;
+    paidAt: Date | null;
+    createdAt: Date;
+    plan: { code: string; label: string; tier: string; durationDays: number };
+  } | null;
 }
 
 export interface QueueServiceListing {
@@ -241,10 +258,12 @@ export interface RewardUser {
  * written to `audit_logs`.
  *
  * A verified payment now activates its subscription and promotes the business
- * by itself (see PaymentsService.verifyPayment) — these queues review content
- * (ads, businesses) and any legacy PENDING_REVIEW subscription rows. An
- * explicit rejection here is never overridden by a later payment: only the
- * tier changes, the rejected status stays.
+ * (see PaymentsService.verifyPayment), but a newly registered business still
+ * waits here for an explicit approval: its queue row carries the latest
+ * Bazaar payment so the operator can confirm the fee was paid before
+ * publishing it on the map and showcase. An explicit rejection here is never
+ * overridden by a later payment: only the tier changes, the rejected status
+ * stays.
  */
 @Injectable()
 export class AdminService {
@@ -501,13 +520,62 @@ export class AdminService {
         latitude: true,
         longitude: true,
         subscriptionTier: true,
+        subscriptionStatus: true,
+        subscriptionExpiresAt: true,
         createdAt: true,
         city: { select: { id: true, name: true } },
         owner: { select: { id: true, phone: true, fullName: true } },
         category: { select: { name: true, icon: true } },
       },
     });
-    return rows.map(({ owner, ...rest }) => ({ ...rest, owner }));
+    const ids = rows.map((row) => row.id);
+    // A business can have several attempts (failed checkout, retry, renewal);
+    // the queue shows the newest one so a paid registration is recognizable
+    // before the operator approves it.
+    const payments = ids.length === 0
+      ? []
+      : await this.prisma.payment.findMany({
+          where: { businessId: { in: ids } },
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          select: {
+            id: true,
+            businessId: true,
+            provider: true,
+            status: true,
+            amount: true,
+            paidAt: true,
+            createdAt: true,
+            plan: { select: { code: true, label: true, tier: true, durationDays: true } },
+          },
+        });
+    const latestPayment = new Map<number, (typeof payments)[number]>();
+    const latestSuccessful = new Map<number, (typeof payments)[number]>();
+    for (const payment of payments) {
+      if (payment.businessId === null) continue;
+      if (!latestPayment.has(payment.businessId)) latestPayment.set(payment.businessId, payment);
+      if (payment.status === 'SUCCESS' && !latestSuccessful.has(payment.businessId)) {
+        latestSuccessful.set(payment.businessId, payment);
+      }
+    }
+    return rows.map(({ owner, ...rest }) => {
+      // A later failed retry must not hide an earlier successful purchase.
+      const payment = latestSuccessful.get(rest.id) ?? latestPayment.get(rest.id);
+      return {
+        ...rest,
+        owner,
+        payment: payment
+          ? {
+              id: payment.id,
+              provider: payment.provider,
+              status: payment.status,
+              amount: Number(payment.amount),
+              paidAt: payment.paidAt,
+              createdAt: payment.createdAt,
+              plan: payment.plan,
+            }
+          : null,
+      };
+    });
   }
 
   /** Active city service-directory entries, limited to the operator's scope. */

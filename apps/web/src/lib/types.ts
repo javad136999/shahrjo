@@ -243,10 +243,22 @@ export interface QueueBusiness {
   latitude: number | null;
   longitude: number | null;
   subscriptionTier: string;
+  subscriptionStatus: string;
+  subscriptionExpiresAt: string | null;
   createdAt: string;
   city: { id: number; name: string };
   owner: { id: number; phone: string; fullName: string | null };
   category: { name: string; icon: string | null };
+  /** Newest Bazaar payment attempt; null = never started a checkout. */
+  payment: {
+    id: number;
+    provider: string;
+    status: string;
+    amount: number;
+    paidAt: string | null;
+    createdAt: string;
+    plan: { code: string; label: string; tier: string; durationDays: number };
+  } | null;
 }
 
 export interface QueueServiceListing {

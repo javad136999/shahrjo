@@ -41,3 +41,45 @@ describe('PaymentsService Bazaar product IDs', () => {
     expect(result.packageName).toBe('ir.shahrju.app');
   });
 });
+
+describe('PaymentsService business activation after a verified payment', () => {
+  function makeTx() {
+    return {
+      subscription: { create: jest.fn().mockResolvedValue({ id: 1 }) },
+      business: { findUnique: jest.fn(), update: jest.fn().mockResolvedValue({}) },
+    };
+  }
+
+  const service = new PaymentsService({} as unknown as PrismaService, {} as unknown as BazaarService);
+  const payment = { userId: 1, businessId: 5, planId: 2 };
+
+  it('keeps a newly registered (PENDING) business in the admin moderation queue', async () => {
+    const tx = makeTx();
+    tx.business.findUnique.mockResolvedValue({ status: 'PENDING', subscriptionExpiresAt: null });
+
+    await (service as any).activateVerifiedPayment(tx, payment, { tier: 'GOLD', durationDays: 30 }, null);
+
+    const data = tx.business.update.mock.calls[0][0].data;
+    // No status change: the operator still has to approve (and thereby publish)
+    // the paid registration from the admin panel.
+    expect(data).not.toHaveProperty('status');
+    expect(data).toMatchObject({
+      subscriptionTier: 'GOLD',
+      subscriptionStatus: 'ACTIVE',
+      showcasePriority: 10,
+    });
+  });
+
+  it('restores an expired (CLOSED) business immediately on a renewal payment', async () => {
+    const tx = makeTx();
+    tx.business.findUnique.mockResolvedValue({ status: 'CLOSED', subscriptionExpiresAt: null });
+
+    await (service as any).activateVerifiedPayment(tx, payment, { tier: 'SILVER', durationDays: 30 }, null);
+
+    expect(tx.business.update.mock.calls[0][0].data).toMatchObject({
+      status: 'APPROVED',
+      subscriptionStatus: 'ACTIVE',
+      showcasePriority: 50,
+    });
+  });
+});
