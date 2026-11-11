@@ -113,10 +113,13 @@ const approvedBusiness = {
   latitude: null,
   longitude: null,
   subscriptionTier: 'GOLD',
+  subscriptionStatus: 'ACTIVE',
+  subscriptionExpiresAt: null,
   createdAt: '2026-10-01T08:00:00.000Z',
   city: { id: 1, name: 'شهر نمونه' },
   owner: { id: 5, phone: '09123456789', fullName: null },
   category: { name: 'رستوران', icon: '🍽' },
+  payment: null,
 };
 
 const serviceListing = {
@@ -352,6 +355,48 @@ describe('AdminPanel', () => {
 
     fireEvent.click(screen.getByTestId('tab-businesses'));
     expect(await screen.findByTestId('empty-queue')).toHaveTextContent('در این فهرست موردی نیست');
+  });
+
+  it('shows the successful Bazaar payment on a paid registration so the operator can approve it', async () => {
+    mockGetAdminBusinesses.mockResolvedValue([
+      {
+        ...approvedBusiness,
+        id: 31,
+        name: 'کافهٔ پرداخت‌شده',
+        status: 'PENDING',
+        subscriptionExpiresAt: '2026-12-11T00:00:00.000Z',
+        payment: {
+          id: 9,
+          provider: 'BAZAAR',
+          status: 'SUCCESS',
+          amount: 1_990_000,
+          paidAt: '2026-11-11T01:00:00.000Z',
+          createdAt: '2026-11-11T01:00:00.000Z',
+          plan: { code: 'GOLD_1M', label: '۱ ماهه', tier: 'GOLD', durationDays: 30 },
+        },
+      },
+    ]);
+
+    render(<AdminPanel />);
+    await screen.findByTestId('tab-businesses');
+    fireEvent.click(screen.getByTestId('tab-businesses'));
+
+    const chip = await screen.findByTestId('payment-chip-31');
+    expect(chip).toHaveTextContent('پرداخت بازار: موفق');
+    expect(chip).toHaveTextContent('۱ ماهه');
+    expect(chip).toHaveTextContent('۱۹۹٬۰۰۰ تومان');
+    expect(screen.getByTestId('subscription-chip-31')).toHaveTextContent('اشتراک فعال تا');
+    expect(screen.getByTestId('approve-31')).toHaveTextContent('تأیید و فعال‌سازی');
+  });
+
+  it('marks an admin-created or free business as without a Bazaar payment', async () => {
+    mockGetAdminBusinesses.mockResolvedValue([approvedBusiness]);
+
+    render(<AdminPanel />);
+    await screen.findByTestId('tab-businesses');
+    fireEvent.click(screen.getByTestId('tab-businesses'));
+
+    expect(await screen.findByTestId('payment-chip-21')).toHaveTextContent('بدون پرداخت بازار');
   });
 
   it('lets a manager remove an active service-directory entry after confirmation', async () => {
