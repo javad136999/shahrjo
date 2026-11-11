@@ -2896,6 +2896,251 @@ a.my-ads__item:hover {
   color: #fff;
 }
 
+/* Compact admin workspace: keep all changes scoped to the moderation dashboard. */
+.ad-page.admin-dashboard {
+  width: min(1280px, calc(100% - 24px));
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 32px;
+}
+.admin-dashboard > * { min-width: 0; margin-top: 0; margin-bottom: 0; }
+.admin-dashboard .plans-hero {
+  margin: 0;
+  padding: 12px 16px;
+  border-color: rgb(14 122 95 / 20%);
+  border-radius: 16px;
+  background: linear-gradient(120deg, var(--brand-soft), var(--surface) 72%);
+  box-shadow: none;
+}
+.admin-dashboard .plans-hero .icon-tile--lg {
+  width: 44px;
+  height: 44px;
+  flex-basis: 44px;
+  border-radius: 13px;
+  font-size: 21px;
+}
+.admin-dashboard .plans-hero h1 { font-size: 21px; }
+.admin-dashboard .plans-hero p { font-size: 12px; }
+.admin-dashboard .stats-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+.admin-dashboard .stat-card {
+  min-width: 0;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: 14px;
+  box-shadow: none;
+}
+.admin-dashboard .stat-card strong { font-size: 15px; }
+.admin-dashboard .admin-visits {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  box-shadow: none;
+}
+.admin-dashboard .admin-visits__head { margin-bottom: 8px; }
+.admin-dashboard .admin-visits__head h2 { font-size: 15px; }
+.admin-dashboard .admin-visits__totals {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.admin-dashboard .admin-visits__chart { height: 62px; }
+.admin-dashboard .admin-tabs {
+  width: 100%;
+  min-width: 0;
+  flex-wrap: nowrap;
+  gap: 5px;
+  margin: 0;
+  padding: 6px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+.admin-dashboard .admin-tab {
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.admin-dashboard .admin-status-select { flex: 0 0 auto; }
+.admin-dashboard .admin-list { gap: 8px; }
+.admin-dashboard .admin-row {
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  box-shadow: none;
+}
+.admin-dashboard .admin-row__body strong { font-size: 14px; }
+.admin-dashboard .admin-row__actions { flex-wrap: wrap; justify-content: flex-end; }
+.admin-dashboard .admin-action { padding: 6px 11px; font-size: 12.5px; }
+
+.admin-dashboard .admin-reward-users {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  box-shadow: none;
+}
+.admin-dashboard .admin-reward-users__summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 62px;
+  padding: 10px 13px;
+  cursor: pointer;
+  list-style: none;
+}
+.admin-dashboard .admin-reward-users__summary::-webkit-details-marker { display: none; }
+.admin-dashboard .admin-reward-users__summary:hover { background: rgb(14 122 95 / 3%); }
+.admin-dashboard .admin-reward-users__summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -3px;
+}
+.admin-dashboard .admin-reward-users__icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+  font-size: 18px;
+}
+.admin-dashboard .admin-reward-users__summary-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.admin-dashboard .admin-reward-users__summary-copy strong { font-size: 14px; }
+.admin-dashboard .admin-reward-users__summary-copy small { color: var(--muted); font-size: 11px; }
+.admin-dashboard .admin-reward-users__chevron {
+  margin-inline-start: auto;
+  color: var(--muted);
+  font-size: 20px;
+  transition: transform .16s ease;
+}
+.admin-dashboard .admin-reward-users[open] .admin-reward-users__chevron { transform: rotate(180deg); }
+.admin-dashboard .admin-reward-users__content {
+  padding: 0 13px 13px;
+  border-top: 1px solid var(--line);
+}
+.admin-dashboard .admin-reward-users__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 0;
+}
+.admin-dashboard .admin-reward-users__toolbar p { margin: 0; font-size: 11px; }
+.admin-dashboard .admin-reward-users__search {
+  width: min(280px, 100%);
+  min-height: 38px;
+  padding: 7px 10px;
+  border-color: var(--line);
+  border-radius: 10px;
+  font-size: 13px;
+}
+.admin-dashboard .admin-reward-users__search:focus {
+  outline: 2px solid rgb(14 122 95 / 24%);
+  border-color: var(--brand);
+}
+.admin-dashboard .admin-reward-users__table-wrap {
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
+}
+.admin-dashboard .admin-reward-users__table {
+  min-width: 600px;
+  font-size: 12px;
+}
+.admin-dashboard .admin-reward-users__table th,
+.admin-dashboard .admin-reward-users__table td {
+  padding: 8px 9px;
+  line-height: 1.4;
+}
+.admin-dashboard .admin-reward-users__table th {
+  position: sticky;
+  top: 0;
+  background: #f7faf8;
+  font-size: 11px;
+}
+.admin-dashboard .admin-reward-users__phone {
+  color: var(--brand-dark);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+}
+.admin-dashboard .admin-reward-users__check { gap: 5px; font-size: 11px; white-space: nowrap; }
+.admin-dashboard .admin-reward-users__check input { width: 16px; height: 16px; }
+.admin-dashboard .admin-reward-users__date { margin-top: 2px; font-size: 10px; }
+.admin-dashboard .admin-reward-users__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.admin-dashboard .admin-reward-users__pagination > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.admin-dashboard .admin-reward-users__page-button {
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--brand-dark);
+  font: inherit;
+  cursor: pointer;
+}
+.admin-dashboard .admin-reward-users__page-button:disabled { opacity: .45; cursor: not-allowed; }
+.admin-dashboard .admin-reward-users__loading { margin: 0; padding: 12px 0; }
+
+@media (max-width: 760px) {
+  .ad-page.admin-dashboard { width: calc(100% - 16px); gap: 9px; }
+  .admin-dashboard .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-dashboard .admin-visits__totals { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .admin-dashboard .admin-tabs { max-width: 100%; }
+  .admin-dashboard .admin-status-select { max-width: 150px; }
+}
+@media (max-width: 520px) {
+  .admin-dashboard .plans-hero { gap: 9px; padding: 10px 11px; }
+  .admin-dashboard .plans-hero h1 { font-size: 18px; }
+  .admin-dashboard .admin-visits { padding: 10px; }
+  .admin-dashboard .admin-visits__totals .stat-card {
+    min-height: 58px;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 7px;
+  }
+  .admin-dashboard .admin-visits__totals .stat-card strong { font-size: 13px; }
+  .admin-dashboard .admin-visits__totals .stat-card .small { font-size: 9px; }
+  .admin-dashboard .admin-reward-users__summary { gap: 8px; padding: 9px; }
+  .admin-dashboard .admin-reward-users__summary-copy strong { font-size: 12px; }
+  .admin-dashboard .admin-reward-users__summary-copy small { font-size: 10px; }
+  .admin-dashboard .admin-reward-users__content { padding: 0 9px 9px; }
+  .admin-dashboard .admin-reward-users__toolbar { align-items: stretch; flex-direction: column; }
+  .admin-dashboard .admin-reward-users__search { width: 100%; }
+  .admin-dashboard .admin-reward-users__pagination { align-items: flex-start; flex-direction: column; }
+  .admin-dashboard .admin-status-select { max-width: 122px; font-size: 12px; }
+  .admin-dashboard .admin-action { padding: 6px 8px; font-size: 11px; }
+}
+
 /* ============ Phase 9: golden showcase marquee + city map ============ */
 
 .showcase {

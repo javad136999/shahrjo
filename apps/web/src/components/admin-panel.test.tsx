@@ -212,19 +212,58 @@ describe('AdminPanel', () => {
     expect(mockGetAdminAds).toHaveBeenCalledWith('PENDING');
   });
 
-  it('offers a phone-list shortcut and records reward delivery with its checkbox', async () => {
+  it('keeps the phone list collapsed until opened and records reward delivery', async () => {
     mockGetAdminRewardUsers.mockResolvedValue([rewardUser]);
     render(<AdminPanel />);
 
-    const shortcut = await screen.findByTestId('admin-reward-shortcut');
-    expect(shortcut).toHaveAttribute('href', '#admin-reward-users');
+    const phonePanel = await screen.findByTestId('admin-reward-users');
+    await screen.findByText(/۱ کاربر/);
+    expect(phonePanel).toHaveTextContent('۱ کاربر');
+    expect(phonePanel).not.toHaveAttribute('open');
+    fireEvent.click(screen.getByTestId('admin-reward-users-toggle'));
+    expect(phonePanel).toHaveAttribute('open');
+
     const checkbox = await screen.findByRole('checkbox', { name: 'ثبت تحویل جایزه برای 09123456789' });
-    expect(screen.getByTestId('admin-reward-users')).toHaveTextContent('۱ شماره ثبت‌شده');
 
     fireEvent.click(checkbox);
 
     await waitFor(() => expect(mockGiveAdminReward).toHaveBeenCalledWith(5));
     expect(await screen.findByRole('checkbox', { name: 'جایزه تحویل‌شده برای 09123456789' })).toBeChecked();
+  });
+
+  it('matches phone numbers typed with Persian digits', async () => {
+    mockGetAdminRewardUsers.mockResolvedValue([
+      rewardUser,
+      { ...rewardUser, id: 6, phone: '09128888888', fullName: 'کاربر دیگر' },
+    ]);
+    render(<AdminPanel />);
+    await screen.findByTestId('admin-reward-users');
+    fireEvent.click(screen.getByTestId('admin-reward-users-toggle'));
+
+    fireEvent.change(await screen.findByTestId('admin-reward-users-search'), { target: { value: '۰۹۱۲۳۴' } });
+
+    expect(await screen.findByRole('checkbox', { name: 'ثبت تحویل جایزه برای 09123456789' })).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: 'ثبت تحویل جایزه برای 09128888888' })).not.toBeInTheDocument();
+  });
+
+  it('limits the phone list to 25 rows and pages through the remaining users', async () => {
+    mockGetAdminRewardUsers.mockResolvedValue(Array.from({ length: 30 }, (_, index) => ({
+      ...rewardUser,
+      id: index + 1,
+      phone: `0912000${String(index).padStart(4, '0')}`,
+    })));
+    render(<AdminPanel />);
+    await screen.findByTestId('admin-reward-users');
+    fireEvent.click(screen.getByTestId('admin-reward-users-toggle'));
+
+    const next = await screen.findByTestId('admin-reward-users-next');
+    expect(screen.getByTestId('admin-reward-users-range')).toHaveTextContent('۱ تا ۲۵ از ۳۰');
+    expect(screen.getAllByRole('checkbox')).toHaveLength(25);
+
+    fireEvent.click(next);
+
+    expect(screen.getByTestId('admin-reward-users-range')).toHaveTextContent('۲۶ تا ۳۰ از ۳۰');
+    expect(screen.getAllByRole('checkbox')).toHaveLength(5);
   });
 
   it('approves an ad and refreshes the queue + counters', async () => {

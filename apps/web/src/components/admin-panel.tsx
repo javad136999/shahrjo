@@ -218,7 +218,7 @@ export function AdminPanel() {
   const visitSum = visitSeries.reduce((acc, p) => acc + p.visits, 0);
 
   return (
-    <div className="ad-page" data-testid="admin-panel">
+    <div className="ad-page admin-dashboard" data-testid="admin-panel">
       <section className="plans-hero">
         <span className="icon-tile icon-tile--lg" aria-hidden>
           🛡️
@@ -228,17 +228,6 @@ export function AdminPanel() {
           <p className="muted">تأیید آگهی‌ها، کسب‌وکارها و اشتراک‌های پرداخت‌شده</p>
         </div>
       </section>
-
-      {canViewRewardUsers && (
-        <a className="admin-reward-shortcut" href="#admin-reward-users" data-testid="admin-reward-shortcut">
-          <span className="admin-reward-shortcut__icon" aria-hidden>☎</span>
-          <span className="admin-reward-shortcut__text">
-            <strong>شماره کاربران و جایزه‌ها</strong>
-            <small>دیدن فهرست شماره‌ها و ثبت تحویل جایزه</small>
-          </span>
-          <span className="admin-reward-shortcut__arrow" aria-hidden>←</span>
-        </a>
-      )}
 
       {overview && (
         <div className="stats-row" data-testid="admin-stats">
