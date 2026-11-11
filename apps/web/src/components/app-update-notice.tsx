@@ -35,7 +35,12 @@ export function AppUpdateNotice() {
         (/[;\s]wv\)/i.test(userAgent) || /Version\/4\.0/i.test(userAgent));
       const installedVersion = window.__SHAHRJO_APP_VERSION__ ??
         userAgent.match(/ShahrjoApp\/(\d+\.\d+\.\d+)/i)?.[1];
-      setNeedsUpdate(isAndroidWebView && (!installedVersion || compareVersions(installedVersion, MINIMUM_APP_VERSION) < 0));
+      // Do not treat a missing version as an old version. Older Bazaar builds
+      // may not expose the native bridge; showing a prompt in that case sends
+      // even the current installed release to a misleading update loop.
+      setNeedsUpdate(
+        isAndroidWebView && installedVersion !== undefined && compareVersions(installedVersion, MINIMUM_APP_VERSION) < 0,
+      );
     };
     syncVersion();
     window.addEventListener(APP_VERSION_EVENT, syncVersion);

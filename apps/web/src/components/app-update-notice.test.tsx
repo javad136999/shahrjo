@@ -38,7 +38,7 @@ describe('AppUpdateNotice', () => {
   });
 
   it('rechecks and hides the prompt if the native version arrives after page hydration', () => {
-    setUserAgent('Mozilla/5.0 (Linux; Android 13; Pixel; wv) Version/4.0 Chrome/130.0 Mobile Safari/537.36');
+    setUserAgent('Mozilla/5.0 (Linux; Android 13; Pixel; wv) Version/4.0 Chrome/130.0 Mobile Safari/537.36 ShahrjoApp/1.0.9');
     render(<AppUpdateNotice />);
     expect(screen.getByTestId('app-update-notice')).toBeInTheDocument();
 
@@ -47,6 +47,12 @@ describe('AppUpdateNotice', () => {
       window.dispatchEvent(new Event('shahrjo:app-version'));
     });
 
+    expect(screen.queryByTestId('app-update-notice')).not.toBeInTheDocument();
+  });
+
+  it('does not show a false prompt when an Android WebView does not report its version', () => {
+    setUserAgent('Mozilla/5.0 (Linux; Android 13; Pixel; wv) Version/4.0 Chrome/130.0 Mobile Safari/537.36');
+    render(<AppUpdateNotice />);
     expect(screen.queryByTestId('app-update-notice')).not.toBeInTheDocument();
   });
 
