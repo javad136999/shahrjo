@@ -44,6 +44,17 @@ export function BottomNav() {
   const [unread, setUnread] = useState<{ dm: number; wall: number }>({ dm: 0, wall: 0 });
   const wallReadPending = useRef<Promise<unknown> | null>(null);
 
+  const clearWallBadge = () => {
+    setUnread((current) => ({ ...current, wall: 0 }));
+    if (city && !wallReadPending.current) {
+      wallReadPending.current = markWallRead(city.id)
+        .catch(() => undefined)
+        .finally(() => {
+          wallReadPending.current = null;
+        });
+    }
+  };
+
   useEffect(() => {
     const sync = () => setCity(getLocalCity());
     sync();
@@ -75,8 +86,7 @@ export function BottomNav() {
     }
     const isWallPage = pathname === '/wall' || pathname.startsWith('/wall/');
     if (isWallPage) {
-      setUnread((current) => ({ ...current, wall: 0 }));
-      if (city) wallReadPending.current = markWallRead(city.id).catch(() => undefined);
+      clearWallBadge();
     }
     let alive = true;
     const refresh = async () => {
@@ -138,6 +148,13 @@ export function BottomNav() {
   const badgeFor = (id: NavItem['id']): number =>
     id === 'messages' ? unread.dm : id === 'wall' ? unread.wall : 0;
 
+  const openWall = () => {
+    // Do this on the tap as well as on pathname change. Native WebViews can
+    // keep the layout mounted briefly during navigation, so waiting only for
+    // usePathname() leaves the red badge visible until the next poll.
+    clearWallBadge();
+  };
+
   return (
     <nav
       className={`bottom-nav${isCityHome ? ' bottom-nav--always' : ''}`}
@@ -152,6 +169,7 @@ export function BottomNav() {
             href={item.href}
             className={`bottom-nav__item${isActive(item) ? ' is-active' : ''}${item.id === 'register-business' ? ' bottom-nav__item--register-business' : ''}`}
             data-testid={`bottom-nav-${item.id}`}
+            onClick={item.id === 'wall' ? openWall : undefined}
           >
             <span className="bottom-nav__iconwrap" aria-hidden>
               <span className="bottom-nav__icon">{item.icon}</span>
