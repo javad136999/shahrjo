@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const mockPathname = jest.fn();
 
@@ -170,6 +170,17 @@ describe('BottomNav', () => {
     mockGetWallUnread.mockResolvedValue({ unseenCount: 1 });
     rerender(<BottomNav />);
     expect(await screen.findByTestId('bottom-nav-wall-badge')).toHaveTextContent('1');
+  });
+
+  it('clears the wall badge immediately when the installed app taps the wall icon', async () => {
+    mockGetWallUnread.mockResolvedValue({ unseenCount: 5 });
+    render(<BottomNav />);
+    expect(await screen.findByTestId('bottom-nav-wall-badge')).toHaveTextContent('5');
+
+    fireEvent.click(screen.getByTestId('bottom-nav-wall'));
+
+    await waitFor(() => expect(screen.queryByTestId('bottom-nav-wall-badge')).not.toBeInTheDocument());
+    expect(mockMarkWallRead).toHaveBeenCalledWith(5);
   });
 
   it('fetches no unread counts for signed-out visitors', async () => {
