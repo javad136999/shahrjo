@@ -6,17 +6,14 @@ import { PrismaService } from '../prisma/prisma.service';
  * Phase 10 — daily ad republication on every city wall («بازنشر روزانه»).
  *
  * Schedule (Asia/Tehran — Iran has no DST since 2022, fixed UTC+3:30):
- *   • 08:00 → 1 GOLD ad + 3 old ads + **1 GOLD business promo**
+ *   • 08:00 → 1 GOLD ad + 3 old ads
  *   • 12:00 → 2 old ads
- *   • 18:00 → 1 GOLD ad + 3 old ads + **1 GOLD business promo**
+ *   • 18:00 → 1 GOLD ad + 3 old ads
  *   • 22:00 → 2 old ads
- * ⇒ 2 promoted GOLD ads per day (one morning, one evening), 10 old ads spread
- * over the four day-parts, and **2 attractive GOLD-business messages** (morning
- * + evening): picked at random among businesses with the fewest prior promo
- * posts, never the same business twice in a day. This exhausts each current
- * fairness round before any eligible business gets another turn. Each ad is republished at most once per
- * day (its id is excluded as soon as it has been used) and the selection is
- * random over the eligible pool.
+ * ⇒ 2 promoted GOLD ads and 10 old ads per day. Separately, five approved
+ * business profiles are published at daily, date-seeded random times. The
+ * business picker always chooses from the least-published businesses first,
+ * creating a fair round-robin over the whole directory.
  *
  * Runs inside the API process on a 60s timer — no external cron, and a
  * restart inside the same day never double-posts (each slot fires once per
@@ -50,6 +47,9 @@ export const REPOST_CHECK_MS = 60_000;
 export const WALL_REPOSTS_ENABLED = process.env.ENABLE_WALL_REPOSTS === 'true';
 /** GOLD business promotions remain on unless explicitly disabled by the operator. */
 export const GOLD_BUSINESS_PROMOS_ENABLED = process.env.ENABLE_GOLD_BUSINESS_PROMOS !== 'false';
+/** Five approved business profiles are published each Tehran day. */
+export const REGISTERED_BUSINESS_PROMOS_ENABLED = process.env.ENABLE_REGISTERED_BUSINESS_PROMOS !== 'false';
+export const REGISTERED_BUSINESS_PROMO_COUNT = 5;
 /** Daily directory promotions remain on unless explicitly disabled. */
 export const SERVICE_LISTING_PROMOS_ENABLED = process.env.ENABLE_SERVICE_LISTING_PROMOS !== 'false';
 export const SERVICE_LISTING_PROMO_MINUTES = 10 * 60;
@@ -62,6 +62,26 @@ export const OLD_AD_MIN_AGE_MS = 7 * 86_400_000;
 const CANDIDATE_LIMIT = 500;
 /** Iran standard time — fixed UTC+3:30 (no DST since 2022). */
 export const TEHRAN_OFFSET_MS = (3 * 60 + 30) * 60_000;
+
+/**
+ * Five date-seeded random times. A restart keeps the same day's timetable,
+ * while the times change on the next Tehran day.
+ */
+export function registeredBusinessPromoSlots(day: string): WallRepostSlot[] {
+  const windows = [
+    { start: 7 * 60, end: 10 * 60, label: 'صبح' },
+    { start: 10 * 60, end: 13 * 60, label: 'ظهر' },
+    { start: 13 * 60, end: 16 * 60, label: 'بعدازظهر' },
+    { start: 16 * 60, end: 20 * 60, label: 'عصر' },
+    { start: 20 * 60, end: 23 * 60, label: 'شب' },
+  ];
+  let seed = [...day].reduce((value, char) => (value * 31 + char.charCodeAt(0)) >>> 0, 17);
+  return windows.map((window) => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    const minutes = window.start + (seed % (window.end - window.start));
+    return { hour: Math.floor(minutes / 60), minute: minutes % 60, gold: 0, old: 0, promo: 1, label: window.label };
+  });
+}
 
 /** Tehran wall-clock facts of `date`: calendar day + minutes since midnight. */
 export function tehranClock(date: Date = new Date()): { day: string; minutes: number } {
@@ -145,13 +165,14 @@ export class WallRepostScheduler implements OnModuleInit {
   private readonly automation = {
     ads: WALL_REPOSTS_ENABLED,
     promo: GOLD_BUSINESS_PROMOS_ENABLED,
+    registeredBusinessPromo: REGISTERED_BUSINESS_PROMOS_ENABLED,
     servicePromo: SERVICE_LISTING_PROMOS_ENABLED,
   };
 
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit(): Promise<void> {
-    if (!this.automation.ads && !this.automation.promo && !this.automation.servicePromo) {
+    if (!this.automation.ads && !this.automation.promo && !this.automation.registeredBusinessPromo && !this.automation.servicePromo) {
       this.logger.log('wall repost and GOLD business promo automation disabled');
       return;
     }
@@ -193,6 +214,14 @@ export class WallRepostScheduler implements OnModuleInit {
       this.doneSlots.set(serviceKey, day);
       posted += await this.publishServicePromos(day);
     }
+    if (this.automation.registeredBusinessPromo) {
+      for (const [index, slot] of registeredBusinessPromoSlots(day).entries()) {
+        const key = `registered-business:${index}`;
+        if (this.doneSlots.has(key) || minutes < slot.hour * 60 + slot.minute) continue;
+        this.doneSlots.set(key, day);
+        posted += await this.publishRegisteredBusinessPromo(day, slot);
+      }
+    }
     for (const slot of WALL_REPOST_SLOTS) {
       const key = `${slot.hour}:${slot.minute}`;
       if (this.doneSlots.has(key)) continue;
@@ -200,7 +229,7 @@ export class WallRepostScheduler implements OnModuleInit {
       this.doneSlots.set(key, day); // marked BEFORE publishing — never twice
       posted += await this.runSlot(day, slot, {
         ads: this.automation.ads,
-        promo: this.automation.promo,
+        promo: this.automation.promo && !this.automation.registeredBusinessPromo,
       });
     }
     return posted;
@@ -301,6 +330,54 @@ export class WallRepostScheduler implements OnModuleInit {
       },
     });
     this.logger.log(`wall promo ${slot.label}: business #${pick.id} → city #${pick.cityId}`);
+    return 1;
+  }
+
+  /** Publishes one approved business profile, fairly rotating through all cities. */
+  async publishRegisteredBusinessPromo(day: string, slot: WallRepostSlot): Promise<number> {
+    const since = tehranDayStart(day);
+    const todayRows = await this.prisma.wallPost.findMany({
+      where: { businessId: { not: null }, createdAt: { gte: since } },
+      select: { businessId: true },
+    });
+    const usedToday = new Set(todayRows.map((row) => row.businessId).filter((id): id is number => id !== null));
+    const rows = await this.prisma.business.findMany({
+      where: {
+        status: 'APPROVED',
+        city: { isActive: true, province: { isActive: true } },
+      },
+      select: {
+        id: true,
+        cityId: true,
+        ownerId: true,
+        name: true,
+        address: true,
+        description: true,
+        category: { select: { name: true, icon: true } },
+      },
+    });
+    const pool = rows.filter((business) => !usedToday.has(business.id));
+    if (pool.length === 0) return 0;
+    const counts = await this.prisma.wallPost.groupBy({
+      by: ['businessId'],
+      where: { businessId: { in: pool.map((business) => business.id) } },
+      _count: { businessId: true },
+    });
+    const postCount = new Map(counts.map((row) => [row.businessId, row._count.businessId]));
+    const leastPublished = Math.min(...pool.map((business) => postCount.get(business.id) ?? 0));
+    const leastPublishedPool = pool.filter((business) => (postCount.get(business.id) ?? 0) === leastPublished);
+    const pick = shuffle(leastPublishedPool)[0];
+    if (!pick) return 0;
+
+    await this.prisma.wallPost.create({
+      data: {
+        cityId: pick.cityId,
+        userId: pick.ownerId,
+        content: promoCopy(pick, slot),
+        businessId: pick.id,
+      },
+    });
+    this.logger.log(`registered business promo ${slot.label}: business #${pick.id} → city #${pick.cityId}`);
     return 1;
   }
 
