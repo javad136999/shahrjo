@@ -2,6 +2,8 @@ import type { PrismaService } from '../prisma/prisma.service';
 import {
   TEHRAN_OFFSET_MS,
   GOLD_BUSINESS_PROMOS_ENABLED,
+  registeredBusinessPromoSlots,
+  REGISTERED_BUSINESS_PROMO_COUNT,
   WALL_REPOST_SLOTS,
   WALL_REPOSTS_ENABLED,
   WallRepostScheduler,
@@ -25,7 +27,12 @@ function makePrisma() {
   };
 }
 
-function makeScheduler(automation = { ads: true, promo: true }) {
+function makeScheduler(automation: {
+  ads: boolean;
+  promo: boolean;
+  registeredBusinessPromo?: boolean;
+  servicePromo?: boolean;
+} = { ads: true, promo: true }) {
   const prisma = makePrisma();
   const scheduler = new WallRepostScheduler(prisma as unknown as PrismaService);
   Object.defineProperty(scheduler, 'automation', { value: automation });
@@ -80,6 +87,14 @@ describe('tehranClock / tehranDayStart', () => {
 });
 
 describe('WallRepostScheduler.tick', () => {
+  it('creates five stable-but-changing Tehran slots for registered businesses', () => {
+    const first = registeredBusinessPromoSlots(DAY);
+    expect(first).toHaveLength(REGISTERED_BUSINESS_PROMO_COUNT);
+    expect(registeredBusinessPromoSlots(DAY)).toEqual(first);
+    expect(registeredBusinessPromoSlots('2026-10-09')).not.toEqual(first);
+    expect(first.every((slot) => slot.promo === 1 && slot.gold === 0 && slot.old === 0)).toBe(true);
+  });
+
   it('keeps ordinary ad reposts off by default while retaining GOLD promos', () => {
     expect(WALL_REPOSTS_ENABLED).toBe(false);
     expect(GOLD_BUSINESS_PROMOS_ENABLED).toBe(true);
@@ -359,6 +374,44 @@ describe('GOLD business promos — 2 attractive messages a day', () => {
     const calls = prisma.business.findMany.mock.calls.length;
     expect(await scheduler.publishPromo(DAY, WALL_REPOST_SLOTS[1])).toBe(0);
     expect(prisma.business.findMany).toHaveBeenCalledTimes(calls);
+  });
+});
+
+describe('registered business wall promotions — five per day', () => {
+  const business = (id: number) => ({
+    id,
+    cityId: id,
+    ownerId: id + 100,
+    name: `کسب‌وکار ${id}`,
+    address: 'خیابان اصلی',
+    description: 'توضیح کسب‌وکار',
+    category: { name: 'فروشگاه', icon: '🏪' },
+  });
+
+  it('publishes an approved business and excludes businesses already published today', async () => {
+    const { scheduler, prisma } = makeScheduler({ ads: false, promo: false, registeredBusinessPromo: true, servicePromo: false });
+    prisma.wallPost.findMany.mockResolvedValue([{ businessId: 1 }]);
+    prisma.business.findMany.mockResolvedValue([business(1), business(2), business(3)]);
+    prisma.wallPost.groupBy.mockResolvedValue([
+      { businessId: 2, _count: { businessId: 0 } },
+      { businessId: 3, _count: { businessId: 2 } },
+    ]);
+
+    expect(await scheduler.publishRegisteredBusinessPromo(DAY, { hour: 12, minute: 0, gold: 0, old: 0, promo: 1, label: 'ظهر' })).toBe(1);
+    expect(prisma.business.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ status: 'APPROVED' }),
+    }));
+    expect(prisma.wallPost.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ businessId: 2, cityId: 2 }),
+    }));
+  });
+
+  it('publishes at most one post per business per day when fewer than five remain', async () => {
+    const { scheduler, prisma } = makeScheduler({ ads: false, promo: false, registeredBusinessPromo: true, servicePromo: false });
+    prisma.wallPost.findMany.mockResolvedValue([{ businessId: 1 }, { businessId: 2 }]);
+    prisma.business.findMany.mockResolvedValue([business(1), business(2), business(3)]);
+    expect(await scheduler.publishRegisteredBusinessPromo(DAY, { hour: 18, minute: 0, gold: 0, old: 0, promo: 1, label: 'عصر' })).toBe(1);
+    expect(prisma.wallPost.create.mock.calls[0][0].data.businessId).toBe(3);
   });
 });
 
