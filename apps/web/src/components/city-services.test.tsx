@@ -64,11 +64,11 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     expect(tiles).toHaveLength(2);
     expect(tiles[0]).toHaveAttribute('data-testid', 'service-tile-register');
     expect(tiles[1]).toHaveAttribute('data-testid', 'service-tile-find');
-    expect(tiles[0]).toHaveTextContent('ثبت شغل');
-    expect(tiles[0]).toHaveTextContent('کلیک کنید');
+    expect(tiles[0]).toHaveTextContent('ثبت خدمت یا مهارت');
+    expect(tiles[0]).toHaveTextContent('معرفی رایگان');
     expect(tiles[0]).toHaveTextContent('رایگان');
-    expect(tiles[0]).toHaveTextContent('بدون صفحهٔ کسب‌وکار');
-    expect(tiles[1]).toHaveTextContent('چه خدماتی در شهر شهر نمونه نیاز داری');
+    expect(tiles[0]).toHaveTextContent('شماره تماس و تخصصت را ثبت کن');
+    expect(tiles[1]).toHaveTextContent('پیدا کردن متخصص در شهر نمونه');
     expect(screen.queryByTestId('service-register')).not.toBeInTheDocument();
     expect(screen.queryByTestId('service-find')).not.toBeInTheDocument();
     expect(m.getServiceCategories).not.toHaveBeenCalled();
@@ -110,7 +110,7 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     expect(list).toHaveTextContent('باربری و حمل بار');
     expect(list).toHaveTextContent('حمل چاه و تخلیه چاه و فنرزنی');
     expect(list).toHaveTextContent('حمل آب شرب');
-    expect(screen.getByTestId('service-register')).toHaveTextContent('پروفایل کسب‌وکار، منو یا محصولی ساخته نمی‌شود');
+    expect(screen.getByTestId('service-register')).toHaveTextContent('عنوان فعالیت، حوزهٔ تخصص و شماره تماس');
   });
 
   it('suggests a category from the job title and lets the user override it', async () => {
@@ -148,7 +148,7 @@ describe('CityServices (دفتر خدمات شهر)', () => {
     fireEvent.change(screen.getByTestId('service-name'), { target: { value: 'کابینت‌کار' } });
     fireEvent.change(screen.getByTestId('service-category'), { target: { value: '91' } });
     fireEvent.change(screen.getByTestId('service-phone'), { target: { value: '09121112233' } });
-    fireEvent.change(screen.getByLabelText('خدماتی که ارائه می‌کنی — اختیاری'), {
+    fireEvent.change(screen.getByLabelText('خدمات و محدودهٔ کاری — اختیاری'), {
       target: { value: 'ساخت و تعمیر کابینت آشپزخانه' },
     });
     expect(submit).toBeEnabled();
