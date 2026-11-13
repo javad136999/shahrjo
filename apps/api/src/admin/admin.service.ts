@@ -257,13 +257,11 @@ export interface RewardUser {
  * everything, PROVINCE_ADMIN/CITY_ADMIN only their area), with every decision
  * written to `audit_logs`.
  *
- * A verified payment now activates its subscription and promotes the business
- * (see PaymentsService.verifyPayment), but a newly registered business still
- * waits here for an explicit approval: its queue row carries the latest
- * Bazaar payment so the operator can confirm the fee was paid before
- * publishing it on the map and showcase. An explicit rejection here is never
- * overridden by a later payment: only the tier changes, the rejected status
- * stays.
+ * A verified payment activates its subscription and automatically publishes a
+ * newly registered business (see PaymentsService.verifyBazaar). This queue
+ * remains useful for inspection and for explicit moderation decisions. An
+ * explicit rejection here is never overridden by a later payment: only the
+ * tier changes, the rejected status stays.
  */
 @Injectable()
 export class AdminService {

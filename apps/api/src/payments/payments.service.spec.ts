@@ -53,17 +53,15 @@ describe('PaymentsService business activation after a verified payment', () => {
   const service = new PaymentsService({} as unknown as PrismaService, {} as unknown as BazaarService);
   const payment = { userId: 1, businessId: 5, planId: 2 };
 
-  it('keeps a newly registered (PENDING) business in the admin moderation queue', async () => {
+  it('publishes a newly registered (PENDING) business atomically after verified payment', async () => {
     const tx = makeTx();
     tx.business.findUnique.mockResolvedValue({ status: 'PENDING', subscriptionExpiresAt: null });
 
     await (service as any).activateVerifiedPayment(tx, payment, { tier: 'GOLD', durationDays: 30 }, null);
 
     const data = tx.business.update.mock.calls[0][0].data;
-    // No status change: the operator still has to approve (and thereby publish)
-    // the paid registration from the admin panel.
-    expect(data).not.toHaveProperty('status');
     expect(data).toMatchObject({
+      status: 'APPROVED',
       subscriptionTier: 'GOLD',
       subscriptionStatus: 'ACTIVE',
       showcasePriority: 10,
@@ -81,5 +79,15 @@ describe('PaymentsService business activation after a verified payment', () => {
       subscriptionStatus: 'ACTIVE',
       showcasePriority: 50,
     });
+  });
+
+  it('does not override an explicit rejection when payment is verified', async () => {
+    const tx = makeTx();
+    tx.business.findUnique.mockResolvedValue({ status: 'REJECTED', subscriptionExpiresAt: null });
+
+    await (service as any).activateVerifiedPayment(tx, payment, { tier: 'SILVER', durationDays: 30 }, null);
+
+    expect(tx.business.update.mock.calls[0][0].data).not.toHaveProperty('status');
+    expect(tx.business.update.mock.calls[0][0].data.subscriptionStatus).toBe('ACTIVE');
   });
 });

@@ -215,8 +215,8 @@ function businessSlug(name: string): string {
 
 /**
  * Owner-submitted business registration. Every new business enters the
- * moderation queue as PENDING with a FREE tier — the paid tier is applied only
- * after a verified payment (and, for business-bound plans, admin approval).
+ * moderation queue as PENDING with a FREE tier — the paid tier and automatic
+ * publication are applied only after server-side payment verification.
  * The city always comes from the caller's validated profile selection.
  */
 @Injectable()
