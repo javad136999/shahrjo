@@ -306,12 +306,12 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
             👷
           </span>
           <span className="service-tile__copy">
-            <b>ثبت شغل</b>
+            <b>ثبت خدمت یا مهارت</b>
             <span className="service-tile__hint-row">
-              <small>کلیک کنید</small>
+              <small>معرفی رایگان</small>
               <small className="service-tile__free">رایگان</small>
             </span>
-            <small className="service-tile__descriptor">فقط معرفی شغل، بدون صفحهٔ کسب‌وکار</small>
+            <small className="service-tile__descriptor">شماره تماس و تخصصت را ثبت کن</small>
           </span>
         </button>
 
@@ -331,31 +331,32 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
             🔎
           </span>
           <span className="service-tile__copy">
-            <b>چه خدماتی در شهر {cityName} نیاز داری؟</b>
+            <b>پیدا کردن متخصص در {cityName}</b>
+            <small>جستجوی سریع خدمات و مهارت‌ها</small>
           </span>
         </button>
       </div>
 
       {panel === 'register' && (
         <form className="service-panel" onSubmit={submit} noValidate data-testid="service-register">
-          <h3>شغلتو ثبت کن</h3>
+          <h3>خدمت یا مهارتت را معرفی کن</h3>
           <p className="muted small">
-            فقط عنوان شغل، دستهٔ خدمات و شمارهٔ تماس ثبت می‌شود؛ پروفایل کسب‌وکار، منو یا محصولی ساخته نمی‌شود.
+            در کمتر از یک دقیقه، عنوان فعالیت، حوزهٔ تخصص و شماره تماس را ثبت کن تا مردم شهر راحت‌تر پیدایت کنند. این مسیر فقط معرفی خدمت است و صفحهٔ کسب‌وکار یا منو نمی‌سازد.
           </p>
 
-          <label htmlFor="svc-name">عنوان شغل</label>
+          <label htmlFor="svc-name">نام و عنوان فعالیت</label>
           <input
             id="svc-name"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            placeholder="مثلاً کابینت‌کار"
+            placeholder="مثلاً تعمیرکار کولر، کابینت‌کار یا خیاط"
             minLength={2}
             maxLength={160}
             required
             data-testid="service-name"
           />
 
-          <label htmlFor="svc-cat">دسته‌بندی خدمات</label>
+          <label htmlFor="svc-cat">حوزهٔ فعالیت</label>
           <select
             id="svc-cat"
             value={form.categoryId}
@@ -366,7 +367,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
             required
             data-testid="service-category"
           >
-            <option value="">— انتخاب خدمت —</option>
+            <option value="">— حوزهٔ فعالیت را انتخاب کن —</option>
             {(categories ?? []).map((c) => (
               <option key={c.id} value={String(c.id)}>
                 {c.icon ? `${c.icon} ` : ''}
@@ -393,12 +394,12 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
             data-testid="service-phone"
           />
 
-          <label htmlFor="svc-desc">خدماتی که ارائه می‌کنی — اختیاری</label>
+          <label htmlFor="svc-desc">خدمات و محدودهٔ کاری — اختیاری</label>
           <input
             id="svc-desc"
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            placeholder="مثلاً نصب، تعمیر و سرویس کولر"
+            placeholder="مثلاً نصب و سرویس کولر در محله‌های مرکزی شهر"
             maxLength={500}
           />
 
@@ -414,15 +415,15 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
           )}
 
           <button type="submit" className="btn btn-primary" disabled={!valid || busy} data-testid="service-submit">
-            {busy ? 'در حال ثبت…' : 'انتشار شغل'}
+            {busy ? 'در حال ثبت…' : 'ثبت رایگان خدمت'}
           </button>
         </form>
       )}
 
       {panel === 'find' && (
         <div className="service-panel" data-testid="service-find">
-          <h3>چه خدماتی در شهر {cityName} نیاز داری؟</h3>
-          <p className="muted small">عنوان شغل را جستجو کن یا از دسته‌بندی‌های پرکاربرد انتخاب کن.</p>
+          <h3>متخصص موردنظرت را پیدا کن</h3>
+          <p className="muted small">نام خدمت، مهارت یا نام متخصص را جستجو کن؛ یا از حوزه‌های پرکاربرد انتخاب کن.</p>
 
           {error && (
             <p className="error" role="alert">
@@ -439,13 +440,13 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
           {categories && (
             <>
               <div className="service-search" role="search">
-                <label htmlFor="service-query">جستجوی عنوان شغل</label>
+                <label htmlFor="service-query">جستجوی خدمت یا نام متخصص</label>
                 <div className="service-search__row">
                   <input
                     id="service-query"
                     value={serviceQuery}
                     onChange={(e) => setServiceQuery(e.target.value)}
-                    placeholder="مثلاً کابینت‌کار یا تعمیرکار"
+                    placeholder="مثلاً تعمیرکار کولر، کابینت‌کار یا احمدی"
                     type="text"
                     inputMode="search"
                     autoComplete="off"
@@ -469,24 +470,25 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
                   </button>
                 </div>
               </div>
-              <div className="service-chips" role="listbox" aria-label="دسته‌بندی‌های خدمات" data-testid="service-chips">
-              {(categories ?? []).map((c) => (
-                <button
-                  key={c.slug}
-                  type="button"
-                  role="option"
-                  aria-selected={activeSlug === c.slug}
-                  className={`service-chip${activeSlug === c.slug ? ' is-active' : ''}`}
-                  data-testid={`service-chip-${c.slug}`}
-                  onClick={() => void pickService(c.slug)}
-                >
-                  <span aria-hidden>{c.icon ?? '◆'}</span>
-                  {c.name}
-                  <span className="service-chip__count" data-testid={`service-category-count-${c.slug}`} aria-label={`${(categoryCounts?.[c.slug] ?? 0).toLocaleString('fa-IR')} شغل ثبت‌شده`}>
-                    {categoryCounts ? (categoryCounts[c.slug] ?? 0).toLocaleString('fa-IR') : '…'}
-                  </span>
-                </button>
-              ))}
+              <p className="service-panel__section-label">انتخاب سریع حوزهٔ خدمت</p>
+              <div className="service-chips" role="listbox" aria-label="حوزه‌های خدمات" data-testid="service-chips">
+                {(categories ?? []).map((c) => (
+                  <button
+                    key={c.slug}
+                    type="button"
+                    role="option"
+                    aria-selected={activeSlug === c.slug}
+                    className={`service-chip${activeSlug === c.slug ? ' is-active' : ''}`}
+                    data-testid={`service-chip-${c.slug}`}
+                    onClick={() => void pickService(c.slug)}
+                  >
+                    <span aria-hidden>{c.icon ?? '◆'}</span>
+                    {c.name}
+                    <span className="service-chip__count" data-testid={`service-category-count-${c.slug}`} aria-label={`${(categoryCounts?.[c.slug] ?? 0).toLocaleString('fa-IR')} شغل ثبت‌شده`}>
+                      {categoryCounts ? (categoryCounts[c.slug] ?? 0).toLocaleString('fa-IR') : '…'}
+                    </span>
+                  </button>
+                ))}
               </div>
             </>
           )}
