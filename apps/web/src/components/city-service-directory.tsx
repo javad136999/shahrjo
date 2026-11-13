@@ -65,14 +65,16 @@ export function CityServiceDirectory({ city, listings, categories, activeCategor
             {listings.map((listing) => (
               <li key={listing.id}>
                 <article className="city-business-directory__card">
-                  <span className="city-business-directory__logo" aria-hidden="true">{listing.category.icon ?? '🧰'}</span>
-                  <span className="city-business-directory__copy">
-                    <strong>{listing.name}</strong>
-                    <span>{listing.category.name} <span aria-hidden="true">·</span> {city.name}</span>
-                    {listing.description && <small>{listing.description}</small>}
-                  </span>
+                  <div className="city-business-directory__main">
+                    <span className="city-business-directory__logo" aria-hidden="true">{listing.category.icon ?? '🧰'}</span>
+                    <span className="city-business-directory__copy">
+                      <strong>{listing.name}</strong>
+                      <span>{listing.category.name} <span aria-hidden="true">·</span> {city.name}</span>
+                      {listing.description && <small>{listing.description}</small>}
+                    </span>
+                  </div>
                   <span className="city-business-directory__tag">✓ ثبت‌شده در {city.name}</span>
-                  <a className="city-business-directory__call" href={`tel:${listing.phone}`}>تماس با متخصص</a>
+                  <a className="city-business-directory__call" href={`tel:${listing.phone}`} aria-label={`تماس با ${listing.name}`}>تماس با متخصص</a>
                 </article>
               </li>
             ))}
