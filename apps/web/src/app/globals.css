@@ -10081,3 +10081,63 @@ button.pill {
   box-shadow: 0 12px 24px -20px #17352a;
 }
 .city-business-directory__call { white-space: nowrap; }
+
+
+/* Service directory cards opened from a wall promotion: keep the main service
+   column readable before the status and call action. */
+.city-business-directory__card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+}
+.city-business-directory__main {
+  min-width: 0;
+}
+.city-business-directory__copy strong,
+.city-business-directory__copy > span,
+.city-business-directory__copy small {
+  display: block;
+  max-width: 100%;
+}
+@media (max-width: 640px) {
+  .city-business-directory__card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "main main"
+      "tag call";
+    align-items: center;
+    gap: 9px 8px;
+    padding: 12px;
+  }
+  .city-business-directory__main { grid-area: main; gap: 10px; }
+  .city-business-directory__logo { flex-basis: 48px; width: 48px; height: 48px; }
+  .city-business-directory__copy strong {
+    overflow: visible;
+    font-size: 15px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .city-business-directory__copy > span { font-size: 11.5px; }
+  .city-business-directory__copy small {
+    margin-top: 2px;
+    overflow: visible;
+    font-size: 11px;
+    line-height: 1.65;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .city-business-directory__tag {
+    grid-area: tag;
+    justify-self: start;
+    max-width: 100%;
+    font-size: 10px;
+  }
+  .city-business-directory__call {
+    grid-area: call;
+    justify-self: end;
+    min-height: 38px;
+    padding: 9px 12px;
+    font-size: 11px;
+  }
+}
