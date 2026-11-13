@@ -121,6 +121,18 @@ describe('per-page SEO (city pages)', () => {
     expect(sitemap).toContain('serviceDirectories');
   });
 
+  it('individual business pages expose dynamic metadata and server-rendered LocalBusiness Schema', () => {
+    const page = read('business', '[id]', 'page.tsx');
+    expect(page).not.toContain("metadata: Metadata = {\n  title: 'کسب‌وکار',");
+    expect(page).toContain('generateMetadata');
+    expect(page).toContain('serverApi<BusinessDetailData>');
+    expect(page).toMatch(/alternates:\s*{\s*canonical:/);
+    expect(page).toContain("'@type': 'LocalBusiness'");
+    expect(page).toContain("type=\"application/ld+json\"");
+    expect(page).toContain('aggregateRating');
+    expect(page).toContain('openingHoursSpecification');
+  });
+
   it('the landing page exposes the confirmed title and a canonical', () => {
     const page = read('page.tsx');
     expect(page).toMatch(/alternates:\s*{\s*canonical:/);
