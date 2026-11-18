@@ -916,6 +916,7 @@ export class AdminService {
         status: true,
         createdAt: true,
         plan: { select: { code: true, label: true, tier: true, durationDays: true } },
+        manualPayment: { select: { id: true, provider: true, status: true, amount: true, invoiceUrl: true, createdAt: true } },
         business: { select: { id: true, name: true, city: { select: { id: true, name: true } } } },
         user: { select: { id: true, phone: true, fullName: true } },
       },
@@ -928,7 +929,7 @@ export class AdminService {
     const adminId = await this.adminRowId(user.id);
     const sub = await this.prisma.subscription.findFirst({
       where: { id, ...(scope.cityId || scope.provinceId ? { business: this.cityFilter(scope) } : {}) },
-      include: { plan: { select: { durationDays: true } }, business: { select: { id: true, subscriptionExpiresAt: true } } },
+      include: { plan: { select: { durationDays: true } }, manualPayment: { select: { id: true, provider: true, status: true } }, business: { select: { id: true, status: true, subscriptionExpiresAt: true } } },
     });
     if (!sub) throw new NotFoundException('اشتراک یافت نشد');
     if (sub.status !== 'PENDING_REVIEW') throw new BadRequestException('این اشتراک قبلاً بررسی شده است');
@@ -948,12 +949,16 @@ export class AdminService {
         await tx.business.update({
           where: { id: sub.businessId },
           data: {
+            ...(['PENDING', 'CLOSED'].includes(String(sub.business?.status)) ? { status: 'APPROVED' as const } : {}),
             subscriptionTier: sub.tier,
             subscriptionStatus: 'ACTIVE',
             subscriptionExpiresAt: effective,
             showcasePriority: sub.tier === 'GOLD' ? 10 : 50,
           },
         });
+      }
+      if (sub.manualPayment?.provider === 'MANUAL') {
+        await tx.payment.update({ where: { id: sub.manualPayment.id }, data: { status: 'SUCCESS', paidAt: now, verifiedAt: now } });
       }
     });
 
@@ -972,7 +977,7 @@ export class AdminService {
     const adminId = await this.adminRowId(user.id);
     const sub = await this.prisma.subscription.findFirst({
       where: { id, ...(scope.cityId || scope.provinceId ? { business: this.cityFilter(scope) } : {}) },
-      select: { id: true, status: true },
+      select: { id: true, status: true, manualPayment: { select: { id: true, provider: true } } },
     });
     if (!sub) throw new NotFoundException('اشتراک یافت نشد');
     if (sub.status !== 'PENDING_REVIEW') throw new BadRequestException('این اشتراک قبلاً بررسی شده است');
@@ -981,6 +986,9 @@ export class AdminService {
       where: { id },
       data: { status: 'REJECTED', reviewNote: reason.slice(0, 300), reviewedById: adminId },
     });
+    if (sub.manualPayment?.provider === 'MANUAL') {
+      await this.prisma.payment.update({ where: { id: sub.manualPayment.id }, data: { status: 'FAILED', errorDescription: reason.slice(0, 300) } });
+    }
     await this.audit(adminId, 'subscription.reject', 'subscription', String(id), {
       status: 'REJECTED',
       reason,

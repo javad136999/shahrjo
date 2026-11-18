@@ -480,6 +480,14 @@ export function AdminPanel() {
                         ' · ' +
                         formatDate(row.createdAt)}
                     </span>
+                    {row.manualPayment?.provider === 'MANUAL' && (
+                      <span className="muted small">
+                        · پرداخت دستی · {formatToman(row.manualPayment.amount)}{' '}
+                        {row.manualPayment.invoiceUrl && (
+                          <a href={row.manualPayment.invoiceUrl} target="_blank" rel="noreferrer">مشاهده فاکتور</a>
+                        )}
+                      </span>
+                    )}
                   </>
                 )}
               </div>

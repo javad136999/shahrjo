@@ -15,6 +15,8 @@ import {
   getProfile,
   getTokens,
   uploadBusinessImage,
+  uploadPaymentReceipt,
+  submitManualPayment,
   verifyBazaarPurchase,
 } from '@/lib/api';
 import { purchaseWithBazaar } from '@/lib/bazaar';
@@ -194,13 +196,16 @@ export function BusinessRegistration() {
   const [paymentNeedsRecovery, setPaymentNeedsRecovery] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [freeRegistrationSelected, setFreeRegistrationSelected] = useState(false);
-  const [freeRegistrationSuccess, setFreeRegistrationSuccess] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'manual' | 'bazaar'>('bazaar');
+  const [receiptUrl, setReceiptUrl] = useState('');
+  const [receiptBusy, setReceiptBusy] = useState(false);
+  const [manualPaymentSuccess, setManualPaymentSuccess] = useState<string | null>(null);
   const [successNoticeDismissed, setSuccessNoticeDismissed] = useState(false);
   const [locating, setLocating] = useState(false);
 
   // Leaflet refs kept out of React state so clicks don't re-init the map.
   const logoInput = useRef<HTMLInputElement | null>(null);
+  const receiptInput = useRef<HTMLInputElement | null>(null);
   const mapEl = useRef<HTMLDivElement | null>(null);
   const mapObj = useRef<import('leaflet').Map | null>(null);
   const markerObj = useRef<import('leaflet').Marker | null>(null);
@@ -212,13 +217,13 @@ export function BusinessRegistration() {
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-    if (!freeRegistrationSuccess || successNoticeDismissed) return;
+    if (!manualPaymentSuccess || successNoticeDismissed) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setSuccessNoticeDismissed(true);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [freeRegistrationSuccess, successNoticeDismissed]);
+  }, [manualPaymentSuccess, successNoticeDismissed]);
 
   // Load form options and the exact profile city together; geometry is lazy.
   useEffect(() => {
@@ -506,6 +511,21 @@ export function BusinessRegistration() {
     }
   };
 
+  const pickReceipt = async (file: File | null) => {
+    if (!file) return;
+    setReceiptBusy(true);
+    setError(null);
+    try {
+      const uploaded = await uploadPaymentReceipt(file);
+      setReceiptUrl(uploaded.url);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'بارگذاری فاکتور ناموفق بود');
+    } finally {
+      setReceiptBusy(false);
+      if (receiptInput.current) receiptInput.current.value = '';
+    }
+  };
+
   const confirmAndPay = async () => {
     if (!detailsValid) {
       setError('نام کسب‌وکار و دسته‌بندی را کامل کن.');
@@ -515,17 +535,19 @@ export function BusinessRegistration() {
       setError('بارگذاری عکس کسب‌وکار هنوز کامل نشده است.');
       return;
     }
-    if (!selectedPlanId && !freeRegistrationSelected) {
+    if (!selectedPlanId) {
       setError('یک پلن اشتراک را انتخاب کن.');
+      return;
+    }
+    if (paymentMethod === 'manual' && !receiptUrl) {
+      setError('تصویر فاکتور پرداخت را پیوست کن.');
       return;
     }
     if (!mapCityName) {
       setError(locationError ?? 'ابتدا شهر حساب کاربری‌ات را در پروفایل انتخاب کن.');
       return;
     }
-    // Paid Bazaar billing is provided by the Android APK bridge, not a normal browser.
-    // The explicit free web path below never starts or implies a Bazaar purchase.
-    if (!freeRegistrationSelected && (typeof window === 'undefined' || !window.ShahrjoBazaar)) {
+    if (paymentMethod === 'bazaar' && (typeof window === 'undefined' || !window.ShahrjoBazaar)) {
       setError('پرداخت اشتراک بازار فقط داخل اپلیکیشن اندروید شهرجو نصب‌شده از بازار امکان‌پذیر است. برنامه را از بازار باز کنید و ثبت کسب‌وکار را آنجا انجام دهید.');
       return;
     }
@@ -543,8 +565,9 @@ export function BusinessRegistration() {
         latitude: location?.lat,
         longitude: location?.lng,
       });
-      if (freeRegistrationSelected) {
-        setFreeRegistrationSuccess(biz.name);
+      if (paymentMethod === 'manual') {
+        await submitManualPayment({ planId: selectedPlanId, businessId: biz.id, invoiceUrl: receiptUrl });
+        setManualPaymentSuccess(biz.name);
         setBusy(false);
         return;
       }
@@ -588,10 +611,10 @@ export function BusinessRegistration() {
           )}
         </div>
       )}
-      {freeRegistrationSuccess && !successNoticeDismissed && (
+      {manualPaymentSuccess && !successNoticeDismissed && (
         <div
           className="biz-registration__success-overlay"
-          data-testid="biz-free-registration-success"
+          data-testid="biz-manual-payment-success"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) setSuccessNoticeDismissed(true);
           }}
@@ -613,8 +636,8 @@ export function BusinessRegistration() {
             <p className="biz-registration__success-eyebrow">درخواست شما دریافت شد</p>
             <h2 id="biz-success-title">درخواست ثبت شد</h2>
             <p className="biz-registration__success-copy">
-              درخواست ثبت کسب‌وکار «<strong>{freeRegistrationSuccess}</strong>» با موفقیت دریافت شد.
-              <span>مدیریت با شما تماس می‌گیرد.</span>
+              درخواست پرداخت دستی کسب‌وکار «<strong>{manualPaymentSuccess}</strong>» با موفقیت ارسال شد.
+              <span>پس از تأیید مدیریت، اشتراک به مدت انتخاب‌شده فعال می‌شود.</span>
             </p>
             <div className="biz-registration__success-actions">
               <Link href="/businesses" className="btn btn-primary">مشاهدهٔ کسب‌وکارهای من</Link>
@@ -808,12 +831,12 @@ export function BusinessRegistration() {
                           role="button"
                           tabIndex={0}
                           aria-pressed={selectedPlanId === plan.id}
-                          onClick={() => { setSelectedPlanId(plan.id); setFreeRegistrationSelected(false); }}
+                          onClick={() => { setSelectedPlanId(plan.id); }}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
                               setSelectedPlanId(plan.id);
-                              setFreeRegistrationSelected(false);
+                              setSelectedPlanId(plan.id);
                             }
                           }}
                           data-testid={`biz-plan-${plan.id}`}
@@ -858,28 +881,31 @@ export function BusinessRegistration() {
               })}
             </section>
           )}
-          <div className={`biz-registration__free-option${freeRegistrationSelected ? ' is-selected' : ''}`} data-testid="biz-free-option">
-            <div>
-              <strong>ثبت درخواست کسب‌وکار از سایت</strong>
-              <p>درخواستت را ثبت کن؛ پس از بررسی، مدیریت با تو تماس می‌گیرد.</p>
+          <div className="biz-registration__free-option" data-testid="biz-payment-methods">
+            <strong>روش پرداخت</strong>
+            <div className="biz-registration__payment-options">
+              <button type="button" className={`btn ${paymentMethod === 'manual' ? 'btn-primary' : 'btn-ghost'}`} aria-pressed={paymentMethod === 'manual'} onClick={() => { setPaymentMethod('manual'); setError(null); }}>پرداخت دستی</button>
+              <button type="button" className={`btn ${paymentMethod === 'bazaar' ? 'btn-primary' : 'btn-ghost'}`} aria-pressed={paymentMethod === 'bazaar'} onClick={() => { setPaymentMethod('bazaar'); setError(null); }}>پرداخت از کافه بازار</button>
             </div>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              aria-pressed={freeRegistrationSelected}
-              onClick={() => { setFreeRegistrationSelected(true); setSelectedPlanId(null); setError(null); }}
-              data-testid="biz-free-select"
-            >
-              {freeRegistrationSelected ? 'ثبت از سایت انتخاب شد' : 'انتخاب ثبت از سایت'}
-            </button>
+            {paymentMethod === 'manual' && (
+              <div className="biz-registration__manual-payment" data-testid="biz-manual-payment">
+                <p>مبلغ پلن انتخابی را به شماره کارت زیر واریز کنید:</p>
+                <strong className="biz-registration__card-number">۵۰۴۱۷۲۱۰۷۴۲۶۲۶۳۶</strong>
+                <button type="button" className="btn btn-ghost" onClick={() => receiptInput.current?.click()} disabled={receiptBusy}>
+                  {receiptBusy ? 'در حال بارگذاری…' : receiptUrl ? 'تغییر تصویر فاکتور' : 'پیوست فاکتور پرداخت'}
+                </button>
+                <input ref={receiptInput} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(event) => void pickReceipt(event.target.files?.[0] ?? null)} />
+                {receiptUrl && <span className="biz-registration__receipt-ready">فاکتور پیوست شد ✓</span>}
+              </div>
+            )}
           </div>
           <div className="auth-actions">
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={!detailsValid || !mapCityName || (!selectedPlanId && !freeRegistrationSelected) || busy || logoBusy || Boolean(freeRegistrationSuccess)}
+              disabled={!detailsValid || !mapCityName || !selectedPlanId || busy || logoBusy || receiptBusy || Boolean(manualPaymentSuccess)}
             >
-              {busy ? 'در حال ثبت…' : freeRegistrationSelected ? 'ثبت درخواست کسب‌وکار' : 'تأیید و پرداخت'}
+              {busy ? 'در حال ثبت…' : paymentMethod === 'manual' ? 'ارسال درخواست پرداخت دستی' : 'پرداخت از کافه بازار'}
             </button>
           </div>
         </section>

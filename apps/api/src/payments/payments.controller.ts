@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { CurrentUser, Public } from '../common/decorators';
-import { BazaarVerifyDto, CheckoutDto } from './payments.dto';
+import { BazaarVerifyDto, CheckoutDto, ManualPaymentDto } from './payments.dto';
 import { PaymentsService } from './payments.service';
 
 @Controller()
@@ -19,6 +19,12 @@ export class PaymentsController {
   @Post('payments/checkout')
   checkout(@CurrentUser() user: User, @Body() dto: CheckoutDto): ReturnType<PaymentsService['checkout']> {
     return this.payments.checkout(user, dto);
+  }
+
+  /** Creates a manual bank-card payment and queues it for admin review. */
+  @Post('payments/manual')
+  manual(@CurrentUser() user: User, @Body() dto: ManualPaymentDto): ReturnType<PaymentsService['manual']> {
+    return this.payments.manual(user, dto);
   }
 
   /** Verifies the Poolakey purchase token with Bazaar and activates the subscription. */

@@ -279,6 +279,12 @@ export async function uploadBusinessImage(file: File): Promise<UploadedImage> {
   return requestForm<UploadedImage>('/uploads/business', form);
 }
 
+export async function uploadPaymentReceipt(file: File): Promise<UploadedImage> {
+  const form = new FormData();
+  form.append('file', file, file.name);
+  return requestForm<UploadedImage>('/uploads/payment-receipt', form);
+}
+
 export const NOTIFICATIONS_CHANGED_EVENT = 'shahrjo:notifications-changed';
 
 export interface UserNotification {
@@ -358,6 +364,10 @@ export async function getPlans(): Promise<PlanItem[]> {
 /** Creates a pending purchase; the Android Bazaar wrapper completes it with Poolakey. */
 export async function checkoutPlan(body: { planId: number; businessId?: number }): Promise<CheckoutSession> {
   return api.post<CheckoutSession>('/payments/checkout', body);
+}
+
+export async function submitManualPayment(body: { planId: number; businessId: number; invoiceUrl: string }): Promise<{ paymentId: number; subscriptionId: number; status: string }> {
+  return api.post<{ paymentId: number; subscriptionId: number; status: string }>('/payments/manual', body);
 }
 
 export async function verifyBazaarPurchase(body: {

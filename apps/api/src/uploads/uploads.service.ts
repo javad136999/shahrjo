@@ -166,6 +166,11 @@ export class UploadsService implements OnModuleInit {
     return this.storeImage(user, file, BUSINESS_PROFILE, 'BUSINESS');
   }
 
+  /** Bank-payment invoices are retained as payment-owned media. */
+  async savePaymentReceipt(user: User, file: { buffer?: Buffer; size?: number } | undefined): Promise<StoredImage> {
+    return this.storeImage(user, file, DISPLAY_PROFILE, 'PAYMENT');
+  }
+
   private async storeImage(
     user: User,
     file: { buffer?: Buffer; size?: number } | undefined,

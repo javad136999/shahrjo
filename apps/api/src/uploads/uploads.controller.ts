@@ -43,6 +43,17 @@ export class UploadsController {
     return this.uploads.saveBusinessImage(user, file);
   }
 
+  @Post('uploads/payment-receipt')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: MAX_UPLOAD_BYTES, files: 1 },
+    }),
+  )
+  uploadPaymentReceipt(@CurrentUser() user: User, @UploadedFile() file?: Express.Multer.File) {
+    if (!file) throw new BadRequestException('تصویر فاکتور الزامی است');
+    return this.uploads.savePaymentReceipt(user, file);
+  }
+
   /**
    * Store one voice note for the city wall chat (Phase 10): 5 MB cap,
    * magic-byte sniffing (WebM/OGG/M4A/MP3/WAV), random storage key, no

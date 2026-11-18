@@ -278,6 +278,7 @@ export interface QueueSubscription {
   status: string;
   createdAt: string;
   plan: { code: string; label: string; tier: string; durationDays: number };
+  manualPayment: { id: number; provider: string; status: string; amount: number; invoiceUrl: string | null; createdAt: string } | null;
   business: { id: number; name: string; city: { id: number; name: string } } | null;
   payer: { id: number; phone: string; fullName: string | null };
 }

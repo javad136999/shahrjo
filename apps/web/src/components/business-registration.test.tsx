@@ -55,6 +55,8 @@ jest.mock('@/lib/api', () => ({
   checkoutPlan: jest.fn(),
   verifyBazaarPurchase: jest.fn(),
   uploadBusinessImage: jest.fn(),
+  uploadPaymentReceipt: jest.fn(),
+  submitManualPayment: jest.fn(),
   ApiError: class ApiError extends Error {},
 }));
 
@@ -112,7 +114,7 @@ describe('BusinessRegistration', () => {
     m.getProfile.mockResolvedValue({ cityId: null });
     render(<BusinessRegistration />);
     expect(await screen.findByRole('alert')).toHaveTextContent('ابتدا شهر حساب کاربری‌ات را');
-    expect(screen.getByRole('button', { name: /تأیید و پرداخت/ })).toBeDisabled();
+    expect(screen.getAllByRole('button', { name: 'پرداخت از کافه بازار' })[1]).toBeDisabled();
     expect(m.getCityMap).not.toHaveBeenCalled();
   });
 
@@ -150,7 +152,7 @@ describe('BusinessRegistration', () => {
 
   it('shows the full one-page form and enables payment only after required details and a plan are selected', async () => {
     render(<BusinessRegistration />);
-    const payment = await screen.findByRole('button', { name: /تأیید و پرداخت/ });
+    const payment = (await screen.findAllByRole('button', { name: 'پرداخت از کافه بازار' }))[1];
     expect(await screen.findByTestId('business-registration')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'مشخصات کسب‌وکار' })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /موقعیت کسب‌وکار/ })).toBeInTheDocument();
@@ -168,24 +170,25 @@ describe('BusinessRegistration', () => {
     await waitFor(() => expect(payment).toBeEnabled());
   });
 
-  it('allows a browser user to submit a free business without opening Bazaar checkout', async () => {
-    window.ShahrjoBazaar = undefined;
+  it('submits a manual payment request with an invoice without opening Bazaar checkout', async () => {
     m.createBusiness.mockResolvedValue({ id: 77, name: 'قهوه‌خانه', slug: 'biz-77', status: 'PENDING', subscriptionTier: 'FREE' });
+    m.uploadPaymentReceipt.mockResolvedValue({ id: 88, url: '/api/v1/files/media/2026/10/receipt.webp' });
+    m.submitManualPayment.mockResolvedValue({ paymentId: 1, subscriptionId: 2, status: 'PENDING_REVIEW' });
 
     render(<BusinessRegistration />);
     fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
     await chooseBusinessCategory(3);
-    expect(screen.getByTestId('biz-free-option')).not.toHaveTextContent('رایگان');
-    fireEvent.click(screen.getByTestId('biz-free-select'));
-    fireEvent.click(screen.getByRole('button', { name: 'ثبت درخواست کسب‌وکار' }));
+    fireEvent.click(screen.getByRole('button', { name: 'پرداخت دستی' }));
+    fireEvent.click(screen.getByTestId('biz-plan-11'));
+    const receipt = new File(['x'], 'receipt.jpg', { type: 'image/jpeg' });
+    fireEvent.change(screen.getByTestId('biz-manual-payment').querySelector('input[type=\"file\"]') as HTMLInputElement, { target: { files: [receipt] } });
+    await waitFor(() => expect(m.uploadPaymentReceipt).toHaveBeenCalledWith(receipt));
+    fireEvent.click(screen.getByRole('button', { name: 'ارسال درخواست پرداخت دستی' }));
 
     const successDialog = await screen.findByRole('dialog', { name: 'درخواست ثبت شد' });
-    expect(successDialog).toHaveTextContent('درخواست ثبت کسب‌وکار «قهوه‌خانه» با موفقیت دریافت شد.');
-    expect(successDialog).toHaveTextContent('مدیریت با شما تماس می‌گیرد.');
-    fireEvent.click(screen.getByRole('button', { name: 'بستن پیام' }));
-    expect(screen.queryByTestId('biz-free-registration-success')).not.toBeInTheDocument();
-    expect(m.createBusiness).toHaveBeenCalledWith(expect.objectContaining({ name: 'قهوه‌خانه', categoryId: 3 }));
-    expect(m.checkoutPlan).not.toHaveBeenCalled();
+    expect(successDialog).toHaveTextContent('درخواست پرداخت دستی کسب‌وکار «قهوه‌خانه» با موفقیت ارسال شد.');
+    expect(successDialog).toHaveTextContent('پس از تأیید مدیریت');
+    expect(m.submitManualPayment).toHaveBeenCalledWith({ planId: 11, businessId: 77, invoiceUrl: '/api/v1/files/media/2026/10/receipt.webp' });
     expect(mockPurchaseWithBazaar).not.toHaveBeenCalled();
   });
 
@@ -217,7 +220,7 @@ describe('BusinessRegistration', () => {
     expect(screen.getByTestId('biz-plan-monthly-14')).toHaveTextContent('میانگین ماهانه: ۱٬۳۳۳٬۳۳۳ ریال');
     expect(screen.getByTestId('biz-plan-monthly-15')).toHaveTextContent('میانگین ماهانه: ۱٬۰۸۳٬۳۳۳ ریال');
     fireEvent.click(screen.getByTestId('biz-plan-11'));
-    fireEvent.click(screen.getByRole('button', { name: /تأیید و پرداخت/ }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'پرداخت از کافه بازار' })[1]);
 
     await waitFor(() =>
       expect(m.createBusiness).toHaveBeenCalledWith(
@@ -287,7 +290,7 @@ describe('BusinessRegistration', () => {
     expect(m.uploadBusinessImage).toHaveBeenCalledWith(file);
 
     fireEvent.click(screen.getByTestId('biz-plan-11'));
-    fireEvent.click(screen.getByRole('button', { name: /تأیید و پرداخت/ }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'پرداخت از کافه بازار' })[1]);
 
     await waitFor(() =>
       expect(m.createBusiness).toHaveBeenCalledWith(

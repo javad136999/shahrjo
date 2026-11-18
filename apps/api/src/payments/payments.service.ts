@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import type { Prisma, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { BazaarVerifyDto, CheckoutDto } from './payments.dto';
+import { BazaarVerifyDto, CheckoutDto, ManualPaymentDto } from './payments.dto';
 import { BazaarService } from './bazaar.service';
 
 /** Per-user hourly checkout cap — aborted sessions should not spam the gateway. */
@@ -137,6 +137,41 @@ export class PaymentsService {
       packageName: this.bazaar.packageName,
       amount: Number(payment.amount),
     };
+  }
+
+  /** Creates a bank-card payment request; an admin activates it after checking the invoice. */
+  async manual(user: User, dto: ManualPaymentDto): Promise<{ paymentId: number; subscriptionId: number; status: string }> {
+    const invoiceUrl = dto.invoiceUrl.trim();
+    if (!invoiceUrl.startsWith('/api/v1/files/media/')) {
+      throw new BadRequestException('فاکتور معتبر نیست؛ ابتدا تصویر فاکتور را بارگذاری کن');
+    }
+    const [plan, business] = await Promise.all([
+      this.prisma.subscriptionPlan.findFirst({ where: { id: dto.planId, isActive: true }, select: { id: true, tier: true, price: true } }),
+      this.prisma.business.findFirst({ where: { id: dto.businessId, ownerId: user.id }, select: { id: true } }),
+    ]);
+    if (!plan) throw new NotFoundException('پلن اشتراک یافت نشد');
+    if (!business) throw new NotFoundException('کسب‌وکار یافت نشد');
+
+    return this.prisma.$transaction(async (tx) => {
+      const subscription = await tx.subscription.create({
+        data: { userId: user.id, businessId: business.id, planId: plan.id, tier: plan.tier, status: 'PENDING_REVIEW' },
+        select: { id: true },
+      });
+      const payment = await tx.payment.create({
+        data: {
+          userId: user.id,
+          businessId: business.id,
+          planId: plan.id,
+          subscriptionId: subscription.id,
+          provider: 'MANUAL',
+          amount: plan.price,
+          status: 'CREATED',
+          invoiceUrl,
+        },
+        select: { id: true },
+      });
+      return { paymentId: payment.id, subscriptionId: subscription.id, status: 'PENDING_REVIEW' };
+    });
   }
   /** Verifies a Poolakey purchase server-to-server and activates the subscription atomically. */
   async verifyBazaar(user: User, dto: BazaarVerifyDto): Promise<PaymentResultStatus> {

@@ -823,6 +823,7 @@ enum PaymentProvider {
   ZARINPAL
   SEPAL
   BAZAAR
+  MANUAL
 }
 
 // Admin-defined purchasable plans (prices in Rial, editable without code changes).
@@ -863,6 +864,7 @@ model Subscription {
   expiresAt    DateTime?          @map("expires_at")
   reviewedById Int?               @map("reviewed_by_id")
   reviewNote   String?            @map("review_note")
+  manualPayment Payment?          @relation("SubscriptionPayment")
   createdAt    DateTime           @default(now()) @map("created_at")
   updatedAt    DateTime           @updatedAt @map("updated_at")
 
@@ -883,7 +885,7 @@ model Payment {
   userId           Int             @map("user_id")
   businessId       Int?            @map("business_id")
   planId           Int             @map("plan_id")
-  subscriptionId   Int?            @map("subscription_id")
+  subscriptionId   Int?            @unique @map("subscription_id")
   provider         PaymentProvider @default(BAZAAR)
   amount           BigInt // Rial
   status           PaymentStatus   @default(CREATED)
@@ -892,6 +894,7 @@ model Payment {
   resultCode       Int?            @map("result_code") // Bazaar purchase state (0 = purchased)
   errorDescription String?         @map("error_description")
   callbackPayload  Json?           @map("callback_payload")
+  invoiceUrl       String?         @map("invoice_url") @db.VarChar(500)
   paidAt           DateTime?       @map("paid_at")
   verifiedAt       DateTime?       @map("verified_at")
   createdAt        DateTime        @default(now()) @map("created_at")
@@ -900,6 +903,7 @@ model Payment {
   user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   business Business?        @relation(fields: [businessId], references: [id], onDelete: SetNull)
   plan     SubscriptionPlan @relation(fields: [planId], references: [id])
+  subscription Subscription? @relation("SubscriptionPayment", fields: [subscriptionId], references: [id])
 
   @@index([businessId, createdAt])
   @@index([status, createdAt])

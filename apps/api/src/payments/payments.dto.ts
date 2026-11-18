@@ -31,3 +31,20 @@ export class BazaarVerifyDto {
   @IsNotEmpty()
   purchaseToken!: string;
 }
+
+/** A bank-card payment submitted with an invoice for admin review. */
+export class ManualPaymentDto {
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  planId!: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  businessId!: number;
+
+  @IsString()
+  @IsNotEmpty()
+  invoiceUrl!: string;
+}
