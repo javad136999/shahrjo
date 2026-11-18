@@ -1,6 +1,6 @@
 # ShahrJo Web - Next.js production image (Phase 3).
 # Build context is the repo root: docker build -f apps/web/Dockerfile .
-FROM node:22-alpine AS build
+FROM public.ecr.aws/docker/library/node:22-alpine AS build
 WORKDIR /repo
 RUN corepack enable
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -22,7 +22,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm --filter @shahrjo/web build
 
-FROM node:22-alpine AS runner
+FROM public.ecr.aws/docker/library/node:22-alpine AS runner
 WORKDIR /repo
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \

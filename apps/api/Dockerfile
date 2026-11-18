@@ -1,6 +1,6 @@
 # ShahrJo API - production image (Phase 13/14).
 # Build context is the repo root: docker build -f apps/api/Dockerfile .
-FROM node:22-alpine AS build
+FROM public.ecr.aws/docker/library/node:22-alpine AS build
 WORKDIR /repo
 RUN corepack enable
 
@@ -17,7 +17,7 @@ COPY . .
 RUN pnpm exec prisma generate
 RUN pnpm --filter @shahrjo/api build
 
-FROM node:22-alpine AS runner
+FROM public.ecr.aws/docker/library/node:22-alpine AS runner
 WORKDIR /repo
 ENV NODE_ENV=production
 RUN corepack enable
