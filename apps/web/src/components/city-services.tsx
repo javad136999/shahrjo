@@ -464,8 +464,9 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
                     disabled={!serviceQuery.trim()}
                     onClick={searchService}
                     data-testid="service-search-button"
+                    aria-label="جستجو"
                   >
-                    جستجو
+                    <span aria-hidden="true">⌕</span>
                   </button>
                 </div>
               </div>
