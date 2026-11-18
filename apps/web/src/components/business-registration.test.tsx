@@ -179,7 +179,11 @@ describe('BusinessRegistration', () => {
     fireEvent.click(screen.getByTestId('biz-free-select'));
     fireEvent.click(screen.getByRole('button', { name: 'ثبت درخواست کسب‌وکار' }));
 
-    expect(await screen.findByTestId('biz-free-registration-success')).toHaveTextContent('درخواست ثبت کسب‌وکار «قهوه‌خانه» دریافت شد؛ مدیریت با شما تماس می‌گیرد.');
+    const successDialog = await screen.findByRole('dialog', { name: 'درخواست ثبت شد' });
+    expect(successDialog).toHaveTextContent('درخواست ثبت کسب‌وکار «قهوه‌خانه» با موفقیت دریافت شد.');
+    expect(successDialog).toHaveTextContent('مدیریت با شما تماس می‌گیرد.');
+    fireEvent.click(screen.getByRole('button', { name: 'بستن پیام' }));
+    expect(screen.queryByTestId('biz-free-registration-success')).not.toBeInTheDocument();
     expect(m.createBusiness).toHaveBeenCalledWith(expect.objectContaining({ name: 'قهوه‌خانه', categoryId: 3 }));
     expect(m.checkoutPlan).not.toHaveBeenCalled();
     expect(mockPurchaseWithBazaar).not.toHaveBeenCalled();

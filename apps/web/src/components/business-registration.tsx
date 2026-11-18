@@ -195,6 +195,7 @@ export function BusinessRegistration() {
   const [busy, setBusy] = useState(false);
   const [freeRegistrationSelected, setFreeRegistrationSelected] = useState(false);
   const [freeRegistrationSuccess, setFreeRegistrationSuccess] = useState<string | null>(null);
+  const [successNoticeDismissed, setSuccessNoticeDismissed] = useState(false);
   const [locating, setLocating] = useState(false);
 
   // Leaflet refs kept out of React state so clicks don't re-init the map.
@@ -208,6 +209,15 @@ export function BusinessRegistration() {
   const mapDataRef = useRef<CityMapData | null>(null);
   const locationRef = useRef<{ lat: number; lng: number } | null>(null);
   const [mapReady, setMapReady] = useState(false);
+
+  useEffect(() => {
+    if (!freeRegistrationSuccess || successNoticeDismissed) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSuccessNoticeDismissed(true);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [freeRegistrationSuccess, successNoticeDismissed]);
 
   // Load form options and the exact profile city together; geometry is lazy.
   useEffect(() => {
@@ -584,10 +594,39 @@ export function BusinessRegistration() {
           )}
         </div>
       )}
-      {freeRegistrationSuccess && (
-        <div className="banner banner--ok" role="status" data-testid="biz-free-registration-success">
-          درخواست ثبت کسب‌وکار «{freeRegistrationSuccess}» دریافت شد؛ مدیریت با شما تماس می‌گیرد. برای دیدن وضعیت،{' '}
-          <Link href="/businesses">کسب‌وکارهای من</Link> را باز کن.
+      {freeRegistrationSuccess && !successNoticeDismissed && (
+        <div
+          className="biz-registration__success-overlay"
+          data-testid="biz-free-registration-success"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setSuccessNoticeDismissed(true);
+          }}
+        >
+          <section className="biz-registration__success-dialog" role="dialog" aria-modal="true" aria-labelledby="biz-success-title">
+            <button
+              type="button"
+              className="biz-registration__success-close"
+              aria-label="بستن پیام"
+              onClick={() => setSuccessNoticeDismissed(true)}
+            >
+              <span aria-hidden>×</span>
+            </button>
+            <div className="biz-registration__success-icon" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="m6 12.5 4 4L18.5 8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <p className="biz-registration__success-eyebrow">درخواست شما دریافت شد</p>
+            <h2 id="biz-success-title">درخواست ثبت شد</h2>
+            <p className="biz-registration__success-copy">
+              درخواست ثبت کسب‌وکار «<strong>{freeRegistrationSuccess}</strong>» با موفقیت دریافت شد.
+              <span>مدیریت با شما تماس می‌گیرد.</span>
+            </p>
+            <div className="biz-registration__success-actions">
+              <Link href="/businesses" className="btn btn-primary">مشاهدهٔ کسب‌وکارهای من</Link>
+              <button type="button" className="btn btn-ghost" onClick={() => setSuccessNoticeDismissed(true)}>بستن</button>
+            </div>
+          </section>
         </div>
       )}
 
