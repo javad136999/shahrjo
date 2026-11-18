@@ -162,6 +162,12 @@ export class AdminController {
     return this.admin.rejectSubscription(user, id, dto);
   }
 
+  @Post('subscriptions/:id/delete')
+  @RequirePermissions('subscriptions.manage')
+  deleteSubscription(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number) {
+    return this.admin.deleteSubscription(user, id);
+  }
+
   /** City map outline (GeoJSON Polygon; null clears) — Phase 9. */
   @Post('cities/:id/boundary')
   @RequirePermissions('map.manage')

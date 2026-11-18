@@ -10116,11 +10116,43 @@ button.pill {
   color: #b42318;
 }
 .city-services .service-search {
-  margin-bottom: 14px;
-  padding: 11px;
-  border: 1px solid #e0ebe3;
-  border-radius: 14px;
-  background: #f8fcf9;
+  margin: 2px 0 10px;
+  padding: 10px;
+  border: 1px solid #d7e8dc;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fbfffc, #f2faf5);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 80%), 0 8px 22px -20px #215f3a;
+}
+.city-services [data-testid='service-find'] h3 { margin-bottom: 1px; }
+.city-services [data-testid='service-find'] .service-search label {
+  color: #315d46;
+  font-size: 11.5px;
+}
+.city-services [data-testid='service-find'] .service-search__row { gap: 6px; }
+.city-services [data-testid='service-find'] .service-search__row input {
+  min-height: 42px;
+  padding-inline: 13px;
+  border-color: #c9ded0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: inset 0 1px 2px rgb(24 69 43 / 5%);
+}
+.city-services [data-testid='service-find'] .service-search__row input:focus {
+  border-color: #4b9a6b;
+  box-shadow: 0 0 0 3px rgb(75 154 107 / 14%);
+}
+.city-services [data-testid='service-find'] .service-search__button {
+  min-width: 74px;
+  border-radius: 12px;
+}
+.city-services [data-testid='service-find'] .service-chips {
+  gap: 6px;
+}
+.city-services [data-testid='service-find'] .service-chip {
+  min-height: 43px;
+  padding: 7px 9px;
+  border-radius: 12px;
+  line-height: 1.35;
 }
 .city-business-directory__count { color: #527565; font-weight: 800; }
 .city-business-directory__card { transition: border-color .16s, transform .16s, box-shadow .16s; }

@@ -516,6 +516,10 @@ export async function rejectAdminSubscription(id: number, reason: string): Promi
   return api.post<{ id: number; status: string }>(`/admin/subscriptions/${id}/reject`, { reason });
 }
 
+export async function deleteAdminSubscription(id: number): Promise<{ id: number; status: string }> {
+  return api.post<{ id: number; status: string }>(`/admin/subscriptions/${id}/delete`);
+}
+
 // ---------- city feeds (Phase 4) ----------
 
 const cityQS = (slug: string, limit: number) => `city=${encodeURIComponent(slug)}&limit=${limit}`;

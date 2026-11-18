@@ -10,7 +10,7 @@ function makePrisma() {
     business: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     serviceListing: { findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     wallPost: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
-    payment: { findMany: jest.fn().mockResolvedValue([]) },
+    payment: { findMany: jest.fn().mockResolvedValue([]), update: jest.fn() },
     subscription: { count: jest.fn(), findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     user: { count: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     city: { findFirst: jest.fn(), update: jest.fn() },
@@ -337,6 +337,22 @@ describe('AdminService subscription approval (ZarinPal)', () => {
   it('requires a reason when rejecting a subscription', async () => {
     const { service } = makeService({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
     await expect(service.rejectSubscription(admin, 44, {})).rejects.toThrow('علت رد');
+  });
+
+  it('cancels a pending manual subscription and its payment without deleting history', async () => {
+    const { service, prisma } = makeService({ role: 'SUPER_ADMIN', provinceId: null, cityId: null });
+    prisma.subscription.findFirst.mockResolvedValue({
+      id: 44,
+      status: 'PENDING_REVIEW',
+      manualPayment: { id: 202, provider: 'MANUAL' },
+    });
+    prisma.subscription.update.mockResolvedValue({ id: 44, status: 'CANCELED' });
+    await expect(service.deleteSubscription(admin, 44)).resolves.toEqual({ id: 44, status: 'CANCELED' });
+    expect(prisma.subscription.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 44 },
+      data: expect.objectContaining({ status: 'CANCELED', reviewedById: 77 }),
+    }));
+    expect(prisma.payment.update).toHaveBeenCalledWith({ where: { id: 202 }, data: { status: 'CANCELED' } });
   });
 });
 

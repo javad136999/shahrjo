@@ -422,8 +422,7 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
 
       {panel === 'find' && (
         <div className="service-panel" data-testid="service-find">
-          <h3>متخصص موردنظرت را پیدا کن</h3>
-          <p className="muted small">نام خدمت، مهارت یا نام متخصص را جستجو کن؛ یا از حوزه‌های پرکاربرد انتخاب کن.</p>
+          <h3>متخصص مورد نظرت رو پیدا کن</h3>
 
           {error && (
             <p className="error" role="alert">
@@ -470,7 +469,6 @@ export function CityServices({ cityName, citySlug, onRegistered }: CityServicesP
                   </button>
                 </div>
               </div>
-              <p className="service-panel__section-label">انتخاب سریع حوزهٔ خدمت</p>
               <div className="service-chips" role="listbox" aria-label="حوزه‌های خدمات" data-testid="service-chips">
                 {(categories ?? []).map((c) => (
                   <button
