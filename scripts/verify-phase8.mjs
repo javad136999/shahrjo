@@ -36,6 +36,7 @@ const endpoints = [
   "@Get('subscriptions')",
   "@Post('subscriptions/:id/approve')",
   "@Post('subscriptions/:id/reject')",
+  "@Post('subscriptions/:id/delete')",
   "@Post('cities/:id/boundary')",
   "@Get('storage/overview')",
   "@Post('storage/sweep')",
@@ -101,11 +102,11 @@ if (!read('apps/api/src/app.module.ts').includes('AdminModule')) {
 
 // --- Web: panel gates + entries ---
 const panel = read('apps/web/src/components/admin-panel.tsx');
-for (const marker of ['getTokens', '/login?next=/admin', 'getProfile', 'roles', 'دسترسی ندارید', 'approveAdminAd', 'rejectAdminAd', 'deleteAdminAd', 'approveAdminSubscription']) {
+for (const marker of ['getTokens', '/login?next=/admin', 'getProfile', 'roles', 'دسترسی ندارید', 'approveAdminAd', 'rejectAdminAd', 'deleteAdminAd', 'approveAdminSubscription', 'deleteAdminSubscription']) {
   if (!panel.includes(marker)) { console.error(`WEB: admin panel missing ${marker}`); fail++; }
 }
 const apiClient = read('apps/web/src/lib/api.ts');
-for (const helper of ['getAdminOverview', 'getAdminAds', 'approveAdminAd', 'rejectAdminAd', 'deleteAdminAd', 'getAdminBusinesses', 'approveAdminBusiness', 'getAdminSubscriptions', 'approveAdminSubscription', 'getAdminRewardUsers', 'giveAdminReward']) {
+for (const helper of ['getAdminOverview', 'getAdminAds', 'approveAdminAd', 'rejectAdminAd', 'deleteAdminAd', 'getAdminBusinesses', 'approveAdminBusiness', 'getAdminSubscriptions', 'approveAdminSubscription', 'deleteAdminSubscription', 'getAdminRewardUsers', 'giveAdminReward']) {
   if (!apiClient.includes(helper)) { console.error(`WEB: api client missing ${helper}`); fail++; }
 }
 // Entry: the admin panel lives in the profile only (role-gated there) — it

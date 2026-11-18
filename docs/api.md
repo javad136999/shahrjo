@@ -116,6 +116,7 @@
 | GET `/admin/subscriptions?status=PENDING_REVIEW` | `subscriptions.manage` | صف اشتراک‌های قدیمیِ در انتظار تأیید (پرداخت‌های جدید خودکار فعال می‌شوند) |
 | POST `/admin/subscriptions/:id/approve` | `subscriptions.manage` | `ACTIVE` + `startsAt`/`expiresAt` + ارتقای tier کسب‌وکار (`showcasePriority` طلایی=۱۰، نقره‌ای=۵۰)؛ هرگز انقضای فعالِ فعلی را کوتاه‌تر نمی‌کند + audit |
 | POST `/admin/subscriptions/:id/reject` | `subscriptions.manage` | `{ reason }` الزامی → `REJECTED` + `reviewNote` + audit |
+| POST `/admin/subscriptions/:id/delete` | `subscriptions.manage` | لغو نرم درخواست در انتظار (`CANCELED`) و لغو پرداخت دستی؛ سابقهٔ اشتراک، رسید و audit حفظ می‌شوند |
 
 ### Admin UI
 
