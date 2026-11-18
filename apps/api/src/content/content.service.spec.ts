@@ -48,6 +48,32 @@ describe('ContentService.newsDetail', () => {
     await expect(service.newsDetail('draft-news')).rejects.toThrow('خبر یافت نشد');
     expect(prisma.news.update).not.toHaveBeenCalled();
   });
+
+  it('serves published article content for server rendering without counting a view', async () => {
+    const { service, prisma } = makeService();
+    prisma.news.findFirst.mockResolvedValue({
+      id: 1,
+      title: 'خبر نمونه',
+      slug: 'sample-news',
+      excerpt: 'خلاصه',
+      body: 'متن کامل خبر',
+      coverUrl: null,
+      publishedAt: new Date('2026-10-01'),
+      city: { name: 'شهر نمونه', slug: 'sample-city' },
+      category: { name: 'عمومی', slug: 'general' },
+      viewCount: 4,
+    });
+
+    const detail = await service.newsContentForRendering('sample-news');
+
+    expect(detail.body).toBe('متن کامل خبر');
+    expect(detail.viewCount).toBe(4);
+    expect(prisma.news.findFirst.mock.calls[0][0].where).toMatchObject({
+      slug: 'sample-news',
+      status: 'PUBLISHED',
+    });
+    expect(prisma.news.update).not.toHaveBeenCalled();
+  });
 });
 
 describe('ContentService.businessDetail', () => {
