@@ -175,10 +175,11 @@ describe('BusinessRegistration', () => {
     render(<BusinessRegistration />);
     fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
     await chooseBusinessCategory(3);
+    expect(screen.getByTestId('biz-free-option')).not.toHaveTextContent('رایگان');
     fireEvent.click(screen.getByTestId('biz-free-select'));
-    fireEvent.click(screen.getByRole('button', { name: 'ثبت رایگان کسب‌وکار' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت درخواست کسب‌وکار' }));
 
-    expect(await screen.findByTestId('biz-free-registration-success')).toHaveTextContent('قهوه‌خانه');
+    expect(await screen.findByTestId('biz-free-registration-success')).toHaveTextContent('درخواست ثبت کسب‌وکار «قهوه‌خانه» دریافت شد؛ مدیریت با شما تماس می‌گیرد.');
     expect(m.createBusiness).toHaveBeenCalledWith(expect.objectContaining({ name: 'قهوه‌خانه', categoryId: 3 }));
     expect(m.checkoutPlan).not.toHaveBeenCalled();
     expect(mockPurchaseWithBazaar).not.toHaveBeenCalled();

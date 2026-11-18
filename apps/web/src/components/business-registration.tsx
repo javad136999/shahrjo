@@ -29,7 +29,7 @@ const formatPlanDuration = (days: number) => {
   return months ? `${months.toLocaleString('fa-IR')} ماهه` : `${days.toLocaleString('fa-IR')} روزه`;
 };
 const TIER_ICON: Record<string, string> = { GOLD: '👑', SILVER: '🥈', FREE: '⭐' };
-const TIER_LABEL: Record<PlanItem['tier'], string> = { GOLD: 'اشتراک طلایی', SILVER: 'اشتراک نقره‌ای', FREE: 'اشتراک رایگان' };
+const TIER_LABEL: Record<PlanItem['tier'], string> = { GOLD: 'اشتراک طلایی', SILVER: 'اشتراک نقره‌ای', FREE: 'اشتراک پایه' };
 const TIER_BENEFITS: Partial<Record<PlanItem['tier'], { icon: string; text: string; instagram?: boolean }[]>> = {
   GOLD: [
     { icon: '✨', text: 'ثبت کسب‌وکار در ویترین طلایی' },
@@ -586,7 +586,7 @@ export function BusinessRegistration() {
       )}
       {freeRegistrationSuccess && (
         <div className="banner banner--ok" role="status" data-testid="biz-free-registration-success">
-          درخواست ثبت «{freeRegistrationSuccess}» ارسال شد و برای بررسی در صف قرار گرفت. برای دیدن وضعیت،{' '}
+          درخواست ثبت کسب‌وکار «{freeRegistrationSuccess}» دریافت شد؛ مدیریت با شما تماس می‌گیرد. برای دیدن وضعیت،{' '}
           <Link href="/businesses">کسب‌وکارهای من</Link> را باز کن.
         </div>
       )}
@@ -775,7 +775,7 @@ export function BusinessRegistration() {
                       <span className="biz-registration__tier-icon" aria-hidden>{TIER_ICON[tier]}</span>
                       <div>
                         <h3 id={titleId}>{TIER_LABEL[tier]}</h3>
-                        <p>{tier === 'GOLD' ? 'بیشترین دیده‌شدن برای کسب‌وکارت' : tier === 'SILVER' ? 'حضور حرفه‌ای روی نقشه و معرفی محصولات' : 'شروع رایگان برای معرفی کسب‌وکار'}</p>
+                        <p>{tier === 'GOLD' ? 'بیشترین دیده‌شدن برای کسب‌وکارت' : tier === 'SILVER' ? 'حضور حرفه‌ای روی نقشه و معرفی محصولات' : 'شروع ثبت کسب‌وکار و معرفی آن'}</p>
                       </div>
                     </header>
                     <div className="plans-grid biz-registration__plans-grid">
@@ -807,7 +807,7 @@ export function BusinessRegistration() {
                             </div>
                           )}
                           <p className="biz-registration__plan-note">
-                            {plan.tier === 'GOLD' ? 'بالاترین سطح اشتراک' : plan.tier === 'SILVER' ? 'اشتراک ویژه کسب‌وکار' : 'طرح رایگان'}
+                            {plan.tier === 'GOLD' ? 'بالاترین سطح اشتراک' : plan.tier === 'SILVER' ? 'اشتراک ویژه کسب‌وکار' : 'طرح پایه'}
                           </p>
                           {selectedPlanId === plan.id && <span className="biz-registration__selected">✓ انتخاب شما</span>}
                         </article>
@@ -838,8 +838,8 @@ export function BusinessRegistration() {
           )}
           <div className={`biz-registration__free-option${freeRegistrationSelected ? ' is-selected' : ''}`} data-testid="biz-free-option">
             <div>
-              <strong>ثبت رایگان از طریق سایت</strong>
-              <p>بدون خرید اشتراک درخواستت را بفرست؛ کسب‌وکار برای بررسی در صف قرار می‌گیرد.</p>
+              <strong>ثبت درخواست کسب‌وکار از سایت</strong>
+              <p>درخواستت را ثبت کن؛ پس از بررسی، مدیریت با تو تماس می‌گیرد.</p>
             </div>
             <button
               type="button"
@@ -848,7 +848,7 @@ export function BusinessRegistration() {
               onClick={() => { setFreeRegistrationSelected(true); setSelectedPlanId(null); setError(null); }}
               data-testid="biz-free-select"
             >
-              {freeRegistrationSelected ? 'ثبت رایگان انتخاب شد' : 'انتخاب ثبت رایگان'}
+              {freeRegistrationSelected ? 'ثبت از سایت انتخاب شد' : 'انتخاب ثبت از سایت'}
             </button>
           </div>
           <div className="auth-actions">
@@ -857,7 +857,7 @@ export function BusinessRegistration() {
               className="btn btn-primary"
               disabled={!detailsValid || !mapCityName || (!selectedPlanId && !freeRegistrationSelected) || busy || logoBusy || Boolean(freeRegistrationSuccess)}
             >
-              {busy ? 'در حال ثبت…' : freeRegistrationSelected ? 'ثبت رایگان کسب‌وکار' : 'تأیید و پرداخت'}
+              {busy ? 'در حال ثبت…' : freeRegistrationSelected ? 'ثبت درخواست کسب‌وکار' : 'تأیید و پرداخت'}
             </button>
           </div>
         </section>
