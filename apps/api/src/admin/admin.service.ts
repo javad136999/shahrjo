@@ -237,6 +237,14 @@ export interface QueueSubscription {
   status: string;
   createdAt: Date;
   plan: { code: string; label: string; tier: string; durationDays: number };
+  manualPayment: {
+    id: number;
+    provider: string;
+    status: string;
+    amount: number;
+    invoiceUrl: string | null;
+    createdAt: Date;
+  } | null;
   business: { id: number; name: string; city: { id: number; name: string } } | null;
   payer: { id: number; phone: string; fullName: string | null };
 }
@@ -921,7 +929,11 @@ export class AdminService {
         user: { select: { id: true, phone: true, fullName: true } },
       },
     });
-    return rows.map(({ user: payer, ...rest }) => ({ ...rest, payer }));
+    return rows.map(({ user: payer, manualPayment, ...rest }) => ({
+      ...rest,
+      payer,
+      manualPayment: manualPayment ? { ...manualPayment, amount: Number(manualPayment.amount) } : null,
+    }));
   }
 
   async approveSubscription(user: User, id: number): Promise<{ id: number; status: string }> {
@@ -982,13 +994,15 @@ export class AdminService {
     if (!sub) throw new NotFoundException('اشتراک یافت نشد');
     if (sub.status !== 'PENDING_REVIEW') throw new BadRequestException('این اشتراک قبلاً بررسی شده است');
 
-    await this.prisma.subscription.update({
-      where: { id },
-      data: { status: 'REJECTED', reviewNote: reason.slice(0, 300), reviewedById: adminId },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.subscription.update({
+        where: { id },
+        data: { status: 'REJECTED', reviewNote: reason.slice(0, 300), reviewedById: adminId },
+      });
+      if (sub.manualPayment?.provider === 'MANUAL') {
+        await tx.payment.update({ where: { id: sub.manualPayment.id }, data: { status: 'FAILED', errorDescription: reason.slice(0, 300) } });
+      }
     });
-    if (sub.manualPayment?.provider === 'MANUAL') {
-      await this.prisma.payment.update({ where: { id: sub.manualPayment.id }, data: { status: 'FAILED', errorDescription: reason.slice(0, 300) } });
-    }
     await this.audit(adminId, 'subscription.reject', 'subscription', String(id), {
       status: 'REJECTED',
       reason,

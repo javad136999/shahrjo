@@ -4,7 +4,7 @@ import type { User } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { newsCutoff } from '../content/content.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { BUSINESS_PROFILE, DISPLAY_PROFILE, MAX_INPUT_BYTES, processImage, type ImageProfile } from './image.processor';
+import { BUSINESS_PROFILE, DISPLAY_PROFILE, MAX_INPUT_BYTES, PAYMENT_RECEIPT_PROFILE, processImage, type ImageProfile } from './image.processor';
 import { STORAGE_DRIVER, type StorageDriver } from './storage/storage.types';
 
 /** Hard cap per incoming image (multer rejects earlier; this is defense in depth). */
@@ -15,7 +15,7 @@ export const MAX_VOICE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_UPLOADS_PER_HOUR = 30;
 /** Total bytes one account may keep on disk (~100 MB) — the disk-fill guard. */
 export const MAX_BYTES_PER_USER = 100 * 1024 * 1024;
-/** Uploads never attached to an ad are orphaned after 48h and get swept. */
+/** Uploads never attached to an entity are orphaned after 48h and get swept. */
 const UNCLAIMED_MAX_AGE_MS = 48 * 3_600_000;
 /** Soft-deleted media keeps its file 7 days (undo window) before hard delete. */
 const TRASH_MAX_AGE_MS = 7 * 86_400_000;
@@ -168,7 +168,7 @@ export class UploadsService implements OnModuleInit {
 
   /** Bank-payment invoices are retained as payment-owned media. */
   async savePaymentReceipt(user: User, file: { buffer?: Buffer; size?: number } | undefined): Promise<StoredImage> {
-    return this.storeImage(user, file, DISPLAY_PROFILE, 'PAYMENT');
+    return this.storeImage(user, file, PAYMENT_RECEIPT_PROFILE, 'PAYMENT');
   }
 
   private async storeImage(
@@ -512,8 +512,8 @@ export class UploadsService implements OnModuleInit {
         entityId: null,
         deletedAt: null,
         createdAt: { lt: new Date(Date.now() - UNCLAIMED_MAX_AGE_MS) },
-        // wall uploads are claimed after the post row exists — keep the grace period
-        entityType: { in: ['AD', 'WALL', 'BUSINESS', 'NEWS', 'USER', 'BANNER'] },
+        // wall and payment uploads are claimed after their row exists — keep the grace period
+        entityType: { in: ['AD', 'WALL', 'BUSINESS', 'NEWS', 'USER', 'BANNER', 'PAYMENT'] },
       },
       select: { id: true, storageKey: true, sizeBytes: true },
     });

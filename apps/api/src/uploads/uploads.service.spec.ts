@@ -309,6 +309,21 @@ describe('UploadsService.save — processing pipeline', () => {
     expect(result.thumbUrl).toContain('.thumb.webp');
   });
 
+  it('stores payment receipts with a smaller review profile (PAYMENT entity)', async () => {
+    const { service, prisma, storage } = makeService();
+    const input = await jpeg(); // 2000px wide fixture
+
+    await service.savePaymentReceipt(user, { buffer: input, size: input.length });
+
+    const files = await storage.list();
+    expect(files).toHaveLength(2);
+    const data = prisma.media.create.mock.calls[0][0].data;
+    expect(data).toMatchObject({ entityType: 'PAYMENT', entityId: null, width: 1200 });
+    expect(data.height).toBe(900);
+    const thumb = await storage.get(files.find((f) => f.key.endsWith('.thumb.webp'))!.key);
+    const thumbMeta = await sharp(thumb!).metadata();
+    expect(thumbMeta.width).toBe(320);
+  });
   it('400s without a file, 415s on non-image content and on GIF', async () => {
     const { service } = makeService();
     await expect(service.save(user, undefined)).rejects.toMatchObject({ status: 400 });
@@ -508,6 +523,8 @@ describe('UploadsService.sweep — disk-fill protection', () => {
       .find((w) => w.entityId === null);
     // abandoned BUSINESS uploads (registration never finished) are still swept
     expect(unclaimedCall.entityType.in).toContain('BUSINESS');
+    // abandoned payment receipts are swept too; submitted ones are claimed by payment id
+    expect(unclaimedCall.entityType.in).toContain('PAYMENT');
   });
 
   it('unlinks orphan files no Media row references but keeps referenced ones (incl. thumbs)', async () => {

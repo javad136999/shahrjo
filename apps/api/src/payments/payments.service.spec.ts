@@ -42,6 +42,50 @@ describe('PaymentsService Bazaar product IDs', () => {
   });
 });
 
+describe('PaymentsService manual receipt flow', () => {
+  const prisma = {
+    subscriptionPlan: { findFirst: jest.fn() },
+    payment: { count: jest.fn(), create: jest.fn() },
+    business: { findFirst: jest.fn() },
+    media: { findFirst: jest.fn(), updateMany: jest.fn() },
+    subscription: { create: jest.fn() },
+    $transaction: jest.fn(),
+  };
+  const service = new PaymentsService(prisma as unknown as PrismaService, {} as unknown as BazaarService);
+  const receiptUrl = '/api/v1/files/media/2026/11/receipt.webp';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    prisma.subscriptionPlan.findFirst.mockResolvedValue({ id: 12, tier: 'GOLD', price: 500_000n });
+    prisma.business.findFirst.mockResolvedValue({ id: 77 });
+    prisma.media.findFirst.mockResolvedValue({ id: 88 });
+    prisma.subscription.create.mockResolvedValue({ id: 101 });
+    prisma.payment.create.mockResolvedValue({ id: 202 });
+    prisma.media.updateMany.mockResolvedValue({ count: 1 });
+    prisma.$transaction.mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => fn(prisma));
+  });
+
+  it('requires an owned, unclaimed PAYMENT receipt instead of trusting the URL', async () => {
+    prisma.media.findFirst.mockResolvedValue(null);
+
+    await expect(service.manual({ id: 5 } as never, { planId: 12, businessId: 77, invoiceUrl: receiptUrl })).rejects.toMatchObject({ status: 400 });
+    expect(prisma.subscription.create).not.toHaveBeenCalled();
+  });
+
+  it('creates the pending request and claims the receipt by payment id in one transaction', async () => {
+    const result = await service.manual({ id: 5 } as never, { planId: 12, businessId: 77, invoiceUrl: receiptUrl });
+
+    expect(result).toEqual({ paymentId: 202, subscriptionId: 101, status: 'PENDING_REVIEW' });
+    expect(prisma.media.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ ownerUserId: 5, entityType: 'PAYMENT', entityId: null, url: receiptUrl }),
+    }));
+    expect(prisma.media.updateMany).toHaveBeenCalledWith({
+      where: expect.objectContaining({ id: 88, ownerUserId: 5, entityType: 'PAYMENT', entityId: null }),
+      data: { entityId: '202' },
+    });
+  });
+});
+
 describe('PaymentsService business activation after a verified payment', () => {
   function makeTx() {
     return {

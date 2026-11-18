@@ -180,6 +180,8 @@ describe('BusinessRegistration', () => {
     await chooseBusinessCategory(3);
     fireEvent.click(screen.getByRole('button', { name: 'پرداخت دستی' }));
     fireEvent.click(screen.getByTestId('biz-plan-11'));
+    expect(screen.getByTestId('biz-payment-bazaar').compareDocumentPosition(screen.getByTestId('biz-payment-manual'))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.getByTestId('biz-manual-payment')).toHaveTextContent('۵۰۰٬۰۰۰ ریال');
     const receipt = new File(['x'], 'receipt.jpg', { type: 'image/jpeg' });
     fireEvent.change(screen.getByTestId('biz-manual-payment').querySelector('input[type=\"file\"]') as HTMLInputElement, { target: { files: [receipt] } });
     await waitFor(() => expect(m.uploadPaymentReceipt).toHaveBeenCalledWith(receipt));

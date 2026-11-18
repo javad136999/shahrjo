@@ -50,6 +50,13 @@ export const DISPLAY_PROFILE: ImageProfile = {
  */
 export const BUSINESS_PROFILE: ImageProfile = { fullEdge: 1000, thumbEdge: 320, quality: 72 };
 
+/**
+ * Payment receipts are reviewed in the admin panel and do not need the
+ * resolution of a detail-page photo. Keep a readable copy while reducing the
+ * storage cost of camera screenshots and scanned cards.
+ */
+export const PAYMENT_RECEIPT_PROFILE: ImageProfile = { fullEdge: 1200, thumbEdge: 320, quality: 68 };
+
 export interface ProcessedImageSet {
   /** ≤1600px display copy (detail pages) */
   full: ProcessedImage;

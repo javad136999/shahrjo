@@ -165,11 +165,11 @@ function SearchableBusinessCategory({
 
 /**
  * Single-page business registration: details, optional map pin, and a plan are
- * visible together. The map is loaded only when requested. On confirm it creates the business (PENDING
- * + FREE), then starts a Cafe Bazaar checkout bound to that business. The
- * Android bridge opens Poolakey. A verified payment applies the paid tier AND
- * approves the still-PENDING business server-side — there is no admin step
- * for a paid signup (an explicit earlier admin rejection is still respected).
+ * visible together. The map is loaded only when requested. On confirm it creates
+ * the business (PENDING + FREE), then either starts a Cafe Bazaar checkout or
+ * submits a manual receipt for admin review. The Android bridge opens Poolakey.
+ * A verified Bazaar payment applies the paid tier AND approves the still-PENDING
+ * business server-side; a manual request is activated only after admin approval.
  */
 export function BusinessRegistration() {
   const router = useRouter();
@@ -202,6 +202,8 @@ export function BusinessRegistration() {
   const [manualPaymentSuccess, setManualPaymentSuccess] = useState<string | null>(null);
   const [successNoticeDismissed, setSuccessNoticeDismissed] = useState(false);
   const [locating, setLocating] = useState(false);
+
+  const selectedPlan = plans?.find((plan) => plan.id === selectedPlanId) ?? null;
 
   // Leaflet refs kept out of React state so clicks don't re-init the map.
   const logoInput = useRef<HTMLInputElement | null>(null);
@@ -882,14 +884,48 @@ export function BusinessRegistration() {
             </section>
           )}
           <div className="biz-registration__free-option" data-testid="biz-payment-methods">
-            <strong>روش پرداخت</strong>
-            <div className="biz-registration__payment-options">
-              <button type="button" className={`btn ${paymentMethod === 'manual' ? 'btn-primary' : 'btn-ghost'}`} aria-pressed={paymentMethod === 'manual'} onClick={() => { setPaymentMethod('manual'); setError(null); }}>پرداخت دستی</button>
-              <button type="button" className={`btn ${paymentMethod === 'bazaar' ? 'btn-primary' : 'btn-ghost'}`} aria-pressed={paymentMethod === 'bazaar'} onClick={() => { setPaymentMethod('bazaar'); setError(null); }}>پرداخت از کافه بازار</button>
+            <strong className="biz-registration__payment-heading">روش پرداخت</strong>
+            <div className="biz-registration__payment-options" role="group" aria-label="انتخاب روش پرداخت">
+              <button
+                type="button"
+                className={`biz-registration__payment-option ${paymentMethod === 'bazaar' ? 'is-selected' : ''}`}
+                aria-label="پرداخت از کافه بازار"
+                aria-pressed={paymentMethod === 'bazaar'}
+                data-testid="biz-payment-bazaar"
+                onClick={() => { setPaymentMethod('bazaar'); setError(null); }}
+              >
+                <span className="biz-registration__payment-option-icon" aria-hidden>🛍️</span>
+                <span className="biz-registration__payment-option-copy">
+                  <strong>پرداخت از کافه بازار</strong>
+                  <small>پرداخت امن و فعال‌سازی فوری پس از تأیید بازار</small>
+                </span>
+                <span className="biz-registration__payment-option-check" aria-hidden>{paymentMethod === 'bazaar' ? '✓' : ''}</span>
+              </button>
+              <button
+                type="button"
+                className={`biz-registration__payment-option ${paymentMethod === 'manual' ? 'is-selected' : ''}`}
+                aria-label="پرداخت دستی"
+                aria-pressed={paymentMethod === 'manual'}
+                data-testid="biz-payment-manual"
+                onClick={() => { setPaymentMethod('manual'); setError(null); }}
+              >
+                <span className="biz-registration__payment-option-icon" aria-hidden>💳</span>
+                <span className="biz-registration__payment-option-copy">
+                  <strong>پرداخت دستی</strong>
+                  <small>واریز کارت‌به‌کارت و بررسی رسید توسط مدیریت</small>
+                </span>
+                <span className="biz-registration__payment-option-check" aria-hidden>{paymentMethod === 'manual' ? '✓' : ''}</span>
+              </button>
             </div>
             {paymentMethod === 'manual' && (
               <div className="biz-registration__manual-payment" data-testid="biz-manual-payment">
                 <p>مبلغ پلن انتخابی را به شماره کارت زیر واریز کنید:</p>
+                {selectedPlan && (
+                  <div className="biz-registration__selected-payment-plan">
+                    <span>{selectedPlan.label} · {formatPlanDuration(selectedPlan.durationDays)}</span>
+                    <strong>{formatRial(selectedPlan.price)}</strong>
+                  </div>
+                )}
                 <strong className="biz-registration__card-number">۵۰۴۱۷۲۱۰۷۴۲۶۲۶۳۶</strong>
                 <button type="button" className="btn btn-ghost" onClick={() => receiptInput.current?.click()} disabled={receiptBusy}>
                   {receiptBusy ? 'در حال بارگذاری…' : receiptUrl ? 'تغییر تصویر فاکتور' : 'پیوست فاکتور پرداخت'}

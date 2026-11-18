@@ -145,12 +145,26 @@ export class PaymentsService {
     if (!invoiceUrl.startsWith('/api/v1/files/media/')) {
       throw new BadRequestException('فاکتور معتبر نیست؛ ابتدا تصویر فاکتور را بارگذاری کن');
     }
-    const [plan, business] = await Promise.all([
+    const [plan, business, receipt] = await Promise.all([
       this.prisma.subscriptionPlan.findFirst({ where: { id: dto.planId, isActive: true }, select: { id: true, tier: true, price: true } }),
       this.prisma.business.findFirst({ where: { id: dto.businessId, ownerId: user.id }, select: { id: true } }),
+      // The URL alone is not an authorization boundary. The receipt must be a
+      // live, unclaimed PAYMENT upload owned by the submitting user.
+      this.prisma.media.findFirst({
+        where: {
+          url: invoiceUrl,
+          ownerUserId: user.id,
+          entityType: 'PAYMENT',
+          entityId: null,
+          deletedAt: null,
+          mimeType: { startsWith: 'image/' },
+        },
+        select: { id: true },
+      }),
     ]);
     if (!plan) throw new NotFoundException('پلن اشتراک یافت نشد');
     if (!business) throw new NotFoundException('کسب‌وکار یافت نشد');
+    if (!receipt) throw new BadRequestException('فاکتور پیدا نشد یا متعلق به شما نیست؛ دوباره بارگذاری کن');
 
     return this.prisma.$transaction(async (tx) => {
       const subscription = await tx.subscription.create({
@@ -170,6 +184,17 @@ export class PaymentsService {
         },
         select: { id: true },
       });
+      const claimed = await tx.media.updateMany({
+        where: {
+          id: receipt.id,
+          ownerUserId: user.id,
+          entityType: 'PAYMENT',
+          entityId: null,
+          deletedAt: null,
+        },
+        data: { entityId: String(payment.id) },
+      });
+      if (claimed.count !== 1) throw new BadRequestException('فاکتور قبلاً ثبت شده است؛ دوباره بارگذاری کن');
       return { paymentId: payment.id, subscriptionId: subscription.id, status: 'PENDING_REVIEW' };
     });
   }

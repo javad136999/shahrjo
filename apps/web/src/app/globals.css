@@ -10023,10 +10023,24 @@ button.pill {
 .biz-registration--jam-style .biz-registration__tier-benefits ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 10px; margin: 0; padding: 0; list-style: none; }
 .biz-registration--jam-style .biz-registration__tier-benefits li { display: flex; align-items: flex-start; gap: 6px; min-width: 0; font-size: 10px; line-height: 1.65; }
 .biz-registration--jam-style .biz-registration__benefit-icon { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 7px; font-size: 12px; }
-.biz-registration--jam-style .biz-registration__free-option { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 12px; padding: 12px 14px; border: 1px solid rgb(68 91 75 / 18%); border-radius: 14px; background: #f8faf7; }
+.biz-registration--jam-style .biz-registration__free-option { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-top: 12px; padding: 12px 14px; border: 1px solid rgb(68 91 75 / 18%); border-radius: 14px; background: #f8faf7; }
 .biz-registration--jam-style .biz-registration__free-option.is-selected { border-color: #27734e; background: #eff8f1; box-shadow: 0 0 0 2px rgb(39 115 78 / 10%); }
-.biz-registration--jam-style .biz-registration__free-option strong { display: block; font-size: 12px; }
+.biz-registration--jam-style .biz-registration__payment-heading { flex: 0 0 auto; padding-top: 9px; font-size: 12px; }
 .biz-registration--jam-style .biz-registration__free-option p { margin: 3px 0 0; color: var(--muted); font-size: 10px; line-height: 1.7; }
+.biz-registration--jam-style .biz-registration__payment-options { display: grid; width: min(100%, 480px); gap: 8px; }
+.biz-registration--jam-style .biz-registration__payment-option { display: flex; width: 100%; min-height: 58px; align-items: center; gap: 10px; padding: 9px 11px; border: 1px solid rgb(68 91 75 / 18%); border-radius: 12px; background: #fff; color: #24352a; font: inherit; text-align: right; cursor: pointer; transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease, transform 150ms ease; }
+.biz-registration--jam-style .biz-registration__payment-option:hover { border-color: #79a98a; transform: translateY(-1px); }
+.biz-registration--jam-style .biz-registration__payment-option.is-selected { border-color: #27734e; background: #eff8f1; box-shadow: 0 0 0 2px rgb(39 115 78 / 10%); }
+.biz-registration--jam-style .biz-registration__payment-option-icon { display: grid; width: 36px; height: 36px; flex: 0 0 36px; place-items: center; border-radius: 10px; background: #eaf5ed; font-size: 20px; }
+.biz-registration--jam-style .biz-registration__payment-option-copy { display: grid; min-width: 0; flex: 1; gap: 2px; }
+.biz-registration--jam-style .biz-registration__payment-option-copy strong { display: block; font-size: 12px; }
+.biz-registration--jam-style .biz-registration__payment-option-copy small { color: var(--muted); font-size: 10px; line-height: 1.6; }
+.biz-registration--jam-style .biz-registration__payment-option-check { width: 20px; color: #27734e; font-size: 18px; font-weight: 800; text-align: center; }
+.biz-registration--jam-style .biz-registration__manual-payment { display: grid; gap: 8px; margin-top: 8px; padding: 10px 12px; border: 1px dashed rgb(39 115 78 / 35%); border-radius: 12px; background: #fff; }
+.biz-registration--jam-style .biz-registration__selected-payment-plan { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #2d4636; font-size: 11px; }
+.biz-registration--jam-style .biz-registration__selected-payment-plan strong { color: #185c38; font-size: 13px; }
+.biz-registration--jam-style .biz-registration__card-number { direction: ltr; letter-spacing: .08em; color: #185c38; font-size: 16px; }
+.biz-registration--jam-style .biz-registration__receipt-ready { color: #27734e; font-size: 11px; font-weight: 700; }
 .biz-registration__success-overlay { position: fixed; z-index: 9999; inset: 0; display: grid; place-items: center; overflow-y: auto; padding: 20px; background: rgb(18 31 24 / 58%); backdrop-filter: blur(5px); animation: biz-success-fade-in 180ms ease-out both; }
 .biz-registration__success-dialog { position: relative; width: min(100%, 440px); max-height: calc(100dvh - 40px); overflow-y: auto; padding: 30px 26px 24px; border: 1px solid rgb(255 255 255 / 78%); border-radius: 24px; background: linear-gradient(160deg, #fff 0%, #f7fbf7 100%); box-shadow: 0 24px 80px rgb(0 0 0 / 24%), 0 4px 16px rgb(21 77 49 / 12%); color: #17251d; text-align: center; direction: rtl; animation: biz-success-pop-in 220ms cubic-bezier(.2,.8,.2,1) both; }
 .biz-registration__success-close { position: absolute; inset-block-start: 12px; inset-inline-start: 12px; display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #e5ebe6; border-radius: 12px; background: #fff; color: #526157; font: inherit; font-size: 25px; line-height: 1; cursor: pointer; transition: background 150ms ease, color 150ms ease, border-color 150ms ease; }
@@ -10062,6 +10076,8 @@ button.pill {
   .biz-registration--jam-style .biz-registration__subscription-card .biz-registration__plans-grid { gap: 6px; }
   .biz-registration--jam-style .biz-registration__subscription-card .biz-registration__plan { padding: 9px 5px; }
   .biz-registration--jam-style .biz-registration__free-option { align-items: stretch; flex-direction: column; gap: 8px; padding: 10px; }
+  .biz-registration--jam-style .biz-registration__payment-heading { padding-top: 0; }
+  .biz-registration--jam-style .biz-registration__payment-options { width: 100%; }
   .biz-registration--jam-style .biz-registration__tier-benefits ul { grid-template-columns: 1fr; }
 }
 @media (max-width: 350px) {
