@@ -10020,6 +10020,10 @@ button.pill {
 .biz-registration--jam-style .biz-registration__tier-benefits ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 10px; margin: 0; padding: 0; list-style: none; }
 .biz-registration--jam-style .biz-registration__tier-benefits li { display: flex; align-items: flex-start; gap: 6px; min-width: 0; font-size: 10px; line-height: 1.65; }
 .biz-registration--jam-style .biz-registration__benefit-icon { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 7px; font-size: 12px; }
+.biz-registration--jam-style .biz-registration__free-option { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 12px; padding: 12px 14px; border: 1px solid rgb(68 91 75 / 18%); border-radius: 14px; background: #f8faf7; }
+.biz-registration--jam-style .biz-registration__free-option.is-selected { border-color: #27734e; background: #eff8f1; box-shadow: 0 0 0 2px rgb(39 115 78 / 10%); }
+.biz-registration--jam-style .biz-registration__free-option strong { display: block; font-size: 12px; }
+.biz-registration--jam-style .biz-registration__free-option p { margin: 3px 0 0; color: var(--muted); font-size: 10px; line-height: 1.7; }
 .biz-registration--jam-style .auth-actions { margin-top: 12px; }
 .biz-registration--jam-style .auth-actions .btn { min-height: 42px; padding: 9px 18px; }
 @media (max-width: 560px) {
@@ -10028,6 +10032,7 @@ button.pill {
   .biz-registration--jam-style .biz-registration__subscription-card { padding: 10px 8px; }
   .biz-registration--jam-style .biz-registration__subscription-card .biz-registration__plans-grid { gap: 6px; }
   .biz-registration--jam-style .biz-registration__subscription-card .biz-registration__plan { padding: 9px 5px; }
+  .biz-registration--jam-style .biz-registration__free-option { align-items: stretch; flex-direction: column; gap: 8px; padding: 10px; }
   .biz-registration--jam-style .biz-registration__tier-benefits ul { grid-template-columns: 1fr; }
 }
 @media (max-width: 350px) {

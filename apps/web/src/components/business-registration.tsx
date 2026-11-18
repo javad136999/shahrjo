@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import 'leaflet/dist/leaflet.css';
 import {
@@ -192,6 +193,8 @@ export function BusinessRegistration() {
   const [paymentNeedsRecovery, setPaymentNeedsRecovery] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [freeRegistrationSelected, setFreeRegistrationSelected] = useState(false);
+  const [freeRegistrationSuccess, setFreeRegistrationSuccess] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
 
   // Leaflet refs kept out of React state so clicks don't re-init the map.
@@ -501,7 +504,7 @@ export function BusinessRegistration() {
       setError('بارگذاری عکس کسب‌وکار هنوز کامل نشده است.');
       return;
     }
-    if (!selectedPlanId) {
+    if (!selectedPlanId && !freeRegistrationSelected) {
       setError('یک پلن اشتراک را انتخاب کن.');
       return;
     }
@@ -509,9 +512,9 @@ export function BusinessRegistration() {
       setError(locationError ?? 'ابتدا شهر حساب کاربری‌ات را در پروفایل انتخاب کن.');
       return;
     }
-    // Bazaar billing is provided by the Android APK bridge, not a normal browser.
-    // Check before creating a business so a browser attempt cannot leave a duplicate PENDING row.
-    if (typeof window === 'undefined' || !window.ShahrjoBazaar) {
+    // Paid Bazaar billing is provided by the Android APK bridge, not a normal browser.
+    // The explicit free web path below never starts or implies a Bazaar purchase.
+    if (!freeRegistrationSelected && (typeof window === 'undefined' || !window.ShahrjoBazaar)) {
       setError('پرداخت اشتراک بازار فقط داخل اپلیکیشن اندروید شهرجو نصب‌شده از بازار امکان‌پذیر است. برنامه را از بازار باز کنید و ثبت کسب‌وکار را آنجا انجام دهید.');
       return;
     }
@@ -529,6 +532,12 @@ export function BusinessRegistration() {
         latitude: location?.lat,
         longitude: location?.lng,
       });
+      if (freeRegistrationSelected) {
+        setFreeRegistrationSuccess(biz.name);
+        setBusy(false);
+        return;
+      }
+      if (!selectedPlanId) throw new Error('یک پلن اشتراک را انتخاب کن.');
       const session = await checkoutPlan({ planId: selectedPlanId, businessId: biz.id });
       const purchaseToken = await purchaseWithBazaar(session.productId, session.packageName);
       let result: Awaited<ReturnType<typeof verifyBazaarPurchase>>;
@@ -573,6 +582,12 @@ export function BusinessRegistration() {
               </button>
             </div>
           )}
+        </div>
+      )}
+      {freeRegistrationSuccess && (
+        <div className="banner banner--ok" role="status" data-testid="biz-free-registration-success">
+          درخواست ثبت «{freeRegistrationSuccess}» ارسال شد و برای بررسی در صف قرار گرفت. برای دیدن وضعیت،{' '}
+          <Link href="/businesses">کسب‌وکارهای من</Link> را باز کن.
         </div>
       )}
 
@@ -771,11 +786,12 @@ export function BusinessRegistration() {
                           role="button"
                           tabIndex={0}
                           aria-pressed={selectedPlanId === plan.id}
-                          onClick={() => setSelectedPlanId(plan.id)}
+                          onClick={() => { setSelectedPlanId(plan.id); setFreeRegistrationSelected(false); }}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
                               setSelectedPlanId(plan.id);
+                              setFreeRegistrationSelected(false);
                             }
                           }}
                           data-testid={`biz-plan-${plan.id}`}
@@ -820,13 +836,28 @@ export function BusinessRegistration() {
               })}
             </section>
           )}
+          <div className={`biz-registration__free-option${freeRegistrationSelected ? ' is-selected' : ''}`} data-testid="biz-free-option">
+            <div>
+              <strong>ثبت رایگان از طریق سایت</strong>
+              <p>بدون خرید اشتراک درخواستت را بفرست؛ کسب‌وکار برای بررسی در صف قرار می‌گیرد.</p>
+            </div>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              aria-pressed={freeRegistrationSelected}
+              onClick={() => { setFreeRegistrationSelected(true); setSelectedPlanId(null); setError(null); }}
+              data-testid="biz-free-select"
+            >
+              {freeRegistrationSelected ? 'ثبت رایگان انتخاب شد' : 'انتخاب ثبت رایگان'}
+            </button>
+          </div>
           <div className="auth-actions">
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={!detailsValid || !mapCityName || !selectedPlanId || busy || logoBusy}
+              disabled={!detailsValid || !mapCityName || (!selectedPlanId && !freeRegistrationSelected) || busy || logoBusy || Boolean(freeRegistrationSuccess)}
             >
-              {busy ? 'در حال ثبت…' : 'تأیید و پرداخت'}
+              {busy ? 'در حال ثبت…' : freeRegistrationSelected ? 'ثبت رایگان کسب‌وکار' : 'تأیید و پرداخت'}
             </button>
           </div>
         </section>

@@ -168,6 +168,22 @@ describe('BusinessRegistration', () => {
     await waitFor(() => expect(payment).toBeEnabled());
   });
 
+  it('allows a browser user to submit a free business without opening Bazaar checkout', async () => {
+    window.ShahrjoBazaar = undefined;
+    m.createBusiness.mockResolvedValue({ id: 77, name: 'قهوه‌خانه', slug: 'biz-77', status: 'PENDING', subscriptionTier: 'FREE' });
+
+    render(<BusinessRegistration />);
+    fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
+    await chooseBusinessCategory(3);
+    fireEvent.click(screen.getByTestId('biz-free-select'));
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت رایگان کسب‌وکار' }));
+
+    expect(await screen.findByTestId('biz-free-registration-success')).toHaveTextContent('قهوه‌خانه');
+    expect(m.createBusiness).toHaveBeenCalledWith(expect.objectContaining({ name: 'قهوه‌خانه', categoryId: 3 }));
+    expect(m.checkoutPlan).not.toHaveBeenCalled();
+    expect(mockPurchaseWithBazaar).not.toHaveBeenCalled();
+  });
+
   it('keeps details, optional location and plans on one page, then opens Bazaar billing with the mapped product', async () => {
     m.createBusiness.mockResolvedValue({ id: 77, name: 'قهوه‌خانه', slug: 'biz-77', status: 'PENDING', subscriptionTier: 'FREE' });
     m.checkoutPlan.mockResolvedValue({ paymentId: 1, productId: 'GOLD_1M', packageName: 'ir.shahrju.app', amount: 500_000 });
