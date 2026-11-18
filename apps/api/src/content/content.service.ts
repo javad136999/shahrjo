@@ -438,8 +438,8 @@ export class ContentService {
     };
   }
 
-  /** A single published news article + view counting (Phase 6). */
-  async newsDetail(slug: string): Promise<NewsDetail> {
+  /** Public, published article data for server rendering; does not count a view. */
+  async newsContentForRendering(slug: string): Promise<NewsDetail> {
     const item = await this.prisma.news.findFirst({
       // older than the week? it is out of the site — same 404 as unknown slugs
       where: { slug, status: 'PUBLISHED', ...this.newsWindow() },
@@ -457,6 +457,13 @@ export class ContentService {
       },
     });
     if (!item) throw new NotFoundException('خبر یافت نشد');
+
+    return item;
+  }
+
+  /** A single published news article + view counting (Phase 6). */
+  async newsDetail(slug: string): Promise<NewsDetail> {
+    const item = await this.newsContentForRendering(slug);
 
     const updated = await this.prisma.news.update({
       where: { id: item.id },

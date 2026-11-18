@@ -56,6 +56,13 @@ export class ContentController {
     return this.content.map(query.city);
   }
 
+  /** Published article data for the web server's initial HTML; does not count a view. */
+  @Public()
+  @Get('news/:slug/render')
+  newsContentForRendering(@Param('slug') slug: string): ReturnType<ContentService['newsContentForRendering']> {
+    return this.content.newsContentForRendering(slug);
+  }
+
   /** One published news article (Phase 6) — counts a view. */
   @Public()
   @Get('news/:slug')

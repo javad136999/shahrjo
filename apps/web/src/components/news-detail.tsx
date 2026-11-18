@@ -7,13 +7,19 @@ import { formatDate } from '@/lib/format';
 import type { NewsDetail as NewsDetailData } from '@/lib/types';
 
 /** Single news article (Phase 6): cover, meta, body paragraphs. */
-export function NewsDetail({ slug }: { slug: string }) {
-  const [detail, setDetail] = useState<NewsDetailData | null | undefined>(undefined); // undefined = loading
+export function NewsDetail({
+  slug,
+  initialDetail,
+}: {
+  slug: string;
+  initialDetail?: NewsDetailData | null;
+}) {
+  const [detail, setDetail] = useState<NewsDetailData | null | undefined>(initialDetail ?? undefined); // undefined = loading
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
-    setDetail(undefined);
+    setDetail(initialDetail ?? undefined);
     setError(null);
     getNewsDetail(slug)
       .then((data) => alive && setDetail(data))
@@ -25,7 +31,7 @@ export function NewsDetail({ slug }: { slug: string }) {
     return () => {
       alive = false;
     };
-  }, [slug]);
+  }, [slug, initialDetail]);
 
   if (detail === undefined) {
     return (

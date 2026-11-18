@@ -133,6 +133,21 @@ describe('per-page SEO (city pages)', () => {
     expect(page).toContain('openingHoursSpecification');
   });
 
+  it('news articles render their content server-side with article metadata and large image previews', () => {
+    const page = read('news', '[slug]', 'page.tsx');
+    const component = read('..', 'components', 'news-detail.tsx');
+    expect(page).toContain('generateMetadata');
+    expect(page).toContain('serverApi<NewsDetailData>');
+    expect(page).toContain('/render`');
+    expect(page).toMatch(/alternates:\s*\{\s*canonical:/);
+    expect(page).toContain("type: 'article'");
+    expect(page).toContain("'max-image-preview': 'large'");
+    expect(page).toContain('news.coverUrl');
+    expect(page).toContain('initialDetail={news}');
+    expect(page).toContain('robots: { index: false, follow: false }');
+    expect(component).toContain('initialDetail');
+  });
+
   it('the landing page exposes the confirmed title and a canonical', () => {
     const page = read('page.tsx');
     expect(page).toMatch(/alternates:\s*{\s*canonical:/);
