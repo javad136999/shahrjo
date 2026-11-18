@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import * as api from '@/lib/api';
 import { BusinessRegistration } from '@/components/business-registration';
 
@@ -238,31 +238,22 @@ describe('BusinessRegistration', () => {
     });
   });
 
-  it('lets the user place the business pin using the device location', async () => {
-    const getCurrentPosition = jest.fn((success: (position: { coords: { latitude: number; longitude: number } }) => void) => {
-      success({ coords: { latitude: 27.8, longitude: 52.3 } });
-    });
-    Object.defineProperty(navigator, 'geolocation', {
-      configurable: true,
-      value: { getCurrentPosition },
-    });
-
+  it('lets the user place the business pin by tapping the closer map', async () => {
     render(<BusinessRegistration />);
     fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
     await chooseBusinessCategory(3);
     await screen.findByTestId('biz-map');
-    fireEvent.click(screen.getByRole('button', { name: 'موقعیت فعلی من' }));
 
     const leaflet = require('leaflet');
+    expect(screen.queryByRole('button', { name: 'موقعیت فعلی من' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'نمایش محدودهٔ شهر' })).not.toBeInTheDocument();
+    act(() => {
+      leaflet.map.mock.results[0].value.fire('click', { latlng: { lat: 27.8, lng: 52.3 } });
+    });
     await waitFor(() => expect(leaflet.map.mock.results[0].value.fire).toHaveBeenCalledWith(
       'click',
       { latlng: { lat: 27.8, lng: 52.3 } },
     ));
-    expect(leaflet.map.mock.results[0].value.setView).toHaveBeenCalledWith(
-      [27.8, 52.3],
-      16,
-      expect.anything(),
-    );
     expect(await screen.findByText(/سنجاق روی مختصات/)).toBeInTheDocument();
   });
 

@@ -5051,13 +5051,6 @@ a.my-ads__item:hover {
   box-shadow: 0 5px 18px rgb(35 68 48 / 12%);
   font-size: 22px;
 }
-.biz-location-instructions {
-  padding: 10px 12px;
-  border: 1px solid var(--line, #e4e4e7);
-  border-radius: 12px;
-  background: var(--surface, #f8faf9);
-  line-height: 1.8;
-}
 .admin-newbiz__map.is-unavailable {
   pointer-events: none;
   filter: grayscale(0.75);
@@ -5067,12 +5060,18 @@ a.my-ads__item:hover {
   background: transparent;
   border: 0;
 }
-.business-location-marker span {
+.business-location-marker__pin {
   display: block;
-  font-size: 34px;
+  width: 28px;
+  height: 32px;
   line-height: 1;
-  transform: translateY(-3px);
-  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 55%));
+  color: #168052;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 38%));
+}
+.business-location-marker__pin svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 @media (max-width: 480px) {
   .biz-map {
