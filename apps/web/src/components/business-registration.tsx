@@ -176,7 +176,8 @@ export function BusinessRegistration() {
   const [mapData, setMapData] = useState<CityMapData | null>(null);
   const [mapCityName, setMapCityName] = useState<string | null>(null);
   const [mapCitySlug, setMapCitySlug] = useState<string | null>(null);
-  const [locationOpen, setLocationOpen] = useState(false);
+  // The city map is part of the form and is visible immediately.
+  const [locationOpen] = useState(true);
   const [mapStatus, setMapStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading');
 
   const [name, setName] = useState('');
@@ -265,9 +266,9 @@ export function BusinessRegistration() {
     };
   }, [router]);
 
-  // Fetch city geometry only if the user opens the optional location picker.
+  // Fetch city geometry as soon as the profile city is known.
   useEffect(() => {
-    if (!locationOpen || !mapCitySlug || mapData) return;
+    if (!mapCitySlug || mapData) return;
     let alive = true;
     setMapStatus('loading');
     getCityMap(mapCitySlug).then((data) => {
@@ -568,18 +569,11 @@ export function BusinessRegistration() {
   return (
     <section className="form-card biz-registration--jam-style" data-testid="business-registration">
       <header className="biz-registration__hero">
-        <span className="biz-registration__hero-icon" aria-hidden>🏪</span>
         <div>
-          <p className="biz-registration__eyebrow">ویژه کسب‌وکارهای محلی</p>
-          <h1>ثبت کسب‌وکار در شهرجو</h1>
-          <p>مشخصات کسب‌وکارت را ثبت کن تا شهروندان راحت‌تر پیدایت کنند.</p>
+          <h1>ثبت کسب و کار ویژه طلایی و نقره‌ای</h1>
+          <p>مشمول هزینه بسیار کم است و کسب‌وکار شما بهتر دیده می‌شود.</p>
         </div>
       </header>
-      <nav className="biz-registration__quick-nav" aria-label="بخش‌های ثبت کسب‌وکار">
-        <a href="#biz-details">۱. مشخصات</a>
-        <a href="#biz-location">۲. موقعیت اختیاری</a>
-        <a href="#biz-plan">۳. اشتراک</a>
-      </nav>
 
       {error && (
         <div className="banner banner--error" role="alert">
@@ -730,21 +724,10 @@ export function BusinessRegistration() {
 
       <section className="biz-registration__step-panel" id="biz-location" aria-labelledby="biz-location-heading">
           <div className="biz-registration__section-heading">
-            <span>۲</span><div><h2 id="biz-location-heading">موقعیت کسب‌وکار — اختیاری</h2><p>اگر موقعیت را اضافه کنی، مشتری‌ها راحت‌تر پیدایت می‌کنند؛ ثبت بدون نقشه هم ممکن است.</p></div>
+            <span>۲</span><div><h2 id="biz-location-heading">موقعیت کسب‌وکار</h2></div>
           </div>
-          <p className="muted small biz-location-instructions">
-            شهر ثبت: <strong>{mapCityName ?? 'شهر حساب کاربری'}</strong>. لازم نیست بین صفحه‌ها جابه‌جا شوی؛ اگر می‌خواهی، نقشه را همین‌جا باز کن.
-          </p>
+          <p className="muted small biz-location-instructions">شهر ثبت: <strong>{mapCityName ?? 'شهر حساب کاربری'}</strong></p>
           {!mapCityName && locationError && <p className="banner banner--error" role="alert">{locationError}</p>}
-          <button
-            type="button"
-            className="btn btn-ghost biz-registration__location-toggle"
-            aria-expanded={locationOpen}
-            aria-controls="biz-location-picker"
-            onClick={() => setLocationOpen((open) => !open)}
-          >
-            {locationOpen ? 'بستن نقشه' : location ? 'ویرایش موقعیت روی نقشه' : 'افزودن موقعیت روی نقشه (اختیاری)'}
-          </button>
           {locationOpen && (
             <div id="biz-location-picker" className="biz-registration__location-picker">
               {mapStatus === 'loading' && (

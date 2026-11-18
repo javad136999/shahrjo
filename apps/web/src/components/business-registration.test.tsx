@@ -103,7 +103,7 @@ describe('BusinessRegistration', () => {
       { id: 1, slug: 'sample-city', name: 'شهر نمونه' },
     ]);
     render(<BusinessRegistration />);
-    fireEvent.click(await screen.findByRole('button', { name: /افزودن موقعیت روی نقشه/ }));
+    await screen.findByTestId('biz-map');
     await waitFor(() => expect(m.getCityMap).toHaveBeenCalledWith('profile-city'));
     expect(m.getCityMap).not.toHaveBeenCalledWith('sample-city');
   });
@@ -159,8 +159,8 @@ describe('BusinessRegistration', () => {
     expect(screen.queryByText(/عکس فشرده ذخیره می‌شود/)).not.toBeInTheDocument();
     expect(screen.queryByText(/بلافاصله پس از پرداخت موفق/)).not.toBeInTheDocument();
     expect(screen.getByTestId('biz-plans')).toBeInTheDocument();
-    expect(m.getCityMap).not.toHaveBeenCalled();
-    expect(screen.queryByTestId('biz-map')).not.toBeInTheDocument();
+    await waitFor(() => expect(m.getCityMap).toHaveBeenCalledWith('sample-city'));
+    expect(await screen.findByTestId('biz-map')).toBeInTheDocument();
     expect(payment).toBeDisabled();
     fireEvent.change(screen.getByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
     await chooseBusinessCategory(3);
@@ -199,7 +199,7 @@ describe('BusinessRegistration', () => {
     await chooseBusinessCategory(3);
     const plansCard = await screen.findByTestId('biz-plans');
     expect(screen.getByRole('heading', { name: /موقعیت کسب‌وکار/ })).toBeInTheDocument();
-    expect(m.getCityMap).not.toHaveBeenCalled();
+    expect(m.getCityMap).toHaveBeenCalledWith('sample-city');
     expect(plansCard).toContainElement(screen.getByTestId('biz-plan-10'));
     expect(plansCard).toContainElement(screen.getByTestId('biz-plan-11'));
     expect(plansCard).toHaveTextContent('ثبت کسب‌وکار در ویترین طلایی');
@@ -245,7 +245,6 @@ describe('BusinessRegistration', () => {
     render(<BusinessRegistration />);
     fireEvent.change(await screen.findByLabelText(/نام کسب‌وکار/), { target: { value: 'قهوه‌خانه' } });
     await chooseBusinessCategory(3);
-    fireEvent.click(screen.getByRole('button', { name: /افزودن موقعیت روی نقشه/ }));
     await screen.findByTestId('biz-map');
     fireEvent.click(screen.getByRole('button', { name: 'موقعیت فعلی من' }));
 
