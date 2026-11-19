@@ -40,7 +40,7 @@ describe('BottomNav', () => {
     window.location.hash = '';
   });
 
-  it('renders the six quick actions with emoji icons (no submit entry)', () => {
+  it('renders the six quick actions with tourism in the bottom bar', () => {
     render(<BottomNav />);
     expect(screen.getByRole('navigation', { name: 'ناوبری سریع' })).toBeInTheDocument();
     expect(screen.getByTestId('bottom-nav-home')).toHaveTextContent('خانه');
@@ -51,8 +51,8 @@ describe('BottomNav', () => {
     expect(screen.getByTestId('bottom-nav-businesses')).not.toHaveClass('bottom-nav__item--register-business');
     expect(screen.getByTestId('bottom-nav-wall')).toHaveTextContent('دیوار');
     expect(screen.getByTestId('bottom-nav-messages')).toHaveTextContent('پیام‌ها');
-    expect(screen.getByTestId('bottom-nav-register-business')).toHaveTextContent('ثبت کسب‌وکار');
-    expect(screen.getByTestId('bottom-nav-register-business')).toHaveClass('bottom-nav__item--register-business');
+    expect(screen.getByTestId('bottom-nav-tourism')).toHaveTextContent('گردشگری');
+    expect(screen.getByTestId('bottom-nav-tourism')).toHaveAttribute('href', '/city/sample-city/tourism');
     expect(screen.getByTestId('bottom-nav-profile')).toHaveTextContent('پروفایل');
     expect(screen.getByTestId('bottom-nav-profile')).toHaveAttribute('href', '/profile');
     expect(screen.getByTestId('bottom-nav-wall')).toHaveAttribute('href', '/wall');
@@ -64,18 +64,18 @@ describe('BottomNav', () => {
     expect(screen.queryByRole('link', { name: /ثبت آگهی/ })).not.toBeInTheDocument();
   });
 
-  it('deep-links businesses and register-business', async () => {
+  it('deep-links businesses and tourism', async () => {
     render(<BottomNav />);
     // the city is read client-side after mount
     expect(await screen.findByTestId('bottom-nav-businesses')).toHaveAttribute('href', '/businesses');
-    expect(screen.getByTestId('bottom-nav-register-business')).toHaveAttribute('href', '/business/new');
+    expect(screen.getByTestId('bottom-nav-tourism')).toHaveAttribute('href', '/city/sample-city/tourism');
   });
 
-  it('keeps the businesses entry working with no city remembered', async () => {
+  it('keeps the tourism entry working with no city remembered', async () => {
     mockGetLocalCity.mockReturnValue(null);
     render(<BottomNav />);
     expect(await screen.findByTestId('bottom-nav-businesses')).toHaveAttribute('href', '/businesses');
-    expect(screen.getByTestId('bottom-nav-register-business')).toHaveAttribute('href', '/business/new');
+    expect(screen.getByTestId('bottom-nav-tourism')).toHaveAttribute('href', '/');
     // with no city chosen yet, home falls back to the city-selection page
     expect(screen.getByTestId('bottom-nav-home')).toHaveAttribute('href', '/');
   });
@@ -117,10 +117,10 @@ describe('BottomNav', () => {
     unmount();
   });
 
-  it('marks register-business active on /business/new', () => {
-    mockPathname.mockReturnValue('/business/new');
+  it('marks tourism active on the city tourism page', () => {
+    mockPathname.mockReturnValue('/city/sample-city/tourism');
     render(<BottomNav />);
-    expect(screen.getByTestId('bottom-nav-register-business')).toHaveClass('is-active');
+    expect(screen.getByTestId('bottom-nav-tourism')).toHaveClass('is-active');
     expect(screen.getByTestId('bottom-nav-home')).not.toHaveClass('is-active');
   });
 

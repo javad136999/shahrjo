@@ -15,7 +15,7 @@ import {
 import type { LocalCity } from '@/lib/types';
 
 interface NavItem {
-  id: 'home' | 'wall' | 'messages' | 'businesses' | 'register-business' | 'profile';
+  id: 'home' | 'wall' | 'messages' | 'businesses' | 'tourism' | 'profile';
   href: string;
   icon: string;
   label: string;
@@ -125,13 +125,13 @@ export function BottomNav() {
     { id: 'wall', href: '/wall', icon: '🧱', label: 'دیوار' },
     { id: 'businesses', href: '/businesses', icon: '🏬', label: 'کسب‌وکارها' },
     { id: 'messages', href: '/messages', icon: '💬', label: 'پیام‌ها' },
-    { id: 'register-business', href: '/business/new', icon: '🏪', label: 'ثبت کسب‌وکار' },
+    { id: 'tourism', href: city ? `/city/${city.slug}/tourism` : '/', icon: '🧭', label: 'گردشگری' },
     { id: 'profile', href: '/profile', icon: '👤', label: 'پروفایل' },
   ];
 
   const isActive = (item: NavItem): boolean => {
     if (item.id === 'profile') return pathname.startsWith('/profile');
-    if (item.id === 'register-business') return pathname.startsWith('/business/new');
+    if (item.id === 'tourism') return pathname.endsWith('/tourism');
     if (item.id === 'businesses') return pathname.startsWith('/businesses') || /^\/business\/\d+\/manage/.test(pathname);
     if (item.id === 'messages') return pathname.startsWith('/messages');
     if (item.id === 'wall') return pathname.startsWith('/wall');
@@ -167,7 +167,7 @@ export function BottomNav() {
           <Link
             key={item.id}
             href={item.href}
-            className={`bottom-nav__item${isActive(item) ? ' is-active' : ''}${item.id === 'register-business' ? ' bottom-nav__item--register-business' : ''}`}
+            className={`bottom-nav__item${isActive(item) ? ' is-active' : ''}`}
             data-testid={`bottom-nav-${item.id}`}
             onClick={item.id === 'wall' ? openWall : undefined}
           >

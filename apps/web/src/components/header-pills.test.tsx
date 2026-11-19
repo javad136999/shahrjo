@@ -72,11 +72,11 @@ describe('HeaderPills', () => {
     expect(visits).toHaveTextContent('بازدید از سایت');
   });
 
-  it('links the tourism button to the remembered city tourism page', async () => {
+  it('links the business signup button to the registration page', async () => {
     render(<HeaderPills />);
-    const tourism = await screen.findByTestId('header-news-pill');
-    expect(tourism).toHaveAttribute('href', '/city/sample-city/tourism');
-    expect(tourism).toHaveTextContent('گردشگری');
+    const signup = await screen.findByTestId('header-register-business-pill');
+    expect(signup).toHaveAttribute('href', '/business/new');
+    expect(signup).toHaveTextContent('ثبت کسب‌وکار');
   });
 
   it('keeps the header uncluttered so the single install prompt is handled by the dismissible banner', async () => {
@@ -85,35 +85,34 @@ describe('HeaderPills', () => {
     expect(screen.queryByTestId('header-install-pill')).not.toBeInTheDocument();
   });
 
-  it('sends the tourism button to the city picker when no city is remembered', async () => {
-    mockGetLocalCity.mockReturnValue(null);
+  it('keeps the business signup link available without a remembered city', async () => {
     render(<HeaderPills />);
-    expect(await screen.findByTestId('header-news-pill')).toHaveAttribute('href', '/');
+    expect(await screen.findByTestId('header-register-business-pill')).toHaveAttribute('href', '/business/new');
   });
 
-  it('no longer offers the ad submission entry — it lives in the city wall now', async () => {
+  it('shows business signup and does not offer the old ad submission entry', async () => {
     render(<HeaderPills />);
-    await screen.findByTestId('header-news-pill');
+    await screen.findByTestId('header-register-business-pill');
     expect(screen.queryByTestId('header-submit-pill')).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /ثبت آگهی/ })).not.toBeInTheDocument();
   });
 
-  it('keeps the tourism link on the remembered city after another part stores a new one', async () => {
+  it('keeps the business signup link stable after a city change', async () => {
     render(<HeaderPills />);
     await screen.findByTestId('header-city-pill');
-    expect(screen.getByTestId('header-news-pill')).toHaveAttribute('href', '/city/sample-city/tourism');
+    expect(screen.getByTestId('header-register-business-pill')).toHaveAttribute('href', '/business/new');
 
     mockGetLocalCity.mockReturnValue({ id: 7, slug: 'new-city', name: 'شهر جدید' });
     window.dispatchEvent(new CustomEvent('shahrjo:city-changed'));
 
-    expect(await screen.findByTestId('header-news-pill')).toHaveAttribute('href', '/city/new-city/tourism');
+    expect(await screen.findByTestId('header-register-business-pill')).toHaveAttribute('href', '/business/new');
     // the pill label never changes — it is «انتخاب شهر», not a readout
     expect(screen.getByTestId('header-city-pill')).toHaveTextContent('انتخاب شهر');
   });
 
-  it('keeps the header to tourism + city (no subscription, no submit pill)', async () => {
+  it('keeps the header to business signup + city (no subscription, no submit pill)', async () => {
     render(<HeaderPills />);
-    await screen.findByTestId('header-news-pill');
+    await screen.findByTestId('header-register-business-pill');
     expect(screen.getByTestId('header-city-pill')).toBeInTheDocument();
     // اشتراک was removed from the header — plans stay reachable via ویترین
     expect(screen.queryByTestId('header-plans-pill')).not.toBeInTheDocument();

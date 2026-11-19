@@ -132,6 +132,28 @@ a:hover {
   font-size: 12.5px;
   gap: 5px;
 }
+.site-header .header-register-business {
+  color: #b42318;
+  border-color: rgb(239 68 68 / 62%);
+  background: rgb(255 241 242 / 94%);
+  box-shadow: 0 0 0 2px rgb(239 68 68 / 10%), 0 0 12px rgb(239 68 68 / 65%);
+  animation: header-register-business-pulse 1.65s ease-in-out infinite;
+}
+.site-header .header-register-business:hover {
+  color: #991b1b;
+  border-color: rgb(220 38 38 / 80%);
+  background: #fff1f2;
+}
+@keyframes header-register-business-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 2px rgb(239 68 68 / 10%), 0 0 12px rgb(239 68 68 / 65%); }
+  12% { transform: scale(1.06); box-shadow: 0 0 0 4px rgb(239 68 68 / 18%), 0 0 18px rgb(239 68 68 / 88%); }
+  24% { transform: scale(1); box-shadow: 0 0 0 2px rgb(239 68 68 / 10%), 0 0 12px rgb(239 68 68 / 65%); }
+  36% { transform: scale(1.04); box-shadow: 0 0 0 3px rgb(239 68 68 / 15%), 0 0 16px rgb(239 68 68 / 78%); }
+  50%, 100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-header .header-register-business { animation: none; }
+}
 .site-header .header-annual-visits {
   gap: 3px;
   padding: 3px 6px;
@@ -244,7 +266,7 @@ a:hover {
   .app-update-notice { gap: 7px; padding-inline: 8px; font-size: 11px; }
   .app-update-notice__link { padding: 3px 8px; font-size: 10px; }
   /* icons only — the city name and the tourism pill keep their labels */
-  .header-pills .pill:not([data-testid='header-city-pill']):not([data-testid='header-news-pill'])
+  .header-pills .pill:not([data-testid='header-city-pill']):not([data-testid='header-register-business-pill'])
     .pill__label {
     display: none;
   }
@@ -338,7 +360,7 @@ a:hover {
 /* 320–360px phones: the two short labels no longer fit next to the city and
    the session action — icons only (the pill titles still name them). */
 @media (max-width: 360px) {
-  .site-header [data-testid='header-news-pill'] .pill__label,
+  .site-header [data-testid='header-register-business-pill'] .pill__label,
   .site-header [data-testid='header-city-pill'] .pill__label {
     display: none;
   }
@@ -2216,6 +2238,54 @@ a.my-ads__item:hover {
   opacity: 1;
   filter: none;
   box-shadow: 0 10px 22px -8px rgb(14 122 95 / 65%);
+}
+
+/* Make the primary business-signup action impossible to miss without
+   changing the layout or drawing attention away from the other nav items. */
+.bottom-nav__item--register-business {
+  color: #b42318;
+}
+.bottom-nav__item--register-business .bottom-nav__iconwrap {
+  width: 42px;
+  height: 42px;
+  margin-top: -6px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgb(239 68 68 / 72%);
+  border-radius: 50%;
+  background: rgb(255 241 242 / 94%);
+  box-shadow: 0 0 0 3px rgb(239 68 68 / 12%), 0 0 12px rgb(239 68 68 / 72%), 0 0 24px rgb(248 113 113 / 46%);
+  animation: bottom-nav-register-pulse 1.65s ease-in-out infinite;
+}
+.bottom-nav__item--register-business .bottom-nav__icon {
+  opacity: 1;
+  filter: none;
+}
+@keyframes bottom-nav-register-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 3px rgb(239 68 68 / 12%), 0 0 12px rgb(239 68 68 / 72%), 0 0 24px rgb(248 113 113 / 46%);
+  }
+  12% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 5px rgb(239 68 68 / 20%), 0 0 18px rgb(239 68 68 / 92%), 0 0 34px rgb(248 113 113 / 66%);
+  }
+  24% {
+    transform: scale(1);
+    box-shadow: 0 0 0 3px rgb(239 68 68 / 12%), 0 0 12px rgb(239 68 68 / 72%), 0 0 24px rgb(248 113 113 / 46%);
+  }
+  36% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 4px rgb(239 68 68 / 16%), 0 0 16px rgb(239 68 68 / 84%), 0 0 30px rgb(248 113 113 / 58%);
+  }
+  50%, 100% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bottom-nav__item--register-business .bottom-nav__iconwrap {
+    animation: none;
+  }
 }
 
 @media (max-width: 767px) {

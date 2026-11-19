@@ -116,7 +116,7 @@ for (const marker of ['GOLD business promos', 'WALL_REPOST_SLOTS.filter((s) => s
   if (!schedSpec.includes(marker)) { console.error(`SCHEDULER SPEC: missing ${marker}`); fail++; }
 }
 
-// --- News: one-week window + cover sweep; the former news pill now opens tourism ---
+// --- News: one-week window + cover sweep; tourism now lives in the bottom nav ---
 const content = read('apps/api/src/content/content.service.ts');
 for (const marker of ['NEWS_MAX_AGE_MS', 'newsCutoff', 'newsWindow()', '...this.newsWindow()']) {
   if (!content.includes(marker)) { console.error(`CONTENT: missing ${marker}`); fail++; }
@@ -126,8 +126,13 @@ for (const marker of ['newsCutoff()', 'data: { coverUrl: null }', '(2b)']) {
   if (!uploads.includes(marker)) { console.error(`UPLOADS: news-cover sweep missing ${marker}`); fail++; }
 }
 const headerPills = read('apps/web/src/components/header-pills.tsx');
-if (!headerPills.includes('گردشگری شهر') || !headerPills.includes('/tourism')) {
-  console.error('HEADER: the former news pill must link to «گردشگری شهر»');
+if (!headerPills.includes('ثبت کسب‌وکار') || !headerPills.includes('/business/new')) {
+  console.error('HEADER: business signup must be available in the top header');
+  fail++;
+}
+const bottomNav = read('apps/web/src/components/bottom-nav.tsx');
+if (!bottomNav.includes('گردشگری') || !bottomNav.includes('/tourism')) {
+  console.error('BOTTOM NAV: tourism must be available in the bottom navigation');
   fail++;
 }
 const cityNews = read('apps/web/src/components/city-news.tsx');
