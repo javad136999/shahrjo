@@ -24,6 +24,7 @@ import {
   suspendAdminBusiness,
   deleteAdminBusiness,
   deleteAdminServiceListing,
+  deleteAdminSubscription,
 } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import type { AdminOverview, QueueAd, QueueBusiness, QueueServiceListing, QueueSubscription, VisitStats } from '@/lib/types';
@@ -665,6 +666,18 @@ export function AdminPanel() {
                       data-testid={`reject-${row.id}`}
                     >
                       رد
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost admin-action admin-action--err"
+                      disabled={busyId === row.id}
+                      onClick={async () => {
+                        if (!window.confirm('این درخواست اشتراک و رسید پرداخت دستی لغو شود؟ سابقهٔ آن حفظ می‌شود.')) return;
+                        await run(() => deleteAdminSubscription(row.id), 'درخواست اشتراک لغو شد', row.id);
+                      }}
+                      data-testid={`delete-subscription-${row.id}`}
+                    >
+                      🗑 حذف
                     </button>
                   </>
                 )}

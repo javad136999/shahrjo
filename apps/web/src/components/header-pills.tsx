@@ -3,16 +3,14 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CITY_CHANGED_EVENT, getLocalCity, getSiteVisitStats, getTokens } from '@/lib/api';
+import { getSiteVisitStats, getTokens } from '@/lib/api';
 import { CityPicker } from '@/components/city-picker';
-import type { LocalCity } from '@/lib/types';
 
-function HeaderIcon({ type }: { type: 'compass' | 'eye' | 'city' }) {
-  if (type === 'compass') {
+function HeaderIcon({ type }: { type: 'store' | 'eye' | 'city' }) {
+  if (type === 'store') {
     return (
       <svg className="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <circle cx="12" cy="12" r="8.5" />
-        <path d="m14.8 9.2-2.1 4.5-4.5 2.1 2.1-4.5 4.5-2.1Z" />
+        <path d="M4 10v9h16v-9M3 10l2-5h14l2 5M3 10c.7 1.1 1.8 1.7 3 1.7S8.3 11.1 9 10c.7 1.1 1.8 1.7 3 1.7s2.3-.6 3-1.7c.7 1.1 1.8 1.7 3 1.7s2.3-.6 3-1.7M9 19v-5h6v5" />
       </svg>
     );
   }
@@ -32,28 +30,16 @@ function HeaderIcon({ type }: { type: 'compass' | 'eye' | 'city' }) {
 }
 
 /**
- * Header quick actions: the city's tourism guide and the «انتخاب شهر» pill.
+ * Header quick actions: business signup and the «انتخاب شهر» pill.
  * The pill opens the in-place city picker (search + suggestions) instead of
  * navigating — it is the single entry point for changing city, since the
  * header's first slot only displays where you are. The «ثبت آگهی» entry no
  * longer lives here: it moved to the composer of the city wall.
  */
 export function HeaderPills() {
-  const [city, setCity] = useState<LocalCity | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [yearlyVisits, setYearlyVisits] = useState<number | null>(null);
   const pathname = usePathname();
-
-  useEffect(() => {
-    const sync = () => setCity(getLocalCity());
-    sync();
-    window.addEventListener(CITY_CHANGED_EVENT, sync);
-    window.addEventListener('storage', sync);
-    return () => {
-      window.removeEventListener(CITY_CHANGED_EVENT, sync);
-      window.removeEventListener('storage', sync);
-    };
-  }, [pathname]);
 
   useEffect(() => {
     let alive = true;
@@ -70,14 +56,14 @@ export function HeaderPills() {
   return (
     <div className="header-pills">
       <Link
-        href={city ? `/city/${city.slug}/tourism` : '/'}
-        className="pill"
-        title="گردشگری شهر"
-        aria-label="گردشگری شهر"
-        data-testid="header-news-pill"
+        href="/business/new"
+        className="pill header-register-business"
+        title="ثبت کسب‌وکار"
+        aria-label="ثبت کسب‌وکار"
+        data-testid="header-register-business-pill"
       >
-        <HeaderIcon type="compass" />
-        <span className="pill__label">گردشگری شهر</span>
+        <HeaderIcon type="store" />
+        <span className="pill__label">ثبت کسب‌وکار</span>
       </Link>
       {yearlyVisits !== null && (
         <Link

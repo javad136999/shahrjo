@@ -1010,6 +1010,33 @@ export class AdminService {
     return { id, status: 'REJECTED' };
   }
 
+  /** Cancel a queued subscription without destroying its payment/audit history. */
+  async deleteSubscription(user: User, id: number): Promise<{ id: number; status: string }> {
+    const scope = await this.scopeOf(user.id);
+    const adminId = await this.adminRowId(user.id);
+    const sub = await this.prisma.subscription.findFirst({
+      where: { id, ...(scope.cityId || scope.provinceId ? { business: this.cityFilter(scope) } : {}) },
+      select: { id: true, status: true, manualPayment: { select: { id: true, provider: true } } },
+    });
+    if (!sub) throw new NotFoundException('اشتراک یافت نشد');
+    if (sub.status !== 'PENDING_REVIEW') throw new BadRequestException('این اشتراک قبلاً بررسی شده است');
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.subscription.update({
+        where: { id },
+        data: { status: 'CANCELED', reviewNote: 'لغو توسط مدیر', reviewedById: adminId },
+      });
+      if (sub.manualPayment?.provider === 'MANUAL') {
+        await tx.payment.update({ where: { id: sub.manualPayment.id }, data: { status: 'CANCELED' } });
+      }
+    });
+    await this.audit(adminId, 'subscription.delete', 'subscription', String(id), {
+      status: 'CANCELED',
+      previousStatus: 'PENDING_REVIEW',
+    });
+    return { id, status: 'CANCELED' };
+  }
+
   // ---------- city map boundary (Phase 9) ----------
 
   /**

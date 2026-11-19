@@ -24,6 +24,7 @@ const mockApproveAdminBusiness = jest.fn();
 const mockRejectAdminBusiness = jest.fn();
 const mockApproveAdminSubscription = jest.fn();
 const mockRejectAdminSubscription = jest.fn();
+const mockDeleteAdminSubscription = jest.fn();
 const mockSuspendAdminBusiness = jest.fn();
 const mockDeleteAdminBusiness = jest.fn();
 const mockDeleteAdminServiceListing = jest.fn();
@@ -56,6 +57,7 @@ jest.mock('@/lib/api', () => ({
   rejectAdminBusiness: (id: number, reason: string) => mockRejectAdminBusiness(id, reason),
   approveAdminSubscription: (id: number) => mockApproveAdminSubscription(id),
   rejectAdminSubscription: (id: number, reason: string) => mockRejectAdminSubscription(id, reason),
+  deleteAdminSubscription: (id: number) => mockDeleteAdminSubscription(id),
   suspendAdminBusiness: (id: number, reason: string) => mockSuspendAdminBusiness(id, reason),
   deleteAdminBusiness: (id: number) => mockDeleteAdminBusiness(id),
   deleteAdminServiceListing: (id: number) => mockDeleteAdminServiceListing(id),
@@ -333,6 +335,18 @@ describe('AdminPanel', () => {
     fireEvent.click(screen.getByTestId('approve-44'));
     await waitFor(() => expect(mockApproveAdminSubscription).toHaveBeenCalledWith(44));
     expect(await screen.findByRole('status')).toHaveTextContent('اشتراک فعال شد');
+  });
+
+  it('lets a manager remove a pending subscription after confirmation', async () => {
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<AdminPanel />);
+    fireEvent.click(await screen.findByTestId('tab-subscriptions'));
+    expect(await screen.findByTestId('delete-subscription-44')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('delete-subscription-44'));
+    await waitFor(() => expect(mockDeleteAdminSubscription).toHaveBeenCalledWith(44));
+    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('درخواست اشتراک'));
+    expect(await screen.findByRole('status')).toHaveTextContent('درخواست اشتراک لغو شد');
+    confirmSpy.mockRestore();
   });
 
   it('sends the manual signup to its own dedicated page (ثبت دستی)', async () => {
