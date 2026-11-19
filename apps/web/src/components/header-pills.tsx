@@ -7,6 +7,30 @@ import { CITY_CHANGED_EVENT, getLocalCity, getSiteVisitStats, getTokens } from '
 import { CityPicker } from '@/components/city-picker';
 import type { LocalCity } from '@/lib/types';
 
+function HeaderIcon({ type }: { type: 'compass' | 'eye' | 'city' }) {
+  if (type === 'compass') {
+    return (
+      <svg className="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="m14.8 9.2-2.1 4.5-4.5 2.1 2.1-4.5 4.5-2.1Z" />
+      </svg>
+    );
+  }
+  if (type === 'eye') {
+    return (
+      <svg className="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M3.5 12s3.1-5 8.5-5 8.5 5 8.5 5-3.1 5-8.5 5-8.5-5-8.5-5Z" />
+        <circle cx="12" cy="12" r="2.2" />
+      </svg>
+    );
+  }
+  return (
+    <svg className="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M4 20h16M6 20V7.5L12 4l6 3.5V20M9 20v-5h6v5M8 9h1M12 9h1M16 9h1" />
+    </svg>
+  );
+}
+
 /**
  * Header quick actions: the city's tourism guide and the «انتخاب شهر» pill.
  * The pill opens the in-place city picker (search + suggestions) instead of
@@ -52,7 +76,7 @@ export function HeaderPills() {
         aria-label="گردشگری شهر"
         data-testid="header-news-pill"
       >
-        <span aria-hidden>🧭</span>
+        <HeaderIcon type="compass" />
         <span className="pill__label">گردشگری شهر</span>
       </Link>
       {yearlyVisits !== null && (
@@ -63,7 +87,7 @@ export function HeaderPills() {
           aria-label={`بازدید سایت امسال: ${yearlyVisits.toLocaleString('fa-IR')}`}
           data-testid="header-annual-visits"
         >
-          <span className="header-annual-visits__icon" aria-hidden="true">◉</span>
+          <HeaderIcon type="eye" />
           <span className="header-annual-visits__count">{yearlyVisits.toLocaleString('fa-IR')}</span>
           <span className="header-annual-visits__label">بازدید از سایت</span>
         </Link>
@@ -81,7 +105,7 @@ export function HeaderPills() {
         aria-expanded={pickerOpen}
         onClick={() => setPickerOpen((open) => !open)}
       >
-        <span aria-hidden>🏙</span>
+        <HeaderIcon type="city" />
         <span className="pill__label">انتخاب شهر</span>
       </button>
       <CityPicker open={pickerOpen} onClose={() => setPickerOpen(false)} />

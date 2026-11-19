@@ -10190,3 +10190,147 @@ button.pill {
     font-size: 11px;
   }
 }
+
+/* ---------- polished, balanced site header ---------- */
+.site-header {
+  margin-top: 0;
+  border-bottom: 1px solid rgb(14 122 95 / 12%);
+  background: rgb(255 255 255 / 88%);
+  box-shadow: 0 8px 24px -22px rgb(21 59 45 / 65%);
+}
+.site-header .header-inner {
+  min-height: 62px;
+  gap: 10px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.site-header .brand {
+  gap: 8px;
+  min-height: 42px;
+  padding: 4px 10px 4px 8px;
+  border: 1px solid rgb(14 122 95 / 12%);
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f7fcf9, #fff);
+  color: #214b38;
+  font-size: 15px;
+  box-shadow: inset 0 1px 0 #fff;
+}
+.site-header .brand-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+}
+.site-header .header-pills {
+  min-width: 0;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgb(14 122 95 / 10%);
+  border-radius: 18px;
+  background: rgb(247 252 249 / 82%);
+}
+.site-header .header-pills > .pill,
+.site-header .header-user > .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  box-sizing: border-box;
+  gap: 7px;
+  padding: 6px 11px;
+  border-color: transparent;
+  border-radius: 13px;
+  background: transparent;
+  color: #466458;
+  font-size: 11.5px;
+  font-weight: 800;
+  box-shadow: none;
+  transition: background .16s ease, color .16s ease, transform .16s ease;
+}
+.site-header .header-pills > .pill:hover,
+.site-header .header-pills > .pill:focus-visible,
+.site-header .header-user > .btn:hover,
+.site-header .header-user > .btn:focus-visible {
+  border-color: transparent;
+  background: #e7f5ed;
+  color: #0e7a5f;
+  box-shadow: none;
+  transform: none;
+}
+.site-header .header-citybtn {
+  background: #fff !important;
+  border-color: #dcebe1 !important;
+  color: #0e7a5f !important;
+  box-shadow: 0 3px 10px rgb(21 59 45 / 6%) !important;
+}
+.site-header .header-user {
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgb(14 122 95 / 10%);
+  border-radius: 18px;
+  background: #fff;
+}
+.site-header .header-user__name {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.site-header .header-user > .btn:last-child {
+  color: #a05757;
+}
+.site-header .header-user > .btn:last-child:hover,
+.site-header .header-user > .btn:last-child:focus-visible {
+  background: #fff1f1;
+  color: #b42318;
+}
+.site-header .header-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+.site-header .header-annual-visits {
+  gap: 5px;
+  padding-inline: 9px;
+  border: 1px solid #d7eadf;
+  background: #f2faf5;
+  color: #226044;
+}
+.site-header .header-annual-visits .header-icon {
+  width: 16px;
+  height: 16px;
+  flex-basis: 16px;
+  color: #178254;
+}
+.site-header .header-annual-visits__count { font-size: 10px; font-variant-numeric: tabular-nums; }
+.site-header .header-annual-visits__label { color: #638370; font-size: 8px; font-weight: 750; white-space: nowrap; }
+.site-header .header-citybtn .header-icon { color: #168052; }
+.site-header .header-pills > .pill:first-child .header-icon { color: #4677a0; }
+.site-header .header-user__name .header-icon { color: #168052; }
+
+@media (max-width: 760px) {
+  .site-header .header-inner { min-height: 58px; padding: 7px 10px; gap: 6px; }
+  .site-header .brand { min-height: 38px; padding-inline: 6px 8px; border-radius: 14px; font-size: 13px; }
+  .site-header .brand-logo { width: 30px; height: 30px; border-radius: 9px; }
+  .site-header .header-pills { gap: 3px; padding: 3px; border-radius: 15px; }
+  .site-header .header-pills > .pill,
+  .site-header .header-user > .btn { min-height: 36px; padding: 6px 8px; border-radius: 11px; }
+  .site-header .header-icon { width: 17px; height: 17px; flex-basis: 17px; }
+  .site-header .header-user { padding: 3px; border-radius: 15px; }
+}
+
+@media (max-width: 420px) {
+  .site-header .header-inner { min-height: 52px; padding-inline: 7px; gap: 4px; }
+  .site-header .brand { gap: 4px; padding-inline: 4px 6px; font-size: 12px; }
+  .site-header .brand-logo { width: 28px; height: 28px; }
+  .site-header .header-pills > .pill,
+  .site-header .header-user > .btn { min-width: 36px; min-height: 34px; padding-inline: 7px; }
+  .site-header .header-pills > .pill .pill__label { max-width: 64px; }
+  .site-header .header-user__name { max-width: 42px; }
+}

@@ -6,6 +6,19 @@ import { usePathname } from 'next/navigation';
 import { api, getTokens, logoutServer } from '@/lib/api';
 import type { MeResponse } from '@/lib/types';
 
+function HeaderActionIcon({ type }: { type: 'user' | 'logout' }) {
+  return type === 'user' ? (
+    <svg className="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="8" r="3.2" />
+      <path d="M5.5 20c.8-3.1 3-4.7 6.5-4.7s5.7 1.6 6.5 4.7" />
+    </svg>
+  ) : (
+    <svg className="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10M13 8l4 4-4 4M9 12h8" />
+    </svg>
+  );
+}
+
 /** Login state / logout in the site header. */
 export function HeaderActions() {
   const [me, setMe] = useState<MeResponse | null>(null);
@@ -42,6 +55,7 @@ export function HeaderActions() {
   if (!me) {
     return (
       <Link href="/login" className="btn btn-ghost">
+        <HeaderActionIcon type="user" />
         ورود
       </Link>
     );
@@ -64,9 +78,10 @@ export function HeaderActions() {
         title="پروفایل من"
         data-testid="header-profile"
       >
-        <span aria-hidden>👤</span> {displayName}
+        <HeaderActionIcon type="user" /> {displayName}
       </Link>
       <button type="button" className="btn btn-ghost" onClick={logout} data-testid="header-logout">
+        <HeaderActionIcon type="logout" />
         خروج
       </button>
     </div>
