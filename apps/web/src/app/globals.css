@@ -10583,3 +10583,41 @@ button.pill {
   .site-header .header-pills > .pill .pill__label,
   .site-header .header-pills > .pill .header-annual-visits__label { font-size: 7px !important; }
 }
+
+/* The current-city mark is context, not a separate card: keep it light and
+   inline so it does not consume a large square on the right of the header. */
+.site-header .brand,
+.site-header .brand:hover {
+  min-height: 32px !important;
+  height: auto !important;
+  gap: 5px !important;
+  padding: 2px 3px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.site-header .brand-logo {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 7px !important;
+}
+@media (max-width: 600px) {
+  .site-header .brand,
+  .site-header .brand:hover {
+    min-height: 28px !important;
+    gap: 3px !important;
+    padding: 1px 2px !important;
+  }
+  .site-header .brand-logo {
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 5px !important;
+  }
+}
+@media (max-width: 380px) {
+  .site-header .brand-logo {
+    width: 20px !important;
+    height: 20px !important;
+  }
+}
