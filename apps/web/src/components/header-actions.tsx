@@ -80,9 +80,9 @@ export function HeaderActions() {
       >
         <HeaderActionIcon type="user" /> {displayName}
       </Link>
-      <button type="button" className="btn btn-ghost" onClick={logout} data-testid="header-logout">
-        <HeaderActionIcon type="logout" />
-        خروج
+      <button type="button" className="btn btn-ghost header-logout" onClick={logout} data-testid="header-logout" aria-label="خروج">
+        <span className="header-logout__icon" aria-hidden><HeaderActionIcon type="logout" /></span>
+        <span className="header-logout__label">خروج</span>
       </button>
     </div>
   );

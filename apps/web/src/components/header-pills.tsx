@@ -94,6 +94,16 @@ export function HeaderPills() {
         <HeaderIcon type="city" />
         <span className="pill__label">انتخاب شهر</span>
       </button>
+      <Link
+        href="/business/new"
+        className="pill header-register-business"
+        title="ثبت کسب‌وکار"
+        aria-label="ثبت کسب‌وکار"
+        data-testid="header-register-business"
+      >
+        <span className="header-register-business__icon" aria-hidden="true">🏪</span>
+        <span className="pill__label header-register-business__label">ثبت کسب‌وکار</span>
+      </Link>
       <CityPicker open={pickerOpen} onClose={() => setPickerOpen(false)} />
     </div>
   );

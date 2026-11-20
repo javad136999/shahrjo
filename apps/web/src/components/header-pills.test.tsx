@@ -79,6 +79,15 @@ describe('HeaderPills', () => {
     expect(signup).toHaveTextContent('ثبت کسب‌وکار');
   });
 
+  it('shows the register-business action with the same compact quick-action pattern', async () => {
+    render(<HeaderPills />);
+    const register = await screen.findByTestId('header-register-business');
+    expect(register).toHaveAttribute('href', '/business/new');
+    expect(register).toHaveAttribute('aria-label', 'ثبت کسب‌وکار');
+    expect(register).toHaveTextContent('ثبت کسب‌وکار');
+    expect(register.querySelector('.header-register-business__icon')).toBeInTheDocument();
+  });
+
   it('keeps the header uncluttered so the single install prompt is handled by the dismissible banner', async () => {
     render(<HeaderPills />);
     await screen.findByTestId('header-city-pill');

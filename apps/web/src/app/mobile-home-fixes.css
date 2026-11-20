@@ -706,3 +706,351 @@
   .site-header .brand-logo { width: 24px; height: 24px; }
   .site-header .brand-cityname { max-width: 24vw; }
 }
+
+/* Unified top-header quick actions: same compact icon rhythm as the bottom nav. */
+.site-header .header-pills > .pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  min-height: 42px;
+  padding: 5px 8px;
+  border-radius: 13px;
+  gap: 4px;
+  line-height: 1.15;
+  box-sizing: border-box;
+}
+.site-header .header-pills > .pill > span[aria-hidden] {
+  display: grid;
+  width: 23px;
+  height: 23px;
+  place-items: center;
+  flex: 0 0 23px;
+  font-size: 18px;
+  line-height: 1;
+}
+.site-header .header-pills > .pill .pill__label {
+  max-width: 88px;
+  font-size: 10px;
+  line-height: 1.25;
+  text-align: center;
+  white-space: nowrap;
+}
+.site-header .header-register-business {
+  border-color: #ead59d;
+  background: linear-gradient(145deg, #fff8e5, #f8edca);
+  color: #725015;
+  box-shadow: 0 4px 11px rgb(166 107 25 / 12%);
+}
+.site-header .header-register-business:hover {
+  border-color: #d7b65f;
+  background: linear-gradient(145deg, #fff1c4, #f2dfa9);
+}
+.header-register-business__icon {
+  animation: header-register-heartbeat 2.6s ease-in-out infinite;
+  filter: none !important;
+}
+.header-register-business__label {
+  position: relative;
+  padding-inline-end: 10px;
+  color: #795512;
+  font-weight: 900 !important;
+}
+.header-register-business__label::after {
+  position: absolute;
+  top: 50%;
+  inset-inline-end: -1px;
+  display: grid;
+  width: 12px;
+  height: 12px;
+  place-items: center;
+  border: 1.5px solid #fff;
+  border-radius: 50%;
+  background: #168052;
+  color: #fff;
+  content: '✓';
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+  transform: translateY(-50%);
+  box-shadow: 0 2px 5px rgb(22 128 82 / 22%);
+}
+@keyframes header-register-heartbeat {
+  0%, 62%, 100% { transform: scale(1); }
+  66% { transform: scale(1.13); }
+  70% { transform: scale(0.98); }
+  74% { transform: scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .header-register-business__icon { animation: none; }
+}
+@media (max-width: 600px) {
+  .site-header .header-inner {
+    gap: 5px;
+    min-height: 62px;
+    padding-inline: 8px;
+  }
+  .site-header .header-pills {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    min-width: 0;
+    gap: 4px;
+  }
+  .site-header .header-pills > .pill {
+    min-width: 52px;
+    min-height: 48px;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 5px;
+    border-radius: 13px;
+  }
+  .site-header .header-pills > .pill > span[aria-hidden] { width: 22px; height: 22px; flex-basis: 22px; font-size: 17px; }
+  .site-header .header-pills > .pill .pill__label { display: block; max-width: 100%; font-size: 8.5px; }
+  .site-header .header-register-business__label { padding-inline-end: 8px; }
+  .header-register-business__label::after { width: 10px; height: 10px; font-size: 7px; }
+}
+@media (max-width: 380px) {
+  .site-header .header-inner { gap: 3px; padding-inline: 5px; }
+  .site-header .header-pills { gap: 2px; }
+  .site-header .header-pills > .pill { min-width: 46px; padding-inline: 3px; }
+  .site-header .header-pills > .pill .pill__label { font-size: 7.5px; }
+  .site-header .brand-cityname { max-width: 20vw; }
+}
+
+/* Final top-header language: plain icon + caption, matching the bottom nav.
+   The action remains tappable, but no icon is boxed inside a square/card. */
+.site-header .header-pills > .pill,
+.site-header .header-pills > .pill:hover {
+  display: inline-flex;
+  min-width: 58px;
+  min-height: 48px;
+  flex: 0 0 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  transform: none;
+}
+.site-header .header-pills > .pill:hover {
+  color: var(--brand-dark);
+  background: rgb(22 128 82 / 6%);
+}
+.site-header .header-pills > .pill > span[aria-hidden] {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  flex: 0 0 24px;
+  font-size: 20px;
+  line-height: 1;
+  opacity: .88;
+  filter: grayscale(.15);
+}
+.site-header .header-pills > .pill:hover > span[aria-hidden],
+.site-header .header-pills > .pill:focus-visible > span[aria-hidden] {
+  opacity: 1;
+  filter: none;
+  transform: translateY(-1px);
+}
+.site-header .header-pills > .pill .pill__label {
+  display: block !important;
+  max-width: 90px;
+  overflow: visible;
+  color: currentColor;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+.site-header .header-annual-visits {
+  min-width: 67px;
+  gap: 2px;
+  padding: 3px 4px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #47735d;
+}
+.site-header .header-annual-visits__icon {
+  width: 23px !important;
+  height: 23px !important;
+  border-radius: 50%;
+  background: #e4f6eb;
+  color: #168052;
+  font-size: 15px;
+}
+.site-header .header-annual-visits__count { font-size: 10px; line-height: 1; }
+.site-header .header-annual-visits__label { color: #638370; font-size: 8px; }
+.site-header .header-register-business {
+  min-width: 72px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #795512;
+}
+.site-header .header-register-business:hover { background: rgb(198 151 31 / 8%); }
+.site-header .header-register-business__icon {
+  width: 25px !important;
+  height: 25px !important;
+  border-radius: 50%;
+  background: #fff3d7;
+  font-size: 19px !important;
+}
+.header-register-business__label { padding-inline-end: 8px; }
+.header-register-business__label::after { inset-inline-end: 0; }
+@media (max-width: 600px) {
+  .site-header .header-inner { min-height: 64px; }
+  .site-header .header-pills > .pill,
+  .site-header .header-pills > .pill:hover {
+    min-width: 48px;
+    min-height: 50px;
+    flex: 0 1 auto;
+    padding: 3px 4px;
+    border-radius: 9px;
+  }
+  .site-header .header-pills > .pill > span[aria-hidden] { width: 22px; height: 22px; flex-basis: 22px; font-size: 18px; }
+  .site-header .header-pills > .pill .pill__label { max-width: 72px; font-size: 8px; }
+  .site-header .header-register-business { min-width: 66px; }
+  .site-header .header-annual-visits { min-width: 59px; }
+}
+@media (max-width: 380px) {
+  .site-header .header-pills > .pill,
+  .site-header .header-pills > .pill:hover { min-width: 42px; padding-inline: 2px; }
+  .site-header .header-pills > .pill .pill__label { font-size: 7.5px; }
+  .site-header .header-register-business { min-width: 58px; }
+}
+
+/* Keep the session action in its own compact slot on narrow phones. Without
+   this, the logout button can be painted over the city selector when the
+   user's name and the quick actions are both present. */
+.site-header .header-user { min-width: 0; }
+.site-header .header-user__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.site-header .header-logout__icon { display: none; }
+@media (max-width: 600px) {
+  .site-header .header-inner { overflow: hidden; }
+  .site-header .brand {
+    min-width: 0;
+    flex: 0 1 27vw;
+  }
+  .site-header .brand-cityname { max-width: 100%; }
+  .site-header .header-pills {
+    min-width: 0;
+    flex: 1 1 0;
+    justify-content: space-evenly;
+    overflow: hidden;
+  }
+  .site-header .header-pills > .pill,
+  .site-header .header-pills > .pill:hover {
+    min-width: 0;
+    width: 0;
+    flex: 1 1 0;
+    padding-inline: 1px;
+  }
+  .site-header .header-pills > .pill .pill__label { max-width: 100%; }
+  .site-header .header-user {
+    flex: 0 1 auto;
+    max-width: 82px;
+    gap: 2px;
+  }
+  .site-header .header-user__name {
+    max-width: 42px;
+    font-size: 10px;
+  }
+  .site-header .header-logout {
+    display: inline-grid;
+    width: 27px;
+    height: 27px;
+    flex: 0 0 27px;
+    padding: 0 !important;
+    place-items: center;
+    font-size: 0 !important;
+    line-height: 1;
+  }
+  .site-header .header-logout__icon {
+    display: block;
+    color: currentColor;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .site-header .header-logout__label { display: none; }
+}
+@media (max-width: 380px) {
+  .site-header .header-user { max-width: 33px; }
+  .site-header .header-user__name { display: none; }
+  .site-header .header-logout { width: 29px; height: 29px; flex-basis: 29px; }
+  .site-header .header-logout__icon { font-size: 19px; }
+}
+
+/* The top actions are one unified horizontal strip, not separate vertical
+   cards. Each action keeps its icon and caption on the same row. */
+@media (max-width: 600px) {
+  .site-header .header-pills {
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+    border: 0;
+    background: transparent;
+  }
+  .site-header .header-pills > .pill,
+  .site-header .header-pills > .pill:hover {
+    display: inline-flex;
+    min-height: 34px;
+    height: 34px;
+    flex-direction: row;
+    justify-content: center;
+    gap: 2px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    white-space: nowrap;
+  }
+  .site-header .header-pills > .pill > span[aria-hidden] {
+    width: 17px;
+    height: 17px;
+    flex-basis: 17px;
+    font-size: 15px;
+  }
+  .site-header .header-pills > .pill .pill__label {
+    max-width: none;
+    overflow: hidden;
+    font-size: 7.5px;
+    text-overflow: ellipsis;
+  }
+  .site-header .header-annual-visits,
+  .site-header .header-register-business {
+    min-width: 0;
+    gap: 2px;
+    padding-inline: 1px;
+  }
+  .site-header .header-annual-visits__icon,
+  .site-header .header-register-business__icon {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 13px !important;
+  }
+  .site-header .header-register-business__label { padding-inline-end: 6px; }
+}
+@media (max-width: 380px) {
+  .site-header .header-pills > .pill > span[aria-hidden] {
+    width: 15px;
+    height: 15px;
+    flex-basis: 15px;
+    font-size: 13px;
+  }
+  .site-header .header-pills > .pill .pill__label { font-size: 6.8px; }
+}
