@@ -6,19 +6,11 @@ import { usePathname } from 'next/navigation';
 import { getSiteVisitStats, getTokens } from '@/lib/api';
 import { CityPicker } from '@/components/city-picker';
 
-function HeaderIcon({ type }: { type: 'store' | 'eye' | 'city' }) {
+function HeaderIcon({ type }: { type: 'store' | 'city' }) {
   if (type === 'store') {
     return (
       <svg className="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M4 10v9h16v-9M3 10l2-5h14l2 5M3 10c.7 1.1 1.8 1.7 3 1.7S8.3 11.1 9 10c.7 1.1 1.8 1.7 3 1.7s2.3-.6 3-1.7c.7 1.1 1.8 1.7 3 1.7s2.3-.6 3-1.7M9 19v-5h6v5" />
-      </svg>
-    );
-  }
-  if (type === 'eye') {
-    return (
-      <svg className="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M3.5 12s3.1-5 8.5-5 8.5 5 8.5 5-3.1 5-8.5 5-8.5-5-8.5-5Z" />
-        <circle cx="12" cy="12" r="2.2" />
       </svg>
     );
   }
@@ -73,7 +65,6 @@ export function HeaderPills() {
           aria-label={`بازدید سایت امسال: ${yearlyVisits.toLocaleString('fa-IR')}`}
           data-testid="header-annual-visits"
         >
-          <HeaderIcon type="eye" />
           <span className="header-annual-visits__count">{yearlyVisits.toLocaleString('fa-IR')}</span>
           <span className="header-annual-visits__label">بازدید از سایت</span>
         </Link>
