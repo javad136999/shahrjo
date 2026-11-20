@@ -10621,3 +10621,100 @@ button.pill {
     height: 20px !important;
   }
 }
+
+/* Final header direction: every header icon owns a vertical label. */
+.site-header .brand,
+.site-header .header-user > .btn,
+.site-header .header-user__name {
+  display: inline-flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+.site-header .brand {
+  min-width: 42px !important;
+  padding: 1px 2px !important;
+}
+.site-header .brand-logo {
+  width: 22px !important;
+  height: 22px !important;
+}
+.site-header .brand-cityname {
+  display: block !important;
+  max-width: 62px !important;
+  font-size: 8px !important;
+  line-height: 1.15 !important;
+}
+.site-header .header-user {
+  align-items: stretch !important;
+  gap: 2px !important;
+}
+.site-header .header-user > .btn,
+.site-header .header-user__name {
+  min-width: 38px !important;
+  min-height: 42px !important;
+  padding: 3px 4px !important;
+  overflow: visible !important;
+}
+.site-header .header-user__name {
+  max-width: 64px !important;
+  font-size: 8px !important;
+  line-height: 1.15 !important;
+}
+.site-header .header-user .header-icon,
+.site-header .header-logout__icon .header-icon {
+  width: 20px !important;
+  height: 20px !important;
+  flex: 0 0 20px !important;
+}
+.site-header .header-logout__icon {
+  display: block !important;
+  height: 20px !important;
+  line-height: 1 !important;
+}
+.site-header .header-logout__label {
+  display: block !important;
+  font-size: 8px !important;
+  line-height: 1.15 !important;
+}
+@media (max-width: 600px) {
+  .site-header .header-inner {
+    min-height: 72px !important;
+    padding-inline: 4px !important;
+    gap: 2px !important;
+  }
+  .site-header .brand {
+    min-width: 36px !important;
+    max-width: 42px !important;
+  }
+  .site-header .brand-logo {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  .site-header .brand-cityname { max-width: 42px !important; font-size: 7px !important; }
+  .site-header .header-user > .btn,
+  .site-header .header-user__name {
+    min-width: 32px !important;
+    min-height: 48px !important;
+    padding-inline: 2px !important;
+  }
+  .site-header .header-user__name { max-width: 46px !important; font-size: 7px !important; }
+  .site-header .header-user .header-icon,
+  .site-header .header-logout__icon .header-icon {
+    width: 18px !important;
+    height: 18px !important;
+    flex-basis: 18px !important;
+  }
+  .site-header .header-logout__icon { height: 18px !important; }
+  .site-header .header-logout__label { font-size: 7px !important; }
+}
+@media (max-width: 380px) {
+  .site-header .header-inner { min-height: 68px !important; }
+  .site-header .brand { min-width: 32px !important; max-width: 36px !important; }
+  .site-header .brand-cityname { max-width: 36px !important; font-size: 6.5px !important; }
+  .site-header .header-user > .btn,
+  .site-header .header-user__name { min-width: 28px !important; padding-inline: 1px !important; }
+}
