@@ -10718,3 +10718,42 @@ button.pill {
   .site-header .header-user > .btn,
   .site-header .header-user__name { min-width: 28px !important; padding-inline: 1px !important; }
 }
+
+/* Header action order requested by the product: icon/count on top, caption below. */
+.site-header .header-pills > .pill.header-register-business,
+.site-header .header-pills > .pill.header-citybtn {
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+}
+.site-header .header-pills > .pill.header-annual-visits {
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+}
+.site-header .header-annual-visits .header-icon {
+  display: none !important;
+}
+.site-header .header-annual-visits__count {
+  display: block !important;
+  min-height: 20px;
+  color: #178254 !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  line-height: 1.1 !important;
+  font-variant-numeric: tabular-nums;
+}
+.site-header .header-annual-visits__label {
+  display: block !important;
+  color: currentColor !important;
+  font-size: 8px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+}
+@media (max-width: 600px) {
+  .site-header .header-annual-visits__count { font-size: 10px !important; }
+  .site-header .header-annual-visits__label { font-size: 7px !important; }
+}
