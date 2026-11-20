@@ -79,13 +79,11 @@ describe('HeaderPills', () => {
     expect(signup).toHaveTextContent('ثبت کسب‌وکار');
   });
 
-  it('shows the register-business action with the same compact quick-action pattern', async () => {
+  it('renders only one register-business action in the unified header row', async () => {
     render(<HeaderPills />);
-    const register = await screen.findByTestId('header-register-business');
-    expect(register).toHaveAttribute('href', '/business/new');
-    expect(register).toHaveAttribute('aria-label', 'ثبت کسب‌وکار');
-    expect(register).toHaveTextContent('ثبت کسب‌وکار');
-    expect(register.querySelector('.header-register-business__icon')).toBeInTheDocument();
+    const registers = await screen.findAllByRole('link', { name: 'ثبت کسب‌وکار' });
+    expect(registers).toHaveLength(1);
+    expect(registers[0]).toHaveAttribute('data-testid', 'header-register-business-pill');
   });
 
   it('keeps the header uncluttered so the single install prompt is handled by the dismissible banner', async () => {
