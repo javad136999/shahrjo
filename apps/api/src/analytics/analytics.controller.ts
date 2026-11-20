@@ -16,7 +16,8 @@ export class AnalyticsController {
     private readonly rateLimiter: RateLimiterService,
   ) {}
 
-  /** Whole-site daily / monthly / yearly totals for signed-in users. */
+  /** Whole-site daily / monthly / yearly totals used by the public header. */
+  @Public()
   @Get('visits')
   visits() {
     return this.analytics.stats();

@@ -62,8 +62,7 @@ describe('HeaderPills', () => {
     expect(pill).toHaveTextContent('انتخاب شهر');
   });
 
-  it('shows the current-year whole-site visit count to a signed-in user', async () => {
-    mockGetTokens.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
+  it('shows the current-year whole-site visit count publicly', async () => {
     render(<HeaderPills />);
     const visits = await screen.findByTestId('header-annual-visits');
     expect(visits).toHaveAttribute('href', '/profile');

@@ -3,20 +3,22 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { getSiteVisitStats, getTokens } from '@/lib/api';
+import { getSiteVisitStats } from '@/lib/api';
 import { CityPicker } from '@/components/city-picker';
 
 function HeaderIcon({ type }: { type: 'store' | 'city' }) {
   if (type === 'store') {
     return (
       <svg className="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M4 10v9h16v-9M3 10l2-5h14l2 5M3 10c.7 1.1 1.8 1.7 3 1.7S8.3 11.1 9 10c.7 1.1 1.8 1.7 3 1.7s2.3-.6 3-1.7c.7 1.1 1.8 1.7 3 1.7s2.3-.6 3-1.7M9 19v-5h6v5" />
+        <path d="M4 10.5 5.8 5h12.4l1.8 5.5M4 10.5c.7 1 1.8 1.5 3 1.5s2.3-.5 3-1.5c.7 1 1.8 1.5 3 1.5s2.3-.5 3-1.5c.7 1 1.8 1.5 3 1.5s2.3-.5 3-1.5M5 11.5V19h14v-7.5M9 19v-4.5h6V19M17.5 7.5h.01" />
+        <path d="M17 15.5v4M15 17.5h4" />
       </svg>
     );
   }
   return (
     <svg className="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M4 20h16M6 20V7.5L12 4l6 3.5V20M9 20v-5h6v5M8 9h1M12 9h1M16 9h1" />
+      <path d="M12 21s6-5.1 6-10a6 6 0 1 0-12 0c0 4.9 6 10 6 10Z" />
+      <path d="M9.2 14.5h5.6V9.2H9.2v5.3ZM11 9.2V7.8h2v1.4M11.2 11.2h.01M13 11.2h.01" />
     </svg>
   );
 }
@@ -35,10 +37,6 @@ export function HeaderPills() {
 
   useEffect(() => {
     let alive = true;
-    if (!getTokens()) {
-      setYearlyVisits(null);
-      return () => { alive = false; };
-    }
     getSiteVisitStats()
       .then((stats) => alive && setYearlyVisits(stats.yearly.total))
       .catch(() => alive && setYearlyVisits(null));
