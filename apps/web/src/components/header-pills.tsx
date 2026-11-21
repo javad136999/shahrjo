@@ -9,16 +9,18 @@ import { CityPicker } from '@/components/city-picker';
 function HeaderIcon({ type }: { type: 'store' | 'city' }) {
   if (type === 'store') {
     return (
-      <svg className="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M4 10.5 5.8 5h12.4l1.8 5.5M4 10.5c.7 1 1.8 1.5 3 1.5s2.3-.5 3-1.5c.7 1 1.8 1.5 3 1.5s2.3-.5 3-1.5c.7 1 1.8 1.5 3 1.5s2.3-.5 3-1.5M5 11.5V19h14v-7.5M9 19v-4.5h6V19M17.5 7.5h.01" />
-        <path d="M17 15.5v4M15 17.5h4" />
+      <svg className="header-icon header-icon--store" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M4 10.5V20h16v-9.5M3 10.5 5 5h14l2 5.5" />
+        <path d="M3 10.5c.5 1.1 1.5 1.7 2.8 1.7s2.3-.6 2.8-1.7c.5 1.1 1.5 1.7 2.8 1.7s2.3-.6 2.8-1.7c.5 1.1 1.5 1.7 2.8 1.7s2.3-.6 2.8-1.7M8.5 20v-5h5v5M17.5 14.5v4m-2-2h4" />
       </svg>
     );
   }
   return (
-    <svg className="header-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M12 21s6-5.1 6-10a6 6 0 1 0-12 0c0 4.9 6 10 6 10Z" />
-      <path d="M9.2 14.5h5.6V9.2H9.2v5.3ZM11 9.2V7.8h2v1.4M11.2 11.2h.01M13 11.2h.01" />
+    <svg className="header-icon header-icon--city" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="m3.5 6 5.2-2 6.6 2 5.2-2v14l-5.2 2-6.6-2-5.2 2z" />
+      <path d="M8.7 4v14m6.6-12v14" />
+      <path d="M12.2 14s-2.1-2.1-2.1-4a2.1 2.1 0 1 1 4.2 0c0 1.9-2.1 4-2.1 4Z" />
+      <circle cx="12.2" cy="10" r=".55" />
     </svg>
   );
 }

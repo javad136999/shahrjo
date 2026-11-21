@@ -1120,3 +1120,90 @@
   background: transparent !important;
   box-shadow: none !important;
 }
+
+
+/* Refined city + business actions: preserve the compact header layout while
+   giving each action a distinct, immediately recognizable visual language. */
+.site-header .header-pills .header-citybtn,
+.site-header .header-pills .header-citybtn:hover,
+.site-header .header-pills .header-citybtn:focus-visible {
+  border: 1px solid #cfe6d9 !important;
+  border-radius: 999px !important;
+  background: linear-gradient(135deg, #f5fbf7, #e7f5ec) !important;
+  box-shadow: 0 2px 9px rgb(18 105 75 / 10%) !important;
+  color: #0b684f !important;
+  transition: background .18s ease, border-color .18s ease, box-shadow .18s ease !important;
+}
+.site-header .header-pills .header-citybtn:hover,
+.site-header .header-pills .header-citybtn:focus-visible {
+  border-color: #9bcdb0 !important;
+  background: #e1f3e8 !important;
+  box-shadow: 0 3px 12px rgb(18 105 75 / 17%) !important;
+}
+.site-header .header-pills .header-citybtn .header-icon--city {
+  color: #118260 !important;
+  stroke-width: 1.9;
+}
+
+.site-header .header-pills .header-register-business,
+.site-header .header-pills .header-register-business:hover,
+.site-header .header-pills .header-register-business:focus-visible {
+  position: relative !important;
+  z-index: 1;
+  isolation: isolate;
+  overflow: visible !important;
+  border: 1px solid #e4bd60 !important;
+  border-radius: 999px !important;
+  background: linear-gradient(115deg, #fff9e8 0%, #f8e3a6 58%, #fff0c7 100%) !important;
+  color: #684309 !important;
+  box-shadow:
+    0 0 0 1px rgb(255 235 178 / 72%),
+    0 2px 10px rgb(190 135 28 / 24%),
+    0 0 18px rgb(220 169 48 / 30%) !important;
+  animation: header-register-gold-glow 2.8s ease-in-out infinite !important;
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease !important;
+}
+.site-header .header-pills .header-register-business:hover,
+.site-header .header-pills .header-register-business:focus-visible {
+  border-color: #d29c2d !important;
+  background: linear-gradient(115deg, #fff3c9 0%, #f4d982 58%, #ffe9ac 100%) !important;
+  box-shadow:
+    0 0 0 2px rgb(255 232 163 / 85%),
+    0 3px 13px rgb(190 135 28 / 31%),
+    0 0 22px rgb(220 169 48 / 42%) !important;
+}
+.site-header .header-pills .header-register-business:focus-visible {
+  outline: 2px solid #9b6a10 !important;
+  outline-offset: 3px !important;
+}
+.site-header .header-pills .header-register-business .header-icon--store {
+  color: #9a6811 !important;
+  filter: drop-shadow(0 0 3px rgb(224 174 55 / 48%));
+  stroke-width: 1.9;
+}
+@keyframes header-register-gold-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgb(255 235 178 / 65%),
+      0 2px 9px rgb(190 135 28 / 20%),
+      0 0 14px rgb(220 169 48 / 24%);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px rgb(255 235 178 / 82%),
+      0 3px 12px rgb(190 135 28 / 30%),
+      0 0 24px rgb(220 169 48 / 46%);
+  }
+}
+@media (max-width: 600px) {
+  /* Let the gold halo breathe beyond the button without changing the flex row. */
+  .site-header .header-inner,
+  .site-header .header-pills {
+    overflow: visible !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-header .header-pills .header-register-business {
+    animation: none !important;
+  }
+}

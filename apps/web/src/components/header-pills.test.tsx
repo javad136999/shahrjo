@@ -126,4 +126,13 @@ describe('HeaderPills', () => {
     // «ثبت آگهی» moved to the wall composer (Phase 10)
     expect(screen.queryByTestId('header-submit-pill')).not.toBeInTheDocument();
   });
+
+  it('uses distinct, descriptive icons for city selection and business signup', async () => {
+    render(<HeaderPills />);
+    const business = await screen.findByTestId('header-register-business-pill');
+    const city = screen.getByTestId('header-city-pill');
+
+    expect(business.querySelector('.header-icon--store')).toBeInTheDocument();
+    expect(city.querySelector('.header-icon--city')).toBeInTheDocument();
+  });
 });
